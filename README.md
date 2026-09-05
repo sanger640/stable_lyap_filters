@@ -128,10 +128,11 @@ This repo holds the safety-filter logic and evaluation. It expects two external 
   Requires `SIM_HEADLESS=1` for batch runs (EGL, no viewer); without it, importing `sim.py`
   core-dumps on a machine with no display.
 
-Paths are currently absolute (`/home/sanger/wksp/...`) — parameterising them is the first
-chore for anyone porting this. Python 3.10+ is required (DINOv2's hub code uses `X | None`
-syntax), and `diffusers==0.11.1` / `huggingface_hub==0.23.0` are pinned by the diffusion
-policy snapshot.
+All external locations resolve through [`src/paths.py`](src/paths.py) from environment
+variables (see Quick start), with defaults pointing at the machine this was developed on, and
+a `check()` that fails fast with a clear message when something is missing. Python 3.10+ is
+required (DINOv2's hub code uses `X | None` syntax), and `diffusers==0.11.1` /
+`huggingface_hub==0.23.0` are pinned by the diffusion policy snapshot.
 
 ## Caveats
 

@@ -59,11 +59,7 @@ params, `down_dims` [512,1024,2048] → [128,256,512]) forced by an 8 GB GPU. Op
 image resolution to afford a bigger UNet, or weight the gripper dimension in the loss (it is a
 ±1 discrete signal competing with mm-scale positions under plain MSE).
 
-### 3. Make the repo portable (~1 h, do this before sharing widely)
-Absolute paths (`/home/sanger/wksp/...`) are hardcoded in `src/steering.py` and both eval
-scripts. Parameterise them and add a `config.yaml` or env vars.
-
-### 4. Only if 1 and 2 both fail
+### 3. Only if 1 and 2 both fail
 Reconsider whether *any* learned-world-model score is a viable control objective here, versus
 using the monitor purely as a halting detector — which is what it is demonstrably good at.
 
