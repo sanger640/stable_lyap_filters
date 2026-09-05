@@ -1,173 +1,169 @@
 # stable_lyap_filters
 
-Stability-based safety filtering for robot manipulation, using the latent dynamics of a
-frozen DINO world model. Task: a Franka Panda picks a block from a cluttered tabletop without
-toppling its neighbours.
+A **zero-shot safety monitor** for robot manipulation. It watches a visuomotor policy's
+proposed action chunk and flags the ones likely to cause a failure — without ever training on
+labelled failures.
 
-Two questions, two answers:
+Task: a Franka Panda picks a block from a cluttered tabletop; failure is toppling a
+neighbouring block. Everything runs on the latent dynamics of a **frozen DINO world model**.
 
-| | question | answer |
-|---|---|---|
-| **Detection** | can latent-divergence *detect* unsafe action chunks, zero-shot? | **Yes** — AUC 0.894 |
-| **Active filtering** | can we *optimise against* that score to prevent topples? | **No** — it roughly triples the topple rate |
+**Result: AUC 0.894** on 1772 action chunks (100 episodes, 25 unsafe), held-out validated.
 
-The headline result is the second one, and it is negative in an informative way: **a metric
-that is a good passive detector is not automatically a valid control objective.** Optimising
-the divergence score reliably drives the score down (−26%) while making real physics
-*worse*, and the correction it produces is statistically indistinguishable from random noise
-of the same magnitude (p = 0.83).
+The idea is Lyapunov-flavoured — measure whether the predicted future is *stable* — but the
+single most useful thing in this repo is which parts of that idea survived contact with data
+and which did not.
 
 ---
 
-## The negative result
+## What works
 
-40 paired trials, expert trajectories replayed in MuJoCo with per-waypoint Gaussian position
-noise (`σ = 2 mm`) — a setting where topples are real and the task actually completes. Within
-each pair, both conditions get an identical noise realisation and identical initial scene.
+Score an action chunk by how far the world model's predicted final latent has drifted from
+the last observed one, per DINOv2 patch, then take the p90 across a masked set of patches.
 
-| filter | trust | topple ctl → filtered | prevented/caused | McNemar p | correction | predicted div | pick rate |
-|---|---|---|---|---|---|---|---|
-| gradient (world model) | 5 mm | 15.0% → **40.0%** | 2 / **12** | **0.013** | 3.09 mm | **−26.4%** | 98% → 100% |
-| random, matched magnitude | 5 mm | 12.5% → **35.0%** | 1 / **10** | **0.012** | 2.55 mm | −2.2% | 98% → 95% |
-| gradient (pre-fix history) | 1 mm | 12.5% → 20.0% | 1 / 4 | 0.375 | 0.92 mm | −13.7% | 98% → 100% |
+| configuration | AUC |
+|---|---|
+| `ftle` — the original (1/T)·log(d_end/d_start), max over patches *and* perturbations | 0.599 |
+| `d_end`, p90 over patches, geometric row mask only | 0.756 |
+| `d_end` + low-norm patch mask (k=30) | 0.854 |
+| **`d_end` + PC1 background mask (75% keep)** | **0.894** |
+| **`ftle_variance` + PC1 background mask** | **0.896** |
 
-Three things make this interpretable rather than just a null:
+Held-out validated: mask type and hyperparameters are chosen on one half of the episodes and
+scored on the other, over 20 random splits. Thresholds come from percentiles of the **safe**
+score distribution only — no failure labels anywhere in the pipeline.
 
-1. **The optimiser works.** Gradient mode drives its objective down 26.4%; the random control
-   leaves it flat (−2.2%). The machinery is sound — the objective is the problem.
-2. **It is not "safe by doing nothing."** Pick rate holds at 100% and endpoint error stays at
-   3 → 8 mm, so the filter executes the task and *still* topples more. (This guard exists
-   because a frozen policy scores a perfect safety record; that failure mode has bitten this
-   project before.)
-3. **The gradient carries no signal.** Gradient-directed corrections caused 12 topples,
-   random-direction corrections of matched magnitude caused 10 — **p = 0.83**. The harm is
-   explained entirely by perturbation magnitude, not by direction.
+```python
+from monitor import Monitor
+mon = Monitor.load()                            # frozen DINO world model
+mon.fit_pc1(safe_latents, motion=gt_motion)     # background mask; motion fixes the sign
+mon.calibrate(safe_scores, percentile=95)       # threshold from SAFE chunks only
+if mon.score(frames, proprio, actions) > mon.threshold:
+    halt()
+```
 
-> The honest claim is therefore *"optimising this objective does not improve real safety, and
-> its gradient is indistinguishable from noise"* — **not** "the gradient actively points the
-> wrong way," which the data does not support.
+### Three findings that made the difference
+
+**1. Drop the FTLE denominator.** The original metric divides by `d_start`, measured one
+prediction step in — so it is tiny, noisy, and dominated by how *quiet* a patch happened to
+start rather than how unstable it is. Removing it is worth ~0.2 AUC. Taking a second maximum
+(over perturbations) makes things worse still: an extremum over ~4100 values per chunk tracks
+tail noise, not instability. This change took the metric from 0.599 (near chance) to 0.799.
+
+**2. Mask *low*-norm patches, not high-norm ones.** The intuitive suspect was DINOv2's
+high-norm artifact tokens. That was wrong: `corr(‖z‖, d_end) = −0.641` on ground-truth-static
+patches. Cosine distance divides by ‖z‖, so a near-featureless patch has a poorly-determined
+direction that wobbles under any perturbation. Masking the 30 lowest-norm patches: 0.756 → 0.854.
+
+**3. PC1 masking keeps the *background*, and that is why it works.** This is the
+counterintuitive one. On foreground patches (arm, gripper, moving block)
+`corr(motion, d_end) = +0.45` — and it is just as strong in **safe** chunks (+0.452) as unsafe
+ones (+0.386). Most foreground divergence is a *motion confound* from the always-moving arm,
+not a failure signal. Background patches have ~zero baseline motion, so divergence there
+actually means something. 0.854 → 0.894.
+
+> This was originally mislabelled in our own notes. The foreground/background sign came from
+> an unverified heuristic ("higher mean ‖z‖ = foreground") that turned out to be backwards on
+> both datasets tested — `corr(PC1_raw, motion) = −0.479` and `−0.486`. **Always resolve the
+> sign against measured patch motion**, never against norm. `Monitor.fit_pc1(motion=...)`
+> does this for you.
 
 ### Watch it
 
-| control (unmodified) — stays safe, 11.1° | filtered (safety filter on) — topples, 90° |
+| | |
 |---|---|
-| [`media/replay_control_safe.mp4`](media/replay_control_safe.mp4) | [`media/replay_filtered_topples.mp4`](media/replay_filtered_topples.mp4) |
-
-Same seed, same noise, same initial scene. The only difference is the safety filter, and the
-filtered run is the one that knocks the block over. *(Individual trials are not
-bit-reproducible — see Caveats — so treat this as an illustration of the aggregate, not a
-proof on its own.)*
-
-[`media/world_model_imagination_ep3.mp4`](media/world_model_imagination_ep3.mp4) shows what
-the filter *thinks* it is doing: real observation | world model's imagined future under the
-original actions | under corrected actions | amplified difference | the two action chunks.
-Both middle panels are the world model dreaming — **no physics runs in that video**, which is
-precisely why it looked like the filter was working.
+| [`media/monitor_catches_topple.mp4`](media/monitor_catches_topple.mp4) | the deployed monitor firing before a real topple |
+| [`media/old_ftle_metric_same_episode.mp4`](media/old_ftle_metric_same_episode.mp4) | the original FTLE metric on the **same** episode, for contrast |
+| [`media/probe_catches_divergence_misses.mp4`](media/probe_catches_divergence_misses.mp4) | a case the supervised probe catches and divergence misses |
+| [`media/patch_grid_reference.png`](media/patch_grid_reference.png) | the 14×14 patch grid and which rows the geometric mask removes |
 
 ---
 
-## The detection result (what does work)
+## Honest limits
 
-Scored on 1772 chunks / 25 unsafe, 100 episodes. Thresholds are percentiles of the *safe*
-distribution only, so the zero-shot claim holds.
+**Report AUC and the operating curve, never accuracy.** At a 1.4% base rate, always predicting
+"safe" scores **98.6%** and beats every real configuration. (An earlier write-up of this work
+quoted 96.9% accuracy as a headline; that number was an artifact of class imbalance.)
 
-| metric | AUC |
+Best operating point found, `p95` threshold: **recall 0.52, precision 0.13, 0.88 false alarms
+per episode.** Precision is capped by arithmetic here — a p95 threshold admits ~88 false
+positives against 25 possible true positives, so it cannot exceed ~22%.
+
+**A supervised probe beats it.** A linear probe on the *predicted* latent recovers future
+block tilt at AUC 0.941 vs divergence's 0.887 on the same chunks, and reaches 100% recall at
+a loose threshold where no divergence configuration does. It needs tilt labels from sim
+physics, so it is not zero-shot — but it bounds what the zero-shot framing costs you, and it
+shows the information is present in the latent. **The readout, not perception or dynamics, is
+the bottleneck.**
+
+**The 50-perturbation "deviator agent" may not earn its cost.** A single unperturbed rollout
+(`nominal`, 53 ms) matched the full 50-rollout apparatus (2021 ms) on one dataset — difference
+not statistically significant. On a second dataset the ordering reversed. Treat
+nominal-vs-perturbed as **dataset-dependent and unsettled**, not a solved question.
+
+**Known failure modes.** "Flash topples" — blocks that fall with no precursor wobble — are an
+information limit given a 3-frame history, not a metric weakness. Shadow and reflection
+artifacts drive some false positives.
+
+---
+
+## Things that did NOT help
+
+Documented so nobody spends a week rediscovering them. All held-out validated over 20 splits.
+
+| idea | result |
 |---|---|
-| `ftle` — original, (1/T)·log(d_end/d_start), max over patches *and* perturbations | 0.599 |
-| `d_end`, p90 over patches | 0.799 |
-| `d_end` + low-norm patch mask (k=30) | 0.854 |
-| `d_end` + PC1 background mask (75% keep) | **0.894** |
-| `ftle_variance` + PC1 background mask | **0.896** |
-| *linear tilt probe on the predicted latent (uses tilt labels)* | *0.941* |
+| low-norm mask **and** PC1 mask combined | 0.887 / 0.892 — no gain; the selector picks "no low-norm filtering" in 12–19/20 splits. PC1 already removes the patches low-norm masking would. |
+| temporal aggregation (rolling max/mean/EMA over chunk scores) | 0.880 / 0.887 — worse. At a 1.4% positive rate a rolling window mostly imports false-alarm surface from safe neighbours. |
+| PCA feature-truncation (as opposed to patch selection) | did not survive cross-validation, despite a promising in-sample number |
+| exact Jacobian FTLE (σ_max of ∂z_T/∂a) | correct but worse; the linear regime ends ~50× below the operating perturbation size |
+| the FTLE ratio family generally | dominated (0.599 vs 0.894); no amount of masking rescues the denominator |
 
-Three findings worth carrying forward, all in [`src/metrics.py`](src/metrics.py):
+---
 
-- **Drop the FTLE denominator.** `d_start` is measured one step in — tiny and noisy — so
-  dividing by it ranks patches by how quiet they started, not how unstable they are. Worth
-  ~0.2 AUC. A second max (over perturbations) makes it worse: an extremum over ~4100 values
-  per chunk tracks tail noise.
-- **Mask low-‖z‖ patches, not high-‖z‖ ones.** The original suspect was DINOv2's high-norm
-  artifact tokens. Wrong: `corr(‖z‖, d_end) = −0.641` on ground-truth-static patches. Cosine
-  distance divides by ‖z‖, so featureless patches have poorly-determined directions that
-  wobble under any perturbation.
-- **PC1 masking keeps the *background*, and that is why it works.** On foreground patches
-  `corr(motion, d_end) = +0.45`, and it is just as strong in safe chunks (+0.452) as unsafe
-  (+0.386) — most foreground divergence is a motion/phase confound from the always-moving arm.
-  Background patches have ~zero baseline motion, so divergence there means something. *This
-  was originally mislabelled* because the foreground/background sign came from an unverified
-  norm heuristic that was backwards on both datasets tested. Always resolve the sign against
-  measured patch motion.
+## Does it generalise?
+
+Partially, and the pattern is informative. Two from-scratch 2D toy tasks, each with its own
+physics and its own small world model:
+
+- **Pusher2D** — a pusher nudges a block past a fragile one, i.e. the same "moving actor +
+  normally-static object that fails discontinuously" structure as Jenga: **AUC 0.89**, and the
+  background-beats-foreground finding **replicated** (background-masked 0.916 vs
+  foreground-masked 0.649).
+- **CartPole** — no second object, so no foreground/background structure at all:
+  **AUC ~0.55**, barely above chance.
+
+So the method's strength appears tied to that specific scene structure rather than to
+detecting dynamical instability in general. Worth stating that way rather than claiming
+either extreme.
 
 ---
 
 ## Layout
 
 ```
-src/metrics.py     divergence metrics + patch masks (the detection core)
-src/steering.py    classifier-guidance hook into a diffusion policy's DDIM loop,
-                   and the differentiable divergence used as a control objective
-eval/eval_active_filter.py   THE MAIN EXPERIMENT: noisy expert replay in MuJoCo,
-                             paired control vs filtered, with the task-progress guards
-eval/eval_live_policy.py     live diffusion-policy rollouts (vacuous — see Caveats)
-eval/check_policy_quality.py policy sanity check / DDIM inference-step sweep
-eval/analyze.py              regenerates every table above from results/*.jsonl
-results/*.jsonl              raw per-trial records
-media/*.mp4                  videos referenced above
-docs/HANDOFF.md              state, gotchas, and next steps for whoever picks this up
+src/monitor.py    the monitor: load -> fit_pc1 -> calibrate -> score   (start here)
+src/metrics.py    divergence metrics + the patch masks, with the reasoning inline
+src/paths.py      external repo locations, from env vars, fails fast
+eval/analyze.py   regenerates every table above from results/
+results/*.json    raw result files behind each table
+media/            videos and the patch-grid reference
+docs/HANDOFF.md   state, traps that cost real time, and prioritised next steps
 ```
 
-Reproduce the tables: `python eval/analyze.py`
+Reproduce all tables: `python eval/analyze.py` (needs nothing but the JSON files).
 
-## Dependencies
-
-This repo holds the safety-filter logic and evaluation. It expects two external pieces:
-
-- **`dino_wm`** — the world model (frozen DINOv2 encoder + trained ViT predictor) and its
-  checkpoint. `src/steering.py` imports its loader.
-- **`panda_express`** — the MuJoCo Jenga sim (`sim.py`) and the expert teleop episodes.
-  Requires `SIM_HEADLESS=1` for batch runs (EGL, no viewer); without it, importing `sim.py`
-  core-dumps on a machine with no display.
-
-All external locations resolve through [`src/paths.py`](src/paths.py) from environment
-variables (see Quick start), with defaults pointing at the machine this was developed on, and
-a `check()` that fails fast with a clear message when something is missing. Python 3.10+ is
-required (DINOv2's hub code uses `X | None` syntax), and `diffusers==0.11.1` /
-`huggingface_hub==0.23.0` are pinned by the diffusion policy snapshot.
-
-## Caveats
-
-- **Trials are not bit-reproducible.** The MuJoCo physics thread advances on wall-clock, so
-  identical seeds can diverge. Pairing controls the noise realisation and initial scene but
-  not timing jitter; aggregate statistics are sound, individual trials are not.
-- **The live-policy experiment is vacuous** and is included only to document why. The trained
-  diffusion policy never grasps the block (gripper RMSE 0.48–0.67 on a ±1 signal), so across
-  16 trials it produced 0 topples and 0 picks, peak tilt 5.97° against a 45° threshold. A
-  steered-vs-unsteered table there reads 0% vs 0% and proves nothing.
-- **The 1 mm row predates a history-alignment fix** (observation history was sampled once per
-  chunk instead of once per step, so the world model saw frames 8 control steps apart paired
-  with mismatched actions). Re-running the 5 mm gradient condition after the fix moved the
-  numbers by ~2 points and changed nothing qualitatively (42.5% → 40.0% topple, p 0.004 →
-  0.013), so the conclusion survives; the 1 mm row was not re-run.
-- Detection AUCs are quoted from the wider research log; this repo carries the metric
-  implementations and the active-filtering evidence, not the full detection sweep.
-
-## Quick start
+## Setup
 
 ```bash
-export DINO_WM_DIR=/path/to/dino_wm
-export PANDA_EXPRESS_DIR=/path/to/panda_express
-export DIFFUSION_POLICY_DIR=/path/to/diffusion_policy
+export DINO_WM_DIR=/path/to/dino_wm                # world model + checkpoint
+export PANDA_EXPRESS_DIR=/path/to/panda_express    # MuJoCo Jenga sim + episodes
 export DINO_WM_CKPT=$DINO_WM_DIR/outputs/model_latest_single.pth
-
-python eval/analyze.py                      # reproduce every table above from results/
-
-SIM_HEADLESS=1 python eval/eval_active_filter.py \
-    --n-trials 40 --episodes 1 2 3 4 5 \
-    --mode gradient --max-delta 0.005 \
-    --out results/my_run.jsonl              # the main experiment (~1 h)
-
-SIM_HEADLESS=1 python eval/eval_active_filter.py --mode random_matched ...   # the control
+pip install -r requirements.txt
 ```
 
-`src/paths.py` resolves all external locations from those environment variables and fails
-fast with a clear message if something is missing.
+Python 3.10+ (DINOv2's hub code uses `X | None`). `SIM_HEADLESS=1` is required for any batch
+run that imports the simulator — without it `sim.py` opens a viewer at import and core-dumps
+on a machine with no display.
+
+`src/paths.py` resolves everything from those variables and fails fast with a clear message
+if something is missing.
