@@ -16,6 +16,51 @@ import torch
 from jacobian import batched_jacobian, jacobian
 
 
+def lyapunov_spectrum_general(s0, step_fn, jac_fn, T, dt=1.0, reorth_every=10):
+    """Benettin/QR spectrum for ANY discrete map, given a step and a Jacobian function.
+
+    Ground truth (true Lorenz flow) and the learned shPLRNN both go through this, so a
+    disagreement isolates cleanly: if this is wrong on the true system the FTLE code is
+    broken; if it is right there and wrong on the learned model, the model's Jacobians are.
+    """
+    d = s0.numel()
+    Q = torch.eye(d, dtype=s0.dtype, device=s0.device)
+    logs = torch.zeros(d, dtype=s0.dtype, device=s0.device)
+    s = s0.clone()
+    for t in range(T):
+        Q = jac_fn(s) @ Q
+        s = step_fn(s)
+        if (t + 1) % reorth_every == 0:
+            Q, R = torch.linalg.qr(Q)
+            logs = logs + torch.log(torch.abs(torch.diagonal(R)) + 1e-300)
+    Q, R = torch.linalg.qr(Q)
+    logs = logs + torch.log(torch.abs(torch.diagonal(R)) + 1e-300)
+    return torch.sort(logs / (T * dt), descending=True).values
+
+
+def spectrum_convergence(s0, step_fn, jac_fn, checkpoints, dt=1.0, reorth_every=10):
+    """Running spectrum estimate at increasing horizons.
+
+    On a regular attractor this FLATTENS; at a guard surface it DIVERGES. Reading that plot
+    is the skill Phase 1 exists to build, so always produce it rather than a single number."""
+    d = s0.numel()
+    Q = torch.eye(d, dtype=s0.dtype, device=s0.device)
+    logs = torch.zeros(d, dtype=s0.dtype, device=s0.device)
+    s, out, done = s0.clone(), {}, 0
+    for T in sorted(checkpoints):
+        for t in range(done, T):
+            Q = jac_fn(s) @ Q
+            s = step_fn(s)
+            if (t + 1) % reorth_every == 0:
+                Q, R = torch.linalg.qr(Q)
+                logs = logs + torch.log(torch.abs(torch.diagonal(R)) + 1e-300)
+        Qf, Rf = torch.linalg.qr(Q)
+        out[T] = torch.sort((logs + torch.log(torch.abs(torch.diagonal(Rf)) + 1e-300)) / (T * dt),
+                            descending=True).values.tolist()
+        done = T
+    return out
+
+
 def lyapunov_spectrum(s0, model, T, dt=1.0, reorth_every=10, action=None):
     """Full spectrum (descending) via QR reorthonormalisation of the deformation matrix.
 

@@ -17,11 +17,20 @@ import torch.nn as nn
 
 
 class ShPLRNN(nn.Module):
-    def __init__(self, d=32, H=32, action_dim=0):
+    def __init__(self, d=32, H=32, action_dim=0, init_near_identity=True):
         super().__init__()
         self.d, self.H, self.action_dim = d, H, action_dim
-        self.A = nn.Parameter(torch.rand(d) * 0.5 + 0.5)      # diagonal, init near-contractive
-        self.W1 = nn.Parameter(torch.randn(d, H) / H ** 0.5)
+        # A near 1 and W1 small => the map starts near the identity. When learning the
+        # dt-flow map of a continuous system with small dt, s_{t+1} ~ s_t, so an init far
+        # from identity makes the first epochs fight the integrator instead of learning the
+        # vector field -- observed directly: init in [0.5,1] gave a 3e5 first-epoch loss and
+        # a collapsed (all-negative) spectrum.
+        if init_near_identity:
+            self.A = nn.Parameter(torch.ones(d) - 0.01 * torch.rand(d))
+            self.W1 = nn.Parameter(torch.randn(d, H) * (0.1 / H ** 0.5))
+        else:
+            self.A = nn.Parameter(torch.rand(d) * 0.5 + 0.5)
+            self.W1 = nn.Parameter(torch.randn(d, H) / H ** 0.5)
         self.W2 = nn.Parameter(torch.randn(H, d) / d ** 0.5)
         self.h1 = nn.Parameter(torch.zeros(d))
         self.h2 = nn.Parameter(torch.zeros(H))
