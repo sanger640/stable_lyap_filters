@@ -28,6 +28,26 @@ def gtf_rollout_loss(model, seq, alpha, action_seq=None):
     return total / (L - 1)
 
 
+def gtf_rollout_loss_latent(model, seq_obs, alpha, action_seq=None):
+    """GTF for a model whose latent is larger than its observation.
+
+    The crucial difference from the full-state version: data is injected into the OBSERVED
+    coordinates only. The auxiliary latent coordinates are never forced -- they evolve freely
+    and are shaped purely by the loss on the observed readout. Forcing the whole state (which
+    is what the obs_dim == d case does) is a different, stronger constraint."""
+    B, L, N = seq_obs.shape
+    z = model.lift(seq_obs[:, 0])
+    total = 0.0
+    for t in range(L - 1):
+        a = action_seq[:, t] if action_seq is not None else None
+        z = model(z, a)
+        pred = model.observe(z)
+        total = total + ((pred - seq_obs[:, t + 1]) ** 2).mean()
+        forced = alpha * seq_obs[:, t + 1] + (1.0 - alpha) * pred
+        z = torch.cat([forced, z[..., N:]], dim=-1)
+    return total / (L - 1)
+
+
 def free_rollout(model, s0, steps, action_seq=None):
     """No forcing at all -- what evaluation uses."""
     s, out = s0, []

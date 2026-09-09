@@ -17,9 +17,26 @@ import torch.nn as nn
 
 
 class ShPLRNN(nn.Module):
-    def __init__(self, d=32, H=32, action_dim=0, init_near_identity=True):
+    def __init__(self, d=32, H=32, action_dim=0, obs_dim=None, init_near_identity=True):
+        """d is the LATENT dimension. obs_dim (N) is what is actually observed; when N < d the
+        remaining d-N coordinates are free auxiliary dimensions that shape the dynamics but are
+        never observed.
+
+        Readout uses the standard [I_N | 0] convention rather than a learned B: the first N
+        latent coordinates ARE the observations. That keeps the observed subspace interpretable
+        and, more importantly, makes teacher forcing well defined -- you inject data into the
+        observed coordinates only and leave the auxiliary ones to evolve untouched, which is
+        how the published GTF training works.
+
+        Extra latent dimensions produce extra Lyapunov exponents (d of them, not N). The top N
+        should match the true system and the rest should be strongly negative -- directions
+        collapsing onto the learned N-dimensional manifold embedded in R^d. ALWAYS check for a
+        clear spectral gap after the Nth exponent before trusting the comparison; without one,
+        spurious exponents can interleave with the real ones."""
         super().__init__()
         self.d, self.H, self.action_dim = d, H, action_dim
+        self.obs_dim = d if obs_dim is None else obs_dim
+        assert self.obs_dim <= d, "observation dim cannot exceed latent dim"
         # A near 1 and W1 small => the map starts near the identity. When learning the
         # dt-flow map of a continuous system with small dt, s_{t+1} ~ s_t, so an init far
         # from identity makes the first epochs fight the integrator instead of learning the
@@ -48,6 +65,19 @@ class ShPLRNN(nn.Module):
         return out
 
     step = forward
+
+    def observe(self, z):
+        """Readout: [I_N | 0] @ z."""
+        return z[..., :self.obs_dim]
+
+    def lift(self, x):
+        """Observation -> latent. Auxiliary coordinates start at zero and are then driven by
+        the observed ones through W2/W1 as the rollout proceeds."""
+        if self.obs_dim == self.d:
+            return x
+        pad = torch.zeros(*x.shape[:-1], self.d - self.obs_dim,
+                          dtype=x.dtype, device=x.device)
+        return torch.cat([x, pad], dim=-1)
 
     def cell_id(self, s):
         """Integer id of the polyhedral cell (hashable active set), for cell-crossing analysis."""
