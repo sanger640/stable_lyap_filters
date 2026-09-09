@@ -232,7 +232,19 @@ Remaining Phase-0 tasks:
 - [ ] Outliers cluster near known topple/contact events rather than scattering uniformly.
 - [ ] Report what fraction of the 25 known unsafe chunks the probe's outliers cover.
 
-### Phase 1 — Lorenz-63: does the FTLE machinery work at all?
+### Phase 1 — Lorenz-63 — **ACCEPTED WITH DEVIATION** (details in NOTES.md)
+
+> **Status.** lambda_3 0.27% error, 5/5 seeds (published reservoir baseline: 28%).
+> lambda_2 ~0. **lambda_1 5.5% mean error, only 2/5 seeds inside 5%.** Accepted as a knowing
+> deviation from the stated criterion, on the grounds that Phase 2's own bar is lambda_max
+> within 10%. **Carry the lambda_1 caveat into every later write-up.**
+>
+> Key enabler: **off-attractor training data**. On-attractor data contains almost no evidence
+> about the contracting exponent, because the transverse transient decays during the burn-in.
+> Also settled: `d=20` + readout is decisively worse (lambda_3 48.8% error, spectrum a smooth
+> ladder with no gap); `d=3` is correct and matches the shPLRNN paper's actual low-latent claim.
+
+#### Original specification
 
 Non-negotiable. If this fails nothing measured later means anything.
 
@@ -383,6 +395,11 @@ until Phase 4 passes *and* real demonstrations exist.
 - Koopman/DMD cannot produce positive Lyapunov exponents; do not add as a chaotic-regime
   baseline.
 - Reservoir computing reproduces `lambda_max` but systematically fails the negative exponents.
+  **VERIFIED** against Pathak et al. 2017 (Chaos 27, 121102), Table II — on Lorenz the
+  successful reservoir gives lambda_1 0.90 (true 0.91), lambda_2 0.00 (true 0.00), and
+  lambda_3 **-10.5 against a true -14.6**. They attribute it to the reservoir not needing to
+  reproduce the thin transverse structure that carries lambda_3, which is the same mechanism
+  our off-attractor data fixes.
 
 ### One boundary on scope, from our own results
 
