@@ -1023,6 +1023,51 @@ A and B are the headline: the alarm fires immediately, hundreds of steps before 
 visible. C is the case an outcome detector cannot produce at all — a survivor flagged for being
 marginal.
 
+**Videos now show WHY S is what it is** (4 panels): the block now plus a ghost per probe at its
+predicted ENDING coloured by assigned attractor; the same probes in latent space (PCA) with the
+attractor centres marked; ground truth; and the entropy trace with ln2/ln3 reference lines. The
+attractor readout tilts come out [+1.69, −1.69, −0.00] → falls-right / falls-left / stays-up, so
+the discovered clusters do carry the physical meaning without ever being told it.
+
+**Two label/horizon mismatches found while building this, both mine:**
+
+1. **The alarm turns OFF before the topple.** Case A: S = 1.086 at t=0, zero by t=180, and
+   silent at t=419 when the block actually crosses α (alarm on for only 43% of calls; case B
+   67%). That is *correct* for a proximity detector — once the outcome is committed there is no
+   uncertainty left, so S = 0 — and it means **the alarm window is the intervention window**.
+   But my first videos used a STICKY banner, so they implied a continuously-lit alarm. The
+   "419 steps of warning" is the gap to the FIRST alarm, not a sustained one. The score also
+   flickers (ON→off→ON) from 32-probe sampling noise; a latch would fix it.
+2. **"Short lookahead fails" (AUC 0.49) was a mislabelled test, not a result.** The monitor saw
+   only `a[:H]` while the label came from the margin of the FULL 450-step action — graded on
+   information it could not have. Re-labelled per chunk ("apply THIS chunk then stop"), H=200
+   gives AUC 0.792 on a 350-step rollout vs 0.831 at H=450/600. Chunks of 25–50 steps give a
+   *degenerate* label (0–4% topple) — this system needs sustained pushing, so one short chunk
+   cannot hurt it, and there is no per-chunk safety question to ask.
+
+   Note the label used pad=600 while the monitor used settle=150, so those horizons are NOT
+   apples-to-apples: the monitor predicts an outcome resolving after its own window ends. Fine
+   in principle, but "total horizon 350" is the monitor's cost, not the physics' timescale.
+
+**Fixed-horizon sweep** (lookahead + settle, both constant — better runtime semantics):
+
+| lookahead | settle | total | AUC | recall | F1 |
+|---|---|---|---|---|---|
+| 450 | 100 | 550 | **0.817** | 0.880 | **0.615** |
+| 450 | 400 | 850 | 0.800 | 0.860 | 0.589 |
+| 200 | 400 | 600 | 0.708 | 0.440 | 0.473 |
+
+**The settle tail can be cut 4× for free** (400 → 100 costs nothing). Probes only need to be
+*distinguishable*, not *finished* — a block 100 steps into a 164-step fall is already
+unmistakable. Corrects my earlier estimate that Jenga would need 5–7× its current horizon; on
+this scaling (~0.6 × time-to-distinguishable) it is closer to **2.5×**.
+
+**Open question for Jenga, which decides the whole design:** can a SINGLE 8-step chunk topple a
+block? If yes, the per-chunk monitor is well posed. If topples need several chunks accumulating,
+every chunk is individually safe, the monitor is silent always, and you need multi-chunk
+lookahead or a state-based (not action-based) risk measure instead. `labels.json` should settle
+it — check whether topples coincide with one chunk or develop across several.
+
 **D and E are the honest half.** D is a false positive at 46% margin, consistent with the
 measured precision of 0.469. E is the structural blind spot: a push far PAST the threshold
 topples robustly, every probe agrees it falls, so the entropy is ZERO and the monitor stays
