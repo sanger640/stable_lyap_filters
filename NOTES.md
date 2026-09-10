@@ -335,3 +335,60 @@ so the 2.7% carrying the contraction contributes little. Note this is the opposi
 data and the loss under-weights them. Untested alternatives: too few epochs, α mis-set for a
 hybrid system, or d=4 being too tight given one dimension is spent on the cos²+sin²=1
 constraint.
+
+### Phase 2 hyperparameter sweep — three corrections and one cross-system result
+
+All 3 seeds per config. TRUTH = (0.1585, −0.0041, −0.2198).
+
+| config | epochs | λ₁ | λ₂ | λ₃ | gap |
+|---|---|---|---|---|---|
+| baseline | 300 | 0.0852 | 0.0200 | −0.0005 | 1/3 |
+| d=6 | 300 | 0.4594 ±0.31 | 0.0040 | −0.0361 | 3/3 |
+| α=0.02 | 300 | 0.1765 ±0.006 | −0.0035 | −0.0983 | 2/3 |
+| α=0.3 | 300 | 0.1795 ±0.086 | 0.0350 | +0.0025 | 2/3 |
+| off_frac=0 | 300 | 0.1054 | 0.0115 | −0.0138 | 2/3 |
+| ep1000 | 1000 | 0.2009 ±0.048 | −0.0092 | −0.2710 ±0.070 | 3/3 |
+| α=0.02 | 1000 | 0.1954 ±0.006 | **−0.0043** ±0.001 | −0.3088 ±0.025 | 3/3 |
+| off_frac=0 | 1000 | 0.1630 ±0.094 | 0.0078 | **−0.6721 ±0.511** | 2/3 |
+| impact-weight 20 | 1000 | 0.2421 ±0.019 | −0.0023 | **−0.2027** ±0.034 | 3/3 |
+
+**Correction 1 — my λ₃ hypothesis was wrong.** I attributed λ₃ ≈ 0 to impacts being only 2.7%
+of transitions and therefore drowned out by a uniform loss. In fact **training length was the
+binding constraint**: 300 → 1000 epochs alone takes λ₃ from −0.0005 to −0.2710 with a clean
+spectral gap in 3/3 seeds instead of 1/3. Worth reporting on its own — this hybrid system
+needed ~3× the epochs the smooth Phase 1 system did at identical settings.
+
+**Correction 2 — the attractor-dimension prediction is refuted.** I predicted off-attractor
+data would matter *less* here because the ball's attractor (D_KY = 2.70) is much fatter than
+Lorenz's (2.06). Removing it instead sent λ₃ to −0.672 against a true −0.220, with the seed
+spread exploding to ±0.51 — the worst and least stable result in the sweep. **The attractor
+dimension is the wrong lens.**
+
+**The cross-system result that replaces it.** On-attractor-only training makes the model
+*over-estimate* contraction, in the same direction on both systems:
+
+| | λ₃ without off-attractor data | truth | error |
+|---|---|---|---|
+| Lorenz | −18.02 | −14.57 | 24% too negative |
+| Ball | −0.672 | −0.220 | 206% too negative |
+
+Two systems with nothing in common failing the same way is stronger evidence for the Phase 1
+diagnosis than Phase 1 alone.
+
+**Correction 3 — teacher forcing was mis-set, in the direction opposite to the default.**
+α=0.02 (more free-running) beats α=0.1 on λ₂ (−0.0043 vs −0.0092, against a true −0.0041) with
+seed spreads ~8× tighter. Pushing the other way to α=0.3 drives λ₃ *positive* (+0.0025) — a
+model that gains energy on every bounce. Mechanically consistent: teacher forcing keeps
+snapping the state back to ground truth, so the model never confronts its own compounding
+error, which is where dissipation would have to show up.
+
+**The impact-weighted loss still earns its place**, just not as the fix it was built to be. On
+a working (1000-epoch) baseline it gives the best λ₃ of anything measured, 7.8% error vs 23%,
+at the cost of inflating λ₁ to 0.2421.
+
+**Capacity hurts, again.** d=6 gives λ₁ nearly 3× truth with ±0.31 seed spread — Phase 1's
+d=20 result reproduced on an unrelated system. Two for two against adding latent dimensions.
+
+**Open and honest: λ₁ is ~25% high in every reliable config**, against Phase 2's own acceptance
+bar of 10% on λ_max. λ₁ is the exponent the monitor actually uses. The only config with λ₁ near
+truth (off0, 0.1630) is precisely the unstable one, so that is noise, not accuracy.
