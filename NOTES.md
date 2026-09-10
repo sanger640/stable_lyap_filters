@@ -1074,3 +1074,39 @@ topples robustly, every probe agrees it falls, so the entropy is ZERO and the mo
 silent through a real failure. **That is correct behaviour for a proximity detector and
 disqualifying for a failure detector**, and it is why this must be paired with an outcome score
 (`d_end`) rather than replacing one.
+
+### 100-episode evaluation of the refined monitor (`eval/phase3_eval100.py`)
+
+Two refinements from analysing the 5-case demo, both of which change the numbers:
+
+* **Score at t=0, no latching.** Latching turned one noisy frame into an episode-level false
+  positive (case D was correctly SILENT at t=0, dissent 0/32, and only alarmed at t=15).
+* **Alarm on k ≥ 2 dissenting probes, not S > 0.** One dissenter of 32 is a 3% rate, consistent
+  with a true rate near zero — the sampling floor. Still calibration-free: a statement about the
+  probe sample, not a threshold in latent units. Measured on 250 actions, 1→2 lifts precision
+  0.454→0.519 and accuracy 0.696→0.760 while recall only falls 0.922→0.844.
+
+**Result, 100 episodes** (25 near-boundary, 54 topple):
+
+| | near | far |
+|---|---|---|
+| **ALARM** | 17 | 20 |
+| no alarm | 8 | 55 |
+
+```
+precision 0.459   recall 0.680   F1 0.548   accuracy 0.720
+AUC of the dissent count: 0.769
+```
+
+Weaker than the 250-action run at the same settings (AUC 0.769 vs 0.828, recall 0.680 vs 0.844)
+— a reminder that these numbers carry real run-to-run variance with a positive class of ~25.
+
+**The blind spot is the headline, and it is large.** **39 of 100 episodes topple while FAR from
+the boundary, and 34 of those draw no alarm.** Every probe agrees the block falls, so entropy is
+zero and the monitor is silent through a genuine failure. That is correct behaviour for a
+proximity detector and disqualifying for a failure detector — **this cannot be deployed alone.**
+It must be paired with an outcome score (`d_end`, which reaches AUC 0.894 on real Jenga data).
+
+10 stratified demo videos in `results/phase3/eval100/` (3 TP, 2 FP, 2 FN, 2 BLIND, 1 TN) —
+stratified deliberately so every failure mode is visible, not sampled or cherry-picked. The
+worst case is `ep019_FN`: margin 0.1%, a one-in-a-thousand near miss, missed entirely.
