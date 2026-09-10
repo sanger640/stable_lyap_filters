@@ -24,6 +24,11 @@ import numpy as np
 import torch
 
 G, A, E_DEFAULT = 1.0, 1.0, 0.8
+# |v - v_table| below this at impact counts as contact rather than a bounce. It cannot be
+# arbitrarily small: relative velocity decays by a factor e per impact, so reaching 1e-6 from
+# O(1) takes ~60 impacts. Paired with max_impacts=64 below, 1e-4 is reachable (~41 impacts at
+# e=0.8) while still being far below any physically meaningful bounce.
+STICK_TOL = 1e-4
 
 # PHASE-2 OPERATING POINT, chosen by eval/tune_bouncing_ball.py. Gamma = omega^2 = 2.0.
 # Gamma=4 (omega=2) is also chaotic but throws the ball to x~47 against table amplitude 1, so
@@ -50,12 +55,44 @@ def gap(state, omega, A_=A):
     return x - table_pos(phi, A_)
 
 
+def contact_force(phi, omega, A_=A):
+    """Normal force (per unit mass) needed to hold the ball ON the table: g + a_table, with
+    a_table = -A omega^2 sin(phi). Contact is only possible while this is >= 0."""
+    return G - A_ * omega * omega * np.sin(phi)
+
+
+def _detach_time(phi0, omega, rem, A_=A, tol=1e-13):
+    """First t in (0, rem] where contact_force goes negative, else None (bisection)."""
+    if contact_force(phi0 + omega * rem, omega, A_) >= 0:
+        n = 64                                    # force can dip and recover within `rem`
+        prev = 0.0
+        for i in range(1, n + 1):
+            t = rem * i / n
+            if contact_force(phi0 + omega * t, omega, A_) < 0:
+                lo, hi = prev, t
+                break
+            prev = t
+        else:
+            return None
+    else:
+        lo, hi = 0.0, rem
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        if contact_force(phi0 + omega * mid, omega, A_) >= 0:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < tol:
+            break
+    return hi
+
+
 def _free_flight(state, dt, omega):
     x, v, phi = state
     return np.array([x + v * dt - 0.5 * G * dt * dt, v - G * dt, phi + omega * dt])
 
 
-def step(state, dt, omega=OMEGA_DEFAULT, e=E_DEFAULT, A_=A, max_impacts=8, tol=1e-13):
+def step(state, dt, omega=OMEGA_DEFAULT, e=E_DEFAULT, A_=A, max_impacts=64, tol=1e-13):
     """Advance dt, resolving any impacts EXACTLY inside the interval by bisection.
 
     Event detection is not optional here. With a fixed step and no bisection the impact gets
@@ -82,6 +119,20 @@ def step(state, dt, omega=OMEGA_DEFAULT, e=E_DEFAULT, A_=A, max_impacts=8, tol=1
         s[1] = (1.0 + e) * vt - e * s[1]              # <- the discontinuous reset
         s[0] = table_pos(s[2], A_)                    # kill numerical penetration
         remaining -= lo
+
+        # CONTACT / STICKING PHASE. Without this the model is ill-posed: the impact map alone
+        # produces inelastic collapse (infinitely many impacts in finite time), measured here
+        # as a single step needing >4000 impacts with the ball at x=-0.22. Physically the ball
+        # does not stay stuck -- with Gamma>1 it rides the table and DETACHES the moment the
+        # table falls away faster than gravity (contact force < 0). Resampling collapsed runs
+        # away would have biased out a real part of the dynamics; this represents it instead.
+        if abs(s[1] - vt) < STICK_TOL and contact_force(s[2], omega, A_) >= 0 and remaining > tol:
+            td = _detach_time(s[2], omega, remaining, A_)
+            ride = remaining if td is None else min(td, remaining)
+            s[2] = s[2] + omega * ride                # ride the table exactly
+            s[0] = table_pos(s[2], A_)
+            s[1] = table_vel(s[2], omega, A_)
+            remaining -= ride
         if remaining <= tol:
             break
     else:
@@ -147,6 +198,9 @@ def lambda_max_two_particle(n_steps=200_000, dt=DT_DEFAULT, omega=OMEGA_DEFAULT,
     for _ in range(n_steps):
         s = step(s, dt, omega, e)
         s2 = step(s2, dt, omega, e)
+        if step.collapsed:
+            return float("nan")      # estimate is already invalid; grinding on just burns
+                                     # ~480 gap evaluations per step in the sticking regime
         diff = s2 - s
         diff[2] = (diff[2] + np.pi) % TWO_PI - np.pi     # phase is circular
         d = np.linalg.norm(diff)

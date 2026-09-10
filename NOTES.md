@@ -254,16 +254,42 @@ was trained, which is the point of tuning the *system* first.
 **`dt`, not `e`, is the lever for impact density in the discrete map.** At dt=0.02 a flight
 spans ~377 steps, but that is only ~2.4 table periods — physically fine, merely finely sampled.
 
-**Chosen operating point: ω=1.4 (Γ=1.96), e=0.8, dt=0.20** → ~35 steps/impact (2.8% of
-samples), x_med ≈ 6, λ_max > 0, and **no collapse in the training data at any seed tested**.
+**Chosen operating point: ω=1.4 (Γ=1.96), e=0.8, dt=0.20** → ~37 steps/impact (2.7% of
+samples), x_med ≈ 6.8, x_max 32, min gap 8.6e-4 (no penetration), **λ_max = 0.1577 ± 0.0072
+over 8/8 seeds**.
 
-### The system has coexisting attractors — this contaminates the λ_max estimator
+### Inelastic collapse was real, and resampling it away would have been wrong
 
-At seed 3 the trajectory statistics are *completely normal* (x_med 6.31, 35 steps/impact) yet
-λ_max returns 3.95 where its neighbours return 0.14. Diagnosis: the two-particle
-renormalisation `s2 ← s + diff·(ε/d)` places the perturbed copy at an artificial state, and it
-occasionally falls into the **sticking attractor** that coexists with the chaotic one. The
-estimator then measures the gap between a bouncing and a stuck trajectory, which is not an
-exponent at all. Raising `max_impacts` 8 → 64 does **not** fix it (3.95 → 5.06), proving a
-genuine basin event rather than truncation. `lambda_max_two_particle` now returns NaN on
-collapse and `true_lambda_max` medians over surviving seeds.
+**Correction to my first reading of this.** I initially attributed the bad λ_max at seed 3 to
+the *estimator* — the two-particle renormalisation dropping the perturbed copy into a
+coexisting sticking basin — and concluded the training data was clean at e=0.8. Both halves
+were wrong once runs got long:
+
+* Collapse is a **rate**, not a seed property. At 8k steps 5/6 seeds survived; at 40k steps
+  only **3/8** did. Long runs collapse almost surely.
+* Direct instrumentation (raising the impact cap and counting) showed a single step needing
+  **>4000 impacts** with the ball at x = −0.22, riding the table. That is genuine inelastic
+  collapse (Zeno), not an estimator artefact and not recoverable chattering — which is why
+  raising `max_impacts` 8 → 64 never fixed it.
+* I also swept `e` in the **wrong direction**. Lower e means more dissipation and *more*
+  collapse. Higher e (0.9–0.95) is collapse-free but throws the ball to x_med 18–103, so the
+  guard — the entire object of Phase 2 — becomes a thin sliver of state space. Every clean row
+  in the sweep failed on state scale, and every small-state row collapsed.
+
+**The impact map alone is ill-posed.** The fix is physical, not statistical: with Γ>1 the ball
+does not stay stuck. It rides the table and **detaches** the instant the table falls away
+faster than gravity — contact force g − Aω²sin(φ) < 0, i.e. sin(φ) > 1/Γ = 0.51. Adding that
+contact/detach phase makes long runs well-posed and takes λ_max from 3/8 usable seeds to
+**8/8**, with no change of regime. Discarding collapsed runs instead — the tempting shortcut —
+would have deleted a real part of the dynamics from the training distribution.
+
+Note `STICK_TOL` cannot be set arbitrarily small: relative velocity decays by a factor `e` per
+impact, so reaching 1e-6 from O(1) needs ~60 impacts. It is 1e-4, paired with
+`max_impacts=64`.
+
+### Phase 2 status
+
+System built, tuned, and tested (`tests/test_bouncing_ball.py`, 6 tests, each guarding a bug
+that actually occurred). Ground truth λ_max established. **No model has been trained yet** —
+that is the next step, along with the FTLE field, the hyperplane-vs-guard alignment test, and
+the T-divergence characterisation.
