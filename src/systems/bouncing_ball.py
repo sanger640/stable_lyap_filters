@@ -231,3 +231,96 @@ def impact_surface_normal():
     align with the true guard's tangent plane near the states the system actually visits?
     Returns grad(gap) = (1, 0, -A cos(phi)) as a function of phi."""
     return lambda phi: np.array([1.0, 0.0, -A * np.cos(phi)])
+
+
+# ---------------------------------------------------------------------------------------
+# Observation coordinates for learning
+# ---------------------------------------------------------------------------------------
+
+def to_obs(traj):
+    """(x, v, phi) -> (x, v, cos phi, sin phi).
+
+    phi is stored mod 2pi, so the raw coordinate leaps by ~2pi every 22 steps at the Phase-2
+    regime -- measured at 4.5% of transitions, MORE OFTEN than real impacts (2.7%). A model
+    given raw phi spends capacity on a coordinate artefact, and worse, the guard-alignment test
+    is contaminated: a ReLU hyperplane can align with the wrap at phi=0 instead of the true
+    guard, which would read as a Phase-2 result while being an artefact.
+
+    The embedding also makes the guard EXACTLY LINEAR in the observed coordinates:
+    x - A sin(phi) = 0 becomes x - A * o_4 = 0, a genuine hyperplane one ReLU can match
+    exactly. That is what turns 'does a learned hyperplane find the guard' into a crisp
+    measurement with a known target normal, instead of asking a model to tile a curved surface.
+    Note this does NOT smooth the dynamics: the velocity reset is still discontinuous (|dv| up
+    to 14.7 in one step), which is the discontinuity the architecture argument is about."""
+    t = np.asarray(traj, dtype=np.float64)
+    return np.stack([t[..., 0], t[..., 1], np.cos(t[..., 2]), np.sin(t[..., 2])], axis=-1)
+
+
+def guard_normal_obs(A_=A):
+    """Unit normal of the guard in observation coordinates: x - A*sin(phi) = 0, so the normal
+    is (1, 0, 0, -A) normalised. This is the known target for the hyperplane-alignment test."""
+    n = np.array([1.0, 0.0, 0.0, -A_])
+    return n / np.linalg.norm(n)
+
+
+# ---------------------------------------------------------------------------------------
+# Ground-truth spectrum
+# ---------------------------------------------------------------------------------------
+
+def _wrap_diff(a, b):
+    d = (a - b).clone()
+    d[2] = (d[2] + np.pi) % TWO_PI - np.pi
+    return d
+
+
+def true_spectrum(n_seeds=8, T=20_000, dt=DT_DEFAULT, omega=OMEGA_DEFAULT, e=E_DEFAULT,
+                  eps=1e-9, burn_in=2000, zero_tol=0.01):
+    """Full spectrum by FINITE-DIFFERENCE Benettin, pooled over seeds.
+
+    No Jacobian is used anywhere: at the guard the correct tangent map needs the saltation
+    matrix, and finite differences of the flow map sidestep it. The estimator is validated
+    against the analytic-Jacobian spectrum on Lorenz, where the two agree to machine precision.
+
+    `eps` is critical and NOT a free knob. It must be small enough that the perturbed particle
+    stays on the SAME SIDE of the guard as the reference; at eps=1e-7 seed 3 returns
+    lambda_1 = -0.030 (a non-chaotic answer for a demonstrably chaotic trajectory), and only
+    at eps <= 1e-8 does it recover 0.148. Lorenz shows no such sensitivity because it is
+    smooth -- the guard is what makes eps matter.
+
+    T MATTERS: lambda_2 converges to 0 only as ~1/T. At T=4000 every seed reads -0.02..-0.03
+    and the check below correctly rejects all of them; by T=20000 it settles near -0.004. Do
+    not widen zero_tol to make a short run pass -- that discards the convergence check.
+
+    Seeds are accepted only if |lambda_2| < zero_tol. lambda_2 is the flow direction and must
+    be 0, so this is an internal validity check in the same spirit as Lorenz's zero-exponent
+    test, and it is what rejects the seeds whose exponents are corrupted."""
+    import torch
+    from ftle import lyapunov_spectrum_finite_diff
+
+    step_fn = lambda s: torch.from_numpy(step(s.numpy(), dt, omega, e))   # noqa: E731
+    rows = []
+    for sd in range(n_seeds):
+        rng = np.random.default_rng(sd)
+        s = np.array([2.0 + rng.uniform(0, 1), rng.uniform(-1, 1), rng.uniform(0, TWO_PI)])
+        for _ in range(burn_in):
+            s = step(s, dt, omega, e)
+        spec = lyapunov_spectrum_finite_diff(torch.tensor(s, dtype=torch.float64), step_fn,
+                                             T=T, dt=dt, eps=eps, diff_fn=_wrap_diff)
+        rows.append(spec.tolist())
+    arr = np.array(rows)
+    ok = np.abs(arr[:, 1]) < zero_tol
+    assert ok.sum() >= 3, f"only {ok.sum()} seeds passed the lambda_2~0 check:\n{arr}"
+    med = np.median(arr[ok], axis=0)
+    return med.tolist(), dict(per_seed=rows, accepted=ok.tolist(),
+                              n_accepted=int(ok.sum()), std=arr[ok].std(0).tolist())
+
+
+def validate_spectrum(spec, lam_max_ref=None, tol_zero=0.01, tol_max=0.02):
+    """Two independent checks on a candidate true spectrum, mirroring Lorenz's Stage 1."""
+    rep = {"zero_exponent": float(spec[1]), "zero_ok": bool(abs(spec[1]) < tol_zero),
+           "lambda_max": float(spec[0]), "sum": float(sum(spec))}
+    if lam_max_ref is not None:
+        rep["lambda_max_ref_two_particle"] = float(lam_max_ref)
+        rep["lambda_max_agrees"] = bool(abs(spec[0] - lam_max_ref) < tol_max)
+    rep["ok"] = rep["zero_ok"] and rep.get("lambda_max_agrees", True)
+    return rep["ok"], rep

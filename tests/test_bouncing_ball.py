@@ -63,6 +63,47 @@ def test_guard_is_sampled_often_enough():
     assert 0.01 < frac < 0.15, f"impact fraction {frac:.4f} outside usable band"
 
 
+def test_finite_diff_matches_analytic_on_smooth_system():
+    """The licence for using finite differences on the ball: on LORENZ, where an analytic
+    Jacobian exists, the two estimators must agree. They match to ~1e-4. Without this check
+    the hybrid-system spectrum would rest on an unvalidated instrument."""
+    sys.path[:0] = [str(Path(__file__).resolve().parent.parent / "src" / p)
+                    for p in ("systems", "geometry")]
+    import torch
+    import lorenz
+    from ftle import lyapunov_spectrum_finite_diff, lyapunov_spectrum_general
+    dt = 0.01
+    s0 = torch.tensor(lorenz.simulate(2000, dt=dt).numpy()[-1], dtype=torch.float64)
+    an = lyapunov_spectrum_general(s0, lambda s: lorenz.rk4_step(s, dt),
+                                   lambda s: lorenz.flow_jacobian(s, dt), T=8000, dt=dt)
+    fd = lyapunov_spectrum_finite_diff(s0, lambda s: lorenz.rk4_step(s, dt), T=8000, dt=dt,
+                                       eps=1e-7)
+    assert float((an - fd).abs().max()) < 1e-3, f"analytic {an} vs finite-diff {fd}"
+
+
+def test_obs_removes_phase_wrap():
+    """Raw phi jumps by ~2pi on 4.5% of transitions -- MORE OFTEN than real impacts (2.7%).
+    A model cannot tell that coordinate artefact from a real discontinuity."""
+    tr = bb.simulate(5000, **P).numpy()
+    raw_jumps = (np.abs(np.diff(tr[:, 2])) > np.pi).mean()
+    obs = bb.to_obs(tr)
+    obs_jumps = (np.abs(np.diff(obs[:, 2:], axis=0)) > 1.0).mean()
+    assert raw_jumps > 0.02, "expected frequent wraps in raw phi"
+    assert obs_jumps == 0.0, f"observation coords still jump: {obs_jumps}"
+    assert np.allclose(obs[:, 2] ** 2 + obs[:, 3] ** 2, 1.0)
+
+
+def test_guard_is_a_hyperplane_in_obs_coords():
+    """x - A sin(phi) = 0 becomes linear in (x, v, cos, sin), so ONE ReLU boundary can match it
+    exactly. That is what makes the alignment test a measurement against a known normal."""
+    n = bb.guard_normal_obs()
+    tr = bb.simulate(3000, **P).numpy()
+    obs = bb.to_obs(tr)
+    resid = obs @ n                                    # == gap / ||n||
+    gap = np.array([bb.gap(s, P["omega"]) for s in tr])
+    assert np.allclose(resid, gap / np.linalg.norm([1.0, 0.0, 0.0, -bb.A]), atol=1e-9)
+
+
 if __name__ == "__main__":
     fails = 0
     for name, fn in sorted(globals().items()):

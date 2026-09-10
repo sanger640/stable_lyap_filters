@@ -38,6 +38,41 @@ def lyapunov_spectrum_general(s0, step_fn, jac_fn, T, dt=1.0, reorth_every=10):
     return torch.sort(logs / (T * dt), descending=True).values
 
 
+def lyapunov_spectrum_finite_diff(s0, step_fn, T, dt=1.0, eps=1e-7, diff_fn=None,
+                                  reorth_every=1):
+    """Benettin/QR spectrum from FINITE DIFFERENCES -- no Jacobian anywhere.
+
+    Why this exists: at a hybrid guard the correct tangent map is NOT the smooth Jacobian. It
+    needs the saltation matrix, which accounts for the guard being crossed at a state-dependent
+    time, and getting it wrong biases every exponent silently. This estimator only ever calls
+    the flow map, so it sidesteps saltation entirely -- the same reason `lambda_max_two_particle`
+    exists, generalised from one direction to the full spectrum.
+
+    `diff_fn(a, b)` must return a - b respecting the state's geometry; supply it whenever a
+    coordinate is circular, or wrap-around differences of ~2pi will be read as huge divergence.
+
+    Validate on a SMOOTH system first (see tests): there this must agree with the
+    analytic-Jacobian spectrum, which is what licenses trusting it where no Jacobian exists.
+    """
+    d = s0.numel()
+    Q = torch.eye(d, dtype=s0.dtype, device=s0.device)
+    logs = torch.zeros(d, dtype=s0.dtype, device=s0.device)
+    sub = diff_fn if diff_fn is not None else (lambda a, b: a - b)
+    s = s0.clone()
+    pert = [s + eps * Q[:, i] for i in range(d)]
+    for t in range(T):
+        s = step_fn(s)
+        pert = [step_fn(p) for p in pert]
+        V = torch.stack([sub(pert[i], s) / eps for i in range(d)], dim=1)
+        if (t + 1) % reorth_every == 0:
+            Q, R = torch.linalg.qr(V)
+            logs = logs + torch.log(torch.abs(torch.diagonal(R)) + 1e-300)
+            pert = [s + eps * Q[:, i] for i in range(d)]   # re-seed at fixed radius
+        else:
+            Q = V
+    return torch.sort(logs / (T * dt), descending=True).values
+
+
 def spectrum_convergence(s0, step_fn, jac_fn, checkpoints, dt=1.0, reorth_every=10):
     """Running spectrum estimate at increasing horizons.
 
