@@ -501,3 +501,40 @@ been reported as a success.
 
 Untested fix: normalise to flips per unit distance travelled, which asks whether the model packs
 hyperplanes more DENSELY near the guard independent of how far the state moves.
+
+### Does the learned model reproduce the local-λ spikes? YES — and they are still useless as a detector
+
+400 pairs. Label from the TRUE system (did separation actually blow up); score from the MODEL
+alone, using only what a monitor could compute at runtime.
+
+| score | AUC |
+|---|---|
+| **TRUE** max\|local λ\| | **0.510** ← chance |
+| MODEL max\|local λ\| | 0.407 |
+| MODEL std(local λ) | 0.391 |
+| **MODEL final separation** | **0.786** |
+
+**The model does reproduce the spikes.** Magnitude true 3.93 vs model 3.89; timing 48% within
+5 steps against ~10% by chance. This answers what Test A could not: the learned model
+represents the discontinuity sharply enough to produce spikes of the right size in roughly the
+right place.
+
+**But the spike statistic does not discriminate, even with perfect physics.** On the TRUE
+system `max|local λ|` scores AUC 0.510 — a coin flip. No model can rescue a statistic that
+fails in the ideal case. Cause: spikes fire at EVERY bounce whose timing differs at all,
+including the harmless transients that immediately re-sync. The signal is real and physical but
+it is **not specific** to trajectories that diverge. This is the same error as the t=6.3 blip,
+now visible at scale — I generalised a detector from one hand-picked trajectory.
+
+**Retracted:** the recommendation to replace the endpoint score with `max|local λ|`. Windowed λ
+remains useful for LOCALISING when something happened once divergence is known, but must not be
+the decision variable.
+
+**Convergent evidence for the design already in use.** On Jenga, `d_end` (AUC 0.894) beat the
+FTLE ratio (0.599). Here, on an unrelated system with exactly known ground truth, final
+separation (0.786) beats every rate-based statistic (0.51 / 0.41 / 0.39). **Simple endpoint
+divergence beats the cleverer rate-based metrics, twice, independently.** That is now a much
+better-supported claim than when it rested on one dataset.
+
+Caveat: only 20/400 pairs were labelled divergent, so the AUCs carry real uncertainty; the
+0.51 vs 0.786 gap is wide but the positive class is small.
