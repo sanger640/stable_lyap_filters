@@ -50,12 +50,16 @@ OBS_DIM = 4
 # ---------------------------------------------------------------------------------------
 
 def make_data(n=60_000, seed=0):
-    """Trajectory in observation coordinates, standardised."""
-    raw = bb.simulate(n, dt=DT, omega=OMEGA, e=E, seed=seed).numpy()
+    """Trajectory in observation coordinates, standardised, plus per-transition impact flags.
+
+    `impacts[i]` marks the transition i -> i+1 as containing an impact, matching
+    bb.simulate's convention, so it indexes transitions rather than states."""
+    raw, imp = bb.simulate(n, dt=DT, omega=OMEGA, e=E, seed=seed, return_impacts=True)
+    raw = raw.numpy()
     assert not bb.simulate.collapsed, "inelastic collapse while generating training data"
     obs = torch.from_numpy(bb.to_obs(raw))
     mu, sd = obs.mean(0), obs.std(0)
-    return ((obs - mu) / sd).to(torch.float64), mu, sd, raw
+    return ((obs - mu) / sd).to(torch.float64), mu, sd, raw, imp
 
 
 def make_off_attractor_bank(mu, sd, n_off, seq_len, off_eps=0.3, seed=0):
@@ -71,7 +75,7 @@ def make_off_attractor_bank(mu, sd, n_off, seq_len, off_eps=0.3, seed=0):
     immediate spurious impact. Such draws are pushed back above the guard."""
     rng = np.random.default_rng(seed + 9999)
     base = bb.simulate(max(n_off, 1) * 2, dt=DT, omega=OMEGA, e=E, seed=seed + 5).numpy()
-    seqs = []
+    seqs, flag_list = [], []
     for _ in range(n_off):
         s = base[rng.integers(len(base))].copy()
         s[0] += rng.normal(0, off_eps * 3.0)          # height, scaled to its own spread
@@ -81,12 +85,15 @@ def make_off_attractor_bank(mu, sd, n_off, seq_len, off_eps=0.3, seed=0):
         if g < 0:
             s[0] += -g + 1e-3                         # lift back above the guard
         traj = np.empty((seq_len, 3))
+        flags = np.zeros(seq_len, dtype=bool)
         for k in range(seq_len):
             traj[k] = s
+            prev_v = s[1]
             s = bb.step(s, DT, OMEGA, E)
-        seqs.append(bb.to_obs(traj))
+            flags[k] = (s[1] - prev_v) > bb.G * DT * 1.5
+        seqs.append(bb.to_obs(traj)); flag_list.append(flags)
     bank = torch.from_numpy(np.stack(seqs)).to(torch.float64)
-    return (bank - mu) / sd
+    return (bank - mu) / sd, torch.from_numpy(np.stack(flag_list))
 
 
 # ---------------------------------------------------------------------------------------
@@ -94,10 +101,11 @@ def make_off_attractor_bank(mu, sd, n_off, seq_len, off_eps=0.3, seed=0):
 # ---------------------------------------------------------------------------------------
 
 def train(seed, epochs, H, d, off_frac, n_data, n_seq, seq_len=30, batch=128, lr=3e-3,
-          alpha=0.1, verbose=False):
-    data, mu, sd, raw = make_data(n_data, seed=seed)
+          alpha=0.1, impact_weight=0.0, verbose=False):
+    data, mu, sd, raw, imp = make_data(n_data, seed=seed)
     n_off = int(round(n_seq * off_frac))
-    bank = make_off_attractor_bank(mu, sd, n_off, seq_len, seed=seed) if n_off else None
+    bank, bank_imp = (make_off_attractor_bank(mu, sd, n_off, seq_len, seed=seed)
+                      if n_off else (None, None))
     n_win = len(data) - seq_len - 1
 
     torch.manual_seed(seed)
@@ -112,9 +120,16 @@ def train(seed, epochs, H, d, off_frac, n_data, n_seq, seq_len=30, batch=128, lr
         for _ in range(20):
             st = torch.randint(0, n_win, (n_on_b,)).tolist()
             parts = [torch.stack([data[i:i + seq_len] for i in st])]
+            fparts = [torch.stack([imp[i:i + seq_len - 1] for i in st])]
             if bank is not None and n_off_b:
-                parts.append(bank[torch.randint(0, len(bank), (n_off_b,))])
-            loss = loss_fn(model, torch.cat(parts, 0), alpha)
+                idx = torch.randint(0, len(bank), (n_off_b,))
+                parts.append(bank[idx]); fparts.append(bank_imp[idx][:, :seq_len - 1])
+            w = None
+            if impact_weight > 0:
+                flags = torch.cat(fparts, 0).to(torch.float64)
+                w = 1.0 + impact_weight * flags
+                w = w / w.mean()          # keep the loss scale (and so the effective LR) fixed
+            loss = loss_fn(model, torch.cat(parts, 0), alpha, step_weights=w)
             opt.zero_grad(); loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
             opt.step()
@@ -172,6 +187,8 @@ def main():
     ap.add_argument("--n-data", type=int, default=60000)
     ap.add_argument("--n-seq", type=int, default=4000)
     ap.add_argument("--alpha", type=float, default=0.1)
+    ap.add_argument("--impact-weight", type=float, default=0.0,
+                    help="extra weight on transitions containing an impact; 0 = uniform")
     ap.add_argument("--eval-T", type=int, default=20000)
     ap.add_argument("--truth-T", type=int, default=20000)
     ap.add_argument("--tag", default="phase2")
@@ -205,13 +222,15 @@ def main():
         return
 
     truth = json.load(open(truth_path))["spectrum"]
-    print(f"=== STAGE 2: shPLRNN (d={args.d}, H={args.H}, off_frac={args.off_frac}) ===")
+    print(f"=== STAGE 2: shPLRNN (d={args.d}, H={args.H}, off_frac={args.off_frac}, "
+          f"impact_weight={args.impact_weight}) ===")
     print(f"ground truth: {[round(v,4) for v in truth]}\n", flush=True)
 
     rows = []
     for seed in args.seeds:
         model, data = train(seed, args.epochs, args.H, args.d, args.off_frac,
                             args.n_data, args.n_seq, alpha=args.alpha,
+                            impact_weight=args.impact_weight,
                             verbose=(seed == args.seeds[0]))
         spec = learned_spectrum(model, data, args.eval_T)
         if spec is None:
