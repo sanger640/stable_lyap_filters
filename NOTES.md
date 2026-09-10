@@ -538,3 +538,69 @@ better-supported claim than when it rested on one dataset.
 
 Caveat: only 20/400 pairs were labelled divergent, so the AUCs carry real uncertainty; the
 0.51 vs 0.786 gap is wide but the positive class is small.
+
+---
+
+## Phase 3 — tipping block. The first system here that models a FAILURE
+
+**Why the bouncing ball was retired** (user's question: "is this even a good toy problem?").
+It is a good model of a *discontinuity* and a bad model of a *safety failure*:
+
+| | Jenga | bouncing ball | tipping block |
+|---|---|---|---|
+| failure | topples and STAYS toppled | recurrent | **absorbing** |
+| reversibility | irreversible | fully reversible | **irreversible** |
+| frequency | rare, catastrophic | constant (2.7% of steps) | **rare, tunable** |
+| safe vs unsafe | different regions | one attractor, no unsafe region | **two outcomes** |
+
+The ball has no unsafe region at all — every trajectory lives on one attractor and "divergence"
+is ordinary chaos happening constantly. That is *why* the detection experiments kept fighting
+us, and it is the root cause of the saturation problem below.
+
+### The saturation artefact — also the user's catch, and it invalidated a result
+
+Separation on the ball saturates at the attractor scale (7.25) and then **oscillates**: after
+saturation d swings down to 17% of its own max, spending 4 of every 40 steps below 20% of it.
+My label was `true final separation > 3× median` = **> 9.27, above the saturation scale**, so it
+was not labelling divergence — it was labelling *which pairs happened to sit near the top of
+their oscillation at exactly step 99*.
+
+Redone with a physical label (do bounce counts actually decouple?), ε=0.01, 116/600 decoupled:
+
+| T | % saturated | AUC d(T) | AUC max\|local λ\| |
+|---|---|---|---|
+| 40 | 6% | 0.703 | 0.671 |
+| 80 | 23% | 0.844 | 0.715 |
+| 100 | 37% | **0.873** | 0.712 |
+| 139 | 66% | 0.864 | 0.590 ← saturation eats it |
+
+**Corrects my earlier claim that `max|local λ|` was at chance (0.510).** That was the bad label,
+not the statistic — with a physical label it reaches 0.715. The *ranking* conclusion survives
+and is now better founded: **d(T) 0.873 beats max|local λ| 0.712.** Also ε=0.01 beats ε=0.1
+(0.873 vs 0.778) because a smaller probe leaves more room before saturation — so ε has an upper
+bound from saturation as well as the known lower bound from straddling.
+
+### The system (`src/systems/tipping_block.py`)
+
+Classical Housner (1963) rocking block — the standard model for exactly the Jenga question.
+
+    theta      tilt; 0 = flat, sign = which corner it pivots on
+    alpha      atan(half-width / half-height); |theta| = alpha is where the CoM passes the pivot
+    GUARD 1    theta = 0    base slam, angular velocity scaled by e_r = 1 - 1.5 sin^2(alpha)
+    GUARD 2    |theta|=alpha  TOPPLE -- absorbing, falls to lying flat and freezes
+
+Measured at alpha=0.35 rad (20.1°), 50-step push: static lift-off force 0.365, **topple
+threshold 0.6311**, and the boundary is sharp — 0.999× survives, 1.001× topples.
+
+| push | max\|θ\| | rocks | fell |
+|---|---|---|---|
+| 0.50× | 0.0000 | 0 | no (below static lift-off) |
+| 0.80× | 0.0832 | 5 | no (rocks and settles) |
+| 0.99× | 0.2863 | 1 | no (nearly tips; α=0.35) |
+| 1.01× | 1.5708 | 1 | **YES** |
+
+Safe-vs-unsafe separation ends at 1.628 with a **minimum after the topple of 1.362** — it never
+reconverges, which is precisely what the ball could not give us.
+
+6 tests in `tests/test_tipping_block.py`; the first four guard properties the ball lacked.
+Demo: `results/phase3/tipping_block.mp4` (gitignored; regenerate with `eval/tipping_block_demo.py`).
