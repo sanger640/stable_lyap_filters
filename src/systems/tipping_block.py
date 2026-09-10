@@ -90,10 +90,17 @@ def step(state, F, dt=DT_DEFAULT, alpha=ALPHA_DEFAULT, tol=1e-12):
     om_new = om + a1 * dt
     th_new = th + om_new * dt
 
-    if toppled(np.array([th_new, om_new]), alpha):
-        # Past the critical angle gravity drives the fall; run it out to lying flat and freeze.
-        sgn = np.sign(th_new if th_new != 0 else om_new)
-        return np.array([sgn * FALLEN_ANGLE, 0.0])
+    if abs(th_new) >= FALLEN_ANGLE:                    # landed flat -> absorbing
+        return np.array([np.sign(th_new) * FALLEN_ANGLE, 0.0])
+
+    if toppled(s, alpha):
+        # ALREADY past the critical angle: the block is committed and falling. The SAME
+        # equation carries it -- for theta > alpha, sin(alpha - theta) < 0, so the gravity term
+        # flips sign and now DRIVES the rotation instead of restoring it. Integrate it out
+        # rather than teleporting to flat: the fall takes real time (measured 164 steps = 3.3
+        # time units at dt=0.02 from a 1.05x push) and
+        # skipping it both looks wrong and erases the dynamics a world model has to learn.
+        return np.array([th_new, om_new])
 
     if th * th_new < 0.0:                              # crossed theta = 0: base impact
         lo, hi = 0.0, dt                               # bisect for the crossing time
@@ -113,8 +120,6 @@ def step(state, F, dt=DT_DEFAULT, alpha=ALPHA_DEFAULT, tol=1e-12):
         a2 = _accel(0.0 if om_after >= 0 else -0.0, F, alpha)
         om_new = om_after + a2 * rem
         th_new = om_new * rem
-        if toppled(np.array([th_new, om_new]), alpha):
-            return np.array([np.sign(th_new) * FALLEN_ANGLE, 0.0])
 
     # settled: at rest on the base with too little push to lift off again
     if abs(th_new) < 1e-4 and abs(om_new) < 1e-3 and abs(F) <= critical_force(alpha):
@@ -123,14 +128,18 @@ def step(state, F, dt=DT_DEFAULT, alpha=ALPHA_DEFAULT, tol=1e-12):
 
 
 def simulate(actions, s0=None, dt=DT_DEFAULT, alpha=ALPHA_DEFAULT):
-    """Roll an action (force) sequence. Returns states (n+1, 2) and a per-step fallen flag."""
+    """Roll an action (force) sequence. Returns states (n+1, 2) and a per-step TOPPLED flag.
+
+    The flag is |theta| >= alpha ("committed to falling"), not "already lying flat". That is the
+    safety-relevant event: past alpha the outcome is decided even though the block is still
+    visibly moving, and the flag is monotone because it can never come back."""
     s = np.array([0.0, 0.0]) if s0 is None else np.asarray(s0, dtype=np.float64).copy()
     n = len(actions)
     out = np.empty((n + 1, 2)); fell = np.zeros(n + 1, dtype=bool)
-    out[0], fell[0] = s, is_fallen(s)
+    out[0], fell[0] = s, toppled(s, alpha)
     for i, F in enumerate(actions):
         s = step(s, float(F), dt, alpha)
-        out[i + 1], fell[i + 1] = s, is_fallen(s)
+        out[i + 1], fell[i + 1] = s, toppled(s, alpha)
     return out, fell
 
 

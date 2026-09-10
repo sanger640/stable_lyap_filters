@@ -602,5 +602,29 @@ threshold 0.6311**, and the boundary is sharp — 0.999× survives, 1.001× topp
 Safe-vs-unsafe separation ends at 1.628 with a **minimum after the topple of 1.362** — it never
 reconverges, which is precisely what the ball could not give us.
 
-6 tests in `tests/test_tipping_block.py`; the first four guard properties the ball lacked.
+#### The fall is integrated, not teleported (user caught this in the video)
+
+`step()` originally jumped straight from |θ|≥α to lying flat in ONE step — and my own comment
+claimed it "runs it out to lying flat" while doing no such thing. Two problems: it looked
+wrong, and it erased dynamics a world model would have to learn.
+
+Fixed by letting the same equation carry the fall. For θ > α, `sin(α − θ)` changes sign, so the
+gravity term flips from restoring to driving — no special case is needed, only the removal of
+the shortcut. Measured from a 1.05× push: crosses α at step 133, lands flat at step 297, so the
+**fall takes 164 steps (3.3 time units)** and accelerates throughout (Δθ grows 0.05 → 0.33).
+
+This changed what two tests should assert, and both were rewritten rather than relaxed:
+
+* the block is **not** frozen when the flag fires — it is *falling*. What must hold is that the
+  flag is monotone, |θ| never decreases, and the state freezes once flat.
+* safe and failed runs are still **close** at the crossing (one is at α, the other just below);
+  the gap opens during the fall. The claim is that it never closes again, so the check now
+  applies from the landing, not from the crossing.
+
+`simulate` now reports **|θ| ≥ α ("committed to falling")** rather than "already flat". That is
+the safety-relevant event — past α the outcome is decided while the block is still visibly
+upright — and it is monotone by construction.
+
+7 tests in `tests/test_tipping_block.py`; the first four guard properties the ball lacked, and
+one is a regression guard against the teleporting fall.
 Demo: `results/phase3/tipping_block.mp4` (gitignored; regenerate with `eval/tipping_block_demo.py`).

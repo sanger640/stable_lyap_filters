@@ -17,11 +17,18 @@ def _thr():
 def test_failure_is_absorbing():
     """THE property this system exists for. In the bouncing ball a diverged pair came back
     together (separation fell to 17% of its max), which made every detection test ambiguous.
-    Once this block is over it is over."""
+    Once this block is over it is over.
+
+    Note the block keeps MOVING after the flag fires -- it is falling, not frozen. What must
+    hold is that it never comes back: the flag is monotone, |theta| only grows until the block
+    is flat, and it is frozen from then on."""
     S, fell = tb.simulate(tb.push_profile(N, _thr() * 1.1, T_ON, T_OFF))
     i = int(np.argmax(fell))
-    assert fell[i:].all(), "block un-fell after toppling"
-    assert np.allclose(S[i:, 0], S[i, 0]), "fallen state is not frozen"
+    assert fell[i:].all(), "toppled flag turned back off"
+    assert (np.diff(np.abs(S[i:, 0])) >= -1e-12).all(), "block rotated back toward upright"
+    flat = np.abs(S[:, 0]) >= tb.FALLEN_ANGLE - 1e-9
+    j = int(np.argmax(flat))
+    assert flat.any() and np.allclose(S[j:, 0], S[j, 0]), "not frozen after landing"
 
 
 def test_safe_and_failed_never_reconverge():
@@ -29,7 +36,11 @@ def test_safe_and_failed_never_reconverge():
     Ss, _ = tb.simulate(tb.push_profile(N, thr * 0.95, T_ON, T_OFF))
     Su, fu = tb.simulate(tb.push_profile(N, thr * 1.05, T_ON, T_OFF))
     d = np.abs(Ss[:, 0] - Su[:, 0])
-    assert d[int(np.argmax(fu)):].min() > 0.5, "separation collapsed after the failure"
+    # Right at the crossing the two are still CLOSE (one is at alpha, the other just below);
+    # the gap opens as the block falls. The claim is that it never closes again.
+    j = int(np.argmax(np.abs(Su[:, 0]) >= tb.FALLEN_ANGLE - 1e-9))
+    assert d[j:].min() > 0.5, "separation collapsed after the block landed"
+    assert d[-1] > 1.0, f"final separation only {d[-1]:.3f}"
 
 
 def test_boundary_is_sharp_in_action_space():
@@ -54,6 +65,20 @@ def test_rocking_loses_energy_and_settles():
     peaks = np.abs(S[:, 0])
     assert peaks[200:].max() < peaks[:200].max(), "rocking amplitude did not decay"
     assert 0.0 < tb.restitution(tb.ALPHA_DEFAULT) < 1.0
+
+
+def test_fall_is_integrated_not_teleported():
+    """Regression: step() used to jump straight from |theta|>=alpha to lying flat in ONE step,
+    which both looked wrong and erased the fall dynamics a world model would have to learn.
+    The fall must take real time and accelerate."""
+    S, fell = tb.simulate(tb.push_profile(N, _thr() * 1.05, T_ON, T_OFF))
+    i = int(np.argmax(fell))
+    flat = np.abs(S[:, 0]) >= tb.FALLEN_ANGLE - 1e-9
+    assert flat.any(), "block never reached the ground"
+    j = int(np.argmax(flat))
+    assert j - i > 20, f"fall took only {j-i} steps -- teleporting again?"
+    d = np.diff(np.abs(S[i:j + 1, 0]))
+    assert d[-1] > d[0], "fall did not accelerate under gravity"
 
 
 def test_critical_angle_matches_geometry():
