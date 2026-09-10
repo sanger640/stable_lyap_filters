@@ -730,3 +730,68 @@ favours displacement by construction. On Jenga the arm moves a great deal regard
 displacement could be dominated by arm motion rather than the block; the patch masking is what
 addresses this, and the 0.894 is evidence it works. State the assumption rather than leaving it
 implicit.
+
+### Proximity to the boundary — the question actually being asked
+
+User's point, and it reverses an earlier conclusion: detecting *failure* is not the goal;
+detecting *nearness to failure* is. I had called "divergence measures |distance to boundary|
+rather than which side" a defect. For this goal it is the point, and I was grading it on the
+wrong task.
+
+**Ground truth (margin).** For an action `a`, scale the whole sequence by `s` and find the
+smallest `|s − 1|` that flips the outcome. 400 actions: median margin 0.337, 65 within 10%.
+
+**The two questions are genuinely different:**
+
+| | near boundary | far |
+|---|---|---|
+| topples | 38 | **141** ← robustly unsafe, nothing marginal |
+| survives | **27** ← marginally safe, the dangerous ones | 194 |
+
+**Result at ε=0.10, T=100:**
+
+| statistic | AUC outcome | **AUC proximity** |
+|---|---|---|
+| **divergence mean** | 0.631 | **0.660** |
+| divergence spread | 0.696 | 0.614 |
+| latent displacement | **0.789** | 0.545 |
+| latent final norm | **0.792** | 0.538 |
+| endpoint bimodality | 0.395 | 0.366 |
+
+The rankings nearly **invert**: displacement wins outcome, divergence wins proximity. Two
+instruments for two questions.
+
+**ε must match the margin.** Proximity AUC for divergence: 0.548 at ε=0.02 (chance), 0.649 at
+ε=0.10, plateauing ~0.657 beyond. Displacement is flat at 0.545 across ε — a good sanity check,
+since it uses no perturbations. **Rule: probe at least as far out as the margin you want to
+keep.** ε=0.005 on Jenga is a very local probe and may be part of why the FTLE numbers are weak.
+
+**Failed idea, recorded so it is not retried.** "Endpoint bimodality" — the perturbed endpoints
+should split into two clusters when straddling a boundary, giving a scale-free (calibration-free)
+threshold. It **inverted**: AUC 0.366 with ρ = **+0.236**. Likely because the fallen state is
+absorbing, so toppling perturbations collapse onto one frozen latent instead of forming a
+distinct second cluster. **No calibration-free threshold was found.** FTLE's λ>0 is the only
+principled zero, and in practice δ=0.8 was needed anyway. Everything here requires a percentile
+calibrated on safe trajectories — which still needs no failure labels, so zero-shot survives,
+but "principled threshold" does not.
+
+### Perturbation DIRECTION matters more than ε — concentration of measure
+
+Testing a direction-matched margin backfired informatively: random directions find the boundary
+*harder*, not easier (median radius 0.500 = never found, vs 0.391 for scaling). In a
+T-dimensional action space a random perturbation is nearly orthogonal to whichever direction
+causes failure, so it spends its magnitude on harmless dimensions. **Jenga's 8×4=32-dim action
+means an isotropic probe puts only ~1/√32 ≈ 18% of its magnitude along any critical direction.**
+
+Equal budget (32 probes), only the direction changed:
+
+| probe family | AUC outcome | AUC proximity | ρ vs margin |
+|---|---|---|---|
+| isotropic (current method) | 0.613–0.617 | 0.629–0.643 | −0.24 |
+| **scaled (magnitude)** | **0.734–0.743** | 0.620 | **−0.32** |
+| smooth (low-frequency) | 0.624–0.635 | 0.605–0.629 | −0.24 |
+
+**Outcome AUC jumps 0.61 → 0.74 for free**, and the margin correlation strengthens. ε barely
+matters for scaled probes (0.734/0.735/0.743 across ε), consistent with direction mattering more
+than magnitude. Concrete recommendation for Jenga: perturb the action's scale/magnitude, not
+each dimension independently.

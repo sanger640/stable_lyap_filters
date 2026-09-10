@@ -77,7 +77,36 @@ def universal_scores(Z, eps_start):
         "latent path length": float((z0[1:] - z0[:-1]).norm(dim=-1).sum()),
         "latent max speed": float((z0[1:] - z0[:-1]).norm(dim=-1).max()),
         "latent final norm": float(z0[-1].norm()),
+        # --- SHAPE of the perturbed endpoint cloud, not its size ---------------------------
+        # The threshold problem: every score above is in arbitrary latent units, so its cut has
+        # to be calibrated. This one is a shape test instead. If the perturbations STRADDLE a
+        # boundary their endpoints split into two clusters (some topple, some do not); if the
+        # action is far from any boundary they form one blob. The ratio below is scale-free --
+        # it divides out the latent units -- so ~1 is a meaningful cut rather than a tuned one.
+        "endpoint bimodality": _bimodality(end_p),
     }
+
+
+def _bimodality(pts, iters=25):
+    """2-means separation / within-cluster spread. Scale-free: >1 means the two clusters are
+    further apart than they are wide, i.e. a genuine split rather than one elongated blob."""
+    if len(pts) < 4:
+        return 0.0
+    x = pts - pts.mean(0)
+    # initialise on the principal direction so the split is not seed-dependent
+    u = torch.linalg.svd(x, full_matrices=False)[2][0]
+    proj = x @ u
+    c = torch.stack([pts[proj <= 0].mean(0) if (proj <= 0).any() else pts[0],
+                     pts[proj > 0].mean(0) if (proj > 0).any() else pts[-1]])
+    for _ in range(iters):
+        lab = torch.cdist(pts, c).argmin(1)
+        for k in (0, 1):
+            if (lab == k).any():
+                c[k] = pts[lab == k].mean(0)
+    sep = float((c[0] - c[1]).norm())
+    within = float(torch.stack([(pts[lab == k] - c[k]).norm(dim=-1).mean()
+                                for k in (0, 1) if (lab == k).any()]).mean())
+    return sep / (within + 1e-12)
 
 
 def main():
