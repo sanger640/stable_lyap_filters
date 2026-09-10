@@ -1110,3 +1110,63 @@ It must be paired with an outcome score (`d_end`, which reaches AUC 0.894 on rea
 10 stratified demo videos in `results/phase3/eval100/` (3 TP, 2 FP, 2 FN, 2 BLIND, 1 TN) —
 stratified deliberately so every failure mode is visible, not sampled or cherry-picked. The
 worst case is `ep019_FN`: margin 0.1%, a one-in-a-thousand near miss, missed entirely.
+
+### CORRECTION: scoring at t=0 was a one-shot GATE, not a monitor
+
+User pushed back that judging the videos at t=0 "seems very premature and wrong". Correct, and
+the cost was large. I had found that LATCHING turned one noisy frame into an episode-level false
+positive, and overcorrected all the way to scoring once before execution — which stops looking.
+
+Audit of the 10 demo episodes, t=0 verdict vs the full running trace the videos actually show:
+
+| ep | t=0 verdict | k at t=0 | peak k | at t | genuinely risky? |
+|---|---|---|---|---|---|
+| 8 | "FP" | 1 | **7** | 135 | topples |
+| 19 | "FN" | 0 | **10** | 135 | margin 0.1% |
+| 2 | "FN" | 2 | **15** | 285 | topples |
+| 0 | "BLIND" | 0 | **2** | 30 | topples |
+
+Sensible verdicts: **6/10 at t=0 vs 9/10 continuous.**
+
+**Same 100 episodes, both rules:**
+
+| | precision | recall | F1 | AUC |
+|---|---|---|---|---|
+| t=0 only *(previously reported)* | 0.395 | 0.600 | 0.476 | 0.769 |
+| **continuous** | 0.403 | **1.000** | **0.575** | **0.863** |
+
+**Recall 1.000 — all 25 near-boundary episodes caught, zero misses.** The blind spot also shrinks:
+of 39 episodes that topple while far from the boundary, 15 are now caught (24 missed, down from
+34), because they pass THROUGH a marginal state on the way over and a monitor that keeps watching
+sees it.
+
+**Cost: precision 0.403, flagging 62 of 100 episodes.** Perfect recall is bought with many alarms,
+and k≥2 now has 30 chances to trip per episode, so the sampling floor returns in a new form. A
+stricter k, or requiring two consecutive alarms, trades recall back for precision.
+
+**These numbers supersede every earlier t=0 figure in this file.**
+
+### Also corrected: the ε/label mismatch
+
+ε=0.10 is the 1σ probe width, but with 32 draws the extreme reaches ~2.3σ, so the ensemble
+genuinely straddles boundaries out to ~23%. Labelling "near" at 10% counted correct detections
+at 12–22% as false positives — ep007 (margin 21.8%, 8/32 dissenting, S=0.562) fired confidently
+and the block DID topple.
+
+| "near" label | precision | recall | F1 |
+|---|---|---|---|
+| < 10% | 0.459 | 0.680 | 0.548 |
+| **< 22%** (matches probe reach) | **0.649** | 0.585 | **0.615** |
+
+**Rule: the label threshold is the probe's REACH (≈2.3ε for 32 draws), not its σ.** For Jenga at
+ε=0.005 that means claiming detection out to ~0.0115, not 0.005.
+
+It does not excuse everything: 9 of the 20 false positives had margins 0.32–0.50 (six at the
+0.50 search cap, i.e. no flip found within ±50%), which no probe reach explains. And only 5 of
+the 20 actually toppled.
+
+**Pattern across this session, worth stating once:** five measurement errors, all the same shape
+— an evaluation protocol that could not see what the method produces. Horizon too short; margin
+measured along a direction the probes never sample; label from the full action while the monitor
+saw one chunk; ε mismatched to reach; scoring at a single instant. Each time the tell was the
+same: an oracle and a proxy disagreeing far more than the method's quality could explain.

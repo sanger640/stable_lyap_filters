@@ -2,9 +2,12 @@
 
 Refinements over the earlier runs, both from analysing the five-case demo:
 
-  * SCORE AT t=0, the decision point -- before the action executes. No latching. Latching
-    converted a single noisy frame into an episode-level false positive (case D was correctly
-    silent at t=0 and only alarmed at t=15).
+  * CONTINUOUS scoring -- the monitor re-evaluates from the CURRENT state every `every` steps
+    and alarms whenever the present evidence warrants. An earlier version scored only at t=0,
+    which was an overcorrection to a latching problem and turns the monitor into a one-shot
+    GATE. Measured on the same 100 episodes it costs a great deal: recall 0.600 -> 1.000 and
+    AUC 0.769 -> 0.863 simply by continuing to look. Several episodes are undetectable at t=0
+    and obvious later (ep019: k=0 at t=0, k=10 at t=135).
   * ALARM ON k >= 2 DISSENTING PROBES, not S > 0. One dissenter out of 32 is a 3% rate, which
     with 32 draws is consistent with a true rate near zero -- it is the sampling floor. This is
     still calibration-free: a statement about the probe sample, not a threshold in latent units.
@@ -166,20 +169,33 @@ def main():
     erng = np.random.default_rng(777)
     acts = np.stack([tb.random_push(erng, n, thr) for _ in range(args.n_episodes)])
 
-    print(f"scoring {args.n_episodes} episodes at t=0 ...", flush=True)
+    # CONTINUOUS scoring: a runtime monitor keeps watching. Scoring only at t=0 -- which is
+    # what I did first, as an overcorrection to the latching problem -- discards most of the
+    # signal: measured on 10 episodes it drops 9/10 sensible verdicts to 6/10, because several
+    # episodes only become detectable partway through (ep019 goes k=0 at t=0 to k=10 at t=135).
+    times = np.arange(0, args.steps, args.every)
+    print(f"scoring {args.n_episodes} episodes at {len(times)} times each ...", flush=True)
     rows = []
     for i, a in enumerate(acts):
-        S0, _, lab0, _ = mon.score(np.array([0.0, 0.0]), a)
-        v = np.array([(lab0 == j).sum() for j in range(len(C))])
-        k = int(args.n_probe - v.max())
+        traj, _ = tb.simulate(a, dt=tb.DT_DEFAULT)
+        ks = []
+        for t in times:
+            _, _, lab, _ = mon.score(traj[t], a[t:])
+            ks.append(0 if lab is None
+                      else int(args.n_probe - max((lab == j).sum() for j in range(len(C)))))
+        ks = np.array(ks)
         m = margin_of(a); f = bool(tb.simulate(a, dt=tb.DT_DEFAULT)[1][-1])
-        rows.append(dict(i=i, margin=m, fell=f, S=S0, dissent=k,
-                         near=bool(m < args.near), alarm=bool(k >= args.k_min)))
+        rows.append(dict(i=i, margin=m, fell=f, dissent=int(ks[0]), k_max=int(ks.max()),
+                         t_first=int(times[np.argmax(ks >= args.k_min)]) if (ks >= args.k_min).any() else -1,
+                         near=bool(m < args.near),
+                         alarm_t0=bool(ks[0] >= args.k_min),
+                         alarm=bool((ks >= args.k_min).any())))
         if (i + 1) % 20 == 0:
             print(f"   {i+1}/{args.n_episodes}", flush=True)
 
     near = np.array([r["near"] for r in rows]); alarm = np.array([r["alarm"] for r in rows])
-    fell = np.array([r["fell"] for r in rows]); K = np.array([r["dissent"] for r in rows])
+    fell = np.array([r["fell"] for r in rows]); K = np.array([r["k_max"] for r in rows])
+    alarm_t0 = np.array([r["alarm_t0"] for r in rows])
     tp = int((alarm & near).sum()); fp = int((alarm & ~near).sum())
     fn = int((~alarm & near).sum()); tn = int((~alarm & ~near).sum())
     pr = tp / (tp + fp) if tp + fp else 0.0; rc = tp / (tp + fn) if tp + fn else 0.0
@@ -199,6 +215,16 @@ def main():
     print(f"  AUC of the dissent count: {auc(K, near):.3f}")
     print(f"\n  BLIND SPOT: {blind} episodes topple while FAR from the boundary; "
           f"{blind_missed} of them draw no alarm")
+    tp0 = int((alarm_t0 & near).sum()); fp0 = int((alarm_t0 & ~near).sum())
+    fn0 = int((~alarm_t0 & near).sum())
+    pr0 = tp0 / (tp0 + fp0) if tp0 + fp0 else 0.0; rc0 = tp0 / (tp0 + fn0) if tp0 + fn0 else 0.0
+    print(f"\n  for comparison, t=0 ONLY: precision {pr0:.3f} recall {rc0:.3f} "
+          f"F1 {2*pr0*rc0/(pr0+rc0) if pr0+rc0 else 0:.3f}  "
+          f"(continuous recall is {rc/max(rc0,1e-9):.1f}x higher)")
+    risky = near | fell
+    for nm, al in (("continuous", alarm), ("t=0 only", alarm_t0)):
+        good = (al & risky) | (~al & ~risky)
+        print(f"  '{nm}' sensible (alarm iff near OR topples): {100*good.mean():.0f}%")
     json.dump({"args": vars(args), "precision": pr, "recall": rc, "f1": f1,
                "auc": auc(K, near), "confusion": {"tp": tp, "fp": fp, "fn": fn, "tn": tn},
                "n_near": int(near.sum()), "n_fell": int(fell.sum()),
@@ -234,9 +260,13 @@ def main():
         for t in times:
             s_, e_, l_, t_ = mon.score(traj[t], a[t:])
             S.append(s_); EE.append(e_); LL.append(l_); TH.append(t_)
-        title = (f"[{r['v']}]  margin {r['margin']:.1%}  |  topples={r['fell']}  |  "
-                 f"dissent {r['dissent']}/{args.n_probe} at t=0  ->  "
-                 f"{'ALARM' if r['alarm'] else 'clear'}")
+        # report BOTH dimensions: a verdict alone reads as "the monitor was wrong" even when
+        # it flagged something that did topple but was not marginal
+        first = f"first at t={r['t_first']}" if r["t_first"] >= 0 else "never fired"
+        title = (f"[{r['v']}]   marginal? {'YES' if r['near'] else 'no':<3}   "
+                 f"topples? {'YES' if r['fell'] else 'no':<3}   "
+                 f"margin {r['margin']:.1%}   |   alarm: {first}, "
+                 f"peak dissent {r['k_max']}/{args.n_probe}")
         p = OUT / f"ep{r['i']:03d}_{r['v']}.mp4"
         render(p, title, a, r["margin"], r["fell"], np.array(S), times, EE, LL, TH,
                C, proj, Cp, allp, cname, n, args.stride, args.fps, ALPHA)
