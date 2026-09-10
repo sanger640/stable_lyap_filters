@@ -1003,3 +1003,29 @@ A limit cycle or chaotic attractor never stops, so this method would discard it 
 ball would yield zero basins. Datseris & Wagemakers' recurrence test handles those correctly
 (a bounded trajectory revisits cells even while moving). A finished Jenga scene is static, so
 the simple test should suffice there; monitoring *during* motion would need recurrence.
+
+### Live-monitor demos (`eval/phase3_live_demo.py`, 5 videos)
+
+Receding-horizon version of the pipeline: every 15 steps the monitor takes the CURRENT state,
+perturbs the REMAINING action, rolls each probe, settles, assigns to a discovered attractor and
+reports S. Alarm on S > 0. Measures WARNING TIME = steps between first alarm and the block
+actually crossing α.
+
+| case | margin | topples | first alarm | crosses α | warning |
+|---|---|---|---|---|---|
+| A on the edge | 1.2% | yes | t=0 | t=419 | **419 steps** |
+| B close to the edge | 7.2% | yes | t=0 | t=373 | **373 steps** |
+| C survives, only just | 1.4% | no | t=0 | — | correct proximity warning |
+| D survives comfortably | 46.3% | no | t=0 | — | **FALSE POSITIVE** |
+| E topples decisively | 43.6% | **yes** | **never** | t=372 | **MISS — the blind spot** |
+
+A and B are the headline: the alarm fires immediately, hundreds of steps before anything is
+visible. C is the case an outcome detector cannot produce at all — a survivor flagged for being
+marginal.
+
+**D and E are the honest half.** D is a false positive at 46% margin, consistent with the
+measured precision of 0.469. E is the structural blind spot: a push far PAST the threshold
+topples robustly, every probe agrees it falls, so the entropy is ZERO and the monitor stays
+silent through a real failure. **That is correct behaviour for a proximity detector and
+disqualifying for a failure detector**, and it is why this must be paired with an outcome score
+(`d_end`) rather than replacing one.
