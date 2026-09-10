@@ -673,3 +673,60 @@ which is exactly the regime where "just predict it" wins. Jenga's failure may be
 predictable directly, and that -- not divergence being intrinsically good -- would be the
 argument for a monitor there. What this phase does establish is that the direct-prediction
 control MUST be run before claiming a monitor adds value.
+
+### Is divergence a good UNIVERSAL proxy? Tested properly — and the answer is no, but something else is
+
+The previous comparison was unfair in a specific way, correctly flagged by the user: `max|theta|`
+and `net impulse` are **privileged**. The first works only because we know which coordinate
+means "tilt"; the second only because we know the action is a force. On DINO latents neither
+exists — no dimension means anything and there is no failure predicate to read off. That is
+precisely why divergence is attractive: no labels, no failure definition, no interpretable state.
+
+So the real question is: among statistics computable from ONLY latent rollouts and perturbed
+actions, is divergence the best, and is it usable? All scores below are norms and differences of
+latent vectors; none would need a change to run on DINO features.
+
+**T=100, 400 pushes (179 topple / 221 survive):**
+
+| universal statistic | AUC | prec | recall | F1 |
+|---|---|---|---|---|
+| **latent final norm** | **0.792** | 0.753 | 0.698 | 0.725 |
+| **latent displacement ‖z_T − z₀‖** | **0.789** | 0.687 | 0.760 | 0.721 |
+| latent max speed | 0.705 | 0.551 | 0.838 | 0.665 |
+| latent path length | 0.688 | 0.541 | 0.804 | 0.647 |
+| divergence spread | 0.652 | 0.521 | 0.883 | 0.656 |
+| divergence mean | 0.648 | 0.524 | 0.849 | 0.648 |
+| divergence max | 0.587 | 0.454 | 0.983 | 0.621 |
+| **FTLE ratio** | **0.518** | 0.453 | 1.000 | 0.624 |
+| *[privileged] max\|θ\|* | *0.724* | | | |
+| *[privileged] net impulse* | *0.720* | | | |
+
+1. **A universal proxy does work** — latent displacement reaches 0.789 knowing nothing about any
+   dimension, and at T=80/100 it **beats both privileged oracles**. An interpretable state is
+   not required to detect failure.
+2. **It is not perturbation-divergence.** That family sits at 0.587–0.652 and the FTLE ratio is
+   last at 0.518 — chance — at every horizon tested.
+3. **Displacement needs no perturbations**: one rollout vs 33. ~33× cheaper, more accurate,
+   equally universal.
+
+**This independently replicates the Jenga result:**
+
+| | Jenga (DINO, real task) | tipping block (shPLRNN, toy) |
+|---|---|---|
+| displacement metric | `d_end` **0.894** | latent displacement **0.789** |
+| FTLE ratio | **0.599** | **0.518** |
+
+Same ordering, same gap, different system / model class / failure mode. `d_end` was never a
+quirk of the Jenga pipeline. **Mechanism:** divergence measures SENSITIVITY, which peaks near
+the boundary on BOTH sides; displacement measures WHERE THE STATE WENT, which is the side you
+are on. A push far past threshold topples robustly and shows LOW divergence.
+
+Mild support for the `ftle_variance` extension: divergence **spread** (0.652) consistently beats
+divergence **max** (0.587) — the better member of the divergence family, though both trail
+displacement.
+
+**Caveat to state explicitly in any write-up:** in this toy, failure IS the large motion, which
+favours displacement by construction. On Jenga the arm moves a great deal regardless, so
+displacement could be dominated by arm motion rather than the block; the patch masking is what
+addresses this, and the 0.894 is evidence it works. State the assumption rather than leaving it
+implicit.

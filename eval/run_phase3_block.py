@@ -50,6 +50,27 @@ def auc(score, y):
     return float((r[y].sum() - p * (p + 1) / 2) / (p * q)) if p and q else float("nan")
 
 
+def metrics(score, y):
+    """AUC plus the operating-point metrics, at the threshold that maximises F1.
+
+    AUC alone answers "is there signal"; P/R/F1 answer "what would you actually get if you
+    deployed it". Reporting the BEST-F1 threshold is generous to every method equally -- it is
+    an upper bound none of them would reach without tuning on the test set."""
+    score = np.asarray(score, dtype=float); y = np.asarray(y, dtype=bool)
+    best = {"f1": -1.0}
+    for thr in np.unique(score):
+        pred = score >= thr
+        tp = int((pred & y).sum()); fp = int((pred & ~y).sum()); fn = int((~pred & y).sum())
+        pr = tp / (tp + fp) if tp + fp else 0.0
+        rc = tp / (tp + fn) if tp + fn else 0.0
+        f1 = 2 * pr * rc / (pr + rc) if pr + rc else 0.0
+        if f1 > best["f1"]:
+            best = {"f1": f1, "precision": pr, "recall": rc, "threshold": float(thr),
+                    "accuracy": float(((score >= thr) == y).mean())}
+    best["auc"] = auc(score, y)
+    return best
+
+
 def make_data(n_traj, thr, seed=0, n=N_STEPS):
     """Trajectories from random pushes spanning safe and toppling.
 
@@ -174,12 +195,32 @@ def main():
             div_t.append(float(np.linalg.norm(tr[1:, -1] - tr[0, -1], axis=-1).max()))
 
         rows[T] = {"visible_frac": float(vis),
-                   "auc_model_divergence": auc(np.array(div_m), label),
-                   "auc_model_max_theta": auc(np.array(maxth_m), label),
-                   "auc_true_divergence": auc(np.array(div_t), label)}
+                   "model_divergence": metrics(div_m, label),
+                   "model_max_theta": metrics(maxth_m, label),
+                   "true_divergence": metrics(div_t, label),
+                   "raw": {"div_model": list(map(float, div_m)),
+                           "max_theta": list(map(float, maxth_m)),
+                           "div_true": list(map(float, div_t))}}
         r = rows[T]
-        print(f"{T:>5}{100*vis:>9.0f}%{r['auc_model_divergence']:>14.3f}"
-              f"{r['auc_model_max_theta']:>14.3f}{r['auc_true_divergence']:>13.3f}", flush=True)
+        print(f"{T:>5}{100*vis:>9.0f}%{r['model_divergence']['auc']:>14.3f}"
+              f"{r['model_max_theta']['auc']:>14.3f}{r['true_divergence']['auc']:>13.3f}",
+              flush=True)
+
+    # ---- operating-point table, comparable with the Jenga precision/recall numbers ---------
+    T_rep = args.horizons[min(2, len(args.horizons) - 1)]
+    base_m = {"action: net impulse": metrics(np.abs(acts_test.sum(1)), label),
+              "action: peak force": metrics(np.abs(acts_test).max(1), label)}
+    print(f"\n=== operating point (best-F1 threshold), horizon T={T_rep} ===")
+    print(f"{'method':<26}{'AUC':>7}{'prec':>8}{'recall':>8}{'F1':>7}{'acc':>7}")
+    allm = list(base_m.items()) + [
+        ("model: max|theta|", rows[T_rep]["model_max_theta"]),
+        ("model: divergence", rows[T_rep]["model_divergence"]),
+        ("oracle: divergence", rows[T_rep]["true_divergence"])]
+    for name, m in allm:
+        print(f"{name:<26}{m['auc']:>7.3f}{m['precision']:>8.3f}{m['recall']:>8.3f}"
+              f"{m['f1']:>7.3f}{m['accuracy']:>7.3f}")
+    rows["baselines"] = base_m
+    rows["report_horizon"] = T_rep
 
     print("\n'visible?' = fraction of test pushes whose block has already passed alpha by T.")
     print("A monitor is only interesting where that is LOW -- otherwise it is reporting the")
