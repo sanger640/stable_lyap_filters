@@ -429,7 +429,45 @@ is the detector's sensitivity dial. Below a critical ε no perturbed rollout eve
 other side and failures are undetectable at ANY threshold. Suggested tuning: choose ε so the
 straddle rate matches the observed failure rate from labels.json.
 
-Demo video: `results/phase2/clean_vs_straddled.mp4` — clean pair ends at λ=+0.159 against a
+#### Correction: the mechanism is a CASCADE, not a single guard crossing
+
+Caught by the user watching the video: λ does NOT keep climbing for an individual pair. Two
+errors of mine, both real:
+
+1. **I read an ensemble effect as a single-trajectory one.** Test B's "straddled" median rises
+   with T (0.31 → 0.42) only because the group is classified by its status at the END, so at
+   T=10 most members have not yet had their event. The rise is event-timing across the
+   ensemble. A single pair's λ **spikes then relaxes to an elevated plateau** (0.25 vs a clean
+   0.159), and looks flat for most of its history.
+2. **My "event" detector fired on noise.** `find_pairs` flagged the first instant bounce COUNTS
+   disagreed. In the pair it chose that was a 0.1-time-unit offset that immediately re-synced —
+   separation actually FELL through it (0.579 → 0.549, local λ went negative). The real
+   divergence was ~9 time units later.
+
+**What actually happens.** Each bounce amplifies the mismatch in WHEN the two balls hit, since
+outgoing velocity depends on table phase at contact. Measured on the current demo pair:
+
+| bounce | ball A | ball B | gap |
+|---|---|---|---|
+| 1 | 0.80 | 0.80 | 0.00 |
+| 2 | 6.70 | 7.05 | 0.35 |
+| 3 | 8.30 | 12.10 | 3.80 |
+| 4 | 13.15 | 19.05 | 5.90 |
+
+versus a clean pair bouncing at 8.80 and 19.95 with mismatch **0.00** both times.
+
+So there is no single "grazing moment" — there is a geometric amplification of impact timing
+that eventually becomes qualitative. **Retract the grazing attribution**: Nordmark's
+tangential-contact singularity was never verified here, and ordinary phase amplification at
+impact explains the observation without it.
+
+**Consequence for the detection rule.** "Compare λ(T) with λ(2T), still climbing ⇒
+discontinuity" is WRONG for a single trajectory — λ settles either way. The usable signals are
+(a) a transient spike in LOCAL λ at each mismatched bounce, which cumulative λ smears away by
+dividing through total elapsed time, and (b) an elevated settled value afterwards.
+
+Demo videos: `results/phase2/clean_vs_cascade.mp4` (corrected, marks every bounce of each ball)
+and the earlier `results/phase2/clean_vs_straddled.mp4` — clean pair ends at λ=+0.159 against a
 true λ₁=0.1585 (bounce counts 2/2); straddled pair reaches λ=+0.251 with counts 2/3 and a 6×
 larger final separation.
 
