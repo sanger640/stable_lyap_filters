@@ -952,3 +952,54 @@ SCORE    S = -sum p_j ln p_j;  flag if S > 0
 **A Jenga block can topple in several directions, and there are several blocks, so the number of
 terminal states is well above 2.** Clustering DINO latents with k=2 will reproduce this exact
 failure and lead to the false conclusion that the signal is absent.
+
+### END-TO-END pipeline: automatic attractor discovery + basin entropy
+
+Earlier numbers were stitched from runs with different settings (k supplied by hand, no
+settling). `eval/phase3_pipeline.py` assembles the whole thing and measures it once.
+
+**OFFLINE (no k supplied).** Roll actions through the model, then keep rolling with the ACTION
+OFF so states settle (555/600 converge). Merge settled endpoints at a swept distance; the
+attractor count is the PLATEAU:
+
+```
+d/scale   0.05  0.10  0.15  0.20  0.30  0.40  0.60  0.80
+groups      15     7     4     4     3     3     3     3
+                                     ^^^^^^^^^^^^^^^^^^ plateau -> 3 attractors
+```
+
+**RUNTIME.** Coherent `shared-action` probes → roll + settle each → assign to nearest attractor
+→ S = −Σ pⱼ ln pⱼ → alarm if **S > 0** (the probes did not all agree).
+
+**Results, 250 actions, 64 within 10% of the boundary:**
+
+| ε | AUC | precision | recall | F1 | flags |
+|---|---|---|---|---|---|
+| 0.05 | 0.728 | 0.562 | 0.641 | 0.599 | 29% |
+| **0.10** | **0.856** | 0.469 | **0.953** | **0.629** | 52% |
+| 0.20 | 0.847 | 0.320 | 0.984 | 0.483 | 79% |
+
+**Best at ε = 0.10, exactly the margin being asked about** — the ε-matching rule, now confirmed
+on the full pipeline. Note ε is a SPECIFICATION ("warn me within 10%"), not a fitted quantity:
+you choose the margin you want, you do not tune it against labels.
+
+**Versus the calibrated-magnitude baseline** (div_std, 80th-percentile of comfortable actions):
+
+| | AUC | recall | F1 | calibration |
+|---|---|---|---|---|
+| div_std | 0.818 | 0.794 | 0.543 | needs a percentile from safe data |
+| **basin entropy (ε=0.10)** | **0.856** | **0.953** | **0.629** | **none** |
+
+Better on every measure while needing no calibration at all.
+
+**Where the residual error comes from — measured, not assumed.** Model's own tilt readout agrees
+with truth 86.7%; settled-latent groups agree with the true basins 87.0%. **Those match**, so the
+clustering adds essentially zero error and the ~13% loss is entirely the model predicting the
+wrong outcome. The cross-tab shows it **over-predicts toppling** (readout counts [231,191,178] vs
+true [184,229,187]) — expected, since its RMSE of 0.265 rad is comparable to α = 0.35.
+
+**Limitation of the settling test.** "Has it stopped moving" only finds FIXED-POINT attractors.
+A limit cycle or chaotic attractor never stops, so this method would discard it — the bouncing
+ball would yield zero basins. Datseris & Wagemakers' recurrence test handles those correctly
+(a bounded trajectory revisits cells even while moving). A finished Jenga scene is static, so
+the simple test should suffice there; monitoring *during* motion would need recurrence.
