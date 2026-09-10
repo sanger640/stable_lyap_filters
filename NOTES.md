@@ -893,3 +893,62 @@ Demo: `results/phase3/monitor_live.mp4` — two sequences that BOTH survive, mar
 scores 0.892 (ALARM) and 0.166 (quiet) against a calibrated threshold of 0.736. Identical
 outcomes, so an outcome detector cannot separate them; the proximity monitor can. Note these are
 hand-picked clear cases; aggregate performance is the 0.52/0.85 above.
+
+### The calibration-free detector: BASIN ENTROPY — and the k=2 bug that hid it all session
+
+Literature deep dive turned up that we had been reinventing three named quantities:
+
+| concept | reference |
+|---|---|
+| **basin stability** — probability a perturbation returns to the desired attractor | Menck, Heitzig, Marwan & Kurths, *Nat. Phys.* **9**:89 (2013) |
+| **basin entropy** + the **ln 2 criterion** for fractal boundaries | Daza, Wagemakers, Georgeot, Guéry-Odelin & Sanjuán, *Sci. Rep.* **6**:31416 (2016) |
+| **uncertainty exponent** α (α=1 smooth, α<1 fractal) | Grebogi, McDonald, Ott & Yorke, *Phys. Lett. A* **99**:415 (1983) |
+
+The scaling exponent measured earlier — **1.06 far from the boundary, 0.615 near** — is a textbook
+α measurement, and the 0.5 is Nordmark's grazing law. We derived it from scratch.
+
+**Basin entropy is calibration-free by construction.** S = −Σ pⱼ ln pⱼ over the *terminal states*
+reached by the probes. It is built from a probability, so it has no units: S = 0 means every
+probe reached the same place (far from any boundary), S = ln2 means a perfect split (on it).
+Crucially it is maximal AT the boundary and zero on BOTH sides, unlike any magnitude score.
+
+**THE BUG (mine, all session).** The block topples LEFT or RIGHT, so there are THREE terminal
+states: (−π/2,0), (0,0), (+π/2,0). Every clustering attempt used k=2, and:
+
+* the centroid of the two fall modes is **(0,0)** — coinciding exactly with upright, so
+  centroid separation is ~0 **by construction**
+* 2-means splits **left-fall vs right-fall**, not toppled vs safe
+
+That single error produced every clustering null recorded above — the bimodality ratio (0.366,
+inverted), the 1-D gap statistic, the pooled-clustering run (0.658), and the "even the TRUE
+system doesn't separate the outcomes" diagnostic (ratio 0.53), which was itself an artefact of
+the centroid metric rather than a fact about the system.
+
+**With k=3 it works, on the learned model:**
+
+| | AUC proximity | S>0: P / R / F1 |
+|---|---|---|
+| MODEL basin entropy (k=3 latent clusters) | **0.836** | 0.327 / **0.927** / 0.483 |
+| ORACLE basin entropy (3 true terminal states) | 0.880 | 0.325 / 0.927 / 0.481 |
+
+k=3 clusters recover the true terminal states 97.4% of the time on the true state and 68.9% on
+the model latent — and that is enough: the model's operating point is **identical** to the
+oracle's (F1 0.483 vs 0.481).
+
+**Versus the calibrated magnitude:** div_std gives AUC 0.770–0.818 with recall 0.794 and needs a
+percentile fitted on safe trajectories. Basin entropy gives **AUC 0.836, recall 0.927, and no
+calibration at all**. Precision is low (0.33) but that is an ε-matching artefact — ε=0.2 probes
+reach boundaries ~20% away while "near" is defined at 10%.
+
+**Recipe, and the warning that transfers to Jenga:**
+
+```
+OFFLINE  roll many episodes, pool the final latents, cluster with k > 2
+         (pick k by silhouette / gap statistic -- NOT k=2)
+RUNTIME  assign each of the N probes to its nearest terminal state
+SCORE    S = -sum p_j ln p_j;  flag if S > 0
+```
+
+**A Jenga block can topple in several directions, and there are several blocks, so the number of
+terminal states is well above 2.** Clustering DINO latents with k=2 will reproduce this exact
+failure and lead to the false conclusion that the signal is absent.
