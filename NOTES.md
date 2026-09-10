@@ -293,3 +293,45 @@ System built, tuned, and tested (`tests/test_bouncing_ball.py`, 6 tests, each gu
 that actually occurred). Ground truth λ_max established. **No model has been trained yet** —
 that is the next step, along with the FTLE field, the hyperplane-vs-guard alignment test, and
 the T-divergence characterisation.
+
+### Phase 2 driver built — Stage 1 passes, first Stage 2 run is a clear miss
+
+**Stage 1 (ground truth) PASSES**, with two independent checks:
+
+| check | value | |
+|---|---|---|
+| spectrum (finite-difference Benettin) | (0.1585, −0.0041, −0.2198) | |
+| λ₂ = 0 (flow direction) | −0.0041 | ✓ |
+| λ₁ vs independent two-particle | 0.1585 vs 0.1577 ± 0.0072 | ✓ |
+| seeds accepted | 6/8 (rejected on \|λ₂\| ≥ 0.01) | |
+
+No Jacobian is used for the true system — at the guard the correct tangent map needs the
+saltation matrix. The finite-difference estimator is licensed by agreeing with the
+analytic-Jacobian spectrum on smooth Lorenz to machine precision (now a test).
+
+**`eps` is not a free knob.** At eps=1e-7 seed 3 reports λ₁ = −0.030 for a trajectory that is
+demonstrably chaotic (200/200 unique post-impact velocities). Only at eps ≤ 1e-8 does it
+recover 0.148. The perturbed particle must stay on the *same side of the guard*; Lorenz shows
+no such sensitivity because it is smooth. Likewise λ₂ converges only as ~1/T: at T=4000 every
+seed reads −0.02…−0.03 and is correctly rejected, settling near −0.004 by T=20000.
+
+**Stage 2, first run (d=4, H=128, off_frac=0.5, 300 epochs, 3 seeds):**
+
+| | λ₁ | λ₂ | λ₃ |
+|---|---|---|---|
+| TRUTH | 0.1585 | −0.0041 | −0.2198 |
+| shPLRNN | 0.0852 ± 0.0342 | 0.0200 | **−0.0005** |
+
+Spectral gap clean in only **1/3** seeds. Training loss reached 5.5e-3, so the model fits the
+GTF rollouts while getting the spectrum badly wrong — exactly the failure mode the two-stage
+design exists to expose.
+
+**Leading hypothesis: the model is not learning the impact.** λ₃ ≈ 0 means the learned map is
+nearly volume-preserving. In this system *all* dissipation is at impacts (free flight is
+area-preserving in (x,v); the reset multiplies by −e), and impacts are only 2.7% of
+transitions. A rollout loss averaged over all steps is dominated by smooth parabolic flight,
+so the 2.7% carrying the contraction contributes little. Note this is the opposite of Phase
+1's λ₃ problem, which was about data coverage off the attractor — here the events are IN the
+data and the loss under-weights them. Untested alternatives: too few epochs, α mis-set for a
+hybrid system, or d=4 being too tight given one dimension is spent on the cos²+sin²=1
+constraint.
