@@ -841,3 +841,55 @@ Residual caveat: even at 450 steps the separation is imperfect (toppled min 0.47
 max 0.466), because `random_push` scatters pulses across the whole horizon so some topples begin
 near the end. Confining the action to early steps and leaving a settling tail should push this
 higher still.
+
+### Phase 3 monitor on the LEARNED model, corrected horizon — probe families compared
+
+Everything earlier was either the true simulator or ran at a horizon too short for the failure
+to reach the state. Both fixed: model trained AND rolled out at T=450 (fidelity corr(θ)=+0.918,
+RMSE 0.265 rad). 250 actions, 151 topple, 58 near-boundary.
+
+**Key algebraic simplification:** `a + c·a = a·(1+c)`, so "multiplicative shared" is just
+"additive shared along v = a". There is one mechanism — perturb along a chosen direction `v`
+with a single scalar — and the only question is which `v`. That is what makes it transferable:
+Jenga's action is an absolute EE position where multiplying is origin-dependent, but perturbing
+along a chosen direction is well defined.
+
+**AUC proximity (margin < 10%):**
+
+| probe family | v | ε=0.05 | ε=0.10 | ε=0.20 |
+|---|---|---|---|---|
+| per-step *(current deviator agent)* | random, fresh per probe | 0.636 | 0.649 | 0.668 |
+| shared-const | ones | 0.741 | 0.712 | 0.642 |
+| **shared-action** | a (= scaling) | 0.736 | **0.800** | **0.818** |
+| **shared-envelope** | sign(a) | 0.705 | 0.769 | **0.793** |
+
+The oracle result transfers to the learned model: **shared probes beat per-step by ~+0.15 AUC**,
+same direction and size as on the true simulator (0.916 vs 0.828).
+
+**Deployment numbers at the best config** (shared-action, ε=0.20): precision 0.516, recall
+0.845, F1 0.641, accuracy 0.780 — versus per-step's 0.414 / 0.621 / 0.497 / 0.708. It catches
+85% of near-boundary sequences but about half its alarms are false. Better on every measure, not
+solved.
+
+**Divergence has NO outcome signal.** Every family's outcome AUC was 0.29–0.56 (chance or
+inverted) and every outcome F1 was exactly **0.753**, which is precisely the F1 of labelling
+everything unsafe at this 60% base rate. AUC caught a degeneracy F1 concealed. **Divergence is a
+proximity detector, not a failure detector** — the two need different statistics.
+
+**Transferable recommendation for Jenga.** `shared-action` wins but is multiplicative and does
+NOT transfer (scaling an EE position is origin-dependent). `shared-envelope` is additive and
+nearly as good (0.793 vs 0.668). The Jenga analogue perturbs the action chunk's DISPLACEMENT
+rather than its absolute coordinates:
+
+```python
+# now:      a_tilde = a + eps * randn(8, 4)          # 32 independent draws, they cancel
+# instead:  D = a[1:] - a[:-1]                       # direction of travel
+#           a_tilde = a + eps * randn() * (D/||D||)  # 1 draw, coherent
+```
+
+Same N rollouts, same world model, no retraining.
+
+Demo: `results/phase3/monitor_live.mp4` — two sequences that BOTH survive, margins 0.9% and 50%,
+scores 0.892 (ALARM) and 0.166 (quiet) against a calibrated threshold of 0.736. Identical
+outcomes, so an outcome detector cannot separate them; the proximity monitor can. Note these are
+hand-picked clear cases; aggregate performance is the 0.52/0.85 above.
