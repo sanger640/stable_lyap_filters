@@ -151,6 +151,30 @@ def push_profile(n, amp, t_on=10, t_off=None, dt=DT_DEFAULT):
     return a
 
 
+def random_push(rng, n, thr, k=3, scale=2.0, d_min=10, d_max=50, dt=DT_DEFAULT):
+    """A multi-pulse push: k rectangular shoves at random times, durations and amplitudes.
+
+    A SINGLE-amplitude push makes the whole task degenerate: the label is exactly
+    `amp > threshold`, so any score monotone in amplitude scores AUC 1.0 for free and the test
+    measures nothing. Measured that way, the trivial control (roll the model out, look at theta)
+    scored a perfect 1.000.
+
+    With several pulses the outcome depends on TIMING as well as size, because a shove that
+    arrives while the block is already rocking toward that side adds to the motion while the
+    same shove half a rock later cancels it. Toppling is then a genuinely non-monotone function
+    of the action sequence -- which is the situation a real monitor faces.
+
+    Calibrated so the task is neither trivial nor impossible: at these defaults 48% of pushes
+    topple, and the giveaway action statistics reach only AUC 0.787 (peak force) and 0.833
+    (net impulse) -- so there is real headroom for a monitor to be worth anything."""
+    a = np.zeros(n)
+    for _ in range(k):
+        t0 = rng.integers(0, max(n - 20, 1))
+        dur = rng.integers(d_min, d_max)
+        a[t0:t0 + dur] += thr * rng.uniform(-scale, scale)
+    return a
+
+
 def topple_threshold(n, t_on=10, t_off=60, dt=DT_DEFAULT, alpha=ALPHA_DEFAULT,
                      lo=0.0, hi=3.0, iters=60):
     """Bisect for the push amplitude that just topples the block.

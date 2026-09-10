@@ -628,3 +628,48 @@ upright — and it is monotone by construction.
 7 tests in `tests/test_tipping_block.py`; the first four guard properties the ball lacked, and
 one is a regression guard against the teleporting fall.
 Demo: `results/phase3/tipping_block.mp4` (gitignored; regenerate with `eval/tipping_block_demo.py`).
+
+### Phase 3 monitor test — divergence LOSES to simply rolling the model out
+
+shPLRNN (d=4, H=128, action-conditioned), 600 trajectories, 600 epochs, final loss 2.6e-3.
+Test: 400 multi-pulse pushes, 179 topple / 221 survive. Label from the true simulator; every
+score computed from the learned model alone.
+
+| T | visibly toppled | MODEL divergence | **MODEL max\|θ\|** | TRUE divergence (oracle) |
+|---|---|---|---|---|
+| 40 | 0% | 0.590 | **0.618** | 0.603 |
+| 60 | 1% | 0.613 | **0.642** | 0.615 |
+| 80 | 6% | 0.629 | **0.684** | 0.628 |
+| 100 | 9% | 0.648 | **0.724** | 0.594 |
+| 133 | 18% | 0.643 | **0.842** | 0.589 |
+| 160 | 30% | 0.639 | **0.935** | 0.521 |
+
+Giveaway baselines from the ACTION alone: peak force 0.765, net impulse **0.813**.
+
+**Three findings, none flattering to the monitor.**
+
+1. **Direct prediction beats divergence at every horizon**, and the gap widens with T (0.618 vs
+   0.590 at T=40; 0.935 vs 0.639 at T=160). If the world model is good enough to support a
+   divergence monitor, it is good enough to just roll out and check the failure condition.
+
+2. **Both lose to a one-line action statistic.** Net impulse alone scores 0.813 — better than
+   model divergence at EVERY horizon, and better than direct prediction until T=133. A monitor
+   has to beat "add up the forces", and this one does not.
+
+3. **Oracle divergence peaks at 0.628 and DECAYS** (0.521 by T=160). With perfect physics. So
+   the ceiling on this statistic is ~0.63 and the model is already at it — the limitation is
+   the statistic, not model quality. Same verdict as Phase 2's `max|local λ|`, reached the
+   same way, by testing the oracle.
+
+**Why divergence is weak here, and it is structural.** Perturbation-divergence measures
+*sensitivity* — how much outcomes vary under action noise. That is maximal for pushes NEAR the
+boundary, whether they topple or not. A push far above threshold topples robustly and shows
+LOW divergence; a marginal safe push shows HIGH divergence. So divergence is roughly a measure
+of |distance to the boundary|, which is not the same thing as which SIDE of it you are on. On
+this task the two come apart cleanly.
+
+**Caveat on generality.** The tipping block's failure is a smooth monotone function of impulse,
+which is exactly the regime where "just predict it" wins. Jenga's failure may be far less
+predictable directly, and that -- not divergence being intrinsically good -- would be the
+argument for a monitor there. What this phase does establish is that the direct-prediction
+control MUST be run before claiming a monitor adds value.
