@@ -392,3 +392,74 @@ d=20 result reproduced on an unrelated system. Two for two against adding latent
 **Open and honest: λ₁ is ~25% high in every reliable config**, against Phase 2's own acceptance
 bar of 10% on λ_max. λ₁ is the exponent the monitor actually uses. The only config with λ₁ near
 truth (off0, 0.1630) is precisely the unstable one, so that is noise, not accuracy.
+
+### Phase 2 Test B — POSITIVE. Convergence-vs-not separates a guard crossing from ordinary chaos
+
+Pairs of trajectories started ε apart, split by whether their impact COUNTS diverge.
+
+| ε | straddling | group | λ at T=1 | T=10 | T=40 |
+|---|---|---|---|---|---|
+| 1e-1 | 3.8% | straddled | −0.009 | +0.311 | **+0.420** |
+| | | clean | +0.026 | +0.205 | +0.191 |
+| 3e-2 | 1.9% | straddled | +0.101 | +0.314 | **+0.446** |
+| | | clean | +0.019 | +0.180 | +0.181 |
+| 1e-2 | 1.1% | straddled | −0.003 | +0.429 | **+0.514** |
+| | | clean | +0.018 | +0.181 | +0.186 |
+| 1e-4 | **0%** | — | — | — | — |
+
+Clean pairs **converge** to ~0.19 and stay. Straddled pairs **keep climbing** and never settle,
+ending ~2.3× higher. Consistent across three ε spanning a decade. So the discriminator is not
+the magnitude but **whether λ stops changing with horizon**.
+
+**Corrections to my stated prediction.** (1) I predicted λ would *decay* like 1/T from
+saturation; it *rises* instead — separations have not saturated at this horizon, and repeated
+discrete jumps accumulate. The claim "fails to converge" holds; the mechanism I gave was wrong.
+(2) My first grouping (did the reference trajectory hit the guard?) found **no difference at
+all**, and that null is correct and worth keeping: for infinitesimal perturbations the tangent
+map across a guard is the saltation matrix, which is finite, so the exponent converges normally.
+
+**The effect exists only at finite ε** — 0% straddling at ε≤1e-4. It is therefore invisible to
+the Lyapunov exponent and lives entirely in the regime real monitors use. Proper name: this is
+a **finite-size Lyapunov exponent (FSLE)** measurement (Aurell et al. 1997), not an FTLE. The
+underlying event is **grazing** (Nordmark 1991); the class is discontinuity-induced
+bifurcation. "Straddling" is our own label, not standard terminology.
+
+**Implication for Jenga:** ε is not a nuisance parameter justified by EE positional error — it
+is the detector's sensitivity dial. Below a critical ε no perturbed rollout ever crosses to the
+other side and failures are undetectable at ANY threshold. Suggested tuning: choose ε so the
+straddle rate matches the observed failure rate from labels.json.
+
+Demo video: `results/phase2/clean_vs_straddled.mp4` — clean pair ends at λ=+0.159 against a
+true λ₁=0.1585 (bounce counts 2/2); straddled pair reaches λ=+0.251 with counts 2/3 and a 6×
+larger final separation.
+
+### Phase 2 Test A — NULL twice, both times caught by controls
+
+**Attempt 1, direction alignment.** |cos| between each learned hyperplane's normal and the
+known guard normal, plus |corr| of its signed distance with the true gap.
+
+| metric | trained | untrained | random direction |
+|---|---|---|---|
+| \|cos\| with guard normal | 0.9899 | 0.9708 | 0.9777 |
+| \|corr\| with true gap | 0.9990 | 0.9985 | — |
+
+Saturated, so uninformative. Two causes: with H=128 hyperplanes in 4-d some row is near ANY
+fixed direction by chance; and the gap x − A·sin φ is dominated by x (range ~30) over sin φ
+(range 1), so any hyperplane with an x-component correlates ~1 with it. **It measured a scale
+artefact.**
+
+**Attempt 2, ReLU gate flips** (scale-free, and the only mechanism the model has for a
+discontinuity):
+
+| | at impact | elsewhere | ratio |
+|---|---|---|---|
+| trained | 33.58 | 5.41 | 6.21× |
+| untrained | 43.99 | 8.97 | **4.90×** |
+
+Also null. Confound: at an impact the state jumps hard (|Δv| up to 14.7), so ANY hyperplane set
+is crossed more often simply because the state moved further. This measured step size, not
+structure. **The untrained control is what caught both**; without it, either attempt would have
+been reported as a success.
+
+Untested fix: normalise to flips per unit distance travelled, which asks whether the model packs
+hyperplanes more DENSELY near the guard independent of how far the state moves.
