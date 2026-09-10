@@ -795,3 +795,49 @@ Equal budget (32 probes), only the direction changed:
 matters for scaled probes (0.734/0.735/0.743 across ε), consistent with direction mattering more
 than magnitude. Concrete recommendation for Jenga: perturb the action's scale/magnitude, not
 each dimension independently.
+
+### CORRECTION: divergence IS a strong proximity detector — the weak result was a horizon bug
+
+User pushed back that divergence *should* be a good boundary-proximity indicator and that
+something was off. It was. Chasing it found a measurement bug that invalidated the whole
+proximity section above.
+
+**The bug.** Simulations ran for 200 steps. But the block commits at |θ|≥α around step 133 and
+then takes **164 steps to fall**, so at step 200 it is still mid-fall. Measured endpoint norms
+for a near-boundary action:
+
+    toppled   |disp|: 0.432 ... 0.525
+    survivors |disp|: 0.465 ... 0.498      <- completely overlapping
+
+Every state-based statistic was searching for a split that had not happened yet, which is why
+spread, bimodality, 1-D gap and 2-means clustering ALL failed together. The only statistic that
+worked was the privileged flip-fraction, because it reads the *committed* flag (fires at α)
+rather than the state. **That disagreement was the tell** and should have been chased
+immediately instead of theorising about which statistic was better.
+
+**Fixed (horizon 450):**
+
+| probe | ε | divergence std | divergence spread | IDEAL (privileged) |
+|---|---|---|---|---|
+| isotropic | 0.05 | 0.788 | 0.801 | 0.652 |
+| isotropic | 0.20 | 0.925 | 0.888 | 0.914 |
+| **scaled** | **0.05** | **0.941** | 0.912 | 0.978 |
+| scaled | 0.10 | 0.910 | 0.908 | 0.990 |
+
+**Divergence proximity AUC 0.66 → 0.94**, essentially matching the oracle that knows the failure
+predicate. Scaled probes still beat isotropic, most strongly at small ε (0.941 vs 0.788).
+
+**Supersedes** the earlier claim that "divergence reaches only 0.66 on proximity" and the
+speculation that spread conflates proximity with ordinary sensitivity. Both were artefacts of
+the horizon.
+
+**Direct implication for Jenga.** The monitor uses **T=8**. If a topple takes longer than 8
+steps to become visible in the DINO latent, the perturbed rollouts have not separated yet and
+the monitor is measuring in exactly the regime that produced the 0.66 here. **Measure how many
+steps after the action a topple first shows up in the latents**; if it exceeds 8, extending the
+horizon likely matters more than the choice of statistic.
+
+Residual caveat: even at 450 steps the separation is imperfect (toppled min 0.474 vs survivor
+max 0.466), because `random_push` scatters pulses across the whole horizon so some topples begin
+near the end. Confining the action to early steps and leaving a settling tail should push this
+higher still.
