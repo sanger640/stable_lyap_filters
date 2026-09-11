@@ -1555,3 +1555,87 @@ exact shadow pixels, render noise, texture -- wrong. That is irreducible and mos
 directions".** Nothing measured so far answers that, and Phase E answers it directly: cluster the
 PREDICTED ending latents and see whether they form three groups matching the outcomes. Phase D's
 numbers bound the difficulty; they do not decide it.
+
+## Phase E: attractor discovery — FAILS in the raw latent space, WORKS after PCA
+
+### The failure, and why it was not the model's fault
+
+The merge-distance plateau from `phase3_pipeline.py` -- the same code that found 3 attractors for
+the shPLRNN -- returned **k = 300 at every settle length and every d up to 0.8*scale**. Every
+episode its own cluster.
+
+**The CONTROL is what made this diagnosable.** Running the identical discovery on ENCODED TRUE
+endings (zero model error) failed the same way. That rules out the predictor and indicts the
+procedure.
+
+Cause: single-linkage relies on LOCAL structure (nearest-neighbour chains), which concentrates badly
+in 98,304 dimensions. Measured within/between separation in the raw space was **1.09 (encoded truth)
+to 1.35 (GTF-warm predictions)** -- no scale gap for a plateau to sit in, so counts decay smoothly
+instead of plateauing. The shPLRNN's 4-dimensional latent had entirely different geometry.
+
+Three things were verified healthy first, which is what localised the failure:
+
+| | result |
+|---|---|
+| physics settles to 3 tight attractors | upright spans theta std **0.012 rad**; 0% "in between" by settle 80 |
+| DINOv2 encodes theta | Phase B, R^2 **1.000** |
+| nearest-centroid across lighting | Phase B geometry test, **100%** |
+
+Note that nearest-centroid (GLOBAL structure, distance to a mean) worked in the same space where
+single-linkage (LOCAL structure) failed completely. High dimensions punish local structure far more.
+
+### The fix: PCA before clustering
+
+| GTF-warm predictions | sep ratio | k-means k=3 agreement |
+|---|---|---|
+| full (98,304 dim) | 1.354 | 58.7% |
+| PCA 2 | **11.644** | 54.3% |
+| PCA 8 | 2.165 | **93.7%** |
+| PCA 16 | 1.845 | **93.7%** |
+
+**And the ORIGINAL plateau criterion then works**, which matters because it is the calibration-free
+one -- the count is whatever survives the widest range of d, nothing supplied:
+
+```
+GTF-warm, PCA 2:  0.05:26  0.1:6  0.15:5  0.2:4  0.3:4  0.4:4  0.6:4  0.8:4
+                                          ^^^^ plateau at k=4, width 5
+```
+
+It reports 4, but the fourth cluster is a **SINGLETON**:
+
+| cluster | n | theta median | true-basin makeup |
+|---|---|---|---|
+| 0 | 30 | +1.571 | upright 1, fell RIGHT 29 |
+| 1 | 225 | +0.000 | fell LEFT 8, upright 209, fell RIGHT 8 |
+| 2 | 44 | -1.571 | fell LEFT 42, upright 2 |
+| 3 | **1** | +1.571 | fell RIGHT 1 |
+
+So discovery recovers the three real basins plus one stray point that single-linkage never merges.
+**With a minimum-cluster-size rule the count is 3, obtained with nothing supplied.** Agreement with
+the oracle basins is 93.3% against a 70.7% majority baseline. The 16 misassignments in cluster 1
+are the mean-hedging residue, now 5.3%.
+
+### Two findings worth carrying to Jenga
+
+**1. The world model acts as a NUISANCE FILTER, and this is repeatable.** Predicted latents cluster
+better than encoded ones at every measurement: separation 1.354 vs 1.091 raw; and in PCA space the
+encoded-truth control shows **NO plateau at all** (39, 14, 9, 6, 3, 1, 1, 1 -- a smooth decay) while
+the GTF-warm predictions plateau cleanly at width 5. The predictor is trained to model what is
+predictable, so it smooths away render noise, exact shadow pixels and texture -- precisely the
+nuisance that dominates distance in the encoder's output. **Cluster predictions, never encodings.**
+That is also what the monitor does anyway, so the finding is convenient rather than awkward.
+
+**2. Stability-based k selection is unusable here -- it is biased to k=2.** Cross-seed
+co-assignment reproducibility was 1.00 at k=2 and 0.70-0.85 at k=3 for every model and every PCA
+dimension, so it always picks 2. This is a known weakness of stability criteria. The merge-distance
+plateau, in the right space, is the better instrument. Do not substitute stability for it.
+
+### Required additions to the method
+
+- **PCA to ~2-16 dimensions before clustering.** Not optional in a patch-token latent space. The
+  dimension is not critical (8 and 16 both give 93.7%) but the raw space does not work at all.
+- **A minimum cluster size**, or singletons inflate the discovered count. One stray point out of
+  300 turned k=3 into k=4.
+
+Both are unsupervised and neither introduces a tuned threshold, so the calibration-free claim
+survives -- but they have to be stated as part of the method rather than discovered per-dataset.
