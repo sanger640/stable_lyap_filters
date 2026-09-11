@@ -134,15 +134,19 @@ on images. Before probing, teacher-force through the last `num_hist` observed fr
 loop of `gtf_rollout_loss_latent` with the loss deleted — so the latent carries the history that
 encodes omega.
 
-**Run the eps=0 null FIRST.** 32 probes, identical actions. Any `k > 0` is pure model noise and is
-the floor for the whole method. If the null already produces `k >= 2`, the alarm rule is measuring
-the model rather than the boundary, and the eps=0 null becomes the headline result. Run it on the
-shPLRNN too for comparison — it should be exactly 0.
+**Run the FALSE-POSITIVE FLOOR test first.** (An earlier draft said "run the eps=0 null". That is
+vacuous: the model is deterministic, so 32 probes with identical actions give 32 identical rollouts
+and k=0 by construction. Keep eps=0 only as a plumbing check -- it would catch dropout left on at
+inference -- never as a measurement.) The real test runs the monitor at the OPERATING eps on
+episodes with a LARGE TRUE MARGIN, far enough from any boundary that no probe should be able to
+cross one. Any `k > 0` there is model error manufacturing dissent, and that is the floor for the
+whole method. If those episodes already reach `k >= 2`, the alarm rule is measuring the model
+rather than the boundary.
 
 Then the same 100 episodes, same seed (`np.random.default_rng(777)`), same margin oracle.
 
 **Acceptance**
-- eps=0 null: `k = 0` on >= 95% of scores.
+- false-positive floor: `k < 2` on >= 95% of scores from large-margin episodes.
 - Report `k`-vs-margin AUC against the shPLRNN's 0.808, with a paired bootstrap CI. **Parity is
   the bar.** Do not expect to beat a model that sees the exact state.
 
@@ -155,7 +159,7 @@ One table, one system, one set of labels, two representations, no retuning:
 | | shPLRNN on (theta, omega) | DINO-WM on images |
 |---|---|---|
 | state | exact, Markov | inferred from 3 frames |
-| eps=0 null (k) | 0 (expect) | ? |
+| false-positive floor (k, large margin) | ? | ? |
 | theta RMSE | 0.265 rad | ? |
 | settles? | yes | ? |
 | attractor plateau | 3 | ? |
@@ -180,8 +184,8 @@ everything remains exactly measurable.
 | ViT does not settle under held action | **Phase D** | the entire basin construction, on Jenga too |
 | undersampling breaks velocity estimation | Phase B sweep | silent accuracy loss blamed on the method |
 | attractors do not plateau at 3 | Phase E | clustering blamed on the monitor |
-| model noise floor swamps the signal | **Phase F eps=0 null** | `k` measuring the model, not the boundary |
+| model error manufactures dissent | **Phase F false-positive floor** | `k` measuring the model, not the boundary |
 
-The three bolded rows are the cheap kill tests. **Run B, D and the eps=0 null before investing in
+The three bolded rows are the cheap kill tests. **Run B, D and the false-positive floor before investing in
 anything else** — each can end the plan in under a day, and each would otherwise be discovered
 only after the full Jenga rebuild.
