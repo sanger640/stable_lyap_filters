@@ -74,7 +74,22 @@ recall. Latching hides recovery and makes every later frame unreadable.
 
 ---
 
-## Choosing the probe direction v
+## What eps, z and v actually are
+
+```
+a_j  =  a  +  eps * z_j * v
+       ^      ^     ^      ^
+       |      |     |      the DIRECTION in action space to perturb along
+       |      |     ONE SCALAR per probe, z_j ~ N(0,1). Not one per timestep,
+       |      |     not one per action dimension. 32 probes = 32 numbers.
+       |      the SIZE of one standard deviation, in whatever units v carries
+       the nominal chunk from the policy
+```
+
+`z_j` says how many eps this probe moves; `eps` says how far one eps is. With eps=0.10 and
+z_7=1.82, probe 7 sits 18% out along v.
+
+### Choosing v
 
 The algebra that matters:  `a + c*a == a*(1 + c)`.  So "multiplicative shared" is just "additive
 shared along the direction v = a". There is only ONE mechanism -- perturb along a chosen direction
@@ -82,17 +97,49 @@ with a single scalar -- and the only question is which v.
 
 | system | v | why |
 |---|---|---|
-| tipping block | `v = a` (i.e. scale the push) | action is a force; scaling is meaningful |
-| Jenga | `v = diff(a)` (the EE *displacement* sequence) | action is an ABSOLUTE EE position, so scaling is origin-dependent and geometrically meaningless; the displacement sequence is origin-free |
+| tipping block | `a` | the action is a FORCE, so doubling it means something |
+| Jenga | `a - a[0]` | the action is an ABSOLUTE EE POSITION (see below) |
 
-**One scalar per probe, never one per timestep.** Per-step isotropic noise changes the chunk's
-*shape* while barely changing its *size*: T independent nudges largely cancel, so the net moves by
-only ~eps/sqrt(T) even though every timestep moved by eps. Fawzi et al. (NeurIPS 2016, Thm 1): a
-random direction needs Theta(sqrt(d)) times the magnitude to reach the same boundary, because its
-expected squared overlap with the boundary normal is 1/d. At T=450 that is a factor of ~21. The
-per-step family is what the current deviator agent does, and it is the wrong family.
+**Jenga cannot use `v = a`.** If the gripper sits at x=0.457 m, `a * 1.1` sends the arm to x=0.503
+-- that is not "push 10% harder", it is "go somewhere else", and the answer changes if you move the
+world origin. `v = a - a[0]` involves only differences, so it is origin-free; it means *travel 10%
+further along the path you were already going to travel*:
 
----
+```python
+v   = a - a[0]                      # displacement from the chunk's start, shape (T, 4)
+v[:, 3] = 0.0                       # gripper is BINARY -- scaling it is meaningless
+a_j = a + eps * z_j * v             # equivalently: a[0] + (1 + eps*z_j) * (a - a[0])
+```
+
+The start is pinned and the reach is stretched or shortened. A 30 mm reach in x at eps=0.10 becomes
+35.5 mm at z=+1.82 and 23.7 mm at z=-2.10. That is the axis the topple boundary lives on.
+
+(An earlier draft wrote `v = diff(a)`. That is the right mechanism but the wrong shape -- diff(a) is
+(T-1, 4) and will not broadcast. `a - a[0]` is the integrated form of the same thing.)
+
+### One scalar per probe, never one per timestep
+
+Per-step isotropic noise changes the chunk's *shape* while barely changing its *size*: T
+independent nudges largely cancel, so the net moves by only ~eps/sqrt(T) even though every timestep
+moved by eps. Fawzi et al. (NeurIPS 2016, Thm 1): a random direction needs Theta(sqrt(d)) times the
+magnitude to reach the same boundary, because its expected squared overlap with the boundary normal
+is 1/d. At T=450 that is a factor of ~21.
+
+The current Jenga deviator agent (eps=0.005 added independently per timestep) is exactly this wrong
+family.
+
+### Units: pick one convention and stay in it
+
+`eps` is dimensionless or metres depending on whether v is raw or normalised. Both work; mixing
+them is how the "7.8 mm" figure below got stated without its precondition.
+
+| convention | v | eps | detectable margin m* (n=50) |
+|---|---|---|---|
+| **fractional** (validated on the block) | `a - a[0]` | dimensionless | 1.56*eps as a FRACTION of the chunk's motion |
+| **absolute** | `(a - a[0]) / \|\|a - a[0]\|\|` | metres | 1.56*eps in metres |
+
+Fractional with eps=0.10 on a 3 cm chunk gives m* ~ 4.7 mm, and scales with how far the chunk
+travels -- usually what you want. Absolute with eps=0.005 m gives a flat 7.8 mm.
 
 ## Sizing: eps, n and k_min from the margin you want to detect
 
@@ -125,7 +172,8 @@ they are a binomial floor, not a method failure.
 Reach grows only logarithmically in n -- doubling probes from 50 to 100 buys 20% more reach -- so
 raising eps is far cheaper than raising n.
 
-For Jenga at eps=0.005 (~the positional error of the EE):
+For Jenga in the ABSOLUTE convention at eps=0.005 m (~the positional error of the EE),
+with v normalised to unit length:
 
 | n | detectable margin |
 |---|---|
