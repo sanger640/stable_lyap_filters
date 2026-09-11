@@ -1,11 +1,29 @@
-# The runtime monitor — final recipe
+A **calibration-free** monitor for an action chunk. No tuned threshold: the alarm is a *counting*
+statement about disagreement among probes, so nothing plays the role that δ=0.8 plays in the FTLE
+monitor. No labels of any kind, so it drops onto a new manipulation task as-is.
 
-A **calibration-free** proximity-and-failure monitor for an action chunk. No tuned threshold: the
-alarm is a *counting* statement about disagreement among probes, so nothing plays the role that
-δ=0.8 plays in the FTLE monitor.
+## What it claims, and what it does not
 
-The question it answers is not "will this fail?" but **"is this action near a boundary where the
-outcome changes?"** — plus, for free, "has it already committed to failing?"
+**It detects that the policy is operating where small errors change the outcome.** Not that a
+failure is coming. The signal is that a *nearby alternative action has a different terminal state*.
+
+That is the useful thing to know, and the timing is the reason: proximity is actionable while there
+is still room to slow down, re-plan, or ask for help. Failure prediction fires when it is already
+too late to act. And confidently-catastrophic actions are the easy case that any crude check
+catches -- on the tipping block, net impulse alone scores AUC 0.813 on outcome, beating oracle
+divergence at every horizon. The failures that actually bite a demonstration-trained policy come
+from OOD drift where the actions are **marginal**. That is the regime this targets.
+
+Three consequences, and they are not negotiable once the claim is fixed:
+
+1. **Evaluate on proximity (margin < m), never on outcome.** On outcome the method scores AUC
+   0.29-0.56 and loses to a one-line action statistic. On proximity it scores 0.856 with no
+   calibration against div_std's 0.818, which needs a percentile fitted to safe data.
+2. **The blind spot is declared scope, not a defect.** Dissent counting is blind by construction to
+   certain failure: if every probe agrees the block falls, k=0. 28 of 100 tipping-block episodes
+   topple while far from any boundary, 16 silently. Report it; do not patch it.
+3. **Any alarm clause that needs a basin named "failure" is supervision, and is struck.** See
+   clause 1' below for the label-free substitute and its own limitation.
 
 ---
 
