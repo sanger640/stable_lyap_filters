@@ -1305,3 +1305,56 @@ This sharpens the Jenga go/no-go: the question is not only whether toppled and u
 separate in DINOv2 latent space, but whether a ViT predictor's settled latents cluster into
 DISCRETE basins at all. The shPLRNN's piecewise-affine structure may be doing more work there than
 has been verified.
+
+## Phase A (DINO-WM plan): renderer — PASS
+
+`src/systems/block_render.py`, checked by `eval/phase_a_render_check.py`. Artifacts in
+`results/phase_a/`.
+
+Orthographic side view, so the block's geometry is exact and theta is recoverable from the
+silhouette without distortion. Only the tabletop and the shadow are faked into pseudo-3D; they are
+scenery, never the signal.
+
+**Acceptance, all three met.**
+
+| criterion | result |
+|---|---|
+| `+theta` vs `-theta` visibly differ | mean\|diff\| 3.4 (theta=0.10) rising to 22.7 (theta=0.60); all > 2 grey levels |
+| three terminal states mutually distinct | 20.0-22.7 mean\|diff\| pairwise |
+| \|theta\| monotone in distance from upright | 1.8, 3.5, 6.9, 10.4, 14.8, 18.8, 20.8, 21.5 — strictly increasing |
+
+**Two framing decisions worth recording.**
+
+*Crop tighter than the fallen block.* Framing wide enough to contain the fallen block (x = +-2.22)
+shrinks the STANDING block to ~38% of frame height, about 6 patches of 14 px. Cropping to
+x in [-1.75, 1.75] lets the fallen block run off the edge -- "lying flat toward the left" stays
+unmistakable when clipped -- and buys the standing block 57% of the height instead. The first
+render used the wide framing and the block was visibly too small.
+
+*The ground plane needed strengthening.* At `_SQUASH = 0.18` the shadow was a thin smudge against
+the ground line and the tabletop stripes read as noise, which defeats the purpose: the scene has to
+carry real nuisance or a pass proves nothing about a cluttered tabletop. Raised to 0.50 with
+stronger stripes and opacity 0.38-0.70.
+
+**The lighting sheet is the artifact to look at.** Same pose (theta=0.25), six episodes: the shadow
+swings from hard-left to hard-right and changes length, with ambient, warmth and block value moving
+too. That is the documented Jenga precision bottleneck (CLAUDE.md, Limitations 2 -- the world model
+predicts shadows inconsistently between original and perturbed rollouts, inflating d_end) placed
+inside a system where the true margin is computable. Lighting is sampled PER EPISODE and held fixed
+within it, so the shadow moves only as the block tilts -- as it would with a fixed lamp.
+
+If Phase C cannot fit the dynamics, the lighting range is the first thing to narrow; it is a
+deliberate difficulty knob, not a fixed property of the system.
+
+**Throughput: 10.7 ms/frame at 2x supersampling (94 fps).**
+
+| corpus | frames | render time |
+|---|---|---|
+| 600 traj x 45 steps | 27,000 | 4.8 min |
+| 600 traj x 90 steps | 54,000 | 9.6 min |
+| 600 traj x 150 steps | 90,000 | 16.0 min |
+| 600 traj x 450 steps | 270,000 | 48.1 min |
+
+So the ~20 min budget holds up to 150 steps and breaks at the full 450. **The Phase B sampling-rate
+decision therefore has a rendering-budget consequence as well as an omega-recoverability one** --
+if omega needs the full rate, rendering alone costs the better part of an hour before any encoding.
