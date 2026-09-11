@@ -1270,3 +1270,38 @@ Scripts: `eval/phase3_action_shortcut.py`, `eval/phase3_bootstrap_gap.py`.
 ordinal ranks, not average ranks, so any integer-valued score with many ties (the dissent count k
 is exactly that) is slightly misreported: 0.804 vs the correct 0.808. Small, but systematic, and it
 affects every k-based AUC recorded above this line.
+
+## The shPLRNN's stated justification has lapsed
+
+PLAN.md §0 picks shPLRNN over the causal-ViT head for one reason: **exact Jacobians**. The
+diagnosis there is sound and worth keeping -- FTLE on the ViT head failed because "the linear
+regime is 50x too small" (at ||delta||=1e-3, cosine 0.9995; at the operating sigma=0.05,
+relative error 0.963 and cosine 0.538), so the Jacobian was correct and useless. A smooth network
+can only steepen a discontinuity, never represent it. ReLU switching hyperplanes carve state space
+into polyhedral cells that are exactly affine inside, so the Jacobian stays valid at finite
+perturbation size.
+
+**But the monitor that actually shipped never computes a Jacobian.** Basin counting rolls out,
+settles, and clusters endpoints -- no linearisation anywhere. The exact-Jacobian argument belongs
+to Phases 1-2 (spectrum, FTLE); it does not justify the architecture for the current method.
+
+What still does justify it, in order of how much it matters:
+
+1. **Determinism.** The method measures spread among rollouts caused by ACTION perturbations. A
+   stochastic latent (Dreamer's RSSM, anything with a KL term) makes two rollouts of the SAME
+   action land in different places, and that spread is unrelated to any boundary. `k` would be
+   measuring model noise plus action effect, with no way to separate them. This is a real
+   constraint on what world models the method can sit on top of, and it should be stated as one.
+2. Speed -- one score is 32 probes x 350 steps; the full 100-episode eval is ~34M model steps.
+3. A 4-D latent matches a 2-D observation and 600 trajectories.
+
+**Implication for what the toy proves.** Nothing about shPLRNN transfers to Jenga, whose world
+model is DINOv2 + a ViT predictor. The toy validates the ALGORITHM, not the architecture. That is
+consistent with the universality claim (the monitor is architecture-agnostic by design) but it
+means the toy cannot be cited as evidence that the model class works -- only that the procedure
+does, GIVEN a model that rolls out accurately and deterministically.
+
+This sharpens the Jenga go/no-go: the question is not only whether toppled and upright scenes
+separate in DINOv2 latent space, but whether a ViT predictor's settled latents cluster into
+DISCRETE basins at all. The shPLRNN's piecewise-affine structure may be doing more work there than
+has been verified.
