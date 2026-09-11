@@ -63,12 +63,21 @@ class Monitor:
 
     Returns the internals as well as the score, so the video can show WHY S is what it is."""
 
-    def __init__(self, model, C, mu, sd, amu, asd, thr, settle, eps, n_probe, rng):
+    def __init__(self, model, C, mu, sd, amu, asd, thr, settle, eps, n_probe, rng,
+                 lookahead=None):
+        """`lookahead` fixes how many steps of the plan are considered. None = receding, i.e.
+        all remaining action -- which makes the question SHRINK as the episode proceeds, so a
+        safe episode's entropy must decay to zero by construction and carries no information
+        late on. A fixed lookahead asks the same question at every t: constant cost AND constant
+        meaning. Measured on 100 episodes: fixed H=200 gives AUC 0.836 vs 0.805 receding."""
         self.__dict__.update(model=model, C=C, mu=mu, sd=sd, amu=amu, asd=asd, thr=thr,
-                             settle=settle, eps=eps, n_probe=n_probe, rng=rng)
+                             settle=settle, eps=eps, n_probe=n_probe, rng=rng,
+                             lookahead=lookahead)
 
     @torch.no_grad()
     def score(self, state, remaining):
+        if self.lookahead is not None:
+            remaining = remaining[:self.lookahead]
         if len(remaining) < 5:
             return 0.0, None, None, None
         P = remaining[None] * (1.0 + self.eps * self.rng.standard_normal((self.n_probe, 1)))

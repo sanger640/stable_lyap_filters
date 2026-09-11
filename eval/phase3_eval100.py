@@ -135,7 +135,10 @@ def main():
     ap.add_argument("--n-probe", type=int, default=32)
     ap.add_argument("--n-episodes", type=int, default=100)
     ap.add_argument("--k-min", type=int, default=2)
-    ap.add_argument("--near", type=float, default=0.10)
+    ap.add_argument("--near", type=float, default=0.23,
+                    help="label threshold; default matches the 32-probe reach (~2.3*eps)")
+    ap.add_argument("--lookahead", type=int, default=200,
+                    help="fixed steps of plan considered; 0 = receding (all remaining)")
     ap.add_argument("--n-videos", type=int, default=10)
     ap.add_argument("--every", type=int, default=15)
     ap.add_argument("--stride", type=int, default=3)
@@ -165,7 +168,11 @@ def main():
     cname = {order[0]: "falls left", order[1]: "stays up", order[2]: "falls right"}
     print(f"  {len(C)} attractors\n", flush=True)
 
-    mon = Monitor(model, C, mu, sd, amu, asd, thr, st, args.eps, args.n_probe, rng)
+    mon = Monitor(model, C, mu, sd, amu, asd, thr, st, args.eps, args.n_probe, rng,
+                  lookahead=(args.lookahead or None))
+    print(f"  lookahead {'receding' if not args.lookahead else args.lookahead}, "
+          f"settle {st}, rollout {'varies' if not args.lookahead else args.lookahead + st}\n",
+          flush=True)
     erng = np.random.default_rng(777)
     acts = np.stack([tb.random_push(erng, n, thr) for _ in range(args.n_episodes)])
 
@@ -204,7 +211,8 @@ def main():
     blind_missed = int((fell & ~near & ~alarm).sum())
 
     print(f"\n===== {args.n_episodes} EPISODES, alarm = k >= {args.k_min} of {args.n_probe},"
-          f" scored at t=0, no latching =====")
+          f" CONTINUOUS, lookahead={'receding' if not args.lookahead else args.lookahead}"
+          f" =====")
     print(f"  ground truth: {int(near.sum())} near-boundary (margin < {args.near:.0%}), "
           f"{int(fell.sum())} topple")
     print(f"\n  {'':>14}{'near':>8}{'far':>8}")
@@ -221,6 +229,15 @@ def main():
     print(f"\n  for comparison, t=0 ONLY: precision {pr0:.3f} recall {rc0:.3f} "
           f"F1 {2*pr0*rc0/(pr0+rc0) if pr0+rc0 else 0:.3f}  "
           f"(continuous recall is {rc/max(rc0,1e-9):.1f}x higher)")
+    print(f"\n  metrics at several label thresholds (the probe reach is ~2.3*eps = "
+          f"{2.3*args.eps:.0%}):")
+    print(f"    {'near = margin <':>16}{'n pos':>7}{'prec':>7}{'recall':>8}{'F1':>7}")
+    for t_ in (0.10, 0.15, 0.20, 0.23, 0.30):
+        nr = np.array([r["margin"] for r in rows]) < t_
+        a_, b_, c_ = int((alarm & nr).sum()), int((alarm & ~nr).sum()), int((~alarm & nr).sum())
+        p_ = a_ / (a_ + b_) if a_ + b_ else 0.0; r_ = a_ / (a_ + c_) if a_ + c_ else 0.0
+        print(f"    {t_:>15.0%}{int(nr.sum()):>7}{p_:>7.3f}{r_:>8.3f}"
+              f"{2*p_*r_/(p_+r_) if p_+r_ else 0:>7.3f}")
     risky = near | fell
     for nm, al in (("continuous", alarm), ("t=0 only", alarm_t0)):
         good = (al & risky) | (~al & ~risky)

@@ -1170,3 +1170,51 @@ the 20 actually toppled.
 measured along a direction the probes never sample; label from the full action while the monitor
 saw one chunk; ε mismatched to reach; scoring at a single instant. Each time the tell was the
 same: an oracle and a proxy disagreeing far more than the method's quality could explain.
+
+## Fixed lookahead is now the monitor's default (H=200)
+
+Previously the monitor scored `remaining` — every action from `t` to the end of the episode — so
+its horizon shrank from 450 steps to 5 as the episode ran. The score's meaning drifted with time,
+which is not what a runtime monitor should do: in Jenga the policy issues an 8-step chunk, runs
+it, then issues another. `Monitor.score()` now truncates to `remaining[:H]` with H=200, and
+`phase3_eval100.py` takes `--lookahead` (0 restores the receding behaviour).
+
+`--near` also now defaults to 0.23 rather than 0.10, matching the probe reach (2.3ε for 32 draws).
+
+**100 episodes, alarm = k≥2 of 32, continuous, H=200:**
+
+| | near (margin < 23%) | far |
+|---|---|---|
+| **ALARM** | **38** | 22 |
+| no alarm | 4 | 36 |
+
+precision 0.633 · recall 0.905 · F1 0.745 · accuracy 0.740 · **AUC 0.804**
+
+These match the earlier standalone fixed-H sweep at H=200 exactly, which is the consistency check
+that the wiring is right.
+
+**Recall is insensitive to where the "near" line is drawn; precision is not:**
+
+| near = margin < | n pos | precision | recall | F1 |
+|---|---|---|---|---|
+| 10% | 25 | 0.400 | 0.960 | 0.565 |
+| 15% | 31 | 0.500 | 0.968 | 0.659 |
+| 20% | 38 | 0.583 | 0.921 | 0.714 |
+| **23%** *(probe reach)* | 42 | **0.633** | **0.905** | **0.745** |
+| 30% | 51 | 0.733 | 0.863 | 0.793 |
+
+So the honest single statement is *recall ≈0.92, precision 0.58–0.73 depending on the margin you
+care about* — not one precision number, which is what made the earlier reporting misleading.
+
+**The t=0 gate now fails in the opposite direction.** Fixed H makes a single check at t=0 *precise
+but nearly blind*: precision 0.824, recall 0.333. Continuous scoring gets **2.7× the recall**.
+Under receding lookahead the gate was imprecise AND blind, so this is a cleaner demonstration that
+the gate is simply the wrong device — its failure mode changes with H while continuous scoring's
+does not.
+
+**Cost of fixed H: 4 false negatives** (margins 18.7%, 19.8% in the rendered sample), all right at
+the edge of the 23% reach where detection is inherently marginal. Receding lookahead had none. The
+trade is a little recall for a score whose meaning does not change with time.
+
+Blind spot shrinks to 28 far-margin topples with 16 drawing no alarm (from 39/24), largely because
+the 23% label reclassifies some of them as legitimately near. "Sensible" verdicts rise 54% → 70%.
