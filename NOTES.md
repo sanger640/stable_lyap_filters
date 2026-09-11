@@ -1218,3 +1218,55 @@ trade is a little recall for a score whose meaning does not change with time.
 
 Blind spot shrinks to 28 far-margin topples with 16 drawing no alarm (from 39/24), largely because
 the 23% label reclassifies some of them as legitimately near. "Sensible" verdicts rise 54% → 70%.
+
+## Does a one-line action statistic shortcut the toy? (outcome yes, proximity no)
+
+A "cheat" baseline tests the BENCHMARK, not the method: if one scalar computed from the action
+alone predicts the label, the toy cannot demonstrate anything and a good score on it proves
+nothing. Net impulse is the candidate here, and there is an algebraic reason to expect the worst:
+impulse is LINEAR in the action, and the margin oracle scales the whole action, so if toppling were
+purely "impulse > I*" the flip would land at s* = I*/I(a) and
+
+    margin = |I*/I(a) - 1|
+
+-- the margin in closed form from one number, along exactly the axis the probes explore.
+
+Measured on the same 100 episodes. Every baseline had its S* fitted by grid search to MAXIMISE its
+own AUC on the labels it is scored against; the method is fitted to nothing.
+
+| statistic | AUC outcome | AUC proximity |
+|---|---|---|
+| net impulse \|sum a\| | 0.676 | 0.624 |
+| abs impulse sum\|a\| | **0.925** | 0.700 |
+| peak force max\|a\| | 0.783 | 0.703 |
+| L2 norm \|\|a\|\| | **0.922** | 0.764 |
+| **METHOD (dissent k)** | 0.567 | **0.808** |
+
+**The shortcut is real for OUTCOME and absent for PROXIMITY.** Action magnitude nearly solves "will
+it topple" (0.925) while the method is near chance (0.567); on "is it near a boundary" that
+inverts. So scoping the claim to proximity is not a convenient retreat -- it is the only question
+on this toy that is not already answered by adding up the forces. The block is a legitimate
+proximity benchmark and an illegitimate outcome benchmark, now measured rather than assumed.
+
+**The caveat that matters more than the table.** Paired bootstrap, 4000 resamples:
+
+```
+METHOD       AUC 0.808   95% CI [0.721, 0.887]
+L2 (fitted)  AUC 0.764   95% CI [0.667, 0.854]
+gap        +0.044   95% CI [-0.069, +0.155]   P(method better) = 0.78
+```
+
+**At n=100 the method does NOT demonstrably beat a fitted magnitude baseline on AUC.** The gap
+leans right at 78% but straddles zero. Do not put this comparison in a paper as an AUC win.
+
+The claim lives on the CALIBRATION axis instead: 0.764 required fitting S* against the test labels,
+a quantity unobtainable on a new task without failure data; 0.808 required fitting nothing. That
+difference is categorical and needs no confidence interval. If the AUC gap is wanted too, ~400
+episodes at the current effect size would clear zero.
+
+Scripts: `eval/phase3_action_shortcut.py`, `eval/phase3_bootstrap_gap.py`.
+
+**Aside -- a real bug found doing this.** `auc()` in `eval/run_phase3_block.py:46` ranks with
+ordinal ranks, not average ranks, so any integer-valued score with many ties (the dissent count k
+is exactly that) is slightly misreported: 0.804 vs the correct 0.808. Small, but systematic, and it
+affects every k-based AUC recorded above this line.
