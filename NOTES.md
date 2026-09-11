@@ -1358,3 +1358,84 @@ deliberate difficulty knob, not a fixed property of the system.
 So the ~20 min budget holds up to 150 steps and breaks at the full 450. **The Phase B sampling-rate
 decision therefore has a rendering-budget consequence as well as an omega-recoverability one** --
 if omega needs the full rate, rendering alone costs the better part of an hour before any encoding.
+
+## Phase B (DINO-WM plan): omega IS linearly recoverable — PASS, at stride 10
+
+**The first run said FAIL at every stride. It was wrong, and the tell was in the control.** theta is
+directly visible in a single frame, so a linear probe scoring R^2 = 0.856 on it is evidence that the
+PROBE is broken, not the representation — a measurement that fails the easy case cannot be trusted
+on the hard one. omega scoring NEGATIVE R^2 (-1.0 to -4.75) said the same thing: worse than
+predicting the mean is a generalisation failure, not an absent signal.
+
+Two real bugs, one hypothesis of mine that was wrong.
+
+**Bug 1 — the solve.** Standardising the PCA components divides the low-variance ones by tiny
+numbers, turning them into amplified noise and leaving the normal equations ill-conditioned. The
+symptom was R^2 moving NON-MONOTONICALLY in lambda (0.972 -> -0.476 -> -0.872 -> 0.717), which ridge
+never does. Fixed with an SVD solve, centre-only, no per-feature scaling. This alone lifted
+varied-lighting omega from **-3.385 to ~0.28** and theta from 0.854 to 0.962 — so most of the
+original catastrophe was arithmetic, not physics.
+
+**Bug 2 — test-set selection.** The first sweep reported test R^2 at every lambda, i.e. picked the
+winner by peeking. lambda is now chosen on a validation split of the TRAINING trajectories.
+
+**Wrong hypothesis (mine).** I suspected lambda=1.0 was effectively no regularisation given a
+diagonal of order n=14,000. Plausible, and false: raising lambda made trajectory-split theta WORSE
+(0.854 -> -0.519). Lighting was the cause the whole time.
+
+**Corrected result — fixed lighting, trajectory split, lambda on validation:**
+
+| stride | dt_eff | steps/ep | theta R^2 | omega R^2 |
+|---|---|---|---|---|
+| 1 | 0.020 | 450 | 1.000 | 0.874 |
+| 2 | 0.040 | 225 | 1.000 | 0.970 |
+| 3 | 0.060 | 150 | 1.000 | **0.977** |
+| 5 | 0.100 | 90 | 1.000 | 0.918 |
+| **10** | 0.200 | **45** | 1.000 | **0.955** |
+
+**Every stride clears the bar (theta > 0.95, omega > 0.80). Take stride 10.** Cheapest to render
+(4.8 min), and it independently reproduces the earlier finding that coarsening to 45 steps costs
+nothing. The predicted tension is visible but mild: stride 1 is WORST for omega (0.874) because
+inter-frame motion approaches sub-pixel; the sweet spot is stride 2-3.
+
+**This shrinks the riskiest phase by 10x.** Rollout+settle goes from 350 steps to 35
+(H 200->20, settle 150->15), which is a far easier ask of an autoregressive ViT and makes Phase D
+(does it settle?) substantially safer.
+
+**Under VARIED lighting the probe still fails on omega (~0.28) and that is fine.** It saw 32
+training lighting draws; Phase C gets 600, with a nonlinear model. A linear map cannot learn
+lighting invariance from 32 samples. A sweep of "how many lighting draws does invariance need" was
+started and then KILLED as a detour — Phase C answers that question directly and definitively by
+training the model, and a linear probe's invariance says little about a ViT's.
+
+## Latent geometry: does lighting dominate pose? — PASS, but the margin is not comfortable
+
+The question Phase C cannot answer. The monitor assigns basins by `argmin_c ||E - C_c||^2` —
+nearest centroid, Euclidean — so it needs the SPACE to be metrically organised by pose. Whether a
+predictor can decode pose despite lighting is a different question from whether distance is
+dominated by it. Fair to test without a trained model, because `VWorldModel.predict()` maps patch
+tokens to patch tokens: the predictor's outputs live in the encoder's space.
+
+`eval/phase_b_geometry.py`, 7 poses x 40 lighting draws.
+
+| | within-pose (40 lightings) | between-pose | ratio |
+|---|---|---|---|
+| 3 terminal states | 276.6 | 437.6 (min 381.1) | **1.58** (worst 1.38) |
+| all 7 poses | 280.7 | 466.0 (min 351.2) | 1.66 (worst **1.25**) |
+
+**Nearest-centroid on unseen lighting: 100%**, even with centroids built from only 2 lighting
+configs. The clustering step is safe here.
+
+**But 1.58 is a thin margin, not a comfortable one.** Lighting moves latents 63% as far as the gap
+between fall-left and fall-right — states that look nothing alike. Across seven poses the worst
+case is 1.25.
+
+Two reasons this is an optimistic ceiling rather than the operating value:
+1. These are RAW ENCODER outputs. The monitor clusters the PREDICTOR's settled latents, which carry
+   model error on top.
+2. On Jenga the scene is far busier and the distinction far subtler — a neighbour tipped 15 degrees
+   versus standing, not a block flat on its face. **That ratio could easily fall below 1.**
+
+**Action: run `phase_b_geometry.py` on the DINOv2 Jenga latents BEFORE the clustering go/no-go.**
+If lighting or shadows dominate distance there, no amount of predictor quality rescues
+nearest-centroid, and that is a cheaper thing to learn first than last.
