@@ -1499,3 +1499,59 @@ fine as an ORACLE score of model fidelity and is labelled as such, but it is not
 must discover the count unsupervised via the merge-distance plateau, and it can fail independently:
 the model can land episodes in the right physical state while the latents refuse to form clean
 clusters. The 75%/91.7% numbers are evidence about the MODEL, never about the clustering.
+
+## Phase D: the settle tail does NOT converge, and it is EXPANSIVE — qualified FAIL
+
+Two measurements, on both checkpoints. H=20 frames of true action, then L=40 frames of zero force.
+
+**1. Convergence — neither model reaches a fixed point.**
+
+| `||z_t+1 - z_t||` as % of ending scale | step 0 | 4 | 11 | 19 | 29 | 39 | settled (<1%) |
+|---|---|---|---|---|---|---|---|
+| single-step (dino_wm recipe) | 4.25 | 2.91 | 1.08 | 0.96 | 0.88 | 0.88 | 62% |
+| GTF warm-started | 3.68 | 1.80 | 0.75 | 0.63 | 0.60 | 0.60 | 82% |
+
+Both decay and then **flatline** at a nonzero floor rather than converging. The latent never stops
+moving; it moves slowly and indefinitely. Bar was 90%, so both FAIL, GTF less badly.
+
+Consequence for Phase E: "settled" latents that keep creeping smear the centroids. Where the tail is
+truncated changes the centroid you get, so the merge-distance plateau has to survive drift. That
+turns Phase E from "find the clusters" into "find the clusters despite drift".
+
+**2. Contraction — EXPANSIVE.** `||z_model(t) - z_true(t)||` through the tail:
+
+| | step 0 | 19 | 39 | d_end/d_start | contractive on |
+|---|---|---|---|---|---|
+| single-step | 67.9% | 76.7% | 92.5% | **1.410** | 15% of episodes |
+| GTF warm | 62.1% | 66.7% | 75.4% | **1.299** | 20% of episodes |
+
+So the tail amplifies error rather than absorbing it. The hoped-for property -- that errors which do
+not cross a basin boundary get absorbed, making Phase C's tracking error survivable -- does not hold.
+
+### Two of my own errors, recorded because both changed the conclusion
+
+**(a) The first contractivity test was invalid.** I compared basin agreement before vs after the
+tail (96.7% -> 75.0%) and called it "not contractive". The two tasks are not comparable: at H the
+true basins are [2,55,3], so guessing "upright" scores 91.7%, while after the tail they are
+[11,35,14]. **The tail is where the outcome is decided -- it changes the true outcome on 20/60
+episodes.** The drop measured task difficulty, not contraction. Replaced with the definition:
+does `||z_model - z_true||` shrink.
+
+What survives from it: after the tail, against a 58.3% majority baseline, single-step scores 75.0%
+and GTF-warm 88.3%, and the hedging persists (predicted [6,50,4] and [9,42,9] vs true [11,35,14]).
+
+**(b) My "displaced manifold" explanation was wrong.** Seeing 62-68% error at the tail's start
+alongside 96.7-100% basin agreement, I guessed the predictor's outputs sit on a manifold offset
+from the encoder's, which would make the whole comparison irrelevant to a monitor that only
+clusters predictions against predictions. Measured: the systematic offset is 5.5-6.5% of scale and
+explains **3-4%** of the squared error. Not an offset.
+
+The real explanation is better: **one-step error from a TRUE context is already 26.9% of scale at a
+point where theta decodes to 0.040 rad -- essentially perfectly.** The latent is 98,304-dimensional
+and theta is one number. The predictor gets the theta-relevant direction right and the rest --
+exact shadow pixels, render noise, texture -- wrong. That is irreducible and mostly harmless.
+
+**So the open question is not "how big is the error" but "is it in basin-discriminative
+directions".** Nothing measured so far answers that, and Phase E answers it directly: cluster the
+PREDICTED ending latents and see whether they form three groups matching the outcomes. Phase D's
+numbers bound the difficulty; they do not decide it.
