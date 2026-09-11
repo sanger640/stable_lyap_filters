@@ -54,16 +54,42 @@ CONST   H (fixed lookahead), L (settle), n (probes), eps, k_min, C (attractor ce
 6. COUNT           k <- n - max_c #{j : lab_j = c}          # dissent count
                    S <- -sum_c p_c ln p_c                   # basin entropy (a summary of k)
 
-7. ALARM if   lab(majority) is a FAILURE attractor     <- clause 1: already committed
-           or k >= k_min                               <- clause 2: near a boundary
+7. ALARM if   k >= k_min                               <- near a boundary. THE METHOD.
+   (optional)   lab(nominal) != lab(null action)       <- clause 1': the action CHANGES
+                                                          the terminal state
 ```
 
-**Two clauses, and they cover different things.** Clause 2 is blind by construction to actions that
-fail with certainty: if every probe agrees the block falls, k=0 and S=0. Clause 1 catches exactly
-those — it is free, because step 5 already labels the nominal rollout. On the 100-episode tipping
-block eval, 28 episodes topple while far from the boundary and 16 draw no alarm from clause 2
-alone; those are clause 1's job. **Clause 1 is specified here but has not yet been measured on the
-100 episodes — that is the next run.**
+**The method is clause 2 alone: k >= k_min.** Nothing else. It requires no labels of any kind --
+not failure labels, not attractor names, not a tuned threshold -- which is the entire point, since
+a monitor that needs to be told what failure looks like cannot be dropped onto a new manipulation
+task.
+
+**The price is declared scope: this is a PROXIMITY monitor, not a failure detector.** Dissent
+counting is blind by construction to actions that fail with certainty -- if every probe agrees the
+block falls, k=0 and S=0. On the 100-episode tipping-block eval, 28 episodes topple while far from
+any boundary and 16 draw no alarm. Those are OUT OF SCOPE, not errors. Evaluate on proximity and
+report the blind spot as a limitation; do not evaluate on outcome, where a one-line action
+statistic (net impulse, AUC 0.813) beats oracle divergence at every horizon anyway.
+
+The argument for why proximity is the signal worth having: it says a nearby alternative action has a
+DIFFERENT outcome, i.e. the policy is operating where small errors matter. That is actionable while
+there is still time to slow down, re-plan or ask for help. Failure prediction fires too late, and
+confidently-catastrophic actions are the easy case that any crude check catches. The failures that
+actually bite a demo-trained policy come from OOD drift where actions are marginal.
+
+**Clause 1' is optional and was NOT part of the original design.** An earlier draft of this file had
+a clause "alarm if the majority attractor is a FAILURE attractor". That is supervision -- it needs
+someone to say which basin means toppled -- so it is struck. The label-free replacement compares the
+nominal rollout's ending basin against a NULL-ACTION reference rolled from the same state: if doing
+nothing settles upright and executing settles fall-right, the action changed the terminal state.
+That needs no labels, only the unsupervised attractor set and one extra rollout, and it recovers the
+16 silent topples.
+
+Its limitation is real: it also flags INTENDED terminal-state changes. On Jenga a successful grasp
+changes the scene, so every good pick trips it. The fix is not failure labels but the expert demos
+already used to train the policy -- the safe terminal basins are the ones the demos reach. On the
+toy there is no intended change, so the clause is clean there and misleading about how clean it
+would be elsewhere. Treat it as an extension, not part of the core claim.
 
 **Report k, not S.** S is a scalar summary; k is the statistic that carries the sampling
 properties, and the sizing rule below is written in k.
