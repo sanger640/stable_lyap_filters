@@ -1439,3 +1439,63 @@ Two reasons this is an optimistic ceiling rather than the operating value:
 **Action: run `phase_b_geometry.py` on the DINOv2 Jenga latents BEFORE the clustering go/no-go.**
 If lighting or shadows dominate distance there, no amount of predictor quality rescues
 nearest-centroid, and that is a cheaper thing to learn first than last.
+
+## Phase C: DINO-WM predictor — FAILS as dino_wm trains it, PASSES with rollout fine-tuning
+
+| run | theta RMSE | basin agree | predicted basins |
+|---|---|---|---|
+| single-step, teacher-forced (**dino_wm's actual recipe**) | 0.3201 | 75.0% | [11, 43, 6] |
+| GTF from scratch | 0.4062 | 48.3% | [1, 59, 0] |
+| **GTF warm-started from the single-step checkpoint** | **0.2064** | **91.7%** | [15, 31, 14] |
+| shPLRNN reference | 0.265 | 87.0% | — |
+| ground truth | — | — | [15, 28, 17] |
+
+**Two different questions, and only the first one de-risks Jenga.** `conf/train.yaml` carries
+`num_pred: 1 # only supports 1`, so the existing Jenga checkpoint was trained single-step. The
+faithful number is therefore **75% / 0.320 / FAIL**, and that is what predicts Jenga. The warm-start
+result answers a different question — whether a DINO-WM-architecture model CAN support the monitor
+if retrained — and the answer there is yes, comfortably, beating the shPLRNN that sees the exact
+state.
+
+I drifted between those two questions without flagging it and was called on it. Recording the
+distinction because it decides which number belongs in a paper.
+
+**The failure mode is mean-hedging, and it is visible in the basin counts.** MSE's minimiser is the
+conditional mean. Near a bifurcation the model cannot resolve which side of the boundary it is on,
+so its conditional distribution over futures is effectively bimodal and the mean sits BETWEEN the
+modes — which, with attractors at fall-left / upright / fall-right, is "upright". Predictions
+compress toward the middle attractor. Single-step shows it mildly ([11,43,6] vs [15,28,17]);
+GTF-from-scratch collapses to it entirely ([1,59,0]).
+
+This is NOT an impossibility result. The block is deterministic: given exact state and actions the
+future is unique, so the apparent bimodality is an artefact of the model's finite precision
+interacting with sensitive dependence. The uncomfortable part for the paper is that the bias is
+**concentrated exactly at decision boundaries** — the model is most accurate where the monitor does
+not care and least reliable where it does. It is also why the field builds stochastic world models,
+which this method cannot use (it needs determinism to keep `k` measuring action-induced spread).
+
+**Recipe finding, transferable: order matters.** Teacher forcing first to learn the dynamics, THEN
+rollout fine-tuning to learn error correction. GTF from scratch saw 8k windows and had not learned
+the dynamics before being asked to survive its own errors — it took the safest option and predicted
+that nothing ever happens. Warm-started, the same objective fixes the hedging in 19 minutes.
+alpha = 0.18 from gtf.py's heuristic `1 - exp(-lambda_max*dt)` at dt_eff = 0.2 s.
+
+**Practical note:** backprop through an 8-step unrolled ViT OOMs a 7.5 GiB card. Gradient
+checkpointing (~2x compute, roll-x memory) makes rollout length a modelling choice rather than a
+VRAM budget. The Jenga model is larger and dual-view, so this is needed there from the start.
+
+### Two corrections to PLAN_DINOWM, both caught by the user
+
+**1. The eps=0 null is VACUOUS, not a kill test.** The model is deterministic: 32 probes with
+identical actions from the same state give 32 identical rollouts and k=0 by construction. It is a
+plumbing check (it would catch dropout left on at inference) and nothing more. The measurement I
+actually wanted — does model error manufacture spurious dissent — needs the monitor run at the
+OPERATING eps on episodes with a LARGE TRUE MARGIN, where no probe should be able to cross a
+boundary. Any k > 0 there is the false-positive floor.
+
+**2. The 75% basin figure uses basins I supplied, not discovered.** The diagnostic hardcodes
+`where(t < -1.4, 0, where(t > 1.4, 2, 1))` — three bins with boundaries from known physics. That is
+fine as an ORACLE score of model fidelity and is labelled as such, but it is not the method. Phase E
+must discover the count unsupervised via the merge-distance plateau, and it can fail independently:
+the model can land episodes in the right physical state while the latents refuse to form clean
+clusters. The 75%/91.7% numbers are evidence about the MODEL, never about the clustering.
