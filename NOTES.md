@@ -1639,3 +1639,62 @@ plateau, in the right space, is the better instrument. Do not substitute stabili
 
 Both are unsupervised and neither introduces a tuned threshold, so the calibration-free claim
 survives -- but they have to be stated as part of the method rather than discovered per-dataset.
+
+## Phase F: the monitor on DINO-WM — PASSES, and matches the shPLRNN
+
+40 episodes x 3 scoring times, H=20 frames (=200 sim steps, the shPLRNN's horizon), settle 40,
+eps=0.10, n=32 probes, k_min=2, clustering in PCA-8 on predicted endings with singletons dropped.
+Attractor discovery ran live inside the pipeline: plateau k=4, **3 after dropping singletons,
+nothing supplied**.
+
+### 1. False-positive floor — PASS, and this is the structural result
+
+The test that replaced the vacuous eps=0 null. On chunks far from any boundary, no probe should be
+able to cross one, so any dissent is model error manufacturing alarm.
+
+| chunks with margin >= | n | mean k | k=0 | k>=2 |
+|---|---|---|---|---|
+| 0.35 | 83 | 0.29 | **96%** | 4% |
+| 0.40 | 80 | 0.30 | 96% | 4% |
+| 0.45 | 78 | 0.31 | 96% | 4% |
+
+Bar was k < 2 on >= 95%. **The monitor is measuring boundaries, not the model.** This matters more
+than the AUC: Phase D showed the settle tail neither converges (0.60% drift floor) nor contracts
+(ratio 1.299), and the obvious worry was that drift would show up as spurious dissent across 32
+probes. It does not.
+
+### 2. Detection
+
+| | n near | AUC | 95% CI |
+|---|---|---|---|
+| per-chunk (120 chunks) | 25 | 0.759 | — |
+| per-episode, min CHUNK margin | 18 | 0.833 | [0.714, 0.938] |
+| per-episode, full-ACTION margin | 15 | **0.793** | [0.660, 0.924] |
+
+**Only the last row is comparable to the shPLRNN's 0.808**, because that run labelled with
+`margin_of(whole 450-step action)` while Phase F labels per chunk. Both monitors SCORE chunks
+identically (fixed H, continuous over t); only the label differs, and the shPLRNN's is the flawed
+one already recorded above ("label from the full action while the monitor saw one chunk"). The two
+labels correlate +0.781 -- related, not interchangeable.
+
+**0.793 vs 0.808 is indistinguishable at n=40.** The operating points differ, though:
+
+| | precision | recall | F1 |
+|---|---|---|---|
+| DINO-WM (40 eps) | **0.818** | 0.600 | 0.692 |
+| shPLRNN (100 eps) | 0.633 | **0.905** | 0.745 |
+
+DINO-WM is precision-favouring, shPLRNN recall-favouring, at the same k_min=2. Not obviously
+explained; worth understanding before either is quoted as better.
+
+### What this means
+
+**The monitor transfers from an exact 2-D state to DINOv2 patch features with no retuning** --
+same eps, same n, same k_min, same probe family. That is the representation-level universality the
+toy was built to test, and it is the strongest result in this plan.
+
+Caveats that must travel with it:
+- **n=40, not 100.** CIs are wide and the comparison cannot separate 0.793 from 0.808 either way.
+- The DINO-WM model had to be **rollout fine-tuned** (Phase C); dino_wm's shipped single-step recipe
+  gives 75% basin agreement and was not carried into Phase F.
+- PCA and singleton-dropping are now **required parts of the method**, not incidental.
