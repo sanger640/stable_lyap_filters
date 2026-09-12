@@ -1698,3 +1698,37 @@ Caveats that must travel with it:
 - The DINO-WM model had to be **rollout fine-tuned** (Phase C); dino_wm's shipped single-step recipe
   gives 75% basin agreement and was not carried into Phase F.
 - PCA and singleton-dropping are now **required parts of the method**, not incidental.
+
+## Phase F videos: two findings from actually watching them
+
+**1. Phase F UNDERSAMPLED the dissent trace.** The videos score at 8 times per episode
+(t=3,6,...,24) against Phase F's 3 (t=3,13,23). On ep565 the 8-time trace peaks at **k=12** while
+Phase F recorded **k=4** -- it stepped straight over the spike. `k` spikes and decays rather than
+plateauing, so sparse scoring systematically misses peaks.
+
+**Phase F's recall of 0.600 is therefore likely an UNDERESTIMATE**, and the precision-favouring
+operating point (0.818/0.600 vs the shPLRNN's 0.633/0.905 at the same k_min) may be partly an
+artefact of scoring 3 times rather than a property of the model. Worth a denser rerun before that
+asymmetry is explained or quoted. It does NOT affect the false-positive floor, which measured
+far-margin chunks where more sampling only adds more zeros.
+
+**2. The false negatives look like the STRUCTURAL BLIND SPOT, not sampling misses.** ep591 at
+t=3.0s: block standing in the camera, and all 32 probes unanimous (votes 0/0/32) that it falls
+right. Dissent 0.
+
+That is not "the probes failed to reach the boundary". It is confident failure, which dissent
+counting cannot see by construction -- unanimity is precisely what k measures the absence of. Same
+limitation as the shPLRNN's 28 far-margin topples.
+
+**This corrects a suggestion made earlier in this session.** I proposed larger eps or more probes
+as the fix for FNs, reasoning from the binomial sampling floor. That fix addresses misses where
+probes fall short of the boundary; it does nothing for unanimity. Only the second alarm clause
+would catch these, and that clause was struck as supervised. The honest position is that these FNs
+are declared scope.
+
+**Video construction note.** The first attempt rendered 8 frames at 6 fps -- 1.3-second clips,
+useless. The monitor updates 8 times per episode but the BLOCK moves continuously and a frame costs
+~10 ms, so the camera panel now runs at full temporal resolution (225 frames, 9 s) while the monitor
+panels HOLD between scores, with the region past the last scoring time shaded. That is also what a
+runtime monitor actually looks like: continuous world, discrete checks. Scores are cached to
+`phase_f_video_scores.npz`, so re-rendering never re-runs the model.
