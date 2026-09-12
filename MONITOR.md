@@ -32,15 +32,52 @@ Three consequences, and they are not negotiable once the claim is fixed:
 You need the terminal states of the system in latent space. You do **not** supply how many.
 
 ```
-1. Roll M actions (M ~ 200) through the world model for H steps, then append a
+1. Roll M actions (M ~ 200-300) through the world model for H steps, then append a
    SETTLE TAIL of L steps of zero/hold action, so each rollout comes to rest.
 2. Collect the ENDING latents E_j (after the settle tail, not after H).
-3. Sweep a merge distance d over fractions of the ending scale
+   *** Use the PREDICTED endings, never encoded observations. See below. ***
+3. *** PCA the endings to ~2-16 dimensions. NOT OPTIONAL in a patch-token space. ***
+4. Sweep a merge distance d over fractions of the ending scale
    (0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8) x scale(E).
    Single-linkage merge at each d, count the clusters.
-4. The attractor count is the PLATEAU -- the count that survives the widest range of d.
-   Take the cluster centroids as the attractor centres C.
+5. The attractor count is the PLATEAU -- the count that survives the widest range of d.
+6. *** Drop clusters below a minimum size (~1% of M). Singletons inflate the count. ***
+   Take the surviving cluster centroids as the attractor centres C.
 ```
+
+### Steps 3 and 6 were added after the DINO-WM run and are not optional
+
+**PCA first.** Single-linkage relies on LOCAL structure (nearest-neighbour chains), which
+concentrates in high dimensions. In the raw 98,304-dim DINOv2 patch space the within/between
+separation was **1.09-1.35** -- no scale gap for a plateau to sit in -- and the sweep returned
+k = 300 out of 300 at every d. PCA to 2-16 dims raises separation to **2.2-11.6** and the plateau
+appears immediately. The dimension is not critical (8 and 16 both worked); the raw space does not
+work at all. This was diagnosed with a CONTROL: running the same discovery on encoded TRUE endings
+failed identically, which ruled out the model and indicted the procedure.
+
+**Minimum cluster size.** One stray point out of 300 never merges and turns k=3 into k=4.
+
+**Cluster PREDICTIONS, never encodings.** Predicted endings separate better than encoded ones at
+every measurement -- and in PCA space the encoded-truth control shows NO plateau at all while
+predictions plateau cleanly. Measured in absolute distance (same space, so comparable):
+
+| | within-basin | between-basin |
+|---|---|---|
+| encoded truth | 559 | 610 |
+| predicted | **441** (-21%) | 597 (-2%) |
+
+The clusters get TIGHTER without getting CLOSER. That is denoising, not collapse. The predictor is
+trained to model what is PREDICTABLE, so it replaces unpredictable components -- render noise,
+exact shadow pixels, this episode's lighting -- with their conditional mean, which is roughly
+constant across episodes. Pose survives because pose follows from the dynamics.
+
+**PCA cannot substitute for this.** PCA selects by VARIANCE; the world model selects by
+PREDICTABILITY. Lighting is high-variance (63% of a full pose change), so PCA keeps it. The
+predictor discards it anyway. The two are complementary, which is why PCA'ing the encoded control
+still produced no plateau.
+
+This is convenient rather than awkward: the monitor only ever has predictions, since it is
+predicting a future for which no observation exists.
 
 Why the plateau and not silhouette or the gap statistic: both of those were tried on the tipping
 block and both pick 5-6. The plateau picks 3, which is correct (fall-left, upright, fall-right).

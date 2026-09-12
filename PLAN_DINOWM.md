@@ -9,6 +9,33 @@ torch 2.11+cu128). `tipping_block.py` is pure numpy and runs there unchanged.
 
 ---
 
+## STATUS — all phases complete (2026-09-12)
+
+| phase | verdict | key number |
+|---|---|---|
+| A renderer | **PASS** | ±θ differ 3.4–22.7 grey levels; 10.7 ms/frame |
+| B ω recoverable | **PASS** | R² 1.000 (θ) / 0.955 (ω) at stride 10 |
+| — latent geometry | **PASS** | pose/lighting 1.58; nearest-centroid 100% on unseen lighting |
+| C predictor | **FAIL** on dino_wm's recipe · **PASS** retrained | 75% → **91.7%** basin agreement; RMSE 0.320 → **0.206** |
+| D settle tail | **qualified FAIL** | never converges (0.60% floor); expansive (1.299) |
+| E discovery | **FAIL** raw · **PASS** after PCA | separation 1.35 → 2.2–11.6; 93.3% agreement |
+| F monitor | **PASS** | FP floor 96–97%; **AUC 0.882** vs shPLRNN 0.808 |
+
+**Headline:** the monitor transfers from an exact 2-D state to DINOv2 patch features with **no
+retuning** — same ε, n, k_min, probe family — and matches or beats the state-based version while
+being scored ~4× more sparsely.
+
+**Two caveats that must travel with that.** The run used the ROLLOUT FINE-TUNED predictor, not
+dino_wm's shipped `num_pred: 1` recipe, so it validates the architecture and not the existing Jenga
+checkpoint. And the AUC CI is [0.805, 0.949] against the shPLRNN's 0.808 point estimate, with
+unpaired runs — so "at least as good, plausibly better", never "better".
+
+**Phase D deserves a second look before Jenga.** The settle tail neither converges to a fixed point
+nor contracts, yet Phases E and F worked anyway. That is not understood, and the ending latents
+being still in motion when read is a latent fragility rather than a solved problem.
+
+---
+
 ## Objective
 
 Swap the world model underneath the existing monitor — shPLRNN on `(theta, omega)` becomes DINO-WM

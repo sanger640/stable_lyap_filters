@@ -1,13 +1,28 @@
 # stable_lyap_filters
 
-A **zero-shot safety monitor** for robot manipulation. It watches a visuomotor policy's
-proposed action chunk and flags the ones likely to cause a failure — **without ever training
-on labelled failures**.
+> **Start here: [HANDOFF.md](HANDOFF.md)** — self-contained brief on the method, current status,
+> how to run everything, and what to do next. Then [MONITOR.md](MONITOR.md) for the method spec and
+> [NOTES.md](NOTES.md) for the append-only decision log.
+
+A **zero-shot safety monitor** for robot manipulation, needing **no labelled failures and no tuned
+threshold**. It watches a policy's proposed action chunk and flags when the policy is operating
+**near a boundary where small errors change the outcome**.
+
+**It is a PROXIMITY monitor, not a failure detector** — and the distinction is load-bearing, not
+pedantic. Proximity is actionable while there is still room to slow down, re-plan or ask for help;
+failure prediction fires too late. Confidently-catastrophic actions are the easy case any crude
+check catches (on the toy, summing the forces scores AUC 0.925 on outcome). The failures that
+actually bite a demonstration-trained policy are the MARGINAL ones from OOD drift.
 
 Task: a Franka Panda picks a block from a cluttered tabletop; failure is toppling a
 neighbouring block. Everything runs on the latent dynamics of a **frozen DINO world model**.
 
-> **AUC 0.894** on 1772 action chunks (100 episodes, 25 unsafe), held-out validated.
+> Current toy result: **AUC 0.882** [0.805, 0.949] on proximity, matching an equivalent monitor
+> that sees the exact simulator state (0.808), with no retuning between them.
+>
+> The earlier **AUC 0.894** headline below is a different method and a different question --
+> `d_end` magnitude with patch masking, scored on OUTCOME. It is kept because the record of what
+> failed is the useful part.
 
 <p align="center">
   <img src="media/monitor_catches_topple.gif" width="94%"><br>
