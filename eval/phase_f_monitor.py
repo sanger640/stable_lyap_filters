@@ -65,6 +65,13 @@ class Monitor:
           * the context is a fixed NUM_HIST window, not a tensor grown by torch.cat every step --
             the old version reallocated up to ~800 MB per score for frames it never read
         """
+        # Chunk the scoring times so the batch stays within VRAM: 8 times x 32 probes = 256
+        # needs ~9.6 GB for attention alone on a 7.5 GB card. Groups of 4 (batch 128) fit.
+        if len(chunks) > 4:
+            out = []
+            for a in range(0, len(chunks), 4):
+                out += self.score_many(ctx_list[a:a + 4], chunks[a:a + 4], rng)
+            return out
         T, n = len(chunks), self.n_probe
         z = rng.standard_normal((T, n, 1))
         P = np.stack([c[None] * (1.0 + self.eps * z[i]) for i, c in enumerate(chunks)])
@@ -75,13 +82,16 @@ class Monitor:
         ctx = np.stack(list(ctx_list))
         zc = (torch.from_numpy(ctx.astype(np.float32)).to(self.dev) - self.mu) / self.sd
         win = zc[:, None].expand(-1, n, -1, -1, -1).reshape(T * n, NUM_HIST, 256, D).contiguous()
-        for t in range(P.shape[1]):
-            a_win = acts[:, max(0, t - NUM_HIST + 1):t + 1]
-            if a_win.shape[1] < NUM_HIST:
-                a_win = torch.cat([a_win[:, :1].expand(-1, NUM_HIST - a_win.shape[1], -1),
-                                   a_win], 1)
-            nxt = self.model(win, a_win)[:, -1:]
-            win = torch.cat([win[:, 1:], nxt], 1)
+        # bf16 for the rollout: the model was TRAINED under bf16 autocast, so these are
+        # the same numerics it saw, and it roughly halves the wall clock.
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            for t in range(P.shape[1]):
+                a_win = acts[:, max(0, t - NUM_HIST + 1):t + 1]
+                if a_win.shape[1] < NUM_HIST:
+                    a_win = torch.cat([a_win[:, :1].expand(-1, NUM_HIST - a_win.shape[1], -1),
+                                       a_win], 1)
+                nxt = self.model(win, a_win)[:, -1:]
+                win = torch.cat([win[:, 1:], nxt], 1)
         E = win[:, -1].reshape(T * n, -1).float().cpu().numpy() * self.sd + self.mu
         X = (E - self.mean) @ self.V.T
         lab = ((X[:, None] - self.C[None]) ** 2).sum(-1).argmin(1).reshape(T, n)
@@ -138,8 +148,8 @@ def main():
     ap.add_argument("--n-probe", type=int, default=32)
     ap.add_argument("--k-min", type=int, default=2)
     ap.add_argument("--pca", type=int, default=8)
-    ap.add_argument("--n-episodes", type=int, default=40)
-    ap.add_argument("--times", type=int, nargs="+", default=[3, 13, 23])
+    ap.add_argument("--n-episodes", type=int, default=100)
+    ap.add_argument("--times", type=int, nargs="+", default=[3, 6, 9, 12, 15, 18, 21, 24])
     ap.add_argument("--near", type=float, default=0.23)
     ap.add_argument("--ckpt", default="predictor_gtf_warm.pt")
     args = ap.parse_args()
@@ -221,7 +231,7 @@ def main():
     print(f"  AUC {auc(K, near):.3f}   (shPLRNN reference 0.808)")
     import json
     json.dump({"rows": rows, "args": vars(args)},
-              open(OUT / "phase_f_results.json", "w"), indent=1)
+              open(OUT / "phase_f_results_dense.json", "w"), indent=1)
     print(f"\n({(time.time()-t0)/60:.1f} min)")
 
 

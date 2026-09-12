@@ -1732,3 +1732,55 @@ useless. The monitor updates 8 times per episode but the BLOCK moves continuousl
 panels HOLD between scores, with the region past the last scoring time shaded. That is also what a
 runtime monitor actually looks like: continuous world, discrete checks. Scores are cached to
 `phase_f_video_scores.npz`, so re-rendering never re-runs the model.
+
+## Phase F, dense rerun (100 episodes x 8 scoring times) — SUPERSEDES the sparse numbers
+
+The videos showed `k` spikes and decays, so 3 scoring times per episode was undersampling a
+transient. Rerun at 8 times and 100 episodes. **The sparse numbers above are measurement artefacts
+and should not be quoted.**
+
+| | sparse (40 eps x 3) | **dense (100 eps x 8)** |
+|---|---|---|
+| recall | 0.611 | **0.820** |
+| precision | 1.000 | 0.872 |
+| F1 | 0.759 | **0.845** |
+| per-episode AUC | 0.833 | **0.872** |
+| per-chunk AUC | 0.759 | **0.804** |
+
+**Recall rose 0.611 -> 0.820.** Sparse scoring was hiding real detections, exactly as predicted from
+the ep565 trace (k=12 at 8 times vs k=4 at 3). Precision fell 1.000 -> 0.872 as six false positives
+appeared, which is the expected trade: more scoring opportunities, more chances to fire. **So the
+precision-favouring operating point flagged earlier as "unexplained" was largely my sampling, not
+the model.** That question is closed.
+
+**False-positive floor holds at scale**: 537 far-margin chunks (was 83), k=0 on 96-97%, k>=2 on
+3-4%. Unchanged by a 6x larger sample, which is what makes it worth something.
+
+### Like-for-like against the shPLRNN
+
+The per-episode rows above use the min CHUNK margin. The shPLRNN labelled with the FULL-ACTION
+margin, so only this row is directly comparable:
+
+| | AUC | 95% CI | precision | recall | F1 |
+|---|---|---|---|---|---|
+| **DINO-WM** (100 eps, 8 scoring times) | **0.882** | [0.805, 0.949] | 0.766 | 0.857 | **0.809** |
+| shPLRNN (100 eps, ~30 scoring times) | 0.808 | — | 0.633 | 0.905 | 0.745 |
+
+**DINO-WM matches or beats the exact-state monitor while being scored ~4x more sparsely.** Since
+sparse scoring demonstrably costs recall, its 0.857 is probably still understated.
+
+**Do not overclaim this.** The CI's lower bound is 0.805 and the shPLRNN's point estimate is 0.808,
+so the interval just barely includes it. The runs are also not paired (different episode draws), so
+no paired test is possible. The supportable statement is **"at least as good, plausibly better"** --
+not "better".
+
+### What this settles and what it does not
+
+Settled: the monitor transfers from an exact 2-D state to DINOv2 patch features with no retuning
+(same eps, n, k_min, probe family), and the earlier operating-point asymmetry was a sampling
+artefact.
+
+Still open: the run used the ROLLOUT FINE-TUNED predictor, not dino_wm's shipped single-step recipe
+(75% basin agreement, Phase C). So this validates the architecture, not the existing Jenga
+checkpoint. And 8 scoring times is still sparser than the shPLRNN's 30 -- the ceiling has not been
+found.
