@@ -32,39 +32,44 @@ genuine fork in the road rather than a temporary wobble.
 This is the classical **rocking block** of Housner (1963) [1], the standard model for exactly the
 Jenga question: how hard can you push a free-standing block before it goes over?
 
-Let $\theta$ be the tilt angle ($\theta = 0$ means flat on its base) and $\omega = \dot\theta$
-the rotation speed. Rocking about a corner, with a horizontal force $F$ applied at the centre of
-mass, the equation of motion is
+While the block is up on one corner, it obeys a single equation:
 
 $$
-I_O\,\ddot\theta \;=\; F R \cos(\alpha - \theta) \;-\; m g R \sin(\alpha - \theta),
-\qquad I_O = \tfrac{4}{3} m R^2
+I_O \ddot{\theta} = F R \cos(\alpha - \theta) - m g R \sin(\alpha - \theta)
 $$
 
-We set $m = g = R = 1$, so the only shape parameter is $\alpha$, the block's *slenderness*:
+Every symbol in it:
 
-$$
-\alpha \;=\; \arctan\!\left(\frac{\text{half-width}}{\text{half-height}}\right)
-\;=\; 0.35\ \text{rad} \;\approx\; 20^\circ
-$$
-
-Substituting $I_O = \tfrac{4}{3}mR^2$ gives the angular acceleration directly:
-
-$$
-\ddot\theta \;=\; \tfrac{3}{4}\left[\,F\cos(\alpha-\theta) \;-\; g\sin(\alpha-\theta)\,\right]
-$$
-
-The system also has **two guards** — moments where this smooth equation stops applying:
-
-| guard | condition | what happens |
+| symbol | what it is | value here |
 |---|---|---|
-| **impact** | $\theta = 0$ | the block slams onto its base and rocks back the other way, losing speed: $\omega \leftarrow e_r\,\omega$ with Housner's restitution $e_r = 1 - 1.5\sin^2\alpha = 0.824$ |
-| **topple** | $\lvert\theta\rvert = \alpha$ | the centre of mass passes over the pivot. Past this point $\sin(\alpha-\theta) < 0$, so gravity *drives* the rotation instead of restoring it — the fall is committed and irreversible |
+| $\theta$ | **tilt angle.** $\theta = 0$ is flat on the base, positive is tilted right | *state* |
+| $\omega = \dot{\theta}$ | **angular velocity** — how fast it is rocking | *state* |
+| $\ddot{\theta}$ | angular acceleration — what the equation solves for | — |
+| $F$ | **the push**: a horizontal force at the centre of mass | *the action* |
+| $\alpha$ | **slenderness**, $\arctan(\text{half-width} / \text{half-height})$. Tall thin block = small $\alpha$ | $0.35$ rad ($20°$) |
+| $m, g, R$ | mass, gravity, corner-to-centre distance | all set to $1$ |
+| $I_O$ | moment of inertia about the pivoting corner | $\frac{4}{3} m R^2$ |
 
-Two more useful numbers: the block will not move at all unless the push exceeds the **critical
-force** $F_{\text{crit}} = g\tan\alpha = 0.365$, and once committed it takes ~164 simulation steps (3.3 s) to actually reach
-the ground. That gap between *committed* and *fallen* matters — it's why the monitor has to imagine
-far enough ahead.
+The two terms are a tug of war: $F R \cos(\alpha - \theta)$ is the push trying to tip it over, and
+$m g R \sin(\alpha - \theta)$ is gravity trying to pull it back down. Putting in
+$I_O = \frac{4}{3} m R^2$ and $m = g = R = 1$:
+
+$$
+\ddot{\theta} = \frac{3}{4} \left[ F \cos(\alpha - \theta) - g \sin(\alpha - \theta) \right]
+$$
+
+**Two guards interrupt this equation** — moments where the smooth physics stops and something
+discrete happens:
+
+| guard | when | what happens |
+|---|---|---|
+| **impact** | $\theta = 0$ | the block slams back onto its base and starts rocking the other way, losing speed. Housner's restitution: $\omega \rightarrow e_r \omega$ with $e_r = 1 - 1.5 \sin^2 \alpha = 0.824$ |
+| **topple** | $\lvert \theta \rvert = \alpha$ | the centre of mass crosses over the pivot. Beyond this, $\sin(\alpha - \theta)$ turns negative, so the gravity term flips sign and starts *driving* the rotation instead of resisting it. The fall is committed |
+
+Two more numbers worth knowing. The block does not move at all unless the push beats the
+**critical force** $g \tan \alpha = 0.365$. And once committed, it still takes about 164
+simulation steps (3.3 s) to actually hit the ground — that gap between *committed* and *fallen* is
+why the monitor has to imagine far enough ahead.
 
 ### The state, for the model that gets to cheat
 
@@ -139,12 +144,20 @@ GIVEN:  the last 3 camera frames, and the action chunk the robot is about to exe
 a calibrated score. That is the property we care about most: it can be dropped onto a new task
 without anyone first collecting failures to calibrate against.
 
-Steps 2 and 7, written as equations:
+Steps 2 and 7 as equations. Each probe rescales the whole push by one random factor:
 
 $$
-\tilde a_j \;=\; a\,(1 + \varepsilon z_j), \quad z_j \sim \mathcal{N}(0,1),
-\qquad k \;=\; n \;-\; \max_c \bigl\lvert\{\, j : \text{label}_j = c \,\}\bigr\rvert
+\tilde{a}_j = a \left( 1 + \varepsilon z_j \right), \qquad z_j \sim \mathcal{N}(0, 1)
 $$
+
+and the alarm statistic counts how many probes end up outside the most popular group:
+
+$$
+k = n - \max_c n_c
+$$
+
+where $n = 32$ probes, $\varepsilon = 0.10$ is the nudge size, and $n_c$ is how many probes landed
+in ending $c$.
 
 **Why one random number per probe, not one per timestep?** Because nudging every timestep
 independently mostly cancels out — the net change is smaller by roughly √T. A single scalar scales
@@ -152,18 +165,19 @@ the *whole* push coherently, which is what actually moves you toward or away fro
 This is the concentration-of-measure result of Fawzi et al. [8]: a random direction needs
 $\Theta(\sqrt{d})$ times the magnitude to reach the same boundary.
 
-**How far can it see?** A single probe crosses a boundary at margin $m$ with probability
-$\Phi(-m/\varepsilon)$, so the dissent count is binomial:
+**How far can it see?** Say the true *margin* is $m$ — the fraction you would have to rescale the
+push by to flip the outcome. A single probe crosses that boundary only if its own random factor is
+big enough, which happens with probability $p = \Phi(-m / \varepsilon)$, where $\Phi$ is the normal
+CDF. So the dissent count is binomial:
 
 $$
-k \;\sim\; \mathrm{Binomial}\!\bigl(n,\; \Phi(-m/\varepsilon)\bigr),
-\qquad \mathbb{E}[k] \;=\; n\,\Phi(-m/\varepsilon)
+k \sim \text{Binomial}(n, p), \qquad p = \Phi\!\left( -\frac{m}{\varepsilon} \right)
 $$
 
-Requiring $k \ge 2$ to fire with probability $\ge 0.8$ gives a detectable margin
-$m^\star \approx 1.33\,\varepsilon$ at $n = 32$, and $1.56\,\varepsilon$ at $n = 50$. **The reach
-is a design choice, not a mystery** — pick the margin you must catch, then solve for $\varepsilon$.
-It grows only *logarithmically* in $n$, so raising $\varepsilon$ is far cheaper than adding
+Requiring $k \ge 2$ to fire reliably works out to a **detectable margin of about
+$1.33 \varepsilon$** with $n = 32$ probes, or $1.56 \varepsilon$ with $n = 50$. **The reach is a
+design choice, not a mystery** — decide what margin you must catch, then solve for $\varepsilon$.
+And since it grows only logarithmically in $n$, widening the nudge is far cheaper than adding more
 probes.
 
 ### What it looks like when it fires
@@ -192,16 +206,17 @@ All 32 imagined futures agree. Nowhere near a tipping point, no alarm.
 the dynamical-systems-reconstruction literature. It's small and deliberately simple:
 
 $$
-\mathbf{s}_{t+1} \;=\; A\,\mathbf{s}_t \;+\; W_1\,\mathrm{relu}\!\left(W_2\,\mathbf{s}_t + \mathbf{h}_2\right)
-\;+\; \mathbf{h}_1 \;+\; C\,\mathbf{a}_t
+s_{t+1} = A s_t + W_1 \operatorname{relu}(W_2 s_t + h_2) + h_1 + C a_t
 $$
 
+Here $s_t$ is the model's 4-number internal state, $a_t$ is the action, and $A, W_1, W_2, C$ and
+$h_1, h_2$ are what it learns.
+
 We used it because ReLU units make the model **exactly piecewise-linear**: state space is carved
-into regions — hidden unit $i$ defines a switching hyperplane
-$W_2^{(i)}\!\cdot\mathbf{s} + h_2^{(i)} = 0$ — and inside each region the map is exactly affine,
-so its Jacobian is analytic. That was needed for earlier work computing stability exponents, where
+into flat-sided regions, and inside each region the map is exactly linear, so its derivatives are
+exact rather than approximate. That was needed for earlier work computing stability exponents, where
 a smooth network gives derivatives that are correct but useless at the perturbation sizes actually
-probed. It reads the exact $(\theta, \omega)$ and carries a 4-dimensional internal state.
+probed. It reads the exact $(\theta, \omega)$ — the two numbers from the table above.
 
 **The one we're testing — DINO-WM** [3]. The same architecture used on the real robot. A frozen
 **DINOv2** image encoder [2] turns each 196×196 camera frame into **196 patch descriptors of 384
