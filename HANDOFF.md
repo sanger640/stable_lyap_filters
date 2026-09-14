@@ -110,6 +110,26 @@ $PY eval/cluster_shootout.py        # HDBSCAN vs the rest, BOTH systems        (
 
 Set `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` for anything that trains or rolls out.
 
+### The Jenga bundle (built and verified 2026-09-14)
+
+`jenga_bundle_live.tar`, **2.0 GB**, holds everything the Jenga work needs that git cannot carry.
+Rebuild with `./scripts/bundle_jenga.sh --live`.
+
+```bash
+git clone git@github.com:sanger640/stable_lyap_filters.git && cd stable_lyap_filters
+sha256sum -c data/jenga/BUNDLE.sha256      # verify the transfer
+tar -Sxf /path/to/jenga_bundle_live.tar    # -S IS REQUIRED, see below
+python -m pytest tests/ -q                 # 23 tests
+```
+
+**Extract with `-S`.** The LMDB's `data.mdb` is **20 GB apparent against 1.1 GB of real blocks** --
+LMDB preallocates its map file. Without `-S` you write 20 GB to disk for 1.1 GB of data. (The same
+trap made the first bundle 21 GB until `tar -S` was added on the build side.)
+
+Verified by extracting to a clean directory: LMDB opens with 100 episodes, world model loads at
+epoch 88, label keys match the LMDB episodes exactly, the sim tar contains
+`panda_jenga_setup.xml`, policy checkpoint intact.
+
 ### Moving to another machine
 
 Everything needed for the TOY work is in this repo. Verified-working versions are pinned in
