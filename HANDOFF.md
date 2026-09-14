@@ -99,6 +99,43 @@ $PY eval/phase_f_videos2.py         # demo videos (scores are cached) (~5 min)
 
 Set `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` for anything that trains or rolls out.
 
+### Moving to another machine
+
+Everything needed for the TOY work is in this repo. Verified-working versions are pinned in
+`requirements.txt` (python 3.11.15, torch 2.11.0+cu128, numpy 2.4.6). **torch must be a cu128
+build** -- the GPUs used here are Blackwell (sm_120) and cu121 wheels will not run.
+
+```bash
+git clone git@github.com:sanger640/stable_lyap_filters.git && cd stable_lyap_filters
+python -m pytest tests/ -q                       # 23 tests, ~12 s -- verifies the port
+```
+
+**The trained predictors are not in the working tree but ARE recoverable from git history** --
+they were tracked until commit `b48efbc`, so a full clone still carries the blobs:
+
+```bash
+mkdir -p results/phase_c
+git show b48efbc^:results/phase_c/predictor_gtf_warm.pt > results/phase_c/predictor_gtf_warm.pt
+git show b48efbc^:results/phase_c/predictor.pt          > results/phase_c/predictor.pt
+```
+
+(Or just retrain: 8 min + 19 min. The recovery is only worth it to reproduce exact numbers.)
+
+**Regenerate, do not copy**, the large caches -- `results/phase_c/latents.npy` (5.3 GB, ~5 min via
+`phase_c_data.py`), `results/phase_a/feat_*.npz` (13 GB), `phase_e_endings_*.npz`.
+
+**Reproduce one known result to confirm the port**: `eval/phase_e_attractors.py` should find a
+plateau at k=4 dropping to 3 singletons-removed, ~4 min.
+
+**For the JENGA work you also need, from outside this repo:**
+| what | where | size |
+|---|---|---|
+| the `dino_wm` repo | `~/wksp/dino_wm` | — |
+| the world model checkpoint | `dino_wm/outputs/model_latest_single.pth` | 360 MB |
+| the 102 raw Jenga episodes | `~/wksp/panda_express` | — |
+
+`labels.json` and the eval LMDB are absent but rebuildable from those episodes.
+
 ### Disk
 
 `results/phase_a/feat_*.npz` (13 GB) and `results/phase_c/latents.npy` (5.3 GB) are gitignored
