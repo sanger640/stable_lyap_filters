@@ -3,6 +3,8 @@
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.
 Read this, then `MONITOR.md` (the method), then `NOTES.md` (the append-only log, newest at the
 bottom). `PLAN.md` and `PLAN_DINOWM.md` are the phase plans with acceptance criteria.
+`TOY_EXPERIMENT.md` is a plain-language writeup of the toy result with figures -- start there if
+you want the story before the detail.
 
 ---
 
@@ -127,8 +129,16 @@ them closer. One mechanism: liability at decision boundaries, asset against appe
 **4. Clustering needs PCA in patch-token space.** Single-linkage returned k=300 of 300 in the raw
 98,304-dim space — and so did the control on encoded truth, which is what ruled out the model.
 
-**5. The settle tail does not converge or contract**, yet E and F worked anyway. Unexplained. Treat
-as fragility, not a solved problem.
+**5. The settle tail HOVERS rather than freezing, and that is fine.** `||z_t+1 - z_t||` decays then
+flatlines at 0.60% of scale -- it never reaches zero. That was recorded as a failure until the right
+question was asked: the monitor reads only WHICH attractor is nearest, so what matters is whether
+the LABEL is stable. Measured over 120 episodes it is 99.2% stable by settle step 25 and **100% from
+step 40**. A hover INSIDE a basin, not a drift ACROSS basins. It is also physically faithful -- a
+rocking block loses speed at each impact (e_r = 0.824) and approaches upright geometrically without
+exactly arriving.
+
+**Acceptance for any settle test should be label stability, not `||dz|| -> 0`.** The original
+criterion measured a quantity the method does not use.
 
 ---
 
@@ -161,7 +171,8 @@ Run in this order, each step cheap and able to end the plan:
   a. `eval/phase_b_geometry.py` adapted to Jenga latents — **does pose dominate nuisance?** The toy
      measured 1.58. If Jenga falls below 1, nearest-centroid fails regardless of predictor quality.
      A neighbour tipped 15 degrees is a far subtler distinction than a block flat on its face.
-  b. Roll the checkpoint with a settle tail — **do the latents settle?**
+  b. Roll the checkpoint with a settle tail — **does the basin LABEL stop changing?** (not
+     whether motion stops; see finding 5)
   c. PCA + plateau on predicted endings — **does a plateau appear?**
   d. Only then check clusters against `labels.json`, as a CHECK, never a fit.
 

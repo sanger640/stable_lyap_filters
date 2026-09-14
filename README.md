@@ -1,8 +1,12 @@
 # stable_lyap_filters
 
-> **Start here: [HANDOFF.md](HANDOFF.md)** — self-contained brief on the method, current status,
-> how to run everything, and what to do next. Then [MONITOR.md](MONITOR.md) for the method spec and
-> [NOTES.md](NOTES.md) for the append-only decision log.
+> **New here?** [**TOY_EXPERIMENT.md**](TOY_EXPERIMENT.md) explains the whole thing in plain terms
+> with figures — the block, the physics, the monitor algorithm, and what we found.
+>
+> **Picking up the work?** [**HANDOFF.md**](HANDOFF.md) — method, current status, how to run
+> everything, next steps. Then [MONITOR.md](MONITOR.md) for the method spec,
+> [PLAN_DINOWM.md](PLAN_DINOWM.md) for per-phase results, and [NOTES.md](NOTES.md) for the
+> append-only decision log.
 
 A **zero-shot safety monitor** for robot manipulation, needing **no labelled failures and no tuned
 threshold**. It watches a policy's proposed action chunk and flags when the policy is operating

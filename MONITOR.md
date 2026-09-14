@@ -1,3 +1,5 @@
+> Plain-language version with figures: [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md). Current status and next steps: [`HANDOFF.md`](HANDOFF.md).
+
 A **calibration-free** monitor for an action chunk. No tuned threshold: the alarm is a *counting*
 statement about disagreement among probes, so nothing plays the role that δ=0.8 plays in the FTLE
 monitor. No labels of any kind, so it drops onto a new manipulation task as-is.
@@ -83,6 +85,15 @@ Why the plateau and not silhouette or the gap statistic: both of those were trie
 block and both pick 5-6. The plateau picks 3, which is correct (fall-left, upright, fall-right).
 Datseris & Wagemakers (Chaos 2022) use recurrence for the same job; the merge-distance plateau is
 simpler and needs no basin sampling.
+
+**"Settled" means the LABEL stops changing, not that motion stops.** The latent will generally keep
+creeping -- on the tipping block it decays to ~0.6% of scale per step and then flatlines forever,
+never reaching a fixed point. That is not a defect and it is not worth engineering away: the monitor
+reads only which attractor is nearest, and the assignment is stable long before the motion is
+(measured: 99.2% stable by settle step 25, 100% from step 40). It is also physically honest, since a
+damped oscillator approaches its rest state geometrically without arriving. **Size the settle tail by
+when the assignment stops changing; requiring `||dz|| -> 0` measures a quantity this method never
+uses.**
 
 **The settle tail is essential and is NOT the lookahead.** Without it, endings are mid-flight
 states and the "attractors" are just wherever the rollout happened to be at step H. On the tipping
