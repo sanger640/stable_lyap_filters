@@ -1846,3 +1846,66 @@ The remaining options for Jenga, in order of cost:
 an obscure `np.stack` error when every cluster fell below `min_size`. It now raises with the plateau
 count and cluster sizes. Silently returning the largest few clusters would have been worse -- it
 would fabricate attractors out of noise and the caller could not tell.
+
+## JENGA GO/NO-GO: the basins are there, and the arm was hiding them
+
+Encoder only -- no world model, no rollout. 100 labelled episodes, final real frames from
+`jenga_noise_50/jenga_single_100.lmdb` against `labels_noise100.json`. `eval/jenga_basins.py`,
+`eval/jenga_geometry.py`.
+
+### 1. The basins exist, more cleanly than on the toy
+
+Peak neighbour tilt is sharply bimodal: **75 episodes under 19 deg, 25 above 90 deg, and NOTHING in
+between** -- a 72.2 deg gap, zero episodes in the 20-60 deg band. The 45 deg topple threshold sits
+in empty space, so the label is not a judgement call. I had hypothesised the opposite (that Jenga
+outcomes would be a continuum of partial topples, with no discrete basins to find). **Wrong** -- the
+physics is more discrete here than on the tipping block.
+
+### 2. The ARM dominates the raw latents, and removing it is free
+
+PC1 carries 25% of the variance and tracks end-effector pose (|corr| 0.58 with EE z, 0.39 with x);
+the topple signal sits in PC2 and PC4 at 11.5% and 5.7%, both entangled with EE x. So keeping the
+top components keeps arm motion and dilutes the thing of interest.
+
+Regressing proprio and its quadratic terms out of every latent dimension **uses no topple labels** --
+proprio is the robot's own state, available at runtime -- so the method stays calibration-free.
+Proprio explains 35.5% of latent variance. The effect:
+
+| | raw | arm removed |
+|---|---|---|
+| separation (between/within) | 1.502 | **2.146** (toy: 2.2) |
+| leave-one-out nearest centroid | 94.0% | **98-99%** (base rate 75%) |
+| k-means at k=2 vs topple | **50.0%** (chance) | **98.0%** |
+| corr(latent distance, peak tilt) | 0.553 | **0.765** |
+
+**Without arm removal, k-means at k=2 is at chance** -- it clusters purely by arm pose. This is the
+single most important preprocessing step found so far for Jenga, and it has no analogue on the toy
+(no robot in frame).
+
+The graded number matters as much as the binary one: latent distance from the intact centroid
+tracks HOW FAR the block tipped at r = 0.765. That is a proximity signal, which is what this method
+actually predicts -- closer to the right target than the topple flag.
+
+### 3. DISCOVERY is the blocker, not the representation
+
+Two independent count-selection methods fail on data where k-means at k=2 gets 98%:
+
+* **merge-distance plateau**: one bridging pair -- ep45 (tilt 94.5 deg) and ep16 (tilt 7.0 deg) --
+  sits 0.120*scale apart while the median within-group nearest-neighbour distance is 0.115*scale, a
+  ratio of **1.04**. Single-linkage chains straight through it. Raw gives k=1, arm-removed gives
+  k=2 but by accident (sizes [99,1]).
+* **cross-seed stability**: picks k=3 (0.880) over the true k=2 (0.801), agreeing with the topple
+  label only 68% instead of 98%.
+
+**So the structure is findable and the automatic count is not.** That is the one gap between here
+and a working Jenga monitor on the representation side.
+
+**Next thing to try:** single-linkage is famously bridge-sensitive; average-linkage or Ward's method
+is not. Try those before concluding the count cannot be discovered without supervision.
+
+### What this does NOT yet establish
+
+These are REAL final frames encoded directly. The monitor reads PREDICTED endings from the world
+model, which adds prediction error on top, and the settle-tail problem (Jenga demos contain no held
+poses at all -- longest sub-millimetre run is ONE step) is still unsolved. This result says the
+representation and the physics support the method. It does not say the predictor does.
