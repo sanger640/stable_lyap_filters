@@ -134,15 +134,32 @@ blobs: `git show b48efbc^:results/phase_c/predictor.pt > results/phase_c/predict
 **Reproduce one known result to confirm the port**: `eval/phase_e_attractors.py` should find a
 plateau at k=4 dropping to 3 singletons-removed, ~4 min.
 
-**For the JENGA work only** -- not needed for the toy -- you additionally need, from outside this
-repo:
-| what | where | size |
-|---|---|---|
-| the `dino_wm` repo | `~/wksp/dino_wm` | — |
-| the world model checkpoint | `dino_wm/outputs/model_latest_single.pth` | 360 MB |
-| the 102 raw Jenga episodes | `~/wksp/panda_express` | — |
+**For the JENGA work only** -- not needed for the toy -- you additionally need assets from outside
+this repo. **The inventory below was verified on 2026-09-14 and corrects RESUME.md, which claims
+the checkpoint, the LMDB and the labels are all missing. None of them are.**
 
-`labels.json` and the eval LMDB are absent but rebuildable from those episodes.
+| what | where | size | state |
+|---|---|---|---|
+| world model checkpoint | `dino_wm/outputs/model_latest_single.pth` | 360 MB | **exists** (epoch 88, single-view, 196 patches) |
+| eval LMDB (smallest usable) | `panda_express/tasks/jenga_noise_50/jenga_single.lmdb` | 534 MB | **exists**, 8837 entries, opens clean |
+| ground-truth labels | `panda_express/labels_noise100.json` | tiny | **exists**, 100 eps: 75 success / 25 failure |
+| ground-truth labels (smaller set) | `panda_express/labels_noise50.json` | tiny | **exists**, 50 eps: 38 / 12 |
+| the `dino_wm` repo | `~/wksp/dino_wm` | — | needed for its model/config code |
+| 102 raw episodes (only if rebuilding) | `panda_express/tasks/jenga_mujoco/episodes/` | 2.4 GB | dual-cam PNGs + `trajectory_*.json` |
+
+**So the minimum transfer for the Jenga go/no-go is ~1 GB** (checkpoint + one LMDB + labels), not
+the ~27 GB of Jenga task data on disk, and **no rebuild step is required.** The raw episodes are
+only needed if you want to regenerate an LMDB with different preprocessing.
+
+Four other LMDBs exist and all open clean, if you need more or cleaner data:
+`jenga_mujoco/jenga_single_clean.lmdb` (1.3 GB, 16903 entries),
+`jenga_noise_50/jenga_single_100.lmdb` (1.1 GB), `jenga_noise_50/jenga_unified.lmdb` (6.8 GB),
+`jenga_tilt_100/jenga_tilt.lmdb` (944 MB).
+
+The labels carry more than a boolean -- `outcome`, `failure_step`, `peak_tilt_deg`, `failure_block`
+-- at a 45 deg topple threshold. `peak_tilt_deg` is the useful one: it is a continuous
+near-miss measure, which is much closer to the PROXIMITY quantity this method actually predicts
+than a success/failure flag is. Median peak tilt is 12.7 deg against a 45 deg threshold.
 
 ### Disk
 
