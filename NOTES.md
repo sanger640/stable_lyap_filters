@@ -1909,3 +1909,55 @@ These are REAL final frames encoded directly. The monitor reads PREDICTED ending
 model, which adds prediction error on top, and the settle-tail problem (Jenga demos contain no held
 poses at all -- longest sub-millimetre run is ONE step) is still unsolved. This result says the
 representation and the physics support the method. It does not say the predictor does.
+
+## Ward linkage discovers the Jenga basins — but breaks the toy. No universal choice yet.
+
+`eval/jenga_linkage.py`. Count criterion is unsupervised throughout: build the dendrogram, cut at
+the **largest relative jump in merge height** (many cheap merges inside a clump, then one expensive
+merge joining clumps).
+
+**On JENGA (2 true basins, sizes 75/25), arm removed, PCA 2:**
+
+| linkage | k found | agreement | sizes |
+|---|---|---|---|
+| single | 1 | 75.0% | [100] |
+| average | 2 | 74.0% | [99, 1] |
+| complete | 2 | 60.0% | [63, 37] |
+| **ward** | **2** | **98.0%** | **[75, 25]** |
+| *k-means at k=2 (reference)* | *given* | *98.0%* | |
+
+**Ward recovers the exact true split with nothing supplied**, matching k-means that was TOLD k=2.
+The clumps are visually unambiguous (`results/jenga/clump*.png`): clump 0 is 25 scenes with the
+neighbour flat on the table, mean tilt 89.2 deg; clump 1 is 75 scenes with it standing, mean tilt
+12.5 deg. Two errors out of 100 -- ep16 (7 deg, placed with the toppled) and ep36 (91 deg, placed
+with the intact). **ep16 is the same episode that bridged the two groups under single-linkage**,
+which is a satisfying consistency: the one genuinely ambiguous scene is the one both methods
+stumble on.
+
+**But Ward FAILS on the toy**, where single-linkage + plateau succeeded:
+
+| PCA | single-linkage plateau | ward | ward agreement |
+|---|---|---|---|
+| 2 | 4 | 2 | 83.7% |
+| 8 | **4** (3 after singletons, 93.3%) | 1 | 70.7% (= majority baseline) |
+
+**Cause is Ward's known bias toward EQUAL-SIZED clusters** -- it merges to minimise the increase in
+within-group variance. The toy's basins are 212/50/38, badly imbalanced, so Ward splits the big
+cluster rather than isolating the two small ones. Jenga's 75/25 is balanced enough that it works.
+
+### The honest consequence
+
+**There is no single clustering choice that works for both systems**, and picking the linkage by
+which one gives the right answer IS using the labels. The calibration-free claim survives for
+thresholds (there is still no tuned delta) but takes a real dent here: the *algorithm* is now a
+per-task decision.
+
+Options, none yet tested:
+1. A linkage robust to BOTH bridging and size imbalance. Average is the usual compromise and it
+   failed here ([99,1]), so this needs actual search rather than assumption.
+2. Run several linkages and require consensus; report disagreement as low confidence.
+3. Accept a per-task choice and justify it from cluster-size balance, which is observable without
+   labels -- but that is close to circular and should be argued carefully if used.
+
+**For Jenga specifically, Ward works and that is what matters right now.** The universality claim
+needs the above resolved before it goes in a paper.
