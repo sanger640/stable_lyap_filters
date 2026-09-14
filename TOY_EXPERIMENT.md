@@ -32,40 +32,48 @@ genuine fork in the road rather than a temporary wobble.
 This is the classical **rocking block** of Housner (1963) [1], the standard model for exactly the
 Jenga question: how hard can you push a free-standing block before it goes over?
 
-Let **θ** be the tilt angle (0 = flat on its base) and **ω = θ̇** the rotation speed. Rocking about
-a corner, with a horizontal force *F* applied at the centre of mass:
+Let $\theta$ be the tilt angle ($\theta = 0$ means flat on its base) and $\omega = \dot\theta$
+the rotation speed. Rocking about a corner, with a horizontal force $F$ applied at the centre of
+mass, the equation of motion is
 
-```
-    I_O · θ̈  =  F·R·cos(α − θ)  −  m·g·R·sin(α − θ)        with  I_O = (4/3)·m·R²
-```
+$$
+I_O\,\ddot\theta \;=\; F R \cos(\alpha - \theta) \;-\; m g R \sin(\alpha - \theta),
+\qquad I_O = \tfrac{4}{3} m R^2
+$$
 
-We set m = g = R = 1, so the only shape parameter is **α**, the block's *slenderness*:
+We set $m = g = R = 1$, so the only shape parameter is $\alpha$, the block's *slenderness*:
 
-```
-    α = atan(half-width / half-height) = 0.35 rad ≈ 20°
-```
+$$
+\alpha \;=\; \arctan\!\left(\frac{\text{half-width}}{\text{half-height}}\right)
+\;=\; 0.35\ \text{rad} \;\approx\; 20^\circ
+$$
 
-With I_O = (4/3)mR², the acceleration simplifies to **θ̈ = (3/4)·[F·cos(α−θ) − g·sin(α−θ)]**, and
-the system has **two guards** — moments where the smooth equation stops applying:
+Substituting $I_O = \tfrac{4}{3}mR^2$ gives the angular acceleration directly:
+
+$$
+\ddot\theta \;=\; \tfrac{3}{4}\left[\,F\cos(\alpha-\theta) \;-\; g\sin(\alpha-\theta)\,\right]
+$$
+
+The system also has **two guards** — moments where this smooth equation stops applying:
 
 | guard | condition | what happens |
 |---|---|---|
-| **impact** | θ = 0 | the block slams onto its base and rocks the other way, losing speed: ω ← e_r·ω with Housner's restitution **e_r = 1 − 1.5·sin²α = 0.824** |
-| **topple** | \|θ\| = α | the centre of mass passes over the pivot. Past this point gravity *drives* the rotation instead of restoring it — the fall is committed and irreversible |
+| **impact** | $\theta = 0$ | the block slams onto its base and rocks back the other way, losing speed: $\omega \leftarrow e_r\,\omega$ with Housner's restitution $e_r = 1 - 1.5\sin^2\alpha = 0.824$ |
+| **topple** | $\lvert\theta\rvert = \alpha$ | the centre of mass passes over the pivot. Past this point $\sin(\alpha-\theta) < 0$, so gravity *drives* the rotation instead of restoring it — the fall is committed and irreversible |
 
-Two more useful numbers: the block won't move at all unless the push exceeds the **critical force
-g·tan(α) = 0.365**, and once committed it takes ~164 simulation steps (3.3 s) to actually reach
+Two more useful numbers: the block will not move at all unless the push exceeds the **critical
+force** $F_{\text{crit}} = g\tan\alpha = 0.365$, and once committed it takes ~164 simulation steps (3.3 s) to actually reach
 the ground. That gap between *committed* and *fallen* matters — it's why the monitor has to imagine
 far enough ahead.
 
 ### The state, for the model that gets to cheat
 
-The whole system is described by **two numbers: (θ, ω)** — tilt and rotation speed. That is exactly
-what the state-based model is handed. It's a complete description: given (θ, ω) and the forces, the
-future is fully determined.
+The whole system is described by **two numbers**, $(\theta, \omega)$ — tilt and rotation speed.
+That is exactly what the state-based model is handed, and it is a *complete* description: given
+$(\theta,\omega)$ and the forces, the future is fully determined.
 
-**The image-based model gets neither.** It gets a picture. A single photo shows θ but says nothing
-about ω — you cannot see speed in a still image — which is why it needs **three consecutive
+**The image-based model gets neither.** It gets a picture. A single photo shows $\theta$ but says
+nothing about $\omega$ — you cannot see speed in a still image — which is why it needs **three consecutive
 frames** to work out how fast the block is rocking.
 
 ### There are exactly three ways it can end
@@ -106,40 +114,57 @@ knowing *now*, while there's still time to slow down or ask for help.
 GIVEN:  the last 3 camera frames, and the action chunk the robot is about to execute
         a set of attractor centres C (found offline, see §5)
 
- 1.  a  ←  the next H = 20 steps of the planned action          (fixed horizon, never shrinking)
+ 1.  a  <-  the next H = 20 steps of the planned action         (fixed horizon, never shrinking)
 
- 2.  for j = 1 … 32:                                            ← 32 probes
-         z_j ~ Normal(0, 1)                                     ← ONE random number per probe
-         a_j ←  a · (1 + ε·z_j)      with ε = 0.10              ← same push, scaled up or down
+ 2.  for j = 1 ... 32:                                          <- 32 probes
+         z_j ~ Normal(0, 1)                                     <- ONE random number per probe
+         a_j <-  a * (1 + eps*z_j)    with eps = 0.10           <- same push, scaled up or down
 
- 3.  append 40 steps of ZERO force to every a_j                 ← the "settle tail": stop pushing
-                                                                  and let the block come to rest
+ 3.  append 40 steps of ZERO force to every a_j                 <- the "settle tail": stop
+                                                                   pushing, let the block rest
 
  4.  roll each a_j through the world model from the current
      frames; keep only the FINAL latent state E_j
 
- 5.  squash every E_j down to 8 numbers (PCA)                   ← see §5 for why
+ 5.  squash every E_j down to 8 numbers (PCA)                   <- see section 5 for why
 
- 6.  label_j  ←  index of the nearest attractor centre in C     ← which ending did it reach?
+ 6.  label_j  <-  index of the nearest attractor centre in C    <- which ending did it reach?
 
- 7.  k  ←  32 − (size of the largest label group)               ← how many probes DISAGREE
+ 7.  k  <-  32 - (size of the largest label group)              <- how many probes DISAGREE
 
- 8.  ALARM  if  k ≥ 2
+ 8.  ALARM  if  k >= 2
 ```
 
 **There is no threshold to tune and no training on examples of failure.** Step 8 is a *count*, not
 a calibrated score. That is the property we care about most: it can be dropped onto a new task
 without anyone first collecting failures to calibrate against.
 
+Steps 2 and 7, written as equations:
+
+$$
+\tilde a_j \;=\; a\,(1 + \varepsilon z_j), \quad z_j \sim \mathcal{N}(0,1),
+\qquad k \;=\; n \;-\; \max_c \bigl\lvert\{\, j : \text{label}_j = c \,\}\bigr\rvert
+$$
+
 **Why one random number per probe, not one per timestep?** Because nudging every timestep
 independently mostly cancels out — the net change is smaller by roughly √T. A single scalar scales
 the *whole* push coherently, which is what actually moves you toward or away from tipping over.
-This is the concentration-of-measure result of Fawzi et al. [8]: a random direction needs ~√d times
-the magnitude to reach the same boundary.
+This is the concentration-of-measure result of Fawzi et al. [8]: a random direction needs
+$\Theta(\sqrt{d})$ times the magnitude to reach the same boundary.
 
-**How far can it see?** The probe spread sets the smallest margin you can detect. With
-`k ~ Binomial(n, Φ(−m/ε))`, detecting a margin *m* with 32 probes needs **m ≲ 1.33·ε**. So the
-reach is a *design choice*, not a mystery — pick the margin you must catch, solve for ε.
+**How far can it see?** A single probe crosses a boundary at margin $m$ with probability
+$\Phi(-m/\varepsilon)$, so the dissent count is binomial:
+
+$$
+k \;\sim\; \mathrm{Binomial}\!\bigl(n,\; \Phi(-m/\varepsilon)\bigr),
+\qquad \mathbb{E}[k] \;=\; n\,\Phi(-m/\varepsilon)
+$$
+
+Requiring $k \ge 2$ to fire with probability $\ge 0.8$ gives a detectable margin
+$m^\star \approx 1.33\,\varepsilon$ at $n = 32$, and $1.56\,\varepsilon$ at $n = 50$. **The reach
+is a design choice, not a mystery** — pick the margin you must catch, then solve for $\varepsilon$.
+It grows only *logarithmically* in $n$, so raising $\varepsilon$ is far cheaper than adding
+probes.
 
 ### What it looks like when it fires
 
@@ -166,20 +191,22 @@ All 32 imagined futures agree. Nowhere near a tipping point, no alarm.
 **The one that cheats — shPLRNN.** A *shallow Piecewise-Linear Recurrent Neural Network* [4], from
 the dynamical-systems-reconstruction literature. It's small and deliberately simple:
 
-```
-    s_{t+1} = A·s_t + W₁·relu(W₂·s_t + h₂) + h₁ + C·a_t
-```
+$$
+\mathbf{s}_{t+1} \;=\; A\,\mathbf{s}_t \;+\; W_1\,\mathrm{relu}\!\left(W_2\,\mathbf{s}_t + \mathbf{h}_2\right)
+\;+\; \mathbf{h}_1 \;+\; C\,\mathbf{a}_t
+$$
 
 We used it because ReLU units make the model **exactly piecewise-linear**: state space is carved
-into regions, and inside each region the map is exactly affine. That was originally needed for
-earlier work computing stability exponents, where you need exact derivatives and a smooth network
-gives useless ones near a sharp boundary. It reads the exact **(θ, ω)** and has a 4-number internal
-state.
+into regions — hidden unit $i$ defines a switching hyperplane
+$W_2^{(i)}\!\cdot\mathbf{s} + h_2^{(i)} = 0$ — and inside each region the map is exactly affine,
+so its Jacobian is analytic. That was needed for earlier work computing stability exponents, where
+a smooth network gives derivatives that are correct but useless at the perturbation sizes actually
+probed. It reads the exact $(\theta, \omega)$ and carries a 4-dimensional internal state.
 
 **The one we're testing — DINO-WM** [3]. The same architecture used on the real robot. A frozen
 **DINOv2** image encoder [2] turns each 196×196 camera frame into **196 patch descriptors of 384
-numbers each**, and a small transformer learns to predict the *next* set of descriptors given the
-current ones plus the action. Nothing is ever decoded back to pixels — prediction happens entirely
+numbers each** — so one frame is $196 \times 384 = 75{,}264$ numbers — and a small transformer
+learns to predict the *next* set of descriptors given the current ones plus the action. Nothing is ever decoded back to pixels — prediction happens entirely
 in feature space.
 
 The experiment was simply: **replace the first with the second, change nothing else.**
@@ -191,7 +218,7 @@ The experiment was simply: **replace the first with the second, change nothing e
 | step | question | answer |
 |---|---|---|
 | **A** | Can we draw the block convincingly? | **Yes** |
-| **B** | Can image features recover tilt *and* rotation speed? | **Yes** — θ perfectly, ω at R² 0.955, using 3 frames |
+| **B** | Can image features recover tilt *and* rotation speed? | **Yes** — $\theta$ at $R^2\!=\!1.000$, $\omega$ at $R^2\!=\!0.955$, from 3 frames |
 | **C** | Can the world model predict well enough? | **Yes — after changing how it is trained** (§6) |
 | **D** | Do the imagined futures settle down? | **Yes — they hover around an equilibrium** rather than freezing (§5) |
 | **E** | Can we find the three endings automatically? | **Yes — after squashing the latent down first** (§5) |
@@ -219,8 +246,9 @@ latent hovers:
 | 60 | 100% |
 
 **It's a hover *inside* a basin, not a drift *across* basins.** The block in the real system behaves
-the same way — a rocking block loses energy at each impact (e_r = 0.824) and asymptotically
-approaches upright without ever exactly arriving. The model reproduced that faithfully; we were
+the same way — a rocking block loses a fraction of its speed at every base impact
+($\omega \leftarrow e_r\,\omega$, $e_r = 0.824$), so it approaches upright geometrically and never
+exactly arrives. The model reproduced that faithfully; we were
 asking the wrong question.
 
 ### Finding the three endings needed the data squashed down first
@@ -265,12 +293,12 @@ exactly the nuisance we deliberately added.** PCA cannot do this on its own — 
 
 DINO-WM is normally trained to predict **one step ahead**, and it is superb at that — 0.04 radians
 of error. But our monitor needs it to imagine **40 steps** ahead, feeding its own predictions back
-in as input. It had never practised that, so small errors snowballed to 0.577 rad (red) — larger
-than the 0.35 rad topple angle itself, which means guessing.
+in as input. It had never practised that, so small errors snowballed to $0.577$ rad (red) — larger
+than the topple angle $\alpha = 0.35$ rad itself, which means guessing.
 
 This is a textbook case of **exposure bias** [9,10]: train on real data, test on your own output,
-and errors compound. Ross et al. [11] showed the error grows as O(T²) in horizon when you don't
-train on your own induced states.
+and errors compound. Ross et al. [11] showed the error grows as $\mathcal{O}(T^2)$ in the horizon when you do not train
+on your own induced states, against $\mathcal{O}(T)$ when you do.
 
 The fix is to make it practise on its own predictions [5,6]. **But the order matters**: teach the
 physics first with real data, *then* fine-tune on rollouts. Done in the wrong order the model finds
@@ -323,7 +351,8 @@ this validates the *approach*, not the world-model checkpoint currently on disk.
 **The physical system**
 [1] Housner, G.W. (1963). *The behavior of inverted pendulum structures during earthquakes.*
 Bulletin of the Seismological Society of America 53(2). — the rocking-block model, its impact
-restitution e_r = 1 − 1.5 sin²α, and the |θ| = α overturning condition.
+restitution $e_r = 1 - 1.5\sin^2\alpha$, and the $\lvert\theta\rvert = \alpha$ overturning
+condition.
 
 **The world models**
 [2] Oquab, M. et al. (2024). *DINOv2: Learning Robust Visual Features without Supervision.* TMLR.
