@@ -42,8 +42,9 @@ ONLINE, every chunk:
   6. k = number of probes NOT in the plurality
   7. ALARM if k >= 2.   No threshold. No labels. No calibration.
 
-OFFLINE, once: discover the attractors by merge-distance PLATEAU on PREDICTED endings
-               (PCA first, drop singletons). The count is never supplied.
+OFFLINE, once: discover the attractors with HDBSCAN on PREDICTED endings, PCA'd first
+               (min_cluster_size = 5-10% of n). The count is never supplied. A probe
+               landing in NOISE reached no known basin, so it counts as dissent.
 ```
 
 **Sizing rule — this replaces threshold tuning.** `E[k] = n * Phi(-m/eps)`, so the detectable
@@ -132,7 +133,7 @@ blobs: `git show b48efbc^:results/phase_c/predictor.pt > results/phase_c/predict
 `phase_c_data.py`), `results/phase_a/feat_*.npz` (13 GB), `phase_e_endings_*.npz`.
 
 **Reproduce one known result to confirm the port**: `eval/phase_e_attractors.py` should find a
-plateau at k=4 dropping to 3 singletons-removed, ~4 min.
+k=3 on the toy at 93.7%, ~4 min.
 
 **For the JENGA work only** -- not needed for the toy -- you additionally need assets from outside
 this repo. **The inventory below was verified on 2026-09-14 and corrects RESUME.md, which claims
@@ -191,6 +192,17 @@ them closer. One mechanism: liability at decision boundaries, asset against appe
 **4. Clustering needs PCA in patch-token space.** Single-linkage returned k=300 of 300 in the raw
 98,304-dim space — and so did the control on encoded truth, which is what ruled out the model.
 
+**6. JENGA'S BASINS ARE REAL AND DISCOVERABLE — but only after removing the arm.** Verified on
+100 labelled episodes, real final frames, encoder only. Peak neighbour tilt is sharply bimodal (75
+episodes under 19 deg, 25 above 90, NOTHING between -- a 72.2 deg gap). PC1 of the raw latents is
+end-effector pose, not the blocks, so **regress proprio out first** -- it uses no outcome labels,
+and without it k-means at k=2 sits at CHANCE (50%). With it: separation 1.50 -> 2.15,
+nearest-centroid 94% -> 98-99%, correlation with peak tilt 0.55 -> 0.77. HDBSCAN then finds k=2 at
+98.8% with nothing supplied.
+
+**What this does NOT establish:** those are REAL frames. The monitor reads PREDICTED endings, and
+the settle-tail problem below is still open.
+
 **5. The settle tail HOVERS rather than freezing, and that is fine.** `||z_t+1 - z_t||` decays then
 flatlines at 0.60% of scale -- it never reaches zero. That was recorded as a failure until the right
 question was asked: the monitor reads only WHICH attractor is nearest, so what matters is whether
@@ -235,7 +247,8 @@ Run in this order, each step cheap and able to end the plan:
      A neighbour tipped 15 degrees is a far subtler distinction than a block flat on its face.
   b. Roll the checkpoint with a settle tail — **does the basin LABEL stop changing?** (not
      whether motion stops; see finding 5)
-  c. PCA + plateau on predicted endings — **does a plateau appear?**
+  c. PCA + HDBSCAN on predicted endings — **does it find k basins?** (on REAL final frames it
+     already does: k=2 at 98.8%, see finding 6)
   d. Only then check clusters against `labels.json`, as a CHECK, never a fit.
 
 Phase C predicts trouble at (b)/(c): the Jenga model has the same single-step recipe that failed.

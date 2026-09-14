@@ -152,11 +152,12 @@ Merge-distance sweep on the settled latents, exactly `find_attractors()` from
 `eval/phase3_pipeline.py`. No k supplied.
 
 **Acceptance**
-- A plateau exists, and it is at **3**.
+- HDBSCAN (min_cluster_size 5-10% of n) returns **3**. (The original merge-distance plateau is
+  superseded: it is bridge-sensitive and broke on Jenga. See NOTES.)
 - Cross-check assignments against the true basins from `tb.simulate`. shPLRNN reached 87.0%
   agreement; require >= 80%.
-- If the plateau is at 5 or 7, or absent, report it — unsupervised attractor discovery is then the
-  fragile component, not the monitor, and that distinction matters for the paper.
+- If the count is wrong or nothing is found, report it — unsupervised attractor discovery is then
+  the fragile component, not the monitor, and that distinction matters for the paper.
 
 ---
 
@@ -198,7 +199,7 @@ One table, one system, one set of labels, two representations, no retuning:
 | false-positive floor (k, large margin) | ? | ? |
 | theta RMSE | 0.265 rad | ? |
 | settles? | yes | ? |
-| attractor plateau | 3 | ? |
+| attractors found (HDBSCAN) | 3 | 3, at 93.7% |
 | AUC vs margin | 0.808 | ? |
 
 Plus the baselines already measured on this system (`sum|a|` 0.700, `||a||` 0.764 with S* fitted to
@@ -219,7 +220,7 @@ everything remains exactly measurable.
 | omega not recoverable from frames | **Phase B linear probe** | weeks of training a model that cannot work |
 | ViT does not settle under held action | **Phase D** | the entire basin construction, on Jenga too |
 | undersampling breaks velocity estimation | Phase B sweep | silent accuracy loss blamed on the method |
-| attractors do not plateau at 3 | Phase E | clustering blamed on the monitor |
+| attractors not discovered | Phase E | clustering blamed on the monitor |
 | model error manufactures dissent | **Phase F false-positive floor** | `k` measuring the model, not the boundary |
 
 The three bolded rows are the cheap kill tests. **Run B, D and the false-positive floor before investing in
