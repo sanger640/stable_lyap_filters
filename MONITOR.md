@@ -39,13 +39,45 @@ You need the terminal states of the system in latent space. You do **not** suppl
 2. Collect the ENDING latents E_j (after the settle tail, not after H).
    *** Use the PREDICTED endings, never encoded observations. See below. ***
 3. *** PCA the endings to ~2-16 dimensions. NOT OPTIONAL in a patch-token space. ***
-4. Sweep a merge distance d over fractions of the ending scale
-   (0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8) x scale(E).
-   Single-linkage merge at each d, count the clusters.
-5. The attractor count is the PLATEAU -- the count that survives the widest range of d.
-6. *** Drop clusters below a minimum size (~1% of M). Singletons inflate the count. ***
-   Take the surviving cluster centroids as the attractor centres C.
+4. *** HDBSCAN with min_cluster_size = 5-10% of M. Keeps the clusters that PERSIST over the
+   widest range of DENSITY levels, and labels sparse points as NOISE. ***
+5. The attractor count is whatever HDBSCAN returns. Nothing is supplied.
+6. Take the cluster centroids as the attractor centres C. Points labelled noise get no centre --
+   at runtime a probe landing in noise counts as DISSENT, since it reached no known basin.
 ```
+
+### Why HDBSCAN and not the merge-distance plateau
+
+The original recipe used a single-linkage merge-distance sweep and took the count that survived the
+widest range of d. **That is not robust, and two systems broke it in opposite directions:**
+
+| method | toy (3 basins, 212/50/38) | Jenga (2 basins, 75/25) |
+|---|---|---|
+| single-linkage + plateau | works (93.3%) | **fails** -- one bridging pair welds the basins |
+| Ward + merge-height gap | **fails** (k=1, 70.7%) | works (98.0%) |
+| **HDBSCAN (5-10% of M)** | **works (93.7%)** | **works (98.8%)** |
+
+*Single-linkage* merges on the NEAREST pair, so one coincidental close pair chains two clumps into
+one. On Jenga, ep16 (block barely moved, 7 deg) and ep45 (fully over, 94.5 deg) sit 0.120*scale
+apart against a median within-group nearest-neighbour distance of 0.115 -- a ratio of 1.04.
+
+*Ward* merges to minimise the increase in within-cluster VARIANCE, which costs more for large
+clusters, so it biases toward EQUAL-SIZED groups. At 75/25 that is fine; at 212/50/38 it splits the
+majority instead of isolating the minorities.
+
+*HDBSCAN* keeps clusters that persist across density levels -- the same idea as the plateau, built
+on density instead of raw distance -- and crucially it has a NOISE label, so a bridging point is
+discarded rather than used as a bridge. It discarded 17% of Jenga episodes as noise, which is the
+intended behaviour and not a defect.
+
+`min_cluster_size` is the only knob and it is a structural statement, not a fitted one: *a basin
+must hold at least this share of the episodes to count as a basin.* 5% and 10% both work on both
+systems, so it is not knife-edge. Setting it ABOVE the smallest true basin correctly returns
+nothing rather than inventing structure (15% asks for 45 points on the toy, whose smallest basin
+has 38).
+
+**Two systems is not proof of universality.** But it removes the per-task algorithm choice, which
+was the thing that made the calibration-free claim shaky.
 
 ### Steps 3 and 6 were added after the DINO-WM run and are not optional
 

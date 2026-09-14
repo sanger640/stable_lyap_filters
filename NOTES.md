@@ -1961,3 +1961,35 @@ Options, none yet tested:
 
 **For Jenga specifically, Ward works and that is what matters right now.** The universality claim
 needs the above resolved before it goes in a paper.
+
+## HDBSCAN discovers the basins on BOTH systems — the per-task algorithm choice is gone
+
+`eval/cluster_shootout.py`. Same PCA'd endings as before; only the clustering changes.
+
+| method | TOY (k=3, sizes 212/50/38) | JENGA (k=2, sizes 75/25) |
+|---|---|---|
+| single-linkage + merge plateau | k=4 -> 3 after singletons, **93.3%** | bridged, [99,1] |
+| Ward + merge-height gap | k=1, **70.7%** (= baseline) | k=2, **98.0%** |
+| **HDBSCAN, min 5% of n** | **k=3, 93.7%**, 100% coverage | **k=2, 98.8%**, 83% coverage |
+| **HDBSCAN, min 10% of n** | **k=3, 93.3%**, 100% coverage | **k=2, 98.8%**, 82% coverage |
+
+**Right count on both, nothing supplied, and it beats the best per-task method on each** (93.7 vs
+93.3 on the toy; 98.8 vs 98.0 on Jenga).
+
+**Why it works where the others failed.** HDBSCAN keeps the clusters that persist over the widest
+range of DENSITY levels -- the same principle as our merge-distance plateau, but on density rather
+than raw distance -- and it has an explicit NOISE label. The bridging point that destroyed
+single-linkage gets discarded instead of used as a bridge. It calls 17% of Jenga episodes noise;
+that is the mechanism working, not a defect.
+
+**The knob is structural, not fitted.** `min_cluster_size` says "a basin must hold at least this
+share of the episodes". 5% and 10% both work on both systems, so it is not knife-edge. At 15% it
+returns NOTHING on the toy rather than inventing structure -- correct, since 15% of 300 is 45 and
+the smallest true basin has 38.
+
+**For the monitor**, a probe whose ending lands in noise reached no known basin, so it should count
+as DISSENT. That is a small addition to the alarm rule and is now recorded in MONITOR.md.
+
+**Caveat:** two systems is not universality. But the previous position -- single-linkage for the
+toy, Ward for Jenga, chosen by which matched the labels -- was a genuine hole in the
+calibration-free claim, and this closes it for the cases in hand.
