@@ -1784,3 +1784,28 @@ Still open: the run used the ROLLOUT FINE-TUNED predictor, not dino_wm's shipped
 (75% basin agreement, Phase C). So this validates the architecture, not the existing Jenga
 checkpoint. And 8 scoring times is still sparser than the shPLRNN's 30 -- the ceiling has not been
 found.
+
+## The settle tail HOVERS — Phase D's "failure" resolved
+
+Phase D recorded that `||z_t+1 - z_t||` decays and then flatlines at 0.60% of ending scale rather
+than reaching zero, called it a FAIL, and noted it was unexplained that Phases E and F worked
+anyway. **That was the wrong question.** The monitor never reads the latent's position -- only which
+attractor it is nearest. So the test should be whether the LABEL is stable while the latent hovers.
+
+Measured, 120 episodes, GTF-warm predictor, basin assignment vs the label at settle step 40:
+
+| settle steps | 10 | 15 | 20 | 25 | 30 | 35 | **40** | 45 | 50 | 60 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| agreement | 95.0% | 96.7% | 98.3% | 99.2% | 99.2% | 99.2% | **100%** | 100% | 100% | 100% |
+
+**It is a hover INSIDE a basin, not a drift ACROSS basins.** From settle step 25 onward the
+assignment is 99%+ stable and it is exactly stable from 40. That is why E and F worked, and the
+"unexplained" note above is resolved.
+
+It is also physically faithful rather than a model artefact: a rocking block loses energy at each
+base impact (Housner restitution e_r = 1 - 1.5 sin^2(alpha) = 0.824 at alpha = 0.35) and
+asymptotically approaches upright without exactly arriving. The model reproduced that.
+
+**Restated acceptance for Phase D:** do not require `||z_t+1 - z_t|| -> 0`. Require that the
+ATTRACTOR ASSIGNMENT stops changing. The original criterion measured a quantity the method does not
+use, which is the same error shape recorded repeatedly above.
