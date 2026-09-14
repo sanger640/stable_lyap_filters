@@ -73,7 +73,8 @@ architecture, not the existing Jenga checkpoint.
 
 ## 3. Environment and how to run things
 
-**Everything runs in the `dino_wm` conda env.** `tipping_block.py` is pure numpy and runs there too.
+**Everything runs in the `dino_wm` conda env** (named after the sibling repo, but the toy pipeline
+no longer depends on it -- see below). Versions are pinned in `requirements.txt`.
 
 ```bash
 PY=/home/sanger/miniforge3/envs/dino_wm/bin/python
@@ -110,16 +111,22 @@ git clone git@github.com:sanger640/stable_lyap_filters.git && cd stable_lyap_fil
 python -m pytest tests/ -q                       # 23 tests, ~12 s -- verifies the port
 ```
 
-**The trained predictors are not in the working tree but ARE recoverable from git history** --
-they were tracked until commit `b48efbc`, so a full clone still carries the blobs:
+**The repo is self-contained for the toy work.** `ViTPredictor` -- the only thing ever imported
+from `dino_wm` -- is vendored at `src/models/dinowm_vit.py`. You do NOT need the dino_wm repo to
+run phases A-F. (It was previously behind a hard-coded `sys.path` entry pointing at
+`/home/sanger/wksp/dino_wm`, which made a fresh clone fail immediately.)
+
+**Training from scratch is the expected path** and takes ~32 min end to end:
 
 ```bash
-mkdir -p results/phase_c
-git show b48efbc^:results/phase_c/predictor_gtf_warm.pt > results/phase_c/predictor_gtf_warm.pt
-git show b48efbc^:results/phase_c/predictor.pt          > results/phase_c/predictor.pt
+python eval/phase_c_data.py                      # render + encode 600 eps   ~5 min
+python eval/phase_c_train.py                     # teacher-forced            ~8 min
+python eval/phase_c_train_gtf.py --tag gtf_warm  # rollout fine-tune         ~19 min  <- REQUIRED
 ```
 
-(Or just retrain: 8 min + 19 min. The recovery is only worth it to reproduce exact numbers.)
+The trained predictors are also recoverable from git history if you ever want to reproduce exact
+numbers rather than retrain -- they were tracked until `b48efbc`, so a full clone carries the
+blobs: `git show b48efbc^:results/phase_c/predictor.pt > results/phase_c/predictor.pt`.
 
 **Regenerate, do not copy**, the large caches -- `results/phase_c/latents.npy` (5.3 GB, ~5 min via
 `phase_c_data.py`), `results/phase_a/feat_*.npz` (13 GB), `phase_e_endings_*.npz`.
@@ -127,7 +134,8 @@ git show b48efbc^:results/phase_c/predictor.pt          > results/phase_c/predic
 **Reproduce one known result to confirm the port**: `eval/phase_e_attractors.py` should find a
 plateau at k=4 dropping to 3 singletons-removed, ~4 min.
 
-**For the JENGA work you also need, from outside this repo:**
+**For the JENGA work only** -- not needed for the toy -- you additionally need, from outside this
+repo:
 | what | where | size |
 |---|---|---|
 | the `dino_wm` repo | `~/wksp/dino_wm` | — |

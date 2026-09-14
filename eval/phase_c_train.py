@@ -32,8 +32,9 @@ import torch
 import torch.nn as nn
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "eval"), "/home/sanger/wksp/dino_wm"]
-from models.vit import ViTPredictor                                # noqa: E402
+sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
+                str(ROOT / "eval")]
+from dinowm_vit import ViTPredictor        # vendored; see src/models/                                # noqa: E402
 
 OUT = ROOT / "results" / "phase_c"
 NP, D, ACT_EMB, NUM_HIST = 256, 384, 10, 3

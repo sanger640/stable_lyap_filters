@@ -27,7 +27,8 @@ import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "eval"), "/home/sanger/wksp/dino_wm"]
+sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
+                str(ROOT / "eval")]
 import tipping_block as tb                                         # noqa: E402
 import block_render as br                                          # noqa: E402
 from phase_c_train import Predictor, NUM_HIST, D                   # noqa: E402
