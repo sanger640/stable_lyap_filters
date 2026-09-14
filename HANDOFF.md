@@ -99,6 +99,15 @@ $PY eval/phase_f_monitor.py         # the monitor, 100 eps x 8 times  (~53 min)
 $PY eval/phase_f_videos2.py         # demo videos (scores are cached) (~5 min)
 ```
 
+### Jenga scripts (encoder only — no world model, no training)
+
+```bash
+$PY eval/jenga_geometry.py          # do toppled/intact separate? raw vs PCA   (~2 min)
+$PY eval/jenga_basins.py            # bimodality + arm removal, the key result (~2 min)
+$PY eval/jenga_linkage.py           # linkage comparison + contact sheets      (~2 min)
+$PY eval/cluster_shootout.py        # HDBSCAN vs the rest, BOTH systems        (~5 min)
+```
+
 Set `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` for anything that trains or rolls out.
 
 ### Moving to another machine
@@ -236,35 +245,63 @@ criterion measured a quantity the method does not use.
 
 ## 6. Next steps, ranked
 
-**1. The Jenga go/no-go.** The only step that can invalidate everything. The world model checkpoint
-EXISTS at `~/wksp/dino_wm/outputs/model_latest_single.pth` (378 MB) — `RESUME.md` still wrongly
-claims it is missing. `labels.json` and the eval LMDB are absent but rebuildable from the 102 raw
-episodes.
+### The Jenga go/no-go is PARTLY DONE. What is settled:
 
-Run in this order, each step cheap and able to end the plan:
-  a. `eval/phase_b_geometry.py` adapted to Jenga latents — **does pose dominate nuisance?** The toy
-     measured 1.58. If Jenga falls below 1, nearest-centroid fails regardless of predictor quality.
-     A neighbour tipped 15 degrees is a far subtler distinction than a block flat on its face.
-  b. Roll the checkpoint with a settle tail — **does the basin LABEL stop changing?** (not
-     whether motion stops; see finding 5)
-  c. PCA + HDBSCAN on predicted endings — **does it find k basins?** (on REAL final frames it
-     already does: k=2 at 98.8%, see finding 6)
-  d. Only then check clusters against `labels.json`, as a CHECK, never a fit.
+| check | status |
+|---|---|
+| do toppled/intact scenes separate in DINOv2 space? | **YES** — 98-99% nearest-centroid, separation 2.15 (`eval/jenga_geometry.py`) |
+| are the basins real, or a continuum? | **REAL** — peak tilt bimodal, 72.2 deg gap, 0 episodes in 20-60 deg |
+| can the count be found with no labels? | **YES** — HDBSCAN finds k=2 at 98.8% (`eval/jenga_linkage.py`, `eval/cluster_shootout.py`) |
+| does latent distance track HOW FAR it tipped? | **YES** — r = 0.77 with `peak_tilt_deg` |
 
-Phase C predicts trouble at (b)/(c): the Jenga model has the same single-step recipe that failed.
+**All of that used REAL final frames and the encoder only.** The two things it does not touch are
+exactly what remains.
 
-**2. Competing baselines on PROXIMITY.** Never measured, and "same performance, no threshold" is
-the entire paper claim. Tuned-delta FTLE (the predecessor), div_std (0.818, needs a fitted
-percentile), Mahalanobis/kNN on safe-trajectory latents.
+### 1. THE SETTLE TAIL — the live blocker, and it needs a design decision
 
-**3. The warm-start ablation.** GTF from scratch at MATCHED compute. Currently "warm start
-required" is a claim, not a result — the successful run changed initialisation AND training volume
-together.
+The method reads the ending after "stop acting and let the scene settle". **Jenga demos contain no
+held poses at all**: over 6771 steps of demo actions the median per-step EE displacement is 5.3 mm,
+only 0.6% of steps move under 1 mm, and the longest run of consecutive sub-millimetre steps is
+**ONE**. So a zero-action tail is pure extrapolation, and asking "does it settle?" would be
+answered by OOD behaviour rather than physics.
 
-**4. Matched-impulse actions** (system-level universality). The toy is shortcut on OUTCOME
-(sum|a| -> AUC 0.925) but NOT on proximity (best fitted baseline 0.764 vs the method's 0.808).
-Generating action pairs with matched total impulse that differ only in timing would force magnitude
-baselines to chance by construction.
+Ruled out already: **dropping the tail entirely**. Measured on the toy against the fully-settled
+outcome, tail=0 finds the WRONG count (2 instead of 3) and scores 74.3% against a 70.7% baseline.
+
+The live option is a **nominal-continuation tail**: append the policy's own remaining actions
+instead of freezing. The arm lifts and retracts after every grasp, so a neighbour that was going to
+topple does so while the robot moves away — in-distribution, free, no retraining. One shared tail
+across all probes keeps probe-to-probe differences coming only from the chunk. Fallback is
+fine-tuning on held-pose data generated in the MuJoCo sim.
+
+### 2. Does the PREDICTOR preserve the structure the encoder has?
+
+Everything above is the encoder on real photographs. The monitor reads the world model's PREDICTED
+endings, which carry error. Phase C predicts trouble: the Jenga checkpoint uses dino_wm's shipped
+`num_pred: 1` recipe, which on the toy gave 75% basin agreement and hedged toward "nothing
+happened".
+
+**The diagnostic is one line and needs no retraining:** roll the checkpoint, cluster the endings,
+and compare the predicted basin COUNTS against the true 75/25 split. Compressed toward "nothing
+toppled" means it is hedging, and the fix is ~19 min of rollout fine-tuning on top of the existing
+checkpoint (teacher-force first, THEN rollouts — the order matters, reversed it collapses).
+
+### 3. Competing baselines on PROXIMITY
+
+Never measured, and "same performance, no threshold" is the entire paper claim. Tuned-delta FTLE
+(the predecessor), div_std (0.818, needs a fitted percentile), Mahalanobis/kNN on safe-trajectory
+latents.
+
+### 4. The warm-start ablation
+
+GTF from scratch at MATCHED compute. "Warm start required" is currently a claim, not a result — the
+successful run changed initialisation AND training volume together.
+
+### 5. Matched-impulse actions (system-level universality)
+
+The toy is shortcut on OUTCOME (`sum|a|` -> AUC 0.925) but NOT on proximity (best fitted baseline
+0.764 vs the method's 0.808). Action pairs with matched total impulse differing only in timing would
+force magnitude baselines to chance by construction.
 
 ---
 

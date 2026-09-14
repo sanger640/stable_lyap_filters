@@ -293,6 +293,15 @@ We only knew the clustering was at fault, rather than the world model, because w
 we fed the same clustering step *real photographs* of the endings instead of imagined ones. It
 failed identically. That ruled out the model.
 
+**A later correction, from trying this on real Jenga data.** The grouping method used here — merge
+things that are close, and keep the count that survives the widest range of "close" — turned out to
+be fragile. On Jenga, two scenes that happened to look alike (one block fully toppled, one barely
+moved) acted as a bridge and welded the two groups into one. We replaced it with **HDBSCAN**, which
+follows the same principle (keep what survives the widest range of scales) but works on density
+rather than raw distance, and which can label an odd scene as *noise* instead of letting it bridge.
+It finds the right number of groups on **both** systems — 3 on the block at 93.7%, 2 on Jenga at
+98.8% — where each of the older methods worked on one and failed on the other.
+
 **An unexpected bonus.** Clustering worked *better* on imagined endings than on real photographs.
 Measured in raw distance, imagined endings sit **21% closer together within a group** while the
 gaps *between* groups barely move (−2%). The world model only learns what's *predictable*, so it
