@@ -46,6 +46,14 @@ def build_centroids(E, pca_dim=8, min_size=3):
     Dm = pdist(X); scale = float(np.linalg.norm(X - X.mean(0), axis=1).mean())
     lab, k, width, counts = plateau(Dm, scale)
     keep = [j for j in range(k) if (lab == j).sum() >= min_size]
+    if not keep:
+        # Every cluster fell below min_size -- the plateau fragmented rather than finding
+        # structure. Raising this is right: silently returning the largest few would fabricate
+        # attractors out of noise, and the caller cannot tell the difference.
+        raise ValueError(
+            f"no cluster reached min_size={min_size}: plateau found k={k} with sizes "
+            f"{sorted(np.bincount(lab, minlength=k).tolist(), reverse=True)[:8]}. "
+            "The endings did not cluster -- do not proceed as if they had.")
     C = np.stack([X[lab == j].mean(0) for j in keep])
     return C, mean, V, k, len(keep), width, counts
 

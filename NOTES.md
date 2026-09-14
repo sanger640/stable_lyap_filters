@@ -1809,3 +1809,40 @@ asymptotically approaches upright without exactly arriving. The model reproduced
 **Restated acceptance for Phase D:** do not require `||z_t+1 - z_t|| -> 0`. Require that the
 ATTRACTOR ASSIGNMENT stops changing. The original criterion measured a quantity the method does not
 use, which is the same error shape recorded repeatedly above.
+
+## Tail length: no-tail is ruled out (toy), and Jenga cannot use a held-pose tail at all
+
+**Why this came up.** The Jenga world model has never seen a held pose. Measured over 6771 steps of
+demo actions (40 episodes, `jenga_noise_50/jenga_single.lmdb`): per-step EE displacement has a
+median of 5.3 mm and a 10th percentile of 2.6 mm, only 0.6% of steps move less than 1 mm, and **the
+longest run of consecutive sub-millimetre steps is ONE**. There are zero runs of >= 10 steps. A
+40-step zero-action settle tail is therefore pure extrapolation on Jenga -- and Phase D's question
+("does it settle?") would be answered by OOD behaviour rather than physics.
+
+This did not arise on the toy because `random_push` fires 3 pulses across 450 steps, leaving ~2/3 of
+steps at zero force. I checked that at the time and concluded the settle tail "is not asking for
+extrapolation". True for the toy; I had no basis for assuming it carried over.
+
+**Toy measurement, tail = 0** (read the latent at H, no settling), scored against the FULLY SETTLED
+outcome:
+
+| tail | separation | plateau k | after singletons | agreement |
+|---|---|---|---|---|
+| 0 | 1.705 | 2 | 2 | 74.3% |
+| 40 (reference) | 2.165 | 4 | **3** | **93.3%** |
+
+**No-tail finds the WRONG NUMBER OF ATTRACTORS (2, not 3)** and scores 74.3% against a 70.7%
+majority baseline -- barely above chance. MONITOR.md's warning that mid-flight endings destroy the
+attractor structure is confirmed. **Option "drop the tail" is dead.**
+
+The remaining options for Jenga, in order of cost:
+1. **Nominal-continuation tail** -- append the policy's own remaining actions instead of freezing.
+   The arm lifts and retracts after the grasp in every demo, so a neighbour that was going to topple
+   does so while the robot moves away. In-distribution, free, no retraining. One shared tail across
+   all probes keeps probe-to-probe differences coming only from the chunk.
+2. Fine-tune with held-pose data generated in the MuJoCo sim.
+
+**Bug found and fixed while doing this:** `build_centroids` in `eval/phase_f_monitor.py` crashed with
+an obscure `np.stack` error when every cluster fell below `min_size`. It now raises with the plateau
+count and cluster sizes. Silently returning the largest few clusters would have been worse -- it
+would fabricate attractors out of noise and the caller could not tell.
