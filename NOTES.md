@@ -1993,3 +1993,108 @@ as DISSENT. That is a small addition to the alarm rule and is now recorded in MO
 **Caveat:** two systems is not universality. But the previous position -- single-linkage for the
 toy, Ward for Jenga, chosen by which matched the labels -- was a genuine hole in the
 calibration-free claim, and this closes it for the cases in hand.
+
+## Jenga runtime implemented; preliminary J1 fidelity smoke (2026-09-14)
+
+The transferred bundle now runs without the original `dino_wm` checkout. `src/jenga_runtime.py`
+reconstructs the epoch-88 `VWorldModel` around the stripped modules, reads and validates the real
+LMDB contract (one cam2 frame plus aligned 4-D action/proprio per step), and provides the coherent
+absolute-EE probe family. `eval/jenga_j1_fidelity.py` is the J1 runner. The local environment is
+created by `scripts/setup_env.sh`.
+
+Ten real episodes rolled for 20 autoregressive steps on CPU with no NaNs. Error growth, measured
+against encoded truth in the model's own visual latent, was:
+
+| horizon | normalised RMSE | mean cosine distance |
+|---:|---:|---:|
+| 1 | 0.284 | 0.041 |
+| 2 | 0.405 | 0.083 |
+| 4 | 0.518 | 0.134 |
+| 8 | 0.598 | 0.177 |
+| 12 | 0.606 | 0.181 |
+| 20 | 0.609 | 0.183 |
+
+This clears J1's finite-20-step plumbing gate and confirms the expected exposure-bias shape: most
+error growth happens by step 8. **Do not mark J1 fully passed yet.** Its second acceptance criterion
+compares one-step error with the between-basin distance from predicted endings, which belongs to
+the joint J2/J3 tail-and-clustering run and has not been measured.
+
+The toy Phase E/F path now uses the shared PCA+HDBSCAN implementation rather than the superseded
+single-linkage plateau. HDBSCAN noise has an operational runtime meaning: nearest centroid is
+accepted only inside unsupervised nearest-neighbour density support; otherwise label -1 counts as
+dissent. Existing large toy ending caches are absent on this machine, so the historical headline
+has not yet been regenerated under this updated assignment rule.
+
+## Toy PCA+HDBSCAN full rerun (2026-09-14) — supersedes the nearest-centroid headline
+
+The 600-episode DINO cache was regenerated, both predictor variants were rolled through Phase E,
+and Phase F was rerun over 100 episodes x 8 scoring times using the shared HDBSCAN runtime rule.
+
+Phase E found the correct three basins for every predictor/settle combination. For the deployed
+GTF warm-started predictor at settle 40: **k=3, 100.0% coverage, 93.7% agreement**, cluster sizes
+225/44/31. The encoded-truth control found k=3 at 95.0% coverage and 85.3% agreement.
+
+Phase F produced 800 scored chunks, 159 near the operating margin of 0.23:
+
+| metric | PCA+HDBSCAN result |
+|---|---:|
+| per-chunk AUC | 0.773 |
+| per-episode AUC | 0.726 |
+| precision / recall / F1 | 0.745 / 0.820 / 0.781 |
+| accuracy | 0.770 |
+| confusion matrix (TP/FP/FN/TN) | 41 / 14 / 9 / 36 |
+
+The false-positive floor **fails**: among chunks with margin >=0.35, 10% alarm (k>=2); at margins
+>=0.40 and >=0.45, 11% alarm. The acceptance bar was <=5%. This is a real regression from the
+historical nearest-centroid run, not sampling noise: HDBSCAN discovery itself is sound, while the
+new out-of-support/noise assignment contributes runtime dissent. The old AUC 0.882 headline must
+not be quoted for the current algorithm.
+
+Ten videos were reselected from this exact confusion matrix (4 TP, 2 FN, 3 TN, 1 FP), rescored
+without the old cache, and rendered to `results/phase_f_videos/`. Each is 225 frames / 9.0 seconds;
+the associated cache is `results/phase_c/phase_f_video_scores_hdbscan.npz`.
+
+For a direct comparison with the superseded dense nearest-centroid run:
+
+| metric | nearest centroid | HDBSCAN runtime |
+|---|---:|---:|
+| per-chunk AUC | 0.804 | 0.773 |
+| per-episode AUC, preferred chunk label | 0.872 | 0.726 |
+| precision / recall / F1 | 0.872 / 0.820 / 0.845 | 0.745 / 0.820 / 0.781 |
+| large-margin chunks below alarm | 96-97% | 89-90% |
+
+The old 0.882 headline used the full-action margin. Applying those same saved labels to the new
+episode scores gives **AUC 0.751**, precision 0.655, recall 0.857, F1 0.742 (36/19/6/39). Thus the
+like-for-like headline comparison is 0.882 -> 0.751. The preferred per-chunk label remains the
+scientifically correct primary result, but both views show the same regression.
+
+## Toy known-basin dissent rerun (2026-09-14) — current runtime rule
+
+The runtime vote was then corrected so HDBSCAN noise is excluded from `k` rather than counted as
+dissent. Noise is retained as a separate known-basin coverage diagnostic. The same 100 episodes,
+800 chunks, predictor, probe stream, H=20, settle=40, eps=0.10, and k>=2 alarm rule were rerun.
+
+| metric | noise counted as dissent | noise excluded from dissent |
+|---|---:|---:|
+| per-chunk AUC | 0.773 | **0.782** |
+| per-episode AUC, preferred chunk label | 0.726 | **0.869** |
+| precision / recall / F1 | 0.745 / 0.820 / 0.781 | **0.889 / 0.800 / 0.842** |
+| accuracy | 0.770 | **0.850** |
+| confusion matrix (TP/FP/FN/TN) | 41 / 14 / 9 / 36 | **40 / 5 / 10 / 45** |
+| large-margin chunks below alarm | 89-90% | **96-97%** |
+
+The change removes false alarms caused by unfamiliar predicted latents while preserving most basin
+disagreement detections. It trades 2 percentage points of episode recall for a 14-point precision
+gain. Against the old full-action label, the known-only run gives AUC **0.872**, precision 0.778,
+recall 0.833, and F1 0.805 (35/10/7/48), close to the superseded nearest-centroid AUC 0.882.
+
+The ten representative videos were rescored and rendered again with the known-only rule. They are
+4 TP, 2 FN, 3 TN, and 1 FP; each is 225 frames / 9.0 seconds. The score cache is
+`results/phase_c/phase_f_video_scores_hdbscan_known_only.npz`.
+
+The known-only rule restores the acceptance criterion: far chunks remain below alarm 96-97% of the
+time, compared with 89-90% when noise was counted as dissent. It trades a small amount of recall
+(0.820 -> 0.800) for a large precision gain (0.745 -> 0.889). The ten videos were regenerated from
+the new confusion matrix and display noise count/known coverage separately from basin dissent. Mean
+known-basin coverage is 92.8% (median 100%); 29/800 chunks are all-noise and produce k=0 by
+definition, so those cases are no-evidence rather than affirmative clear decisions.

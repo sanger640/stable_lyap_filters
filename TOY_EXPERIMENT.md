@@ -338,31 +338,34 @@ one-step way, so expect the same problem there.
 
 ![results](media/fig_toy_results.png)
 
-**Left:** the image-based monitor (blue) matches the one reading the exact state (grey) on identical
-settings. It's slightly ahead on three of four measures, but the error bar shows they're close
-enough that the honest claim is **"at least as good"**, not "better".
+**Left is the historical nearest-centroid result, not the current algorithm.** After replacing
+per-task clustering with shared HDBSCAN and excluding out-of-support endings from the dissent vote,
+the 100-episode result is episode AUC 0.869 on the preferred per-chunk label, versus 0.872 for the
+previous nearest-centroid run. On the old full-action label, the like-for-like comparison is 0.872
+now versus 0.882 previously.
 
-**Right:** something we got wrong. The alarm signal **spikes and fades**. Checking only 3 times per
-episode missed spikes entirely and made the monitor look worse than it is. Checking 8 times pushed
-recall from 0.61 to 0.82 — **the monitor never changed; we were looking too rarely.**
+**Right records an earlier sampling correction.** The alarm signal **spikes and fades**. Checking
+only 3 times per episode missed spikes entirely; checking 8 times pushed recall from 0.61 to 0.82
+without changing that historical monitor. The later HDBSCAN change is a separate experiment.
 
-One number worth noting: on actions genuinely nowhere near a tipping point, the monitor stayed
-silent **96–97% of the time** across 537 checks. It is not jumpy.
+The revised dissent rule fixes the false-positive regression. On actions genuinely nowhere near a
+tipping point, both the previous monitor and the current HDBSCAN runtime stay below alarm 96–97%
+of the time. The tradeoff is a small recall drop (0.820 → 0.800) because noise no longer contributes
+to alarms. Basin discovery remains HDBSCAN, while noise is shown separately as coverage.
 
 ---
 
 ## 8. What this does and doesn't tell us
 
-**It tells us** the monitor survives the jump from perfect information to camera images with no
-re-tuning, and it identifies two specific things to fix first: the training recipe, and the
-clustering step.
+**It tells us** unsupervised HDBSCAN can discover the correct attractors in both the toy and Jenga
+representations without selecting a linkage per task. With noise excluded from the dissent vote,
+the runtime monitor passes the large-margin false-positive test and is close to the previous
+nearest-centroid monitor on AUC. It still does not prove transfer to the full Jenga runtime.
 
-**It does not tell us the method works on Jenga.** A block on a plain table is a far easier picture
-than a cluttered tabletop, and "flat on its face vs standing" is a far easier distinction than
-"neighbour tipped 15° vs not". The next step is a one-minute test on real Jenga images measuring
-whether the difference between *block positions* is bigger than the difference between *lighting
-conditions* — the same ratio as the right-hand panel in §5. If it isn't above ~1.5, none of this
-transfers.
+**It does not tell us the runtime method works on Jenga.** Real-frame geometry has since passed:
+HDBSCAN finds two Jenga groups at 98.8% agreement. The next test is J2/J3: roll the Jenga world
+model through a settle tail, cluster its *predicted* endings, and compare one-step error with
+between-basin distance. Only then is an end-to-end Jenga monitor justified.
 
 **Honest caveats:** the headline comes from 100 episodes; the two models were compared on separate
 runs rather than head to head; and the image model had to be re-trained with the better recipe, so

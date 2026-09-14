@@ -17,14 +17,16 @@ instead of welding two groups together.
 `min_cluster_size` is the one knob. It is set from the data as a fraction of n, not tuned against
 labels: "a basin must contain at least this share of the episodes to count as a basin."
 """
+import argparse
 import sys
 from pathlib import Path
 import numpy as np
+import torch
 from scipy.cluster.hierarchy import linkage, fcluster
-from sklearn.cluster import HDBSCAN
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "eval")]
+sys.path[:0] = [str(ROOT / "src"), str(ROOT / "src" / "systems"), str(ROOT / "eval")]
+from basins import fit_basin_model                                # noqa: E402
 from phase_e_attractors import pdist, plateau, agreement           # noqa: E402
 from jenga_linkage import count_by_gap                             # noqa: E402
 
@@ -58,49 +60,70 @@ def run(name, X, truth, frac=0.10):
           f"{sorted(np.bincount(lab).tolist(), reverse=True)[:4]}")
 
     for f in (0.05, 0.10, 0.15):
-        mcs = max(3, int(f * n))
-        h = HDBSCAN(min_cluster_size=mcs).fit(X)
-        lab = h.labels_
-        ag, cov, k = score(lab, truth)
+        try:
+            b = fit_basin_model(X, pca_dim=X.shape[1], min_cluster_fraction=f)
+            lab = b.labels
+            ag, cov, k = score(lab, truth)
+        except ValueError:
+            lab = np.full(n, -1, int); ag, cov, k = 0.0, 0.0, 0
         sizes = sorted(np.bincount(lab[lab >= 0]).tolist(), reverse=True)[:4] if (lab >= 0).any() else []
         print(f"{f'HDBSCAN (min {f:.0%} of n)':>26}{k:>9}{ag:>11.1%}{cov:>9.0%}   {sizes}")
 
 
-# ---------------------------------------------------------------- TOY
 import tipping_block as tb                                         # noqa: E402
 import block_render as br                                          # noqa: E402
 from phase_d_settle import basin, STRIDE                           # noqa: E402
-
-E = np.load(ROOT / "results/phase_c/phase_e_endings_H20_n300.npz")[
-    "predictor_gtf_warm.pt_40"].astype(np.float32)
-Zl_ = np.load(ROOT / "results/phase_c/latents.npy", mmap_mode="r")
-idx = np.linspace(0, Zl_.shape[0] - 1, 300).astype(int)
-rng = np.random.default_rng(0); thr = tb.topple_threshold(450, 10, 60)
-acts = []
-for _ in range(Zl_.shape[0]):
-    a = tb.random_push(rng, 450, thr); tb.simulate(a, dt=tb.DT_DEFAULT)
-    br.sample_lighting(rng); acts.append(a)
-truth_toy = basin(np.array([tb.simulate(
-    np.concatenate([acts[i][:20 * STRIDE], np.zeros(40 * STRIDE)]), dt=tb.DT_DEFAULT)[0][-1, 0]
-    for i in idx]))
-Xc = (E - E.mean(0)).astype(np.float32)
-V = np.linalg.svd(Xc[::2], full_matrices=False)[2]
-run("TOY, PCA 8", Xc @ V[:8].T, truth_toy)
-
-# ---------------------------------------------------------------- JENGA
-import json, torch                                                 # noqa: E402
 from jenga_basins import load, remove_arm                          # noqa: E402
 from jenga_geometry import encode                                  # noqa: E402
-W = Path("/home/sanger/wksp")
-eps, F, P, L = load(W / "panda_express/tasks/jenga_noise_50/jenga_single_100.lmdb",
-                    W / "panda_express/labels_noise100.json")
-model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14", verbose=False).cuda().eval()
-Ej = encode(F, model, "cuda").reshape(len(F), -1).astype(np.float32)
-R = remove_arm(Ej, P)
-truth_j = np.array([L[e]["outcome"] != "success" for e in eps]).astype(int)
-Xc = (R - R.mean(0)).astype(np.float32)
-V = np.linalg.svd(Xc[::2], full_matrices=False)[2]
-run("JENGA, arm removed, PCA 2", Xc @ V[:2].T, truth_j)
 
-print("\ncoverage = share of points NOT called noise. HDBSCAN discarding a few outliers is")
-print("the intended behaviour -- it is what stops one bridging point from welding two basins.")
+
+def run_toy(endings_path, latents_path):
+    endings = np.load(endings_path)["predictor_gtf_warm.pt_40"].astype(np.float32)
+    latents = np.load(latents_path, mmap_mode="r")
+    idx = np.linspace(0, latents.shape[0] - 1, 300).astype(int)
+    rng = np.random.default_rng(0); thr = tb.topple_threshold(450, 10, 60)
+    acts = []
+    for _ in range(latents.shape[0]):
+        a = tb.random_push(rng, 450, thr); tb.simulate(a, dt=tb.DT_DEFAULT)
+        br.sample_lighting(rng); acts.append(a)
+    truth = basin(np.array([tb.simulate(
+        np.concatenate([acts[i][:20 * STRIDE], np.zeros(40 * STRIDE)]),
+        dt=tb.DT_DEFAULT)[0][-1, 0] for i in idx]))
+    xc = (endings - endings.mean(0)).astype(np.float32)
+    v = np.linalg.svd(xc[::2], full_matrices=False)[2]
+    run("TOY, PCA 8", xc @ v[:8].T, truth)
+
+
+def run_jenga(lmdb_path, labels_path, device):
+    eps, frames, proprio, labels = load(lmdb_path, labels_path)
+    model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14", verbose=False)
+    model = model.to(device).eval()
+    encoded = encode(frames, model, device).reshape(len(frames), -1).astype(np.float32)
+    residual = remove_arm(encoded, proprio)
+    truth = np.array([labels[e]["outcome"] != "success" for e in eps]).astype(int)
+    xc = (residual - residual.mean(0)).astype(np.float32)
+    v = np.linalg.svd(xc[::2], full_matrices=False)[2]
+    run("JENGA, arm removed, PCA 2", xc @ v[:2].T, truth)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--toy-endings", default=str(
+        ROOT / "results/phase_c/phase_e_endings_H20_n300.npz"))
+    ap.add_argument("--toy-latents", default=str(ROOT / "results/phase_c/latents.npy"))
+    ap.add_argument("--lmdb", default=str(ROOT / "data/jenga/jenga_single_100.lmdb"))
+    ap.add_argument("--labels", default=str(ROOT / "data/jenga/labels_noise100.json"))
+    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--skip-toy", action="store_true")
+    ap.add_argument("--skip-jenga", action="store_true")
+    args = ap.parse_args()
+    if not args.skip_toy:
+        run_toy(args.toy_endings, args.toy_latents)
+    if not args.skip_jenga:
+        run_jenga(args.lmdb, args.labels, args.device)
+    print("\ncoverage = share of points NOT called noise. HDBSCAN discarding outliers is")
+    print("the intended behaviour -- it stops a bridging point from welding two basins.")
+
+
+if __name__ == "__main__":
+    main()

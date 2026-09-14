@@ -18,13 +18,14 @@ import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"), str(ROOT / "eval")]
+sys.path[:0] = [str(ROOT / "src"), str(ROOT / "src" / "systems"),
+                str(ROOT / "src" / "models"), str(ROOT / "eval")]
 import tipping_block as tb                                         # noqa: E402
 import block_render as br                                          # noqa: E402
 from phase_c_train import Predictor, NUM_HIST                      # noqa: E402
 from phase_d_settle import basin, STRIDE                           # noqa: E402
 from phase_e_attractors import pdist, plateau, agreement           # noqa: E402
-from phase_f_monitor import build_centroids                        # noqa: E402
+from phase_f_monitor import build_basin_model                     # noqa: E402
 
 OUT = ROOT / "results" / "phase_c"
 H, N = 20, 300
@@ -69,25 +70,25 @@ def main():
     ends[0] = np.stack(E0)
     print(f"  done ({time.time()-t0:.0f}s)\n", flush=True)
 
-    print(f"{'tail':>6}{'sep ratio':>11}{'plateau k':>11}{'after singles':>15}"
+    print(f"{'tail':>6}{'sep ratio':>11}{'HDBSCAN k':>11}{'coverage':>11}"
           f"{'agreement':>11}   verdict")
     print("-" * 74)
     for s in (0, 10, 20, 40):
         E = ends[s]
         try:
-            C, pmean, V, k_raw, k_keep, width, _ = build_centroids(E, 8)
+            b = build_basin_model(E, 8)
         except ValueError as ex:
-            print(f"{s:>6}{'--':>11}{'--':>11}{'--':>15}{'--':>11}   FRAGMENTED: {ex}")
+            print(f"{s:>6}{'--':>11}{'--':>11}{'--':>11}{'--':>11}   NO BASINS: {ex}")
             continue
-        X = (E - pmean) @ V.T
+        X = b.transform(E)
         D = pdist(X); scale = float(np.linalg.norm(X - X.mean(0), axis=1).mean())
         iu = np.triu_indices(len(X), 1); pw = D[iu] / scale
         same = truth[iu[0]] == truth[iu[1]]
         sep = np.median(pw[~same]) / np.median(pw[same])
-        lab = ((X[:, None] - C[None]) ** 2).sum(-1).argmin(1)
-        ag = agreement(lab, truth)
-        ok = "OK" if (k_keep == 3 and ag > 0.80) else ("count wrong" if k_keep != 3 else "weak")
-        print(f"{s:>6}{sep:>11.3f}{k_raw:>11}{k_keep:>15}{ag:>11.1%}   {ok}")
+        keep = b.labels >= 0
+        ag = agreement(b.labels[keep], truth[keep]) if keep.any() else float("nan")
+        ok = "OK" if (b.n_clusters == 3 and ag > 0.80) else ("count wrong" if b.n_clusters != 3 else "weak")
+        print(f"{s:>6}{sep:>11.3f}{b.n_clusters:>11}{b.coverage:>11.1%}{ag:>11.1%}   {ok}")
     print("\nlabel is the FULLY SETTLED outcome in every row, so a short tail has to")
     print("RECOVER the final structure, not just describe what it can see.")
     print(f"({time.time()-t0:.0f}s)")

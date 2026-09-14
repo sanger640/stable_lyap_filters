@@ -42,8 +42,10 @@ You need the terminal states of the system in latent space. You do **not** suppl
 4. *** HDBSCAN with min_cluster_size = 5-10% of M. Keeps the clusters that PERSIST over the
    widest range of DENSITY levels, and labels sparse points as NOISE. ***
 5. The attractor count is whatever HDBSCAN returns. Nothing is supplied.
-6. Take the cluster centroids as the attractor centres C. Points labelled noise get no centre --
-   at runtime a probe landing in noise counts as DISSENT, since it reached no known basin.
+6. Take the cluster centroids as the attractor centres C. Record each cluster's density support
+   as the 99th percentile of within-cluster nearest-neighbour distance. At runtime, use the
+   nearest centroid only when the ending lies inside that cluster's support; otherwise retain
+   the NOISE label. Noise is excluded from DISSENT and reported as reduced coverage.
 ```
 
 ### Why HDBSCAN and not the merge-distance plateau
@@ -69,6 +71,14 @@ majority instead of isolating the minorities.
 on density instead of raw distance -- and crucially it has a NOISE label, so a bridging point is
 discarded rather than used as a bridge. It discarded 17% of Jenga episodes as noise, which is the
 intended behaviour and not a defect.
+
+**Runtime result from the 100-episode toy rerun.** Discovery and online assignment are separate
+tests. HDBSCAN finds the correct three toy basins at 93.7% agreement and 100% training coverage.
+Excluding support noise from the basin vote restores the large-margin floor: 96-97% of far chunks
+stay below alarm. Preferred chunk-label episode AUC is 0.869; applying the old full-action label
+gives AUC 0.872. Mean known-basin coverage is 92.8% (median 100%); 29/800 chunks are all-noise
+and therefore have k=0 by definition. Noise remains visible as reduced coverage, not as basin
+dissent, and zero-coverage chunks should be treated as no-evidence rather than as a safety claim.
 
 `min_cluster_size` is the only knob and it is a structural statement, not a fitted one: *a basin
 must hold at least this share of the episodes to count as a basin.* 5% and 10% both work on both
@@ -148,9 +158,11 @@ CONST   H (fixed lookahead), L (settle), n (probes), eps, k_min, C (attractor ce
 3. SETTLE          a_j <- concat(a_j, zeros(L))
 4. ROLL            z_0 <- lift(encode(o_t))
                    E_j <- world_model.rollout(z_0, a_j)[-1]
-5. ASSIGN          lab_j <- argmin_c || E_j - C_c ||^2
-6. COUNT           k <- n - max_c #{j : lab_j = c}          # dissent count
-                   S <- -sum_c p_c ln p_c                   # basin entropy (a summary of k)
+5. ASSIGN          lab_j <- nearest supported basin, or NOISE
+6. COUNT           known <- {j : lab_j != NOISE}
+                   k <- |known| - max_c #{j in known : lab_j = c}  # known-basin dissent
+                   coverage <- |known| / n                        # report separately
+                   S <- -sum_c p_c ln p_c                         # entropy over known basins
 
 7. ALARM if   k >= k_min                               <- near a boundary. THE METHOD.
    (optional)   lab(nominal) != lab(null action)       <- clause 1': the action CHANGES
@@ -345,9 +357,9 @@ more than the method's quality could explain.
 | rollout total | 350 | H + L |
 | n (probes) | 32 | reach 1.33 eps = 13% margin |
 | eps | 0.10 | 1-sigma of the scalar |
-| k_min | 2 | inclusive: k=2 IS an alarm |
+| k_min | 2 | inclusive: k=2 known-basin dissent IS an alarm |
 | v | `a` | scale the push |
-| attractors | 3 | fall-left, upright, fall-right, from the plateau |
+| attractors | 3 | fall-left, upright, fall-right, discovered by HDBSCAN |
 
 Caveat on L: 150 is shorter than the 164-step fall and was chosen empirically; the fall completes
 because the settle tail starts from an already-committed state. Worth re-checking if H changes.

@@ -6,12 +6,12 @@
 acceptance criteria are met and logged in NOTES.md. **If a phase fails twice, stop and report** —
 do not loosen the criteria.
 
-**Environment:** run everything in the `dino_wm` conda env (`/home/sanger/miniforge3/envs/dino_wm`,
-torch 2.11+cu128). `tipping_block.py` is pure numpy and runs there unchanged.
+**Environment:** run `./scripts/setup_env.sh`, activate `.venv`, then use its Python. The setup
+reuses the installed CUDA PyTorch stack and installs the lightweight runtime dependencies.
 
 ---
 
-## STATUS — all phases complete (2026-09-12)
+## STATUS — all phases complete; HDBSCAN rerun added 2026-09-14
 
 | phase | verdict | key number |
 |---|---|---|
@@ -20,17 +20,18 @@ torch 2.11+cu128). `tipping_block.py` is pure numpy and runs there unchanged.
 | — latent geometry | **PASS** | pose/lighting 1.58; nearest-centroid 100% on unseen lighting |
 | C predictor | **FAIL** on dino_wm's recipe · **PASS** retrained | 75% → **91.7%** basin agreement; RMSE 0.320 → **0.206** |
 | D settle tail | **PASS** (re-judged) | motion never stops (0.60% floor) but the basin LABEL is 100% stable from settle step 40 |
-| E discovery | **FAIL** raw · **PASS** after PCA | separation 1.35 → 2.2–11.6; 93.3% agreement |
-| F monitor | **PASS** | FP floor 96–97%; **AUC 0.882** vs shPLRNN 0.808 |
+| E discovery | **FAIL** raw · **PASS** PCA+HDBSCAN | k=3; 93.7% agreement; 100% coverage |
+| F monitor | **PASS with noise-excluded dissent** | FP floor 96–97%; chunk-label AUC 0.869; old-label AUC 0.872 |
 
-**Headline:** the monitor transfers from an exact 2-D state to DINOv2 patch features with **no
-retuning** — same ε, n, k_min, probe family — and matches or beats the state-based version while
-being scored ~4× more sparsely.
+**Current headline:** HDBSCAN discovers the correct basin count without a per-task clustering
+choice, and excluding noise from the dissent vote passes Phase F. The full 100-episode rerun has
+preferred per-chunk-label AUC 0.869 and a 96-97% large-margin below-alarm rate.
 
 **Two caveats that must travel with that.** The run used the ROLLOUT FINE-TUNED predictor, not
 dino_wm's shipped `num_pred: 1` recipe, so it validates the architecture and not the existing Jenga
-checkpoint. And the AUC CI is [0.805, 0.949] against the shPLRNN's 0.808 point estimate, with
-unpaired runs — so "at least as good, plausibly better", never "better".
+checkpoint. Also, the old 0.882 headline used a full-action margin that does not match what each
+scored chunk sees. Re-evaluating the known-only HDBSCAN scores on that same old label gives AUC
+0.872; the preferred chunk-label result is 0.869.
 
 **Phase D was re-judged and now passes.** It was originally failed for never reaching a fixed point
 (0.60% of scale per step, flatlining) and for being expansive against the encoded truth. But the
@@ -148,8 +149,8 @@ ASSIGNMENT stops changing:
 
 ## Phase E — Attractor discovery
 
-Merge-distance sweep on the settled latents, exactly `find_attractors()` from
-`eval/phase3_pipeline.py`. No k supplied.
+PCA+HDBSCAN on the settled predicted latents. No k supplied. The historical merge-distance sweep
+is retained only for comparison because it is bridge-sensitive and fails on Jenga.
 
 **Acceptance**
 - HDBSCAN (min_cluster_size 5-10% of n) returns **3**. (The original merge-distance plateau is
@@ -196,11 +197,11 @@ One table, one system, one set of labels, two representations, no retuning:
 | | shPLRNN on (theta, omega) | DINO-WM on images |
 |---|---|---|
 | state | exact, Markov | inferred from 3 frames |
-| false-positive floor (k, large margin) | ? | ? |
+| false-positive floor (k, large margin) | ? | **96–97% below alarm (PASS; bar 95%)** |
 | theta RMSE | 0.265 rad | ? |
 | settles? | yes | ? |
 | attractors found (HDBSCAN) | 3 | 3, at 93.7% |
-| AUC vs margin | 0.808 | ? |
+| AUC vs margin | 0.808 (full-action label) | **0.872 same old label; 0.869 preferred chunk label** |
 
 Plus the baselines already measured on this system (`sum|a|` 0.700, `||a||` 0.764 with S* fitted to
 the test labels, both proximity).

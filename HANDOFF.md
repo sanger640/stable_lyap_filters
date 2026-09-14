@@ -38,13 +38,14 @@ ONLINE, every chunk:
   2. 32 probes: a_j = a + eps * z_j * v,  ONE SCALAR z_j ~ N(0,1) per probe
   3. append a SETTLE TAIL of zero/hold action
   4. roll each probe through the world model, take the ENDING latent
-  5. PCA -> assign to nearest attractor centroid
-  6. k = number of probes NOT in the plurality
+  5. PCA -> assign to nearest supported attractor centroid, or NOISE
+  6. k = number of KNOWN-BASIN probes NOT in the plurality
+     coverage = fraction of probes assigned to a known basin (reported separately)
   7. ALARM if k >= 2.   No threshold. No labels. No calibration.
 
 OFFLINE, once: discover the attractors with HDBSCAN on PREDICTED endings, PCA'd first
                (min_cluster_size = 5-10% of n). The count is never supplied. A probe
-               landing in NOISE reached no known basin, so it counts as dissent.
+               landing in NOISE is excluded from the basin vote and reported as reduced coverage.
 ```
 
 **Sizing rule — this replaces threshold tuning.** `E[k] = n * Phi(-m/eps)`, so the detectable
@@ -59,12 +60,17 @@ detect; solve for eps.
 | track | status |
 |---|---|
 | **shPLRNN on the exact state** (toy) | done — AUC 0.808, prec 0.633, rec 0.905 |
-| **DINO-WM on images** (toy) | phases A–F done — **AUC 0.882 [0.805, 0.949]**, prec 0.766, rec 0.857 |
-| **Jenga** (the real task) | **not started** |
+| **DINO-WM on images** (toy) | known-only dissent rerun — chunk-label **AUC 0.869**, prec 0.889, rec 0.800, F1 0.842 |
+| **Jenga** (the real task) | encoder checks done; J1 runtime implemented; J2-J6 pending |
 
-**The headline result:** the monitor transfers from an exact 2-D state to DINOv2 patch features
-with **no retuning** — same eps, n, k_min, probe family — and matches or beats the state-based
-version while being scored ~4x more sparsely.
+**The current result:** HDBSCAN removes the per-task clustering choice and discovers the correct
+three toy basins (93.7% agreement, 100% coverage). Excluding noise from the dissent vote restores
+the runtime false-positive floor: on 100 episodes it scores AUC 0.869 on the preferred per-chunk
+label, with precision 0.889, recall 0.800, F1 0.842, and 96-97% of large-margin chunks below alarm.
+Against the old full-action label, its like-for-like AUC is 0.872 versus 0.882 for nearest-centroid
+and 0.808 for the exact-state monitor. Mean known-basin coverage is 92.8% (median 100%); 29 of
+800 chunks have no known-basin probes and therefore produce k=0 by definition, not evidence of
+safety.
 
 **The caveat that must travel with it:** this used a ROLLOUT FINE-TUNED predictor. dino_wm's
 shipped `num_pred: 1` recipe gives 75% basin agreement and was NOT used. So this validates the
@@ -80,11 +86,12 @@ no longer depends on it -- see below). Versions are pinned in `requirements.txt`
 ```bash
 PY=/home/sanger/miniforge3/envs/dino_wm/bin/python
 cd ~/wksp/stable_lyap_filters
-$PY -m pytest tests/ -q            # 23 tests, ~12 s, all should pass
+$PY -m pytest tests/ -q            # 27 tests, ~12 s, all should pass
 ```
 
-GPU is an RTX 5060 Ti with **7.5 GiB** — small. Two traps it causes, both hit during development:
-* batch 256 x 768 tokens needs ~9.6 GB for attention alone. Chunk to <=128.
+The current machine has an RTX 3090 with **24 GiB**. The monitor still chunks to <=128 to preserve
+the validated execution path and remain portable to the original RTX 5060 Ti (7.5 GiB):
+* batch 256 x 768 tokens needs ~9.6 GB for attention alone on the original machine.
 * backprop through an unrolled 8-step ViT OOMs. Use gradient checkpointing.
 
 ### Pipeline, in order (DINO-WM track)
@@ -95,13 +102,14 @@ $PY eval/phase_c_train.py           # teacher-forced predictor        (~8 min)
 $PY eval/phase_c_train_gtf.py --tag gtf_warm   # rollout fine-tune    (~19 min)  <- REQUIRED
 $PY eval/phase_d_settle.py          # settle + contraction tests      (~2 min)
 $PY eval/phase_e_attractors.py      # attractor discovery             (~4 min)
-$PY eval/phase_f_monitor.py         # the monitor, 100 eps x 8 times  (~53 min)
-$PY eval/phase_f_videos2.py         # demo videos (scores are cached) (~5 min)
+$PY eval/phase_f_monitor.py         # the monitor, 100 eps x 8 times  (~34 min on RTX 3090)
+$PY eval/phase_f_videos2.py --rescore  # select/rescore/render 10 demos (~14 min on RTX 3090)
 ```
 
-### Jenga scripts (encoder only — no world model, no training)
+### Jenga scripts
 
 ```bash
+$PY eval/jenga_j1_fidelity.py       # bundled model + LMDB, error vs horizon (J1)
 $PY eval/jenga_geometry.py          # do toppled/intact separate? raw vs PCA   (~2 min)
 $PY eval/jenga_basins.py            # bimodality + arm removal, the key result (~2 min)
 $PY eval/jenga_linkage.py           # linkage comparison + contact sheets      (~2 min)
@@ -119,7 +127,10 @@ Rebuild with `./scripts/bundle_jenga.sh --live`.
 git clone git@github.com:sanger640/stable_lyap_filters.git && cd stable_lyap_filters
 sha256sum -c data/jenga/BUNDLE.sha256      # verify the transfer
 tar -Sxf /path/to/jenga_bundle_live.tar    # -S IS REQUIRED, see below
-python -m pytest tests/ -q                 # 23 tests
+./scripts/setup_env.sh
+source .venv/bin/activate
+python -m pytest tests/ -q                 # 27 tests
+python eval/jenga_j1_fidelity.py --episodes 10
 ```
 
 **Extract with `-S`.** The LMDB's `data.mdb` is **20 GB apparent against 1.1 GB of real blocks** --
@@ -138,7 +149,7 @@ build** -- the GPUs used here are Blackwell (sm_120) and cu121 wheels will not r
 
 ```bash
 git clone git@github.com:sanger640/stable_lyap_filters.git && cd stable_lyap_filters
-python -m pytest tests/ -q                       # 23 tests, ~12 s -- verifies the port
+python -m pytest tests/ -q                       # 27 tests, ~12 s -- verifies the port
 ```
 
 **The repo is self-contained for the toy work.** `ViTPredictor` -- the only thing ever imported

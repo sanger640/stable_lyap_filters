@@ -28,17 +28,19 @@ from matplotlib.animation import FFMpegWriter, FuncAnimation       # noqa: E402
 from matplotlib.patches import Polygon                             # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
+sys.path[:0] = [str(ROOT / "src"), str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
                 str(ROOT / "eval")]
 import tipping_block as tb                                         # noqa: E402
 import block_render as br                                          # noqa: E402
 from phase_c_train import Predictor, NUM_HIST                      # noqa: E402
-from phase_f_monitor import build_centroids, chunk_margin, STRIDE  # noqa: E402
+from basins import dissent_count, known_coverage                   # noqa: E402
+from phase_f_monitor import build_basin_model, chunk_margin, STRIDE  # noqa: E402
 
 OUT = ROOT / "results" / "phase_c"
 VID = ROOT / "results" / "phase_f_videos"
-SCORES = OUT / "phase_f_video_scores.npz"
+SCORES = OUT / "phase_f_video_scores_hdbscan_known_only.npz"
 ACOL = ["#8e44ad", "#27ae60", "#d35400"]
+NOISE_COLOR = "#7f8c8d"
 
 
 def main():
@@ -62,8 +64,9 @@ def main():
     mu, sd, amu, asd = (float(p[k]) for k in ("mu", "sd", "amu", "asd"))
     cache = np.load(OUT / "phase_e_endings_H20_n300.npz")
     E_all = cache[f"predictor_gtf_warm.pt_{args.settle}"].astype(np.float32)
-    C, pmean, V, k_raw, k_keep, _, _ = build_centroids(E_all, args.pca)
-    assign = ((((E_all - pmean) @ V.T)[:, None] - C[None]) ** 2).sum(-1).argmin(1)
+    basins = build_basin_model(E_all, args.pca)
+    C, pmean, V = basins.centers, basins.mean, basins.components
+    assign = basins.labels
     V2 = np.linalg.svd((E_all - E_all.mean(0))[::2], full_matrices=False)[2][:2]
     Emean = E_all.mean(0)
 
@@ -73,7 +76,7 @@ def main():
         a = tb.random_push(rng, 450, thr); tb.simulate(a, dt=tb.DT_DEFAULT)
         acts.append(a); lights.append(br.sample_lighting(rng))
 
-    rows = json.load(open(OUT / "phase_f_results.json"))["rows"]
+    rows = json.load(open(OUT / "phase_f_results_dense.json"))["rows"]
     picks = []
     for want, cond, n in (("TP", lambda r: r["m_min"] < 0.23 and r["k_max"] >= 2, 4),
                           ("FN", lambda r: r["m_min"] < 0.23 and r["k_max"] < 2, 2),
@@ -100,7 +103,7 @@ def main():
         eps_rng = np.random.default_rng(777); dat = {}
         for tag, row in picks:
             i = row["i"]; st, _ = tb.simulate(acts[i], dt=tb.DT_DEFAULT)
-            KS, LB, TH, XP, MS = [], [], [], [], []
+            KS, CV, LB, TH, XP, MS = [], [], [], [], [], []
             for t in ts:
                 ch = A[i, t:t + args.H, 0].astype(np.float64)
                 z = eps_rng.standard_normal((args.n_probe, 1))
@@ -117,14 +120,15 @@ def main():
                             aw = torch.cat([aw[:, :1].expand(-1, NUM_HIST-aw.shape[1], -1), aw], 1)
                         win = torch.cat([win[:, 1:], model(win, aw)[:, -1:]], 1)
                 Ee = win[:, -1].reshape(args.n_probe, -1).float().cpu().numpy() * sd + mu
-                X = (Ee - pmean) @ V.T
-                lab = ((X[:, None] - C[None]) ** 2).sum(-1).argmin(1)
-                KS.append(int(args.n_probe - max((lab == j).sum() for j in range(len(C)))))
+                lab = basins.predict(Ee)
+                KS.append(dissent_count(lab, basins.n_clusters))
+                CV.append(known_coverage(lab, basins.n_clusters))
                 LB.append(lab); TH.append(((Ee - xm) @ Vk.T) @ Wg + ym)
                 XP.append((Ee - Emean) @ V2.T)
                 MS.append(chunk_margin(st[t*STRIDE], acts[i][t*STRIDE:(t+args.H)*STRIDE],
                                        args.settle * STRIDE))
-            dat[f"{i}_k"] = np.array(KS); dat[f"{i}_lab"] = np.array(LB)
+            dat[f"{i}_k"] = np.array(KS); dat[f"{i}_cov"] = np.array(CV)
+            dat[f"{i}_lab"] = np.array(LB)
             dat[f"{i}_th"] = np.array(TH); dat[f"{i}_xp"] = np.array(XP)
             dat[f"{i}_m"] = np.array(MS)
             print(f"  ep{i} scored ({(time.time()-t0)/60:.1f} min)", flush=True)
@@ -134,7 +138,8 @@ def main():
     frames_idx = np.arange(0, 450, args.sim_stride)
     for tag, row in picks:
         i = row["i"]
-        KS, LB, TH = dat[f"{i}_k"], dat[f"{i}_lab"], dat[f"{i}_th"]
+        KS, CV, LB, TH = (dat[f"{i}_k"], dat[f"{i}_cov"], dat[f"{i}_lab"],
+                          dat[f"{i}_th"])
         XP, MS = dat[f"{i}_xp"], dat[f"{i}_m"]
         st, _ = tb.simulate(acts[i], dt=tb.DT_DEFAULT)
         bg = br.prepare(lights[i], seed=i)
@@ -185,7 +190,7 @@ def main():
                            fontsize=13, fontweight="bold")
         fig.suptitle(f"[{tag}] episode {i} — DINO-WM monitor — min chunk margin "
                      f"{MS.min():.1%},  peak k {KS.max()}/{len(TH[0])} "
-                     f"(Phase F saw {row['k_max']} at 3 scoring times)", fontsize=12)
+                     f"(Phase F peak {row['k_max']} across {len(ts)} scoring times)", fontsize=12)
 
         def update(f):
             simf = frames_idx[f]
@@ -200,10 +205,13 @@ def main():
                 for g, th_, l_ in zip(ghosts, TH[j], LB[j]):
                     g.set_alpha(0.22)
                     g.set_xy(br.corners(float(np.clip(th_, -np.pi/2, np.pi/2))))
-                    g.set_facecolor(ACOL[l_ % 3])
-                pts.set_offsets(XP[j]); pts.set_color([ACOL[l % 3] for l in LB[j]])
+                    g.set_facecolor(NOISE_COLOR if l_ < 0 else ACOL[l_ % 3])
+                pts.set_offsets(XP[j])
+                pts.set_color([NOISE_COLOR if l < 0 else ACOL[l % 3] for l in LB[j]])
                 votes = "/".join(str(int((LB[j] == q).sum())) for q in range(len(C)))
+                noise = int((LB[j] < 0).sum())
                 info.set_text(f"t {simf*tb.DT_DEFAULT:5.2f}s\nvotes {votes}\n"
+                              f"noise {noise} ({CV[j]:.0%} known)\n"
                               f"dissent {KS[j]}\nchunk margin {MS[j]:.1%}")
                 kl.set_data(tsec[:j+1], KS[:j+1])
                 hot = KS[j] >= 2

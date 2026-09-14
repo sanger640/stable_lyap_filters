@@ -4,9 +4,9 @@ First time the whole pipeline runs on the image-based model. Comparison target i
 AUC 0.808 on the same system.
 
 WHAT PHASE E CHANGED. Clustering happens in PCA space, not the raw 98,304-dim latent, and on
-PREDICTED endings, never encoded ones. Both are unsupervised, so the calibration-free claim holds:
-the attractor count still comes from the merge-distance plateau with nothing supplied, minus
-singletons.
+PREDICTED endings, never encoded ones. HDBSCAN discovers the count with nothing supplied and
+retains a noise label. At runtime, endings outside learned density support are excluded from the
+dissent vote and reported as reduced known-basin coverage.
 
 WARM START. The monitor's context is the last `num_hist` REAL encoded observations. That is what a
 deployed monitor has, and it is required here because a single frame shows theta but not omega.
@@ -27,41 +27,27 @@ import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
+sys.path[:0] = [str(ROOT / "src"), str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
                 str(ROOT / "eval")]
 import tipping_block as tb                                         # noqa: E402
 import block_render as br                                          # noqa: E402
 from phase_c_train import Predictor, NUM_HIST, D                   # noqa: E402
-from phase_e_attractors import pdist, plateau                      # noqa: E402
+from basins import dissent_count, fit_basin_model, known_coverage   # noqa: E402
 
 OUT = ROOT / "results" / "phase_c"
 STRIDE = 10
 
 
-def build_centroids(E, pca_dim=8, min_size=3):
-    """Phase E's recipe: PCA, merge-distance plateau, drop singletons. Nothing supplied."""
-    mean = E.mean(0)
-    V = np.linalg.svd((E - mean)[::2], full_matrices=False)[2][:pca_dim]
-    X = (E - mean) @ V.T
-    Dm = pdist(X); scale = float(np.linalg.norm(X - X.mean(0), axis=1).mean())
-    lab, k, width, counts = plateau(Dm, scale)
-    keep = [j for j in range(k) if (lab == j).sum() >= min_size]
-    if not keep:
-        # Every cluster fell below min_size -- the plateau fragmented rather than finding
-        # structure. Raising this is right: silently returning the largest few would fabricate
-        # attractors out of noise, and the caller cannot tell the difference.
-        raise ValueError(
-            f"no cluster reached min_size={min_size}: plateau found k={k} with sizes "
-            f"{sorted(np.bincount(lab, minlength=k).tolist(), reverse=True)[:8]}. "
-            "The endings did not cluster -- do not proceed as if they had.")
-    C = np.stack([X[lab == j].mean(0) for j in keep])
-    return C, mean, V, k, len(keep), width, counts
+def build_basin_model(E, pca_dim=8, min_cluster_fraction=0.05):
+    """Current Phase E recipe: PCA then HDBSCAN, with no basin count supplied."""
+    return fit_basin_model(E, pca_dim=pca_dim,
+                           min_cluster_fraction=min_cluster_fraction)
 
 
 class Monitor:
     """Basin entropy / dissent count over an H-step chunk, from real observed context."""
 
-    def __init__(self, model, C, mean, V, mu, sd, amu, asd, H, settle, eps, n_probe, dev):
+    def __init__(self, model, basin_model, mu, sd, amu, asd, H, settle, eps, n_probe, dev):
         self.__dict__.update(locals()); del self.self
 
     @torch.no_grad()
@@ -102,10 +88,9 @@ class Monitor:
                 nxt = self.model(win, a_win)[:, -1:]
                 win = torch.cat([win[:, 1:], nxt], 1)
         E = win[:, -1].reshape(T * n, -1).float().cpu().numpy() * self.sd + self.mu
-        X = (E - self.mean) @ self.V.T
-        lab = ((X[:, None] - self.C[None]) ** 2).sum(-1).argmin(1).reshape(T, n)
-        return [int(n - max((lab[i] == j).sum() for j in range(len(self.C))))
-                for i in range(T)]
+        lab = self.basin_model.predict(E).reshape(T, n)
+        return [(dissent_count(lab[i], self.basin_model.n_clusters),
+                 known_coverage(lab[i], self.basin_model.n_clusters)) for i in range(T)]
 
 
 def chunk_margin(s0, chunk_sim, settle_sim, s_max=0.5, coarse=0.04):
@@ -157,6 +142,7 @@ def main():
     ap.add_argument("--n-probe", type=int, default=32)
     ap.add_argument("--k-min", type=int, default=2)
     ap.add_argument("--pca", type=int, default=8)
+    ap.add_argument("--min-cluster-fraction", type=float, default=0.05)
     ap.add_argument("--n-episodes", type=int, default=100)
     ap.add_argument("--times", type=int, nargs="+", default=[3, 6, 9, 12, 15, 18, 21, 24])
     ap.add_argument("--near", type=float, default=0.23)
@@ -172,12 +158,12 @@ def main():
 
     cache = np.load(OUT / "phase_e_endings_H20_n300.npz")
     E = cache[f"{args.ckpt}_{args.settle}"].astype(np.float32)
-    C, pmean, V, k_raw, k_keep, width, counts = build_centroids(E, args.pca)
-    print(f"attractors: plateau k={k_raw} (width {width}), {k_keep} after dropping singletons")
-    print(f"  counts by d/scale: " + " ".join(f"{f}:{c}" for f, c in counts) + "\n", flush=True)
+    basins = build_basin_model(E, args.pca, args.min_cluster_fraction)
+    print(f"attractors: HDBSCAN k={basins.n_clusters}, coverage={basins.coverage:.1%}, "
+          f"sizes={basins.cluster_sizes}, min_cluster_size={basins.min_cluster_size}\n", flush=True)
 
     model = Predictor().to(dev); model.load_state_dict(torch.load(OUT / args.ckpt)); model.eval()
-    mon = Monitor(model, C, pmean, V, mu, sd, amu, asd, args.H, args.settle,
+    mon = Monitor(model, basins, mu, sd, amu, asd, args.H, args.settle,
                   args.eps, args.n_probe, dev)
 
     rng = np.random.default_rng(0); thr = tb.topple_threshold(450, 10, 60)
@@ -196,10 +182,12 @@ def main():
         ts = [t for t in args.times if t + args.H <= Z.shape[1]]
         ctxs = [np.asarray(Z[i, t - NUM_HIST + 1:t + 1], np.float32) for t in ts]
         chunks = [A[i, t:t + args.H, 0].astype(np.float64) for t in ts]
-        ks = mon.score_many(ctxs, chunks, eps_rng)
+        scored = mon.score_many(ctxs, chunks, eps_rng)
+        ks = [x[0] for x in scored]
+        cov = [x[1] for x in scored]
         ms = [chunk_margin(st[t * STRIDE], acts[i][t * STRIDE:(t + args.H) * STRIDE],
                            args.settle * STRIDE) for t in ts]
-        rows.append(dict(i=int(i), k=ks, margin=ms,
+        rows.append(dict(i=int(i), k=ks, coverage=cov, margin=ms,
                          k_max=int(max(ks)), m_min=float(min(ms))))
         if (c + 1) % 10 == 0:
             print(f"  {c+1}/{len(idx)}  ({(time.time()-t0)/60:.1f} min)", flush=True)

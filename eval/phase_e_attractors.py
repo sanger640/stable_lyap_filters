@@ -1,9 +1,10 @@
 """Phase E of PLAN_DINOWM: do the PREDICTED ending latents form discoverable attractors?
 
 THE FIRST PHASE WHERE THE METHOD, NOT THE MODEL, IS ON TRIAL. Everything so far measured how well
-the predictor tracks reality. This asks whether the monitor's own machinery works: cluster the
-ending latents with NO k supplied, via the merge-distance plateau, and see whether the count that
-emerges is 3 and whether the groups correspond to the three outcomes.
+the predictor tracks reality. This asks whether the monitor's own machinery works: PCA the ending
+latents, cluster them with HDBSCAN with NO k supplied, and see whether the count that emerges is 3
+and whether the groups correspond to the three outcomes. The older merge-distance helpers remain
+below for historical analysis scripts, but they are no longer the Phase E decision rule.
 
 Phase D bounded the difficulty without deciding it. One-step error is 26.9% of ending scale at a
 moment when theta decodes to 0.040 rad, so most latent error lives in theta-IRRELEVANT directions
@@ -18,7 +19,7 @@ different failures:
 
 Settle length is swept because Phase D showed the latents never stop moving (0.60-0.88% of scale
 per step, flatlining rather than converging). Where you truncate the tail changes the ending you
-get, so the plateau has to survive that drift.
+get, so the HDBSCAN result has to survive that drift.
 
 `merge` and `find_attractors` are imported from eval/phase3_pipeline.py -- the same code that found
 3 attractors for the shPLRNN. merge() is O(n^2) in 98k dimensions, so distances are precomputed
@@ -31,12 +32,13 @@ import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
+sys.path[:0] = [str(ROOT / "src"), str(ROOT / "src" / "systems"), str(ROOT / "src" / "models"),
                 str(ROOT / "eval")]
 import tipping_block as tb                                         # noqa: E402
 from phase_c_train import Predictor, NUM_HIST                      # noqa: E402
 from phase3_pipeline import merge, find_attractors                 # noqa: E402
 from phase_d_settle import basin, STRIDE                           # noqa: E402
+from basins import fit_basin_model                                # noqa: E402
 
 OUT = ROOT / "results" / "phase_c"
 
@@ -99,6 +101,8 @@ def main():
     ap.add_argument("--H", type=int, default=20)
     ap.add_argument("--settles", type=int, nargs="+", default=[10, 20, 40])
     ap.add_argument("--n", type=int, default=300)
+    ap.add_argument("--pca", type=int, default=8)
+    ap.add_argument("--min-cluster-fraction", type=float, default=0.05)
     args = ap.parse_args()
     dev = "cuda"; t0 = time.time()
     L = max(args.settles)
@@ -171,18 +175,21 @@ def main():
     assert (merge_D(Dm, 0.3 * sc) == merge(sm, 0.3 * sc)).all(), "merge_D != phase3_pipeline.merge"
     print("  merge_D verified against phase3_pipeline.merge\n", flush=True)
 
-    print(f"{'model':<32}{'settle':>7}{'k found':>9}{'plateau':>9}{'agree':>8}   counts by d/scale")
-    print("-" * 96)
+    print(f"{'model':<32}{'settle':>7}{'k found':>9}{'coverage':>10}{'agree':>8}   sizes")
+    print("-" * 84)
     for tag, byS in runs.items():
         for s, Es in byS.items():
-            D = pdist(Es)
-            scale = float(np.linalg.norm(Es - Es.mean(0), axis=1).mean())
-            lab, k, width, counts = plateau(D, scale)
             tr = truth[s] if s in truth else truth[max(truth)]
-            ag = agreement(lab, tr)
-            print(f"{tag:<32}{s:>7}{k:>9}{width:>9}{ag:>8.1%}   "
-                  + " ".join(f"{f}:{c}" for f, c in counts))
-    print(f"\nACCEPTANCE: plateau at k=3 with >= 80% agreement")
+            try:
+                b = fit_basin_model(Es, args.pca, args.min_cluster_fraction)
+            except ValueError as ex:
+                print(f"{tag:<32}{s:>7}{0:>9}{0:>10.1%}{'--':>8}   {ex}")
+                continue
+            keep = b.labels >= 0
+            ag = agreement(b.labels[keep], tr[keep]) if keep.any() else float("nan")
+            print(f"{tag:<32}{s:>7}{b.n_clusters:>9}{b.coverage:>10.1%}{ag:>8.1%}   "
+                  f"{sorted(b.cluster_sizes, reverse=True)}")
+    print(f"\nACCEPTANCE: HDBSCAN at k=3 with >= 80% agreement; report coverage")
     print(f"({time.time()-t0:.0f}s)")
 
 

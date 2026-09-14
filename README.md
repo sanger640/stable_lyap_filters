@@ -21,8 +21,11 @@ actually bite a demonstration-trained policy are the MARGINAL ones from OOD drif
 Task: a Franka Panda picks a block from a cluttered tabletop; failure is toppling a
 neighbouring block. Everything runs on the latent dynamics of a **frozen DINO world model**.
 
-> Current toy result: **AUC 0.882** [0.805, 0.949] on proximity, matching an equivalent monitor
-> that sees the exact simulator state (0.808), with no retuning between them.
+> Current toy result with the shared PCA+HDBSCAN basin model and noise-excluded dissent: **episode
+> AUC 0.869**, precision 0.889, recall 0.800, and F1 0.842 on 100 episodes using the preferred
+> per-chunk label. On the old full-action label, the like-for-like AUC is **0.872 versus 0.882**
+> previously. HDBSCAN discovers all three basins with 93.7% agreement, and 96-97% of large-margin
+> chunks remain below alarm.
 >
 > The earlier **AUC 0.894** headline below is a different method and a different question --
 > `d_end` magnitude with patch masking, scored on OUTCOME. It is kept because the record of what
@@ -230,6 +233,17 @@ python eval/make_figures.py   # all figures
 ```
 
 ## Setup
+
+For the transferred Jenga bundle, create an isolated environment and run the first fidelity gate:
+
+```bash
+./scripts/setup_env.sh
+source .venv/bin/activate
+python eval/jenga_j1_fidelity.py --episodes 10
+```
+
+The setup script reuses an existing CUDA PyTorch installation to avoid downloading a second
+multi-gigabyte wheel. `requirements.txt` remains the fully pinned from-scratch environment.
 
 ```bash
 export DINO_WM_DIR=/path/to/dino_wm                # world model + checkpoint
