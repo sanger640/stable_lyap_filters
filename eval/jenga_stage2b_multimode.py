@@ -33,6 +33,9 @@ def score(coords):
             # Revised persistence, declared after Stage 2b; valid only on fresh data.
             "revised_alarm": bool(both and coarse_persistent_fork(early["labels"],
                                                                   late["labels"])),
+            # Step 1 rule: only the widest-gap two-way split must persist.
+            "dominant_alarm": bool(both and groupings_persist(early["dominant"],
+                                                              late["dominant"])),
             "groups_step10": early["groups"], "groups_step30": late["groups"],
             "sizes_step30": late["sizes"], "persistent": bool(persist)}
 
@@ -75,6 +78,8 @@ def main():
                                      "multi_alarms": sum(p["multi"]["alarm"] for p in part),
                                      "revised_alarms": sum(p["multi"]["revised_alarm"]
                                                            for p in part),
+                                     "dominant_alarms": sum(p["multi"]["dominant_alarm"]
+                                                            for p in part),
                                      "old_pc1_alarms": sum(p["old_pc1_alarm"] for p in part)}
         strata = sorted({r["by_scale"][s]["stratum"] for r in rows for s in r["by_scale"]}
                         - {None})
@@ -88,6 +93,7 @@ def main():
                     "old_pc1_alarms": sum(p["old_pc1_alarm"] for p in part),
                     "multi_alarms": sum(p["multi"]["alarm"] for p in part),
                     "revised_alarms": sum(p["multi"]["revised_alarm"] for p in part),
+                    "dominant_alarms": sum(p["multi"]["dominant_alarm"] for p in part),
                     "states_with_topple_mix_at_this_scale": sum(p["class"] == "topple_fork"
                                                                 for p in part)}
             print("  by stratum", scale, by_stratum[scale])
@@ -95,7 +101,8 @@ def main():
         print(name)
         for scale, entry in summary.items():
             print("  ", scale, {c: f"old {v['old_pc1_alarms']} / multi {v['multi_alarms']} / "
-                                   f"revised {v['revised_alarms']} of {v['states']}"
+                                   f"revised {v['revised_alarms']} / "
+                                   f"dominant {v['dominant_alarms']} of {v['states']}"
                                 for c, v in entry.items() if v["states"]})
     Path(args.output).write_text(json.dumps(out, indent=2) + "\n")
 

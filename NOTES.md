@@ -2841,3 +2841,34 @@ rule that handles both hold regimes (candidate: keep coarse persistence but requ
 split to be the one with the largest separation, not any split), then world-model predicted
 endings. Results: `results/jenga/holdout_stage2b.json`, `holdout_stage0.json`,
 `holdout_stage1.json`, `holdout_stage2_shared.json`, `holdout_stage2_ownhold.json`.
+
+## Step 1: dominant-split rule on a SECOND holdout (2026-09-17)
+
+`dominant_binary` in `src/outcome_modes.py`: single-linkage merge of the fitted groups down to the
+two-way split with the widest gap; alarm if that split persists between hold steps 10 and 30
+(<=1 run misplaced). Frozen after synthetic checks only: 0/100 false alarms on smooth and
+arm-like spreads, 75/100 sub-pose forks (the revised rule gets 89; when two topple sub-poses are
+further apart than topple-vs-stable, the widest gap is between them).
+
+Second holdout batch: 107 states (50 topple / 7 physical / 50 quiet), seed 1, selected by the same
+declared rule from the remaining screened chunks with the batch-1 states excluded; zero overlap
+verified. `results/jenga/holdout2_selected_stage1.json`, `holdout2_stage2b.json`.
+
+Recall on mixed states / false alarms on quiet states:
+
+| | scale | old | multi | revised | dominant |
+|---|---|---|---|---|---|
+| shared hold | 1x | 88% / 1% | 6% / 0% | 56% / 1% | **81% / 0%** |
+| shared hold | 2x | 84% / 2% | 12% / 0% | 74% / 2% | 66% / 2% |
+| arm moving | 1x | 40% / 2% | 35% / 0% | 75% / 3% | **75% / 3%** |
+| arm moving | 2x | 67% / 2% | 23% / 2% | 79% / 8% | 73% / 2% |
+
+The dominant rule is the best compromise: 66-81% recall with 0-3% false alarms in every condition,
+where the old rule swings 40-88% and the revised rule reaches 8% false alarms. It also fixes the
+revised rule's specificity at 2x with the arm moving (2% vs 8%).
+
+**It still fails the pre-declared gate of ~85% recall at under 10% false alarms in both
+conditions**, so by that criterion the ending-grouping family has reached its ceiling and the next
+gate is world-model predicted endings, not a fifth rule. Batch-to-batch variance is large at these
+sample sizes (old rule, arm moving at 1x: 78% on batch 1, 40% on batch 2, n=27 and n=20), which is
+itself a reason to stop tuning rules on single batches.

@@ -113,3 +113,23 @@ def test_coarse_persistence_stray_tolerance():
     assert coarse_persistent_fork(a, b)
     b[1] = 1; b[61] = 0  # now 3 strays: pairs (0,1)x2 is linked, (1,0)x1 stray -> merges
     assert not coarse_persistent_fork(a, b)
+
+
+from outcome_modes import dominant_binary  # noqa: E402
+
+
+def test_dominant_split_takes_the_widest_gap():
+    z = np.array([[0.], [0.2], [5.], [5.2], [0.1], [5.1]])
+    labels = np.array([0, 1, 2, 3, 0, 2])  # four groups, the wide gap is 0/1 vs 2/3
+    d = dominant_binary(z, labels)
+    assert set(d[labels <= 1]) == {d[0]} and set(d[labels >= 2]) == {d[2]} and d[0] != d[2]
+
+
+def test_dominant_split_of_toppled_subgroups_is_topple_vs_stable():
+    rng = np.random.default_rng(0)
+    z = rng.normal(0, 1, (64, 5))
+    z[:6, 1] += 40; z[6:12, 1] += 40; z[6:12, 2] += 8  # two topple sub-poses
+    result = multi_mode_test(z)
+    assert result["groups"] >= 2
+    dom = result["dominant"]
+    assert set(dom[:12]) == {dom[0]} and dom[0] != dom[20]

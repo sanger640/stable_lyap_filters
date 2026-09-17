@@ -29,10 +29,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage1", default=str(ROOT / "results/jenga/holdout_stage1.json"))
     ap.add_argument("--output", default=str(ROOT / "results/jenga/holdout_selected_stage1.json"))
+    ap.add_argument("--exclude", action="append", default=[],
+                    help="a previous selection JSON whose states must not be reused")
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--counts", default="60,20,60", help="topple,physical,quiet")
     args = ap.parse_args()
     stage1 = json.loads(Path(args.stage1).read_text())
-    rows = stage1["rows"]
-    rng = np.random.default_rng(0)
+    used = set()
+    for path in args.exclude:
+        used |= {(r["episode_id"], r["chunk_start"])
+                 for r in json.loads(Path(path).read_text())["rows"]}
+    rows = [r for r in stage1["rows"] if (r["episode_id"], r["chunk_start"]) not in used]
+    counts = [int(x) for x in args.counts.split(",")]
+    rng = np.random.default_rng(args.seed)
     topple = [r for r in rows if "mixed" in (r["grade"]["1.0"], r["grade"]["2.0"])]
     safe = [r for r in rows
             if r["grade"]["1.0"] == "unanimous_safe" and r["grade"]["2.0"] == "unanimous_safe"]
@@ -41,15 +50,15 @@ def main():
              if not any(r["scores"][s]["no_floor"] or r["scores"][s]["all_blocks"]
                         for s in SCALES)]
     chosen = []
-    for name, pool, count in (("topple", topple, 60), ("physical", physical, 20),
-                              ("quiet", quiet, 60)):
+    for name, pool, count in zip(("topple", "physical", "quiet"),
+                                 (topple, physical, quiet), counts):
         for r in pick(pool, count, rng):
             chosen.append(dict(r, stratum=f"holdout_{name}"))
         print(f"{name}: {len(pool)} available")
     out = dict(stage1, rows=chosen)
     out["selection"] = {"rule": __doc__.strip(), "pool_sizes": {
         "topple": len(topple), "physical": len(physical), "quiet": len(quiet),
-        "screened": len(rows)}}
+        "screened": len(rows)}, "excluded_states": len(used), "seed": args.seed}
     Path(args.output).write_text(json.dumps(out, indent=1) + "\n")
     print(len(chosen), "selected")
 

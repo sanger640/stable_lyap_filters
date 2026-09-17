@@ -198,7 +198,7 @@ def multi_mode_test(endings, dims=MULTI_DIMS, max_groups=MAX_GROUPS, seed=0):
             best[k] = labels
     k = min(bic, key=bic.get)
     labels = best[k]
-    return {"groups": int(k), "labels": labels,
+    return {"groups": int(k), "labels": labels, "dominant": dominant_binary(z, labels),
             "sizes": sorted(np.bincount(labels).tolist(), reverse=True),
             "bic": {int(a): float(b) for a, b in bic.items()}}
 
@@ -241,3 +241,31 @@ def coarse_persistent_fork(labels_a, labels_b, min_shared=MIN_SIDE, tolerance=1)
             sizes[root] = sizes.get(root, 0) + int(n)
     big = sum(v >= min_shared for v in sizes.values())
     return bool(strays <= tolerance and big >= 2)
+
+
+def dominant_binary(z, labels):
+    """Merge the fitted groups down to the two-way split with the largest separation.
+
+    Single linkage on the group centroids: repeatedly merge the closest pair until two
+    clusters remain, so the final boundary is the widest gap between groups.
+    """
+    labels = np.asarray(labels)
+    groups = list(np.unique(labels))
+    if len(groups) < 2:
+        return np.zeros(len(labels), int)
+    clusters = [[g] for g in groups]
+    centres = {g: z[labels == g].mean(0) for g in groups}
+    while len(clusters) > 2:
+        best, pair = np.inf, (0, 1)
+        for i in range(len(clusters)):
+            for j in range(i + 1, len(clusters)):
+                d = min(np.linalg.norm(centres[a] - centres[b])
+                        for a in clusters[i] for b in clusters[j])
+                if d < best:
+                    best, pair = d, (i, j)
+        i, j = pair
+        clusters[i] = clusters[i] + clusters[j]
+        clusters.pop(j)
+    side = {g: 0 for g in clusters[0]}
+    side.update({g: 1 for g in clusters[1]})
+    return np.array([side[g] for g in labels], int)
