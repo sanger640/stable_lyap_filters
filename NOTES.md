@@ -2872,3 +2872,38 @@ conditions**, so by that criterion the ending-grouping family has reached its ce
 gate is world-model predicted endings, not a fifth rule. Batch-to-batch variance is large at these
 sample sizes (old rule, arm moving at 1x: 78% on batch 1, 40% on batch 2, n=27 and n=20), which is
 itself a reason to stop tuning rules on single batches.
+
+## Stage 3: PREDICTED endings, the deployable input -- FAIL (2026-09-17)
+
+`eval/jenga_stage3_predicted_forks.py`. Identical to Stage 2 except nothing after the chunk is
+simulated: the three real frames at the chunk start warm-start the bundled world model, each of
+the 64 perturbed action windows is rolled out H=8 plus the 30-step hold (40 transitions), and the
+predicted latents after 10 and 30 held steps are read. Same probes, same scales, same per-state
+exact PCA, same frozen rules, same batch-2 holdout states and classes.
+
+Recall on mixed states / false alarms on quiet states, predicted vs real:
+
+| | scale | old | revised | dominant |
+|---|---|---|---|---|
+| shared, PREDICTED | 1x | 0% / 8% | 12% / 8% | 6% / 7% |
+| shared, real | 1x | 88% / 1% | 56% / 1% | 81% / 0% |
+| shared, PREDICTED | 2x | 4% / 2% | 10% / 9% | 6% / 2% |
+| shared, real | 2x | 84% / 2% | 74% / 2% | 66% / 2% |
+| arm moving, PREDICTED | 1x | 0% / 0% | 0% / 6% | 0% / 5% |
+| arm moving, real | 1x | 40% / 2% | 75% / 3% | 75% / 3% |
+| arm moving, PREDICTED | 2x | 4% / 0% | 8% / 4% | 4% / 2% |
+| arm moving, real | 2x | 67% / 2% | 79% / 8% | 73% / 2% |
+
+Alarm rates on forks and on quiet states are equal within noise, i.e. no signal. The cause is the
+predictor, not the rule: on the same states and probes, the separation between toppling and
+non-toppling probes (d' in the state's own latent space) is median 0.60 predicted versus 4.85 real
+at 1x, and 0.55 versus 3.11 at 2x. The predicted endings of a toppling probe and a stable probe
+are nearly the same point, exactly the num_pred=1 hedging seen on the toy system (HANDOFF finding
+2). Rollouts were finite everywhere; the failure is not numerical.
+
+So the detector is validated only on real endings, and the deployable path is blocked on the world
+model. Next: rollout fine-tune the Jenga predictor (the toy fix: teacher-force first, then
+fine-tune on rollouts -- `eval/phase_c_train_gtf.py` is the pattern) and repeat Stage 3 unchanged.
+Do not tune the rules against predicted latents while d' is 0.6. Results:
+`results/jenga/holdout2_stage3_shared.json`, `holdout2_stage3_ownhold.json`,
+`holdout2_stage3b.json`.

@@ -10,9 +10,12 @@
 > mixed-outcome states at 1x with 3% false alarms on unanimous-safe states; with the arm ending
 > in each probe's own pose it falls to 78%, where the coarse-persistence multi-group rule gets
 > 93% with 5%. Neither rule wins both regimes, and no rule may be chosen per case.
-> **Nothing here is validated as a safety filter, and nothing has run on world-model
-> PREDICTED endings yet** - that is the next gate and the historically weak link.
-> Read section 6's Stage 0-2b entries, then NOTES.md from the bottom up.
+> **Nothing here is validated as a safety filter.** Stage 3 ran the same rules on world-model
+> PREDICTED endings and FAILED: alarm rates on forks and on quiet states are equal within noise
+> (0-12% either way). The cause is the predictor -- the separation between toppling and stable
+> probes is d' 0.60 predicted versus 4.85 real -- so the deployable path is blocked on rollout
+> fine-tuning the Jenga world model, not on the detector.
+> Read section 6's Stage 0-3 entries, then NOTES.md from the bottom up.
 
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.
 Read this, then `MONITOR.md` (the method), then `NOTES.md` (the append-only log, newest at the
