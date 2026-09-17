@@ -1,5 +1,24 @@
 > Plain-language version with figures: [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md). Current status and next steps: [`HANDOFF.md`](HANDOFF.md).
 
+> **Which variant is current (2026-09-17).** Everything below describes the ORIGINAL method:
+> Gaussian probes that scale the chunk's own motion, one global attractor atlas discovered
+> offline, and dissent counted against that atlas. It is validated on the toy system and it
+> FAILED on Jenga. The Jenga line of work now uses a different construction, kept deliberately
+> close in spirit:
+>
+> * **probes** = 64 contiguous 8-step tracking-residual snippets from held-out episodes,
+>   subtracted from the commanded targets (a measured execution-error scale, no `eps`), at
+>   0.5x/1x/2x; see `src/action_uncertainty.py` and `eval/jenga_stage0_noise_oracle.py`;
+> * **endings** = the settled scene after a 30-step hold on a common target, read as full-frame
+>   DINO latents (`eval/jenga_stage2_visual_forks.py`);
+> * **alarm** = the 64 endings split into separated groups, tested PER STATE with no global
+>   atlas and no supplied count, and the split must persist between hold steps 10 and 30
+>   (`src/outcome_modes.py`).
+>
+> The sizing rule survives in the form "at least 2 of 64 runs in the minority", i.e. a minority
+> outcome of 5% is detected with probability .84. Holdout numbers and the open problem (no single
+> rule works both when the arm converges and when it does not) are in `HANDOFF.md` and `NOTES.md`.
+
 A **calibration-free** monitor for an action chunk. No tuned threshold: the alarm is a *counting*
 statement about disagreement among probes, so nothing plays the role that δ=0.8 plays in the FTLE
 monitor. No labels of any kind, so it drops onto a new manipulation task as-is.

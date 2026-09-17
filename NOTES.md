@@ -2662,3 +2662,182 @@ live use or visual translation. No new holdout because the development-panel spe
 failed. Preserve these results as a negative baseline and measure an independently observable,
 task-general future consequence and real execution variability next. See `HANDOFF.md` and the
 three `results/jenga/*predictive*.json`/`tracking_uncertainty.json` files.
+
+## Stage 0: answer key under realistic execution noise (2026-09-17)
+
+No detector scored. Each of the frozen 55 panel states replays its nominal chunk 64 times, each
+with a contiguous 8-step lag-model tracking residual from non-panel episodes subtracted from the
+xyz targets. The same 64 snippets are used at every state, at 0.5x/1x/2x, followed by 30 held
+steps on the nominal final target. Snippet step norm: median 1.59 mm, p90 4.01 mm. Oracle
+(evaluation only): a neighbor starting <45 deg ends step 30 at >=45 deg. Mixed = >=2 probes on
+each side; weak = exactly one dissenter. Sizing: P(detect minority p) = .37/.84/.99 at p=.02/.05/.10.
+
+Settling is adequate: the last held step moves blocks p99 0.13 mm and topple labels at tail 10 and
+tail 20 agree with tail 30 in 100% of 10,560 probes (tail 5: 99.1-99.97%).
+
+| stratum (n) | 0.5x mixed/weak | 1x mixed/weak | 2x mixed/weak |
+|---|---|---|---|
+| boundary (15) | 1/1 | 7/2 | 11/1 |
+| moving non-topple (20) | 0/1 | 2/1 | 8/6 |
+| contact lift (10) | 0/0 | 0/0 | 0/0 |
+| silent (10) | 0/0 | 0/0 | 0/0 |
+
+Readings: (1) contact lifts and silent states are unanimous-safe at every scale, so every past alarm
+on them is a genuine false alarm. (2) At 1x, 6/15 "boundary" states are unanimous-safe; the
+boundary cohort was built with a wider offset grid and is only partly within realistic noise.
+(3) Moving non-topple is not a clean negative group: at 2x, 14/20 have at least one toppling probe.
+At 1x, the 2026-09-17 predictive probe alarmed on 9 moving states that are all unanimous-safe and
+missed both mixed ones; on boundaries it alarmed on 4/7 mixed and 3/6 unanimous. The Stage 1
+benchmark should use these grades per scale, not the stratum names. Result:
+`results/jenga/stage0_noise_oracle.json`; script `eval/jenga_stage0_noise_oracle.py`.
+
+## Stage 1: label-free two-mode test on Stage 0 endings (2026-09-17)
+
+Physics upper bound on the 55-state panel using the Stage 0 true endings. Constants were fixed
+before results (`src/outcome_modes.py`). Features: neighbor box-corner displacement (mm). Rule:
+split along PC1; BIC prefers two groups; Ashman D>2; minority >=2; group separation greater than
+the injected perturbation (median per-chunk max 3.16 mm x scale); the same split at hold 10 and 30.
+Positives = mixed, negatives = unanimous-safe, weak states not scored.
+
+| scale | full TP/FN/FP/TN | no floor FP | no persistence FP | all blocks FP |
+|---|---|---|---|---|
+| 0.5x | 1/0/9/43 | 20 | 13 | 12 |
+| 1x | 9/0/8/35 | 20 | 9 | 5 |
+| 2x | 19/0/0/29 | 16 | 1 | 1 |
+
+Recall is 100% at every scale; contact-lift and silent states never alarm. All 8 false alarms at
+1x are real two-way splits without a topple: in some runs a neighbor slides 3.5-10 mm or rests at
+a few degrees of tilt, and in others it doesn't (D 6-71, minority 5-22). The floor removed 12 of
+20 such splits. They are not noise; whether they count as "a different outcome" is a goal decision,
+not something to fit.
+
+Spread alone (RMS ending spread) has AUC 1.0 at every scale: mixed states are >=10.0 mm and
+unanimous-safe states are <=4.1 mm, so any cutoff between them is perfect here. Topples are so
+large on this panel that the two-mode test adds no discrimination over spread; its only
+advantage is needing no fitted cutoff, and the floor is itself a scale. The panel cannot
+separate these methods, and it has only 9 positives at 1x. Result:
+`results/jenga/stage1_outcome_modes.json`.
+
+## Stage 2: the fork test on image latents, universal (2026-09-17)
+
+`eval/jenga_stage2_visual_forks.py`. Same 64 Stage 0 executions per state, re-simulated. The
+settled scene at hold steps 10 and 30 is rendered from cam_fixed and encoded with the world
+model's DINOv2 (full frame, 196x384 tokens), then projected with exact per-state PCA. No object,
+mask, geometry, contact, or mm scale. Rule frozen before results: BIC two>one, Ashman D>2,
+minority>=2 at both times, and the same partition (<=1 probe) at steps 10 and 30. Graded after
+scoring against physics classes: topple fork (Stage 0 mixed), nudge fork (Stage 1 neighbor fork
+with floor), small split (Stage 1 split only without floor), quiet.
+
+| scale | topple fork | nudge fork | small split | quiet | weak |
+|---|---|---|---|---|---|
+| 0.5x | 1/1 | 3/9 | 0/11 | 2/32 | 0/2 |
+| 1x | 8/9 | 1/8 | 2/12 | 0/23 | 0/3 |
+| 2x | 19/19 | - | 1/16 | 0/13 | 1/7 |
+
+Image latent separation alone has AUC 1.0 for topple fork vs quiet at every scale. At 1x,
+topple-fork separations are 131-160 and quiet ones are <=35.5.
+
+Persistence carries the specificity: the final time alone alarms on 10/23 quiet states at 1x
+(25/32 at 0.5x), even when the arm's end position varies by only 0.01-0.02 mm. Single-frame DINO
+latents split two ways without a physical fork, and the splits change between steps 10 and 30.
+The 1x miss (ep51 c82, 3 topples) had a 2-probe minority and failed persistence.
+
+The two 1x "small split" alarms are not neighbor forks, so the neighbor-only grading mislabels
+them. At ep25 c90, the grasped red block drops ~25 mm and moves ~45 mm in 4/64 runs (a grasp
+failure fork, visual separation 145.5, topple-sized). At ep48 c82, the red block ends ~8 mm
+differently in 8/64 runs. Both are real forks of the kind a universal monitor should report;
+Stage 0/1 missed them because physics grading looked only at neighbors.
+
+Caveats: true rendered endings, not world-model predictions; one camera; development panel only;
+0.5x has 2 quiet alarms. Result: `results/jenga/stage2_visual_forks.json`.
+
+## Stage 2 arm-movement check (2026-09-17)
+
+`eval/jenga_stage2_visual_forks.py --own-hold`: each probe holds its own perturbed final target,
+so the arm ends in different places (median end spread 1.1/2.3/4.5 mm at 0.5x/1x/2x, vs
+0.01-0.11 mm with a shared hold). Topples were re-graded from these runs; nudge and small-split
+classes are inherited from the shared-hold Stage 1. A declared variant residualizes latents on
+end-effector xyz before the same rule. Result: `results/jenga/stage2_visual_forks_ownhold.json`.
+
+| scale | topple fork | nudge | small split | quiet | arm-removed: topple / quiet |
+|---|---|---|---|---|---|
+| 0.5x | 1/1 | 0/9 | 0/10 | 0/31 | 1/1 / 0/31 |
+| 1x | 7/11 | 0/5 | 1/9 | 1/19 | 9/11 / 0/19 |
+| 2x | 20/30 | - | 1/10 | 0/10 | 21/30 / 0/10 |
+
+Specificity survives arm motion. Recall drops. Every miss looks the same: BIC does not prefer two
+groups, or persistence fails, and the best PC1 split has a minority of 14-32, with separation about
+equal to overall spread. PC1 is now the arm's end position, and the cut halves that continuous
+spread instead of isolating the toppled runs (2-8 of 64). This is the predicted PC1-only failure.
+
+Arm removal recovers most misses but loses other hits (1x: ep49; 2x: 8 hits lost). With own hold,
+the arm's final position partly causes the topple, so outcome and arm position are correlated and
+regressing out the arm removes signal. Neither variant is clean; the post-hoc union is not
+claimed. Next: a frozen multi-direction, multi-group test (e.g. GMM with BIC over k=1-4 on the top
+few PCs) on both the shared-hold and own-hold data.
+
+## Stage 2b: multi-direction, multi-group test, frozen rule FAILS on recall (2026-09-17)
+
+`src/outcome_modes.multi_mode_test` and `eval/jenga_stage2b_multimode.py`: top 5 PCs; diagonal
+GMM with k=1-4 and 10 starts; each group needs >=2 runs; every pair needs 1-D BIC two>one plus
+Ashman D>2 along the joining line; k is the valid minimum BIC. Alarm if k>=2 at hold steps 10 and
+30 with groupings matching (<=1 misplaced, either direction). Two versions were rejected on
+synthetic data before any Jenga run: hard-assignment D, then fitted-variance D, both split a
+continuous stretched cloud. On 100 synthetic seeds the final rule gives 0 false splits for round,
+stretched, and uniform clouds, and finds 98/100 four-run off-axis forks.
+
+Jenga, multi / old PC1 alarms:
+- shared hold: topple forks 1/1, 2/9, 1/19 (old 1, 8, 19); quiet 1/32, 0/23, 0/13.
+- own hold: topple forks 0/1, 3/11, 11/30 (old 1, 7, 20); quiet 0/31, 0/19, 0/10.
+
+Diagnosis (not used to change the rule): the forks ARE found. Topple states give 3-4 groups at
+both times (e.g. ep33 c122 at 2x: sizes 36/12/11/5, BIC strongly prefers k>1). They fail
+persistence because the finer groups inside "toppled" and "not toppled" reshuffle between step 10
+and step 30 (different fall and settle poses). The topple/no-topple split itself persists, but
+the <=1-misplaced mapping requires the whole fine grouping to match. Result:
+`results/jenga/stage2b_multimode.json`. Any persistence revision is post-hoc on this panel and
+needs fresh data.
+
+## Fresh holdout: three frozen rules, 140 unseen states (2026-09-17)
+
+Screened every non-overlapping H=8 chunk (1,168) in the 57 episodes outside the development
+panel with the Stage 0 physics: 64 shared snippets, scales .5/1/2, 30-step hold. Snippet identity
+was verified byte-identical to the development run (`--snippet-panel`). The snippets do come from
+these episodes, which affects the wobbles applied, not anything the detector fits. Topple labels
+settle by hold 10 (99.997% agreement with 30). Mixed states: 20/44/121 at .5x/1x/2x.
+
+Selection declared before the screen: all mixed at 1x or 2x capped at 60 (121 available), up to 20
+unanimous-safe with an all-block physical fork at 1x (27 available), 60 random unanimous-safe with
+no physical split at any scale (711 available), seed 0. Panel: 140 states.
+`eval/jenga_holdout_select.py`, `results/jenga/holdout_selected_stage1.json`.
+
+Rules, all frozen before this run: **old** = PC1 two-group test (Stage 2); **multi** = 5-direction
+GMM k=1-4 with strict persistence (Stage 2b); **revised** = same groups, coarse persistence
+(`coarse_persistent_fork`, declared after Stage 2b and evaluated here for the first time). Revised
+scored 0/100 synthetic false alarms and 97/100 sub-pose forks before this run.
+
+Recall on mixed states / false alarms on quiet states, Wilson 95% CI:
+
+| | scale | old | multi | revised |
+|---|---|---|---|---|
+| shared hold | 1x | **96% [79-99]** / 3% | 17% / 0% | 65% / 2% |
+| shared hold | 2x | **77% [65-86]** / 0% | 22% / 2% | 63% / 2% |
+| arm moving | 1x | 78% [59-89] / 4% | 30% / 0% | **93% [77-98]** / 5% |
+| arm moving | 2x | 58% [46-70] / 2% | 18% / 2% | **75% [64-84]** / 14% [7-25] |
+
+Conclusions: the strict multi-group rule is dead (17-30% recall). The old PC1 rule is best when the
+arm converges and degrades when it does not (96->78% at 1x). The revised rule is the reverse: best
+with the arm moving (93% at 1x) and weaker with a shared hold (65%). No rule wins both, and the
+revised rule's 14% false alarms at 2x with the arm moving is the worst specificity seen here.
+False alarms stay near the 2-5% range otherwise, on truly unanimous states, which is the first
+holdout specificity result this project has produced.
+
+Old-rule misses concentrate where the arm moves and the minority is small (own hold 1x, minority
+2-3: 0/4 vs revised 3/4). Non-topple all-block physical forks alarm at 1-4/20, so the image test
+mostly does not see them at any scale.
+
+Do not mix the two rules by picking per case; that choice would be fitted here. Next: a single
+rule that handles both hold regimes (candidate: keep coarse persistence but require the surviving
+split to be the one with the largest separation, not any split), then world-model predicted
+endings. Results: `results/jenga/holdout_stage2b.json`, `holdout_stage0.json`,
+`holdout_stage1.json`, `holdout_stage2_shared.json`, `holdout_stage2_ownhold.json`.

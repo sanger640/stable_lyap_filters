@@ -1,12 +1,18 @@
 # HANDOFF — stability-based safety monitor
 
-> **Current handoff (2026-09-17):** The newest experiment is a controller-error-scaled,
-> multi-direction, short-horizon physical probe in `eval/jenga_predictive_regime_probe.py`.
-> It is **not validated as a safety filter**: 9/20 moving non-topple and 3/10 contacting-pick
-> development controls alarm, while only 5/8 physically mixed boundary cases inside the new
-> probe envelope alarm. Read the current-experiment section near the end of this document
-> and `results/jenga/predictive_regime_probe.json` before continuing. The older basin-monitor
-> description below is historical, not a claim that this method works on Jenga.
+> **Current handoff (2026-09-17, end of day).** The live line of work is the Stage 0-2b
+> sequence at the END of this document, not the basin/dissent method described below. In one
+> line: wobble the chunk 64 times with measured execution error, let the scene settle, and
+> alarm if the endings split into separated groups that persist over time.
+>
+> Where it stands on a FRESH 140-state holdout, from image latents of rendered endings:
+> with the arm converging to a shared hold pose, the two-group rule gets 96% recall on
+> mixed-outcome states at 1x with 3% false alarms on unanimous-safe states; with the arm ending
+> in each probe's own pose it falls to 78%, where the coarse-persistence multi-group rule gets
+> 93% with 5%. Neither rule wins both regimes, and no rule may be chosen per case.
+> **Nothing here is validated as a safety filter, and nothing has run on world-model
+> PREDICTED endings yet** - that is the next gate and the historically weak link.
+> Read section 6's Stage 0-2b entries, then NOTES.md from the bottom up.
 
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.
 Read this, then `MONITOR.md` (the method), then `NOTES.md` (the append-only log, newest at the
@@ -117,6 +123,19 @@ $PY eval/phase_f_videos2.py --rescore  # select/rescore/render 10 demos (~14 min
 ### Jenga scripts
 
 ```bash
+# --- current line of work (Stage 0-2b, 2026-09-17); see the banner at the top ---
+$PY eval/jenga_stage0_noise_oracle.py    # 64 execution-noise runs/state -> answer key (~2.5 min)
+$PY eval/jenga_stage1_outcome_modes.py   # physics fork test on those endings (CPU only)
+$PY eval/jenga_stage1_split_images.py    # render the non-topple splits it flags
+$PY eval/jenga_stage2_visual_forks.py    # same test on full-frame DINO latents (~9 min/55 states)
+$PY eval/jenga_stage2_visual_forks.py --own-hold  # arm-movement check (own hold target)
+$PY eval/jenga_stage2b_multimode.py      # multi-group + revised persistence on cached latents
+$PY eval/jenga_holdout_select.py         # pick holdout states from a screen (rule in docstring)
+# the holdout end to end: screen 1,168 chunks (~37 min, 30 workers), then select, render, score
+$PY eval/jenga_stage0_noise_oracle.py --panel results/jenga/holdout_screen_panel.json \
+    --cache results/jenga/holdout_stage0_cache.npz --output results/jenga/holdout_stage0.json \
+    --workers 30   # --snippet-panel keeps the SAME 64 snippets; do not change it
+
 $PY eval/jenga_j1_fidelity.py       # bundled model + LMDB, error vs horizon (J1)
 $PY eval/jenga_j2_j3_predicted_basins.py  # nominal tail + predicted basins (J2/J3)
 $PY eval/jenga_j2_j3_predicted_basins.py --reuse-cache  # reanalyse without GPU rollout
@@ -673,6 +692,42 @@ new episode-level holdout, explicitly report reach/censoring and abstention, and
 attempt visual representation transfer or live runtime integration. Preserve the main goal:
 failure-label-free, zero-shot proximity to changed future behavior; Jenga topple labels are
 evaluation-only. Do not tune a Jenga-specific score to these 55 states.
+
+**Stage 0 answer key under realistic noise (2026-09-17):** `eval/jenga_stage0_noise_oracle.py`
+replays each panel state's chunk with 64 contiguous tracking-residual snippets from non-panel
+episodes, at 0.5x/1x/2x, then a 30-step hold. No detector is scored. Topple labels are settled by
+hold step 10 (100% agreement with step 30). Mixed outcomes (>=2 per side) at 1x/2x:
+boundary 7/11 of 15, moving non-topple 2/8 of 20, contact lift 0/0 of 10, silent 0/0 of 10.
+Contact and silent states are true negatives at every scale. The "boundary" and "moving" names
+are not reliable labels under realistic noise, so Stage 1 must be graded against these
+per-scale grades. Details: NOTES.md and `results/jenga/stage0_noise_oracle.json`.
+
+**Stage 1 two-mode test on true endings (2026-09-17):** `src/outcome_modes.py` and
+`eval/jenga_stage1_outcome_modes.py`. Recall on mixed states is 100% at every scale. False
+alarms on unanimous-safe states: 9/52, 8/43, and 0/29 at 0.5x/1x/2x; contact-lift and silent
+states never alarm. The false alarms are real non-topple splits (a neighbor slides 3.5-10 mm or
+rests tilted in some runs and not in others). Ending spread alone is perfect on this panel
+(AUC 1.0), so the panel cannot show the two-mode test adds anything. Open decision: do such
+non-topple splits count as "different outcomes"? A harder benchmark with small-consequence
+positives is also needed.
+
+**Fresh holdout, 140 unseen states (2026-09-17):** 1,168 chunks in the 57 non-development
+episodes were screened with the Stage 0 physics, then 60 topple-fork / 20 physical-fork /
+60 quiet states were selected by a pre-declared rule. Three frozen rules were scored
+(`eval/jenga_stage2b_multimode.py`, `results/jenga/holdout_stage2b.json`). Recall on mixed
+states at 1x / false alarms on quiet states: with a shared hold, the PC1 two-group rule gets
+96% / 3%; with the arm moving, it drops to 78% and the coarse-persistence multi-group rule gets
+93% / 5%. The strict multi-group rule fails everywhere (17-30%). At 2x the coarse rule reaches
+14% false alarms with the arm moving. No single rule wins both hold regimes; do not select per
+case. Details in NOTES.md.
+
+**Stage 2, universal image version (2026-09-17):** `eval/jenga_stage2_visual_forks.py` runs the
+same split test on full-frame DINO latents of the rendered endings, using no object knowledge.
+At 1x it alarms on 8/9 topple forks and 0/23 quiet states, and at 2x on 19/19 and 0/13. The
+nudge forks mostly go unseen (1/8). The persistence check (same split at hold steps 10 and 30)
+is essential: without it, 10/23 quiet states alarm on image-latent noise. Two alarms that looked
+false are real forks on the grasped block (in ep25 c90 the red block drops in 4/64 runs). Next:
+the same test on world-model *predicted* endings, then a fresh holdout. Details: NOTES.md.
 
 ### 3. Competing baselines on PROXIMITY
 
