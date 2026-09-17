@@ -2098,3 +2098,567 @@ time, compared with 89-90% when noise was counted as dissent. It trades a small 
 the new confusion matrix and display noise count/known coverage separately from basin dissent. Mean
 known-basin coverage is 92.8% (median 100%); 29/800 chunks are all-noise and produce k=0 by
 definition, so those cases are no-evidence rather than affirmative clear decisions.
+
+## Jenga J2/J3 nominal-continuation run 1 (2026-09-14) — predicted geometry fails
+
+`eval/jenga_j2_j3_predicted_basins.py` rolled the bundled epoch-88 single-view world model through
+all 100 recorded policy trajectories. The monitored prefix is H=8; checkpoints then use 0, 25,
+50, 75, 90, and 100% of each episode's remaining actions as an in-distribution nominal tail. All
+rollouts stayed finite. Full tails span 80-330 steps.
+
+After regressing proprio and quadratic proprio terms from each checkpoint's predicted endings, the
+PCA/HDBSCAN sweep gave these full-tail results:
+
+| PCA / minimum cluster share | k | agreement (noise excluded) | coverage | separation | 90%-full stability (joint coverage) |
+|---|---:|---:|---:|---:|---:|
+| 2 / 5% | 3 | 67.7% | 96% | 1.02 | 61.8% (76%) |
+| 2 / 10% | 2 | 74.1% | 85% | 1.02 | 93.1% (72%) |
+| 4 / 5% | 2 | 70.1% | 77% | 1.00 | 94.0% (67%) |
+| 8 / 5% | 2 | 68.5% | 73% | 1.00 | 94.8% (58%) |
+| 16 / 5% | 2 | 67.2% | 67% | 1.01 | 96.4% (55%) |
+| 4-16 / 10% | 0 | 0% | 0% | — | — |
+
+J3 therefore **fails run 1**: no configuration reaches k=2 with >=90% agreement and >=1.5
+separation. The apparently stable late assignments at higher dimensions are not evidence for a
+valid tail because they apply only to a shrinking known subset and do not track the physical
+outcome. J2 remains unresolved; no nominal-tail length is accepted.
+
+This also closes J1's pending relative-error test as a failure. Mean one-step latent RMSE is 0.685
+(normalised 0.282). Depending on final clustering, minimum between-basin RMS is only 0.362-0.651,
+so model error is 1.05-1.89 times the basin spacing rather than small relative to it.
+
+The 2-D/10% two-cluster result is not merely a mildly compressed 75/25 split. Its clusters contain
+54 intact / 12 toppled and 10 intact / 9 toppled episodes, with another 11 intact / 4 toppled as
+noise. Predicted membership is badly mixed. J4 should quantify the checkpoint's hedging/error
+growth before any monitor or live-loop work; J5 is gated off.
+
+The compact report is `results/jenga/j2_j3_predicted_basins.json`; the large ending cache is
+gitignored at `results/jenga/j2_j3_predicted_endings.npz` and permits cheap `--reuse-cache` sweeps.
+
+## Jenga J4 run 1 (2026-09-14) — outcome signal collapses under rollout
+
+`eval/jenga_j4_hedging.py` paired the saved predictions with encoded real frames at horizons
+1/2/4/8 and at every nominal-tail checkpoint. It measures geometry in the world model's actual
+input/latent convention, after the same label-free proprio regression. Labels are consulted only
+afterward.
+
+The key comparison is over the continuation, when the physical topple becomes visible:
+
+| checkpoint | median steps after H=8 | real separation | predicted separation | predicted/real outcome-axis magnitude | axis cosine |
+|---|---:|---:|---:|---:|---:|
+| H=8 / tail 0% | 0 | 1.06 | 1.06 | 1.11 | -0.08 |
+| tail 50% | 74 | 1.51 | 1.04 | 0.62 | 0.19 |
+| tail 75% | 110.5 | 2.21 | 0.97 | 0.32 | 0.29 |
+| tail 90% | 132.5 | 2.14 | 1.01 | 0.35 | 0.35 |
+| tail 100% | 147.5 | 2.12 | 1.02 | 0.39 | 0.40 |
+
+This answers the tail-length question. At H=8, neither real nor predicted frames separate by the
+eventual outcome because the topple has not happened yet; a continuation tail is genuinely needed.
+As the real outcome appears, real geometry becomes strongly bimodal while predicted geometry does
+not. The long tail exposes autoregressive failure, but is not merely an unnecessarily long settle.
+
+Simple count hedging is not an adequate diagnosis. At 90% tail, assigning predictions to the two
+real centroids gives exactly 75/25 counts but only 68% episode accuracy. At the final checkpoint it
+gives 72/28 and 67% accuracy. The aggregate count looks right while the identities are wrong. The
+predicted outcome direction has contracted by 61% and rotated substantially.
+
+Only nominal continuation has been tested. The 5-10-step held-pose tail and simulation-based
+held-pose fine-tuning remain untested, but neither addresses the demonstrated loss under the real,
+in-distribution action continuation. The next justified attempt is rollout fine-tuning from the
+existing teacher-forced checkpoint, followed by one complete J1-J3 rerun. J5 remains gated off.
+
+Full metrics are in `results/jenga/j4_hedging.json`; the 100-episode truth/short-rollout cache is
+gitignored at `results/jenga/j4_truth_and_short_predictions.npz`.
+
+## Jenga chunk-local held-tail experiment (2026-09-14) — tail 5 is the physical knee
+
+The nominal-continuation experiment was corrected after noticing that 80-330 later policy actions
+answer a full-trajectory question, not the consequence of one H=8 action chunk.
+`eval/jenga_short_held_tails.py` directly replays all 100 recorded action trajectories in the
+bundled MuJoCo scene. At each non-overlapping chunk it snapshots the simulator, executes exactly
+eight actions, branches into 0/5/10 repeats of the final absolute pose/gripper command, then restores
+the nominal state. Later policy chunks cannot affect the branch result.
+
+The LMDB does not contain MuJoCo `qpos/qvel`, so exact scene restoration from the original episodes
+is impossible. Each recorded action trajectory is replayed under deterministic re-sampled reset
+variation. This reproduces the original episode-level outcome at 79% (20 TP, 16 FP, 5 FN, 59 TN;
+36 simulated versus 25 original topples). The tail comparison remains paired at identical branch
+states, but its absolute failure prevalence should not be confused with the original dataset's.
+
+The run covers 2,049 chunks. Of 1,702 chunks beginning with adjacent blocks upright:
+
+| held tail | newly toppled | rate among upright starts | total toppled endpoints |
+|---:|---:|---:|---:|
+| 0 | 36 | 2.12% | 383 |
+| 5 | 54 | 3.17% | 401 |
+| 10 | 57 | 3.35% | 404 |
+
+Five held steps recover 18 delayed topples over tail 0 (50% more). A further five recover only
+three (5.6% more than tail 5). Tail 5 is therefore the provisional physical choice.
+
+The world model behaves much better here than in the superseded full-trajectory test. In the same
+label-free PCA16 reference space, real/predicted separation is 2.36/2.25 at tail 0, 2.45/2.41 at
+tail 5, and 2.42/2.25 at tail 10. The predicted outcome direction has cosine 0.99 with reality and
+retains 81%, 77%, and 72% of its magnitude respectively.
+
+But the attractor formulation has a new blocker. HDBSCAN finds no persistent density basins when
+fit across all real intermediate chunk endpoints, and only 12.5-12.8% of real endpoints fall in
+the pre-established terminal-basin support. Predicted coverage is similarly 11.6-13.4%, proving
+this is not primarily model error. Most short-tail endpoints are valid intermediate task states,
+not terminal attractors. Among the small supported subset, tail-5 basin agreement is 73.4% for real
+and 61.6% for predicted endpoints.
+
+This supersedes the recommendation to immediately rollout-fine-tune. First decide how the monitor
+should handle context-dependent intermediate endpoints while preserving its unsupervised claim.
+The raw compact cache is `results/jenga/short_held_tails_cache.npz` (gitignored); full metrics are
+in `results/jenga/short_held_tails.json`.
+
+## Jenga local delta-z probes (2026-09-14) — HDBSCAN mistakes curvature for branching
+
+`eval/jenga_local_delta_probes.py` tests the proposed intermediate-state fix. It selects 50
+event-adjacent chunks and 50 quiet controls from the causal simulator replay. Every chunk receives
+50 deterministic Gaussian-quantile probes of the coherent displacement direction at eps=0.10,
+followed by H=8 + held tail 5. The same branches run through MuJoCo and DINO-WM.
+
+For each source, endpoint change relative to the shared start is projected into a label-free PCA16
+basis. Constant, linear, and quadratic dependence on probe scalar is regressed out; local PCA2 +
+HDBSCAN (minimum cluster share 5%) then supplies the unsupervised split. Noise is excluded from
+dissent and retained as coverage.
+
+MuJoCo finds 10 true boundary chunks, defined as at least two probes on each side of the 45-degree
+topple outcome. Results:
+
+| source of local delta-z | TP | FP | FN | TN | precision | recall | mean coverage | median dissent |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| predicted | 10 | 84 | 0 | 6 | 10.6% | 100% | 68.5% | 13 |
+| encoded real simulator frames | 10 | 90 | 0 | 0 | 10.0% | 100% | 78.3% | 24 |
+
+The quiet-control result is decisive: predicted deltas alarm on 46/50, while encoded-real deltas
+alarm on 50/50. Real responses produce 2-10 HDBSCAN clusters per chunk even when every physical
+probe has the same outcome. The detector is partitioning smooth nonlinear image/robot response
+curves into density groups. This is not exposure bias, terminal support, or noise voting, and model
+retraining cannot repair it.
+
+Local delta-z remains a useful representation, but unordered density clustering is the wrong test.
+Because probes are generated by one scalar, the next candidate should explicitly test continuity
+along ordered probe scalar—for example a largest adjacent-jump statistic normalized by neighboring
+smooth variation, with the encoded-real quiet set required to pass before predictions are scored.
+Full per-chunk metrics are in `results/jenga/local_delta_probes.json`.
+
+## Jenga ordered function fitting (2026-09-15) — curvature fixed; gate narrowly missed
+
+Implemented `src/ordered_change_point.py` and `eval/jenga_ordered_change_points.py`. The expensive
+100-chunk x 50-probe paired experiment now caches raw predicted and encoded-real delta-z arrays, so
+subsequent detector work does not rerun MuJoCo or DINO-WM. Regeneration exactly reproduced the
+previous 10 physical boundaries and HDBSCAN confusion matrices.
+
+For each chunk, the detector fits three ordered vector functions of scalar probe strength: one
+global cubic, a continuous piecewise cubic, and the same piecewise cubic with a step. BIC pays for
+parameters and the search over split positions. The discontinuous model must beat both continuous
+alternatives and the observed adjacent delta-z increment at its split must be >=3x the median
+increment. This prevents BIC from using a tiny step merely to approximate smooth curvature between
+finitely sampled points.
+
+Predeclared PCA4 encoded-real result:
+
+| TP | FP | FN | TN | precision | recall | F1 | quiet alarms |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 7 | 8 | 3 | 82 | 46.7% | 70.0% | 0.56 | 5/50 (10%) |
+
+True-positive fitted splits have median scalar-location error 0.0: when it fires on a physical
+boundary, it usually identifies the exact adjacent probe pair where upright/toppled switches.
+PCA2/4/8/16 gave 6/10/8/6% quiet false alarms, so none passes the predeclared <=5% gate. Predicted
+evaluation is deliberately withheld, avoiding another model-retraining story for a detector-side
+problem.
+
+This is still a large gain over local HDBSCAN: quiet alarms fall from 50/50 to 5/50 while recall
+remains 7/10. Some binary negatives contain sharp real-latent changes despite never crossing the
+45-degree threshold. Before raising the 3x jump requirement post hoc, cache per-probe peak tilt,
+block pose/displacement, and contact state. The project already specifies continuous
+`peak_tilt_deg` as the proximity target; remaining alarms may be meaningful sub-threshold physical
+transitions. Full results: `results/jenga/ordered_change_points.json`; diagnostic figure:
+`results/jenga/ordered_change_points.png`.
+
+## Jenga physical attribution of ordered alarms (2026-09-15)
+
+Reran the exact 100-chunk x 50-probe experiment with physical instrumentation at every simulator
+substep. The cache now includes continuous peak/end tilt for all three blocks, endpoint block pose
+and displacement, transient/endpoint contact signatures, contact transition counts, and end-
+effector position. The rerun exactly reproduced 10 binary physical boundaries, the original local
+HDBSCAN matrices, and the ordered detector's 7 TP / 8 FP / 3 FN / 82 TN result.
+
+Only **1 of the 5 quiet-control alarms** coincides with a material neighboring-block change under
+the preregistered diagnostic definition (>=2 mm translation, >=2 deg rotation/tilt, or contact
+change). Ep67/chunk66 moves a side block 2.48 mm and rotates it 2.01 deg, but does not topple. No
+quiet alarm changes an endpoint or trajectory contact category. Ep99/chunk162 moves only the
+manipulated middle block by 0.33 mm. Ep14, ep44, and ep70 have effectively unchanged blocks; paired
+endpoint renders differ only through tiny robot/raster changes (EE differences 0.02-0.07 mm).
+
+Therefore the 45-degree topple label is too coarse for one residual alarm, but it does **not**
+explain the other four. The detector remains sensitive to full-frame visual/encoder variation. A
+4x adjacent-jump rule would happen to retain all seven current true positives and reduce the quiet
+count to 2/50, but adopting it on the same controls would be post-hoc. The defensible next test is
+to freeze 4x before evaluating new held-out quiet chunks and compare it against a spatial latent
+restricted to neighboring blocks (excluding robot and manipulated-middle-block patches). Prediction
+scoring remains withheld until an encoded-real variant passes. Results:
+`results/jenga/physical_jump_diagnostics.json`, `results/jenga/quiet_alarm_inspection.json`, and
+`results/jenga/quiet_alarm_inspection.png`.
+
+## Frozen 4x ordered holdout (2026-09-15) — corrected validation misses by one
+
+Froze PCA4, cubic degree 3, minimum eight probes per side, and adjacent-jump ratio 4 before reading
+new responses. The component scale was also frozen from the original 100 real-delta chunks. There
+were 352 eligible nominally quiet chunks in 25 episodes never touched by the original local-probe
+experiment.
+
+The first holdout implementation selected candidate ranks 0 and 1 from every episode. It returned
+2/50 alarms (4%), but inspection showed every chunk start was 2 or 10: an easy pre-interaction
+prefix, not a representative holdout. This sampling result is invalid. The selector was corrected
+without changing the detector to choose two interior temporal quantiles per episode (chunk starts
+18-146, median 58).
+
+Corrected result: all 50 probe sets remained binary physical non-boundaries and 3 alarmed, giving
+**6% held-out FPR**, just missing the <=5% point gate by one alarm. The exact binomial 95% interval
+is 1.25-16.55%, so 50 controls do not estimate the underlying rate tightly. On the original mixed
+diagnostic, frozen 4x gives 7 TP / 3 FP / 3 FN / 87 TN (precision/recall/F1 all 0.70) and exact
+true-positive split localization.
+
+After the flawed 4% preliminary result, prediction scoring was opened before the temporal sampling
+bug was found. It showed 0 TP / 4 FP / 10 FN / 86 TN: every real physical boundary was smoothed to
+a predicted adjacent-jump ratio <=2.41, while real detected boundaries were 5.33-22.85. The
+corrected external real gate fails, so this result is explicitly **exploratory**, not a formal
+passed-gate model evaluation. It is nevertheless a strong warning about the checkpoint. Formal
+prediction scoring remains closed. Next test a spatial latent restricted to the two neighboring
+blocks; if that real representation passes, apply the already-frozen detector and only then make a
+model/retraining decision. Results: `results/jenga/ordered_holdout.json` and
+`results/jenga/ordered_change_points_4x.json`.
+
+## Jenga all-three-block experiments 1-5 (2026-09-15)
+
+The physical target now includes the manipulated middle block. `src/jenga_failures.py` defines
+neighbor failure as left/right peak tilt >=45 degrees and middle failure as middle peak tilt >=45
+degrees or COM below the 0.425 m tabletop. Controlled upright translation or lifting is not
+failure.
+
+1. **Cached re-label:** the original 100x50 cache has 546 middle-topple probes and two middle-
+specific mixed chunks (ep9/chunk138, 48 failures; ep65/chunk58, 47 failures). The all-block union
+still has the same 10 boundary chunks and frozen-4x 7/3/3/87 matrix because neighbor failures cover
+the union transition. The detector finds neither middle-specific transition. Each has fewer than
+eight probes on one side, so both lie outside the function fitter's declared support.
+
+2. **Failure definition:** safe middle lifting is separated from toppling/falling. Across the
+physical scan, no middle COM crosses below the table; all observed middle failures are topples.
+
+3. **Balanced scenarios:** selected 80 distinct tail-10 chunks without latent labels: 20 nominal
+middle failures, 20 nominal neighbor failures, 20 safe >=20 mm middle lifts, and 20 quiet controls.
+At eps=.10 most nominal failures are certain failures under all probes; only three union boundaries
+have >=8 probes per side and none is middle-specific. This is the monitor's declared certainty
+blind spot, not a missed alarm. A fixed wider eps=.30 stress test yields 18 mixed-outcome chunks,
+but only seven supported boundaries: three middle and six neighbor, with overlap.
+
+4. **Spatial representations:** the first red fixed ROI was found to miss the blocks at some task
+stages and is invalid. It was replaced with a simulator-segmentation oracle: per chunk, all DINO
+patches occupied by any of the three blocks over the 50 probes are unioned and used consistently.
+At eps=.30/full-frame, supported-union performance is 6 TP / 2 FP / 1 FN / 71 TN (precision .75,
+recall .857, F1 .80); quiet alarms 0/20 and safe-extraction alarms 2/20. Oracle block pooling gives
+5/1/2/72 (precision .833, recall .714, F1 .769); quiet 0/20 and safe extraction 1/20. Full-frame
+finds 6/6 supported neighbor boundaries, oracle 5/6. Both find only **1/3 middle boundaries**.
+Therefore full-frame nuisance is not the cause of middle failure, and crop tuning is not the fix.
+
+5. **All-block held tails:** a paired simulator scan over 2,049 chunks gives 48/69/77 new failures
+from safe starts at tails 0/5/10. Aggregate any-failure counts are 506/527/535; middle topples are
+201/209/215 and neighbor failures 383/400/404. Tail 5 remains the largest gain (+21 over tail 0),
+but tail 10 adds eight more union failures, six of them middle topples. For an all-block monitor,
+tail 10 is preferred if its five extra model steps meet the live budget; saturation beyond 10 is
+not established.
+
+Overall: adding the middle block is necessary and now implemented, but it exposes a distinct data/
+signal problem. Operational eps=.10 contains essentially no supported middle boundaries, while
+even the eps=.30 oracle-mask upper bound detects only one of three. The next justified work is to
+design a middle-relevant coherent probe direction and collect more naturally near-boundary middle
+examples—not retrain or tune another image crop yet. Results are in
+`results/jenga/all_block_relabel.json`, `results/jenga/all_block_tails.json`,
+`results/jenga/spatial_latents.json`, and `results/jenga/spatial_latents_eps03.json`.
+
+## Expanded neighbor-only validation and paired model audit (2026-09-15)
+
+Returned to the requested neighbor-only target and froze the operational configuration before the
+new run: H=8, held tail 5, eps=.10, 50 ordered probes, terminal PCA4, cubic continuous versus step
+fit, minimum eight probes per side, 4x adjacent-jump gate, and component scales from the original
+100-state real cache. The 250 quiet controls are temporally spread across all 100 episodes and
+exclude every exact state in the original and corrected-holdout probe caches.
+
+The real detector alarms on **16/250 controls = 6.4%** (exact binomial 95% CI 3.70-10.19%; episode
+bootstrap 3.54-9.45%), again missing the <=5% point gate. This larger sample confirms that the
+earlier 3/50 = 6% result was not just one unlucky tiny holdout. All 250 controls remained physical
+neighbor non-boundaries under the probes.
+
+To construct the requested sensitivity benchmark, every one of the 1,302 other eligible states was
+physically screened at eps=.10. Only **11** had at least eight neighbor-safe and eight neighbor-
+toppled probes, so the preregistered >=30 sample target is impossible in this corpus. Encoded-real
+performance on all 11 is **5 TP / 6 FN**, recall 45.5% (exact 95% CI 16.75-76.62%). Seven of the 11
+ordered binary outcome curves switch state multiple times (up to seven switches), contrary to the
+single-boundary assumption. Two missed cases do have very large adjacent latent jumps (19.9x and
+28.1x) but negative discontinuity-vs-continuity BIC evidence; other misses have only 1.27-2.24x
+latent jumps. This is not repairable by lowering only one threshold without increasing false
+alarms or changing the structural model.
+
+On the exact same 261 states, DINO-WM yields **0 TP / 11 FN** and 5/250 quiet alarms. Median boundary
+adjacent-jump ratio is 0.81 predicted versus 6.64 real; median predicted/real ratio is 14.8%.
+Predicted and real jump ratios correlate at -0.075 and BIC evidence at -0.063. The model's 2% quiet
+FPR is therefore caused by smoothing away both false and true jumps, not better discrimination.
+The existing deterministic checkpoint is unsuitable for local bifurcation monitoring despite its
+good average tail-5 geometry. Stop J6 for this design. Viable next branches are targeted
+counterfactual/multimodal training on newly collected near-boundary trajectories, or replacing the
+image-latent change-point mechanism with object pose plus physics / a supervised neighbor-risk
+predictor. Full row-level results: `results/jenga/neighbor_validation.json`; implementation:
+`eval/jenga_neighbor_validation.py`.
+
+## Multi-peak local expansion and physical-oracle gate (2026-09-15)
+
+Implemented the research-aligned follow-up without using failure labels in the score. The detector
+slides an eight-probe-per-side window over all ordered adjacent pairs. In each window, a continuous
+piecewise-linear response is compared by BIC with the same response plus a step. A `2 log(K)`
+penalty accounts for searching K positions, positive evidence is the fixed alarm criterion, and
+separated positive regions are retained as multiple peaks. Constant counterfactual responses are
+defined to have zero expansion; this mathematical invariant prevents BIC from turning floating-
+point differences between two near-zero residuals into false evidence.
+
+The original corpus did not contain 30 supported eps=.10 boundaries, so a separate stress-set
+construction used labels only for selection/evaluation: 300 untouched states received 21 broad
+eps=.30 physical probes, the nearest outcome switch set a new action-family center, and a fresh
+50-probe eps=.10 family was verified at that center. Sixty broad sets crossed a transition and 59
+centered sets had >=8 safe and >=8 toppled probes. The final frozen benchmark contains 30 episode-
+spread centered boundaries plus 100 untouched quiet controls. The evaluated perturbation width is
+still eps=.10; this is a constructed sensitivity benchmark, not a prevalence estimate.
+
+The first physical-vector implementation accidentally included three contact channels involving
+only the manipulated middle block. Correcting it to strictly neighboring-block position, 6-D
+orientation, and neighbor-involving contacts gives **26 TP / 0 FP / 4 FN / 100 TN**: precision
+1.0, recall .867 (exact 95% CI .693-.962), F1 .929, and AUC .868. Zero controls alarm (upper exact
+95% FPR bound 3.62%), so the endpoint physical oracle passes both point gates. Fourteen of 30
+physical outcome curves still contain multiple safe/toppled switches.
+
+On identical probes, encoded-real DINO reports all 30 boundaries but also all 100 controls; AUC is
+only .599. It is responding to robot/raster variation even where neighboring physical state is
+constant. Predicted DINO-WM detects 12/30 and alarms on 49/100, with AUC .469 and median zero
+boundary peaks. Because the corrected physical oracle passes while real DINO fails, representation
+learning is the next gate; dynamics retraining remains premature. Code:
+`src/local_expansion.py`, `eval/jenga_near_boundary_discovery.py`, and
+`eval/jenga_multipeak_oracle.py`; results: `results/jenga/multipeak_oracle.json`.
+
+## Trajectory-level physical expansion (2026-09-15)
+
+Reran the same 100 controls and 30 recentered boundaries while recording the strictly neighbor-only
+physical state after each of the eight probe actions and five held actions. At each of the 13 times,
+the frozen local multi-peak detector produces BIC evidence `e_t`. The trajectory score is
+`2 log(mean(exp(e_t / 2)))`, the BIC/Bayes-factor approximation for expansion at an unknown time.
+It automatically pays for searching time and rewards evidence that persists; the alarm remains the
+natural zero-evidence rule and uses no outcome labels or fitted percentile.
+
+The trajectory oracle gives **30 TP / 0 FP / 0 FN / 100 TN**. Precision, recall, F1, and AUC are
+all 1.0; recall's exact 95% interval is .884-1.0 and FPR's is 0-.0362. The endpoint recomputed from
+the identical trajectory cache is 26/30 with zero false positives, confirming that all four prior
+misses contain informative transient expansion earlier in the 13-step branch. Detected boundaries
+have positive local evidence at a median 6.5 times, so this is not driven only by one sampled spike.
+
+This passes only the deliberately centered boundary/static-control benchmark, not a general
+physical safety gate: the expanded hard negatives below overturn that interpretation. It does
+not validate vision or prediction. Implementation:
+`eval/jenga_trajectory_oracle.py`; results: `results/jenga/trajectory_oracle.json`.
+
+## Real visual trajectories and expanded physical controls (2026-09-16)
+
+Recorded and encoded all 13 real frames for each of 50 probes at the same 100 quiet controls and
+30 recentered neighbor boundaries (84,500 frames). The frozen local BIC score with temporal
+aggregation detected 30/30 boundaries but alarmed on 100/100 quiet controls using full-frame DINO
+PCA4 (score AUC .489). A privileged simulator-segmentation pool of neighbor-block DINO patches,
+with unlabeled transductive PCA4, likewise detected 30/30 and alarmed on 100/100 (AUC .331).
+This pool is a nuisance diagnostic, not a deployable readout. All masks were visible; on full-frame
+quiet controls, 97/100 first became positive by time 2 and the median case was positive at 12/13
+times, while paired physical scores were zero. Block-pixel pooling does not suffice to remove
+visual variation from motion/rendering/occlusion.
+
+More importantly, tested the *physical* trajectory score on expanded negative controls. All 38
+chunks from the only two episodes nominally silent throughout were replayed under the same 50
+operational probes: all 38 remained safe, yet 5 alarmed (13.2%, exact 95% CI 4.4–28.1%).
+Selected another 100 episode-spread chunks with nominal neighbor tilt 5–45 degrees and displacement
+at least 2 mm. After probing, 88 were safe on every probe; **87/88 alarmed** (98.9%, exact 95%
+CI 93.8–100%). Six others had supported mixed outcomes, five low-support mixed outcomes, and one
+certain failure. These are additional states from the same 100-episode corpus, not held-out
+episodes. Exploratory pose-only and position-only ablations still alarmed on 88/88 moving-safe
+states, so contacts alone are not responsible. The original static controls were too easy: the
+current score also responds strongly to motion that is safe within the operational probe interval.
+These states may nevertheless be near a topple boundary just outside that interval; calling every
+alarm a physical false positive is premature. Do not train a new visual representation or world
+model to reproduce this alarm until proximity specificity is measured. Freeze the 30 boundaries
+and both expanded sets, then estimate each moving-safe state's physical failure margin with a
+wider adaptive probe search before deciding whether a new metric is needed.
+Code: `eval/jenga_visual_trajectories.py`, `eval/jenga_expand_controls.py`; results:
+`results/jenga/visual_trajectories.json`, `results/jenga/expanded_controls.json`.
+
+## No-alarm middle/red-block picks (2026-09-16)
+
+Screened 2,049 nominal chunks for at least 2.5 cm middle-block lift and 2 cm horizontal travel,
+with no nominal neighbor topple. Replayed all 50 operational probes on 67 candidates. Sixty-six
+stayed safe on all probes; **55/66** had no physical alarm. Three rendered examples in different
+episodes verify ~8 cm red-block lift, 3-4 cm sideways travel, zero neighbor tilt, and no alarm.
+Thus the physical detector can stay quiet while the intended pick proceeds. However, the three
+initial examples are carry-phase, not approach/grasp examples. Two zoomed no-alarm clips start
+with the red block at table height between neighbors and lift it 4.2/7.5 cm, but have no recorded
+robot-neighbor contact. In this 67-pick screen, all 55 safe/no-alarm cases had no nominal
+robot-neighbor contact; all 11 safe/alarm cases did. A broader scan of nominal chunks with
+robot-neighbor contact and >=2.5 cm red lift found 20 candidates, 19 safe on all 50 probes, and
+0/19 no-alarm. We have **no verified no-alarm successful pick with actual neighbor contact** in
+this tested set. The distinction between appropriately warning on contact-induced proximity and
+overreacting to harmless contact remains unresolved. Code:
+`eval/jenga_pick_noalarm_search.py`, `eval/jenga_pick_noalarm_videos.py`; results:
+`results/jenga/pick_noalarm_search.json`, `results/jenga/pick_noalarm_videos/`;
+`eval/jenga_contact_pick_check.py`, `results/jenga/contact_pick_check.json`, and
+`results/jenga/near_grasp_noalarm_videos/`.
+
+## Complete-episode alarm timelines (2026-09-16)
+
+Replayed all 100 episodes nominally. Fifty meet the explicit full-episode pick proxy: after the
+initial settle, the red middle block rises >=2.5 cm and moves laterally >=2 cm, while peak neighbor
+tilt stays below 45 degrees. Every one of these 50 episodes has at least one verified positive
+physical-alarm decision (from contact-pick checks, full H=8 episode audits, and contact sentinels).
+Thus there is **no verified wholly alarm-free successful episode** under this criterion. This is
+different from the earlier 55/66 quiet *pick chunks*. Full timelines for eps 1, 24, 74, 91 were
+scored at every non-overlapping H=8 chunk and rendered end to end. Ep24 alarms at chunk 106 while
+the red pick succeeds and all 50 local probes stay safe; ep74/91 are clear at lift chunks 106/98
+but alarmed earlier during approach. A displayed green phase holds the last decision result; it
+does not mean the detector is continuously rescored every frame. Code:
+`eval/jenga_full_episode_alarm_audit.py`, `eval/jenga_full_episode_noalarm_screen.py`,
+`eval/jenga_nominal_success_scan.py`, `eval/jenga_full_episode_videos.py`; results:
+`results/jenga/nominal_success_scan.json`, `results/jenga/full_episode_alarm_audit.json`,
+`results/jenga/full_episode_alarm_videos/`.
+
+## Physical-basin tails and matched strength pilot (2026-09-16)
+
+Replayed 50 physical probes at H=8 with 5/10/20 held steps for 30 recentered boundary families
+and all 37 nonoverlapping decisions from successful full episodes 24/74. A shared unlabeled
+physical endpoint atlas (excluding these full episodes) gives boundary dissent detection
+10/30, 20/30, 19/30, but 0 alarms on either full episode at every tail. Since the boundary
+families themselves contribute to the atlas, boundary detection is optimistic. Reference basin
+coverage is 72/85/85%; at ep24's pick decision, coverage is zero at all tails, so quiet must not be
+read as a safe verdict. Tail 10 improves detection over 5 and gains nothing at 20; global basin
+dissent has a coverage/representation problem. Complete episode overlays are in
+`results/jenga/physical_basin_episode_videos/`; metrics in
+`results/jenga/physical_basin_tails.json`.
+
+The eps=.10 action family reaches .2326 times the chunk span, or 8.5-18.2 mm in three checked
+chunks. Narrow cached subsets conflated smaller reach with fewer probes. A proper re-simulation
+held the grid at 50 and BIC scoring fixed for 10 boundary + 10 selected moving-safe states at
+eps=.10/.035/.0165. All 10 moving-safe states alarm at every range; 10/10 boundary states alarm
+at every range, but only 8/10 still cross a physical topple transition at eps=.0165. Thus
+strength mismatch may matter for *which* branch is
+in scope, but by itself does not cure the trajectory score's motion sensitivity on this pilot.
+See `results/jenga/action_strength_sensitivity.json` and
+`results/jenga/action_strength_resim.json`.
+For the actual basin-dissent method, the same matched pilot yields 2/10, 1/10, 0/10 boundary
+alarms at eps=.10/.035/.0165, while 0/10 moving-safe states alarm at each setting. But mean
+coverage on moving-safe states is 29%/21%/20%, so absence of dissent is not evidence of a
+well-classified safe regime. Smaller action strengths hide more boundary transitions rather than
+fixing the global atlas.
+
+Next: define action uncertainty in physical units from the controller/error model, measure the
+nearest persistent branch in that bounded region (at both 5 and 10 held steps), and require
+coverage/abstention for basin labels. Compare any new unlabeled-regime score against the frozen
+moving-safe and boundary panels before translating it into pixels.
+Measure the branch margin from the *original nominal command*, not the recentered benchmark's
+probe center; otherwise the benchmark makes the boundary look artificially close. On a finite
+grid, report a bracket between adjacent tested strengths and say "not detected on this grid"
+when no branch is seen; an unsampled narrow branch remains possible. A branch must remain
+separated across the short tails rather than being a
+one-frame contact transient; distinct regimes need not mean one is a failure.
+
+## Nearest persistent branch margin experiment (2026-09-16)
+
+Implemented and ran `eval/jenga_persistent_branch_margin.py` on 55 distinct nominal-centered
+states: 15 held-out recentered-boundary families, 20 previously probe-safe moving controls,
+10 safe silent controls, and 10 safe contacting-lift picks. The signed coefficient grid has 31
+points through ±.6 of the within-chunk command direction. The physical oracle requires a
+neighbor endpoint tilt >=45 degrees at both 5- and 10-step held tails and the same alternative
+on two consecutive strengths. It brackets 13/15 boundaries (median upper margin 3.01 mm;
+median lower 2.25 mm), 1/20 moving controls (4.36-5.45 mm), and 0/10 in each other control
+group. Two more boundary and three moving states change only at the outer grid point: these are
+edge-unconfirmed, not evidence of no nearby transition. The remaining no-branch results are
+censored to this one probe direction and grid. Cohorts were selected using prior physical
+outcomes, for evaluation only; they do not estimate population rates.
+The old trajectory/BIC detector alarms on 19/20 of these moving states, compared with one
+confirmed persistent physical branch on the wider search grid. This is strong evidence of
+motion sensitivity on this panel, subject to the one-direction/finite-grid limitation.
+
+The held-out unlabeled global-basin atlas finds no bracketed margins. Its nominal point is
+unassigned for all 15 boundary and 20 moving states, even though the atlas covers 82-84% of its
+training reference. Mean coverage over the test grids is only 7.7% boundary and 11.5% moving.
+This is a representation/abstention failure, not a negative physical-margin finding. The next
+experiment should score *local* persistent regime changes in the raw physical response curve,
+without global atlas membership, and compare those candidate margins with the frozen physical
+oracle before training any visual model. JSON: `results/jenga/persistent_branch_margin.json`;
+simulator cache: `results/jenga/persistent_branch_margin_cache.npz`.
+
+## Local label-free branch fit on physical responses (2026-09-16)
+
+Implemented `src/local_persistent_branch.py` with a continuous local piecewise-linear fit versus
+the same fit plus a step, compared by BIC. The same neighboring-strength gap must prefer a step
+at held tails 5 and 10. An unlabeled PCA6 projection is fitted on reference physical endpoints
+excluding the episodes containing the 55 test states. No physical-topple or basin labels enter scoring. On the frozen
+panel it reports a branch on 15/15 constructed boundaries, **20/20** moving-safe states, **10/10**
+safe contacting picks, and 1/10 silent controls. Boundary/moving/contact median apparent upper
+margin is ~0.30/0.28/0.51 mm, not close to the physical oracle's boundary median ~3.01 mm;
+median absolute upper-margin error is 2.54 mm on the 13 confirmed boundary cases. This is a
+failed specificity test. Temporal persistence of a fitted local step does not imply a distinct
+future regime; action-driven curvature or contact motion can survive both tails.
+
+Keep the result as a frozen negative baseline: `results/jenga/local_persistent_branch.json`.
+Next design test is multiresolution strength refinement around candidate gaps. Smooth response
+differences should shrink with probe spacing, whereas a true branch should retain finite
+separation. This scaling test can remain label-free and may address the precise failure observed
+here; it still needs an untouched holdout after development.
+
+## Multiresolution branch-gap refinement (2026-09-16)
+
+Implemented `src/branch_scale.py` and `eval/jenga_branch_scale_refine.py`. For each of the 46
+nearest local-BIC candidate gaps, replay a midpoint action, keep the half with larger physical
+response separation, and bisect once more. Compare a constant-separation model with a
+width-proportional-shrink model (both one parameter) at each of tails 5 and 10. No topple label
+enters refinement or model choice. After replaying both original gap edges to check consistency,
+constant separation wins in 11/15 boundary states, including 10/13 oracle-bracketed ones, but
+also 14/20 moving-safe states and 9/10 safe contacting picks; the single silent candidate is
+rejected. The quarter-width/original separation medians are ~0.86 boundary, ~0.84 moving, and
+~1.02 contacting picks, versus .25 for an ideal locally
+linear response. Thus resolution persistence alone does not separate consequential branches
+from tiny/nonmonotonic physical contact responses. Contacting-pick endpoints are already
+stationary by tail 5 (median raw tail5-vs-tail10 difference <1e-9), making the two-tail condition
+effectively redundant for that group. A rejected nearest BIC gap also does not exclude a farther
+genuine branch. Result: `results/jenga/branch_scale_refine.json`; raw new probes:
+`results/jenga/branch_scale_refine_cache.npz` (ignored by git).
+Cached and fresh endpoint contact bits sometimes disagree (physical-state norm error up to 2),
+but pose-only scaling over the same refined intervals still classifies 15/20 moving-safe and
+9/10 contacting-pick cases as persistent. Thus the specificity failure is not solely a discrete
+contact-feature or replay-cache artifact. See `results/jenga/branch_scale_ablation.json`;
+this ablation is post-hoc and not an independent validation.
+
+No fresh episode holdout was run: this failed the existing panel first. The next design needs a
+non-label-based estimate of whether the retained difference is *consequential* relative to
+controller/observation uncertainty and short-horizon behavior, plus multiple action directions;
+neither a topple-specific score nor a fixed millimeter cutoff should be smuggled in.
+
+## Controller-scaled predictive physical probe (2026-09-17)
+
+Fit a one-step command/proprio lag and residual covariance on 57 episodes excluding the 55-state
+panel's 43 episodes. Held-out residual median/p90: 1.465/3.56 mm; training q90 radial envelope
+covers 92.3% of 7,224 test residuals. Probe three covariance axes at 17 strengths over the
+empirical envelope, H=8 actions plus a *common nominal* held continuation. Record three-block
+pose at H, H+5, H+10. Ordered unlabeled PCA6 split fit at the same gap on both tails alarms
+on 9/20 moving non-topple, 3/10 contacting picks, 9/15 selected boundaries, 1/10 silent.
+Only 8/15 boundaries have a neighbor-topple contrast in this envelope; 5 of those alarm.
+Exact simulator repeats differ ~1e-15. Injecting eight held-out residual snippets gives median
+tail-10 gap/jitter ratios 0.81/0.08/0.75 on moving/contact/boundary alarms, respectively;
+this is a proxy diagnostic, not measured stochastic execution. The approach is not ready for
+live use or visual translation. No new holdout because the development-panel specificity gate
+failed. Preserve these results as a negative baseline and measure an independently observable,
+task-general future consequence and real execution variability next. See `HANDOFF.md` and the
+three `results/jenga/*predictive*.json`/`tracking_uncertainty.json` files.

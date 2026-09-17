@@ -1,5 +1,15 @@
 # stable_lyap_filters
 
+> **Current research status (2026-09-17):** the calibrated divergence monitor described below
+> is a legacy baseline, not the current research result. The active goal is a general,
+> failure-label-free, calibration-free *proximity to changed future regime* monitor. Jenga is
+> only a testbed. Physical nearest-topple margins are measurable, but the tested unlabeled
+> basin, local-jump, multiresolution, and controller-scaled predictive physical probes have not
+> passed specificity checks. The latter alarms on 9/20 moving non-topple controls and 3/10
+> contacting picks on the development panel; do not deploy it. See the
+> current [HANDOFF.md](HANDOFF.md) and [PLAN_JENGA.md](PLAN_JENGA.md) before using any score as
+> a safety filter.
+
 > **New here?** [**TOY_EXPERIMENT.md**](TOY_EXPERIMENT.md) explains the whole thing in plain terms
 > with figures — the block, the physics, the monitor algorithm, and what we found.
 >

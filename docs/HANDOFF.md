@@ -1,5 +1,11 @@
 # Handoff
 
+> **Historical handoff only.** This document describes the older calibrated divergence
+> monitor and its results. For the active label-free proximity research and current Jenga
+> experiments, start with the repository-root [HANDOFF.md](../HANDOFF.md) and
+> [PLAN_JENGA.md](../PLAN_JENGA.md). Do not treat the older thresholded monitor below as a
+> validated version of the current research goal.
+
 For whoever picks this up — human or agent. README has the results; this is state, traps, and
 what to do next.
 
