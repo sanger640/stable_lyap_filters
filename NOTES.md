@@ -2907,3 +2907,37 @@ fine-tune on rollouts -- `eval/phase_c_train_gtf.py` is the pattern) and repeat 
 Do not tune the rules against predicted latents while d' is 0.6. Results:
 `results/jenga/holdout2_stage3_shared.json`, `holdout2_stage3_ownhold.json`,
 `holdout2_stage3b.json`.
+
+## Rollout fine-tuning the Jenga predictor: 10x better rollouts, no separation (2026-09-17)
+
+`eval/jenga_gtf_data.py` regenerates what the demos lack: 1,762 sequences from the 43
+development-panel episodes, each a perturbed H=8 chunk plus the 30-step hold, every frame
+rendered and DINO-encoded (encoder frozen, so latents are precomputed). Perturbation snippets come
+from the non-training episodes with a different seed from the evaluation's 64. Holdout episodes
+are never used. `eval/jenga_gtf_train.py` then trains the PREDICTOR ONLY on its own 38-step
+rollout, latent MSE at every step, gradient checkpointing, batch 4, lr 1e-5, 3 epochs, 5 episodes
+held out for validation.
+
+Rollout prediction improved an order of magnitude: validation 38-step latent MSE
+2.095 -> 0.378 -> 0.258 -> 0.207.
+
+The diagnostic that matters barely moved. Separation between toppling and non-toppling probes in
+the state's own latent space (median d' over batch-2 topple-fork states, shared hold):
+
+| | shipped | fine-tuned | real endings |
+|---|---|---|---|
+| 1x | 0.60 | 0.68 | 4.85 |
+| 2x | 0.55 | 0.83 | 3.11 |
+
+Old-rule recall / false alarms, shared hold: 0%/8% and 4%/2% shipped, 0%/7% and 2%/8% fine-tuned.
+Still no signal.
+
+Reading: the loss is the average future, and for a chunk that topples in 11 of 64 executions that
+average is "mostly standing". Predicting the average better does not separate the branches; on the
+toy system the outcome dominated the frame, whereas a toppling neighbour here is a small part of
+the image, so blurring it costs almost nothing in MSE. One recipe was tried; longer training, more
+data, or unfreezing more of the model are untested, but a 10x loss drop moving d' by 13% is the
+wrong shape for a fixable optimisation problem. A loss that penalises collapsing distinct futures
+(distributional or sample-based prediction) is the open research problem. Report:
+`results/jenga/gtf_train.json`; predicted-ending results:
+`results/jenga/holdout2_stage3gtf_shared.json` and `holdout2_stage3gtf_ownhold.json`.

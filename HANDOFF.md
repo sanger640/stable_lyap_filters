@@ -12,16 +12,19 @@
 > 93% with 5%. Neither rule wins both regimes, and no rule may be chosen per case.
 > **Nothing here is validated as a safety filter.** Stage 3 ran the same rules on world-model
 > PREDICTED endings and FAILED: alarm rates on forks and on quiet states are equal within noise
-> (0-12% either way). The cause is the predictor -- the separation between toppling and stable
-> probes is d' 0.60 predicted versus 4.85 real -- so the deployable path is blocked on rollout
-> fine-tuning the Jenga world model, not on the detector.
-> Read section 6's Stage 0-3 entries, then NOTES.md from the bottom up.
+> (0-12% either way), because the predictor collapses the branches (separation d' 0.60 predicted
+> versus 4.85 real). Rollout fine-tuning was then done and did NOT fix it: validation rollout MSE
+> fell 10x (2.095 -> 0.207) while d' moved 0.60 -> 0.68 and recall stayed at 0%. The blocker is a
+> loss that rewards the average future, not an under-trained model.
+> **Plain-language writeup of this whole line of work: [`JENGA_EXPERIMENT.md`](JENGA_EXPERIMENT.md).**
+> Read that, then section 6's Stage 0-3 entries, then NOTES.md from the bottom up.
 
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.
 Read this, then `MONITOR.md` (the method), then `NOTES.md` (the append-only log, newest at the
 bottom). `PLAN.md` and `PLAN_DINOWM.md` are the phase plans with acceptance criteria.
-`TOY_EXPERIMENT.md` is a plain-language writeup of the toy result with figures -- start there if
-you want the story before the detail.
+`TOY_EXPERIMENT.md` is a plain-language writeup of the toy result with figures, and
+`JENGA_EXPERIMENT.md` is the same for the Jenga execution-noise work -- start there if you want
+the story before the detail.
 
 ---
 
