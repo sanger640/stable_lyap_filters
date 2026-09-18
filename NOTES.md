@@ -3114,3 +3114,37 @@ over the holdout states and compare with the real-ending numbers (88% recall at 
 
 Results: `results/jenga/w3_privileged_curves.json`, `w3_fullstate_train.json`,
 `w3_privileged_train.json`.
+
+## End to end on predicted endings with full privileged state (2026-09-18)
+
+`eval/jenga_w3_monitor.py`: the same 64 execution-noise probes, the full-state model's predicted
+endings, the frozen Stage 2/2b fork rules, on the batch-2 holdout states.
+
+| scale | fork/quiet | old rule | revised | dominant | spread AUC |
+|---|---|---|---|---|---|
+| 0.5x | 5/83 | 0% / 17% | 0% / 7% | 0% / 7% | .786 |
+| 1x | 16/73 | 12% / 19% | 19% / 8% | 19% / 7% | .801 |
+| 2x | 50/53 | 34% / 30% | 22% / 9% | 18% / 11% | **.929** |
+
+(recall / false alarms; real endings with the same rules: 88% / 1%.)
+
+The threshold-free grouping rules do not survive the switch to predicted endings even with perfect
+state: predictions do not fall into separated clusters. But ranking states by predicted ending
+spread separates fork from quiet at AUC .93 (2x) and .80 (1x) -- the first usable signal from
+predicted futures in this project. A ranking is not an alarm: turning it into one needs a
+threshold, and "no threshold, no calibration" is the differentiator over Sentinel/PATCH/SAFE. A
+threshold from quiet-state spread alone would use no failure labels but is conformal-style
+calibration on safe data, i.e. what the competition already does.
+
+**Scope correction.** "Localisation is not a representation problem" is supported across three
+inputs but overstated: what is ruled out is a ONE-SHOT map from state to ending, whatever its
+input. That architecture -- 3 dense layers over a flattened action window, predicting a 64-code
+ending directly -- has no integration, so it cannot have attractors, and must fit a
+near-discontinuous function in one step. A topple is a process (contact, tipping, past the balance
+point) and this model never represents it.
+
+The untried hypothesis the evidence points at: a STEP-WISE privileged dynamics model that predicts
+the next block state from the current one plus the current action and rolls forward, so the
+discontinuity emerges from integrating contact dynamics rather than being fitted. The state is 70
+dims and the existing 70,480 rollouts hold ~2.7M transitions; only per-step trajectories need
+regenerating (no rendering, ~10 min). Results: `results/jenga/w3_monitor.json`.
