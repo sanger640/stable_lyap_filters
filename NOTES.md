@@ -2929,8 +2929,9 @@ the state's own latent space (median d' over batch-2 topple-fork states, shared 
 | 1x | 0.60 | 0.68 | 4.85 |
 | 2x | 0.55 | 0.83 | 3.11 |
 
-Old-rule recall / false alarms, shared hold: 0%/8% and 4%/2% shipped, 0%/7% and 2%/8% fine-tuned.
-Still no signal.
+Recall / false alarms after fine-tuning, all three rules: 0%/3-7% at 1x shared, 0%/0% at 1x with
+the arm moving, and at most 4%/4% at 2x. The shipped checkpoint is the same within noise. Both
+predicted-ending runs are complete; there is no condition in which predicted endings carry signal.
 
 Reading: the loss is the average future, and for a chunk that topples in 11 of 64 executions that
 average is "mostly standing". Predicting the average better does not separate the branches; on the

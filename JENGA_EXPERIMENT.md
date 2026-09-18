@@ -111,8 +111,18 @@ changes exactly that one thing (`eval/jenga_stage3_predicted_forks.py`): the thr
 the chunk start warm-start the model, each perturbed action window is rolled out 8 chunk steps plus
 the 30-step hold, and the same frozen rules read the predicted latents.
 
-**Alarm rates on forks and on quiet states become equal within noise** (0-12% either way).
-There is no signal at all.
+**Alarm rates on forks and on quiet states become equal within noise.** There is no signal at
+all, in any condition, with either checkpoint (recall / false alarms, the three rules of Result 1):
+
+| | old | revised | dominant |
+|---|---|---|---|
+| shipped, shared hold 1x | 0% / 8% | 12% / 8% | 6% / 7% |
+| shipped, arm moving 1x | 0% / 0% | 0% / 6% | 0% / 5% |
+| fine-tuned, shared hold 1x | 0% / 7% | 0% / 3% | 0% / 3% |
+| fine-tuned, arm moving 1x | 0% / 0% | 0% / 0% | 0% / 0% |
+| fine-tuned, arm moving 2x | 4% / 2% | 2% / 4% | 2% / 4% |
+
+against 40-88% recall at 0-3% false alarms on the same states from real endings.
 
 The cause is measurable and is not the detector. In each state's own latent space, the separation
 between toppling and non-toppling executions:
