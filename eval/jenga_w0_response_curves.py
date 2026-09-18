@@ -21,7 +21,6 @@ import sys
 import tempfile
 
 import numpy as np
-import torch
 
 os.environ.setdefault("MUJOCO_GL", "egl")
 

@@ -58,15 +58,22 @@ def full_state(sim):
                            sim.contact_signature().astype(np.float32)]).astype(np.float32)
 
 
+def step_state(sim):
+    """Per-step state for a learned integrator: block pose, velocities, contacts, gripper."""
+    return np.concatenate([all_block_pose(sim), block_velocities(sim),
+                           sim.contact_signature().astype(np.float32),
+                           sim.proprio()]).astype(np.float32)
+
+
 def simulate(job):
-    episode_id, seed, lmdb, xml, snippets, scales, probes = job
+    episode_id, seed, lmdb, xml, snippets, scales, probes, per_step = job
     replay = JengaReplay(lmdb)
     episode = replay.episode(episode_id)
     replay.close()
     actions_all = np.asarray(episode.actions, np.float32)
     starts = [s for s in chunk_starts(len(actions_all)) if s >= 2]
     sim = DirectJengaSim(xml)
-    start_state, ending_pose, windows = [], [], []
+    start_state, ending_pose, windows, traces = [], [], [], []
     try:
         sim.reset(int(seed))
         for step, action in enumerate(actions_all):
@@ -74,32 +81,46 @@ def simulate(job):
                 snapshot = sim.snapshot()
                 start_state.append(full_state(sim))
                 chunk = actions_all[step:step + HORIZON]
-                state_endings, state_windows = [], []
+                state_endings, state_windows, state_traces = [], [], []
                 for probe in range(probes):
                     noise = snippets[probe % len(snippets)] * float(scales[probe % len(scales)])
                     perturbed = chunk.copy(); perturbed[:, :3] -= noise
                     window = np.concatenate([actions_all[step - 2:step], perturbed,
                                              np.repeat(perturbed[-1:], HOLD, axis=0)])
                     sim.restore(snapshot)
+                    chunk_trace = []
                     for future in window[2:2 + HORIZON]:
                         sim.execute(future)
-                    captured = []
+                        if per_step:
+                            chunk_trace.append(step_state(sim))
+                    captured, trajectory = [], []
+                    if per_step:
+                        trajectory.extend(chunk_trace)
                     for held in range(1, HOLD + 1):
                         sim.execute(window[-1])
+                        if per_step:
+                            trajectory.append(step_state(sim))
                         if held in HOLD_STEPS:
                             captured.append(all_block_pose(sim))
                     state_endings.append(np.stack(captured))
+                    if per_step:
+                        state_traces.append(np.stack(trajectory))
                     state_windows.append(window)
                 sim.restore(snapshot)
                 ending_pose.append(np.stack(state_endings))
                 windows.append(np.stack(state_windows))
+                if per_step:
+                    traces.append(np.stack(state_traces))
             sim.execute(action)
     finally:
         sim.close()
-    return {"episode_id": episode_id, "seed": int(seed), "starts": np.asarray(starts),
-            "start_state": np.stack(start_state).astype(np.float32),
-            "probe_pose": np.stack(ending_pose).astype(np.float32),
-            "actions": np.stack(windows).astype(np.float32)}
+    out = {"episode_id": episode_id, "seed": int(seed), "starts": np.asarray(starts),
+           "start_state": np.stack(start_state).astype(np.float32),
+           "probe_pose": np.stack(ending_pose).astype(np.float32),
+           "actions": np.stack(windows).astype(np.float32)}
+    if per_step:
+        out["traces"] = np.stack(traces).astype(np.float32)
+    return out
 
 
 def main():
@@ -113,6 +134,8 @@ def main():
     ap.add_argument("--probes", type=int, default=8)
     ap.add_argument("--snippet-seed", type=int, default=4321)
     ap.add_argument("--workers", type=int, default=16)
+    ap.add_argument("--per-step", action="store_true",
+                    help="record the state after every action: training data for an integrator")
     args = ap.parse_args()
 
     train_episodes = sorted({r["episode_id"] for r in
@@ -133,7 +156,7 @@ def main():
     seeds = [args.first_seed + i for i in range(args.seeds)]
     with tempfile.TemporaryDirectory(prefix="jenga_state_") as temp:
         xml = str(extract_sim(args.sim_archive, temp))
-        jobs = [(ep, seed, args.lmdb, xml, snippets, scales, args.probes)
+        jobs = [(ep, seed, args.lmdb, xml, snippets, scales, args.probes, args.per_step)
                 for seed in seeds for ep in train_episodes]
         print(f"{len(jobs)} jobs", flush=True)
         done = 0

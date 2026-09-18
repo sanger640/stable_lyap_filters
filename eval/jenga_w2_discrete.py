@@ -36,9 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from jenga_runtime import NUM_HIST  # noqa: E402
 sys.path.insert(0, str(ROOT / "eval"))
-from jenga_stage0_noise_oracle import HOLD  # noqa: E402
 from jenga_short_held_tails import HORIZON  # noqa: E402
-from jenga_w1_train import load_groups  # noqa: E402,F401 (used by other W2 tooling)
 
 HOLD_STEPS = (10, 30)
 PCA_DIM = 64
@@ -146,8 +144,6 @@ def main():
         episodes = np.asarray(episodes)
         frames = np.concatenate([history_all, endings_all], axis=1)  # 3 history + 2 endings
         del history_all, endings_all
-        frames = frames.reshape(len(frames), 5, -1)
-        is_val_mask = None
     else:
         frames = None
     # Load ONLY the frames this model uses (3 history + the two endings). Loading all 41 frames

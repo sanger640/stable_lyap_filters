@@ -19,6 +19,12 @@
 > **Plain-language writeup of this whole line of work: [`JENGA_EXPERIMENT.md`](JENGA_EXPERIMENT.md).**
 > **The plan for fixing the predictor is [`PLAN_WORLDMODEL.md`](PLAN_WORLDMODEL.md)**; its W0
 > scoreboard (`eval/jenga_w0_response_curves.py`) replaces rollout MSE as the grading metric.
+>
+> **2026-09-18:** W1 (set-based losses) and W2 (discrete ending head) both failed their gates, and
+> the privileged-state probe showed that perception is NOT the binding constraint, so W3
+> (object-centric) is cancelled. What is ruled out is a one-shot map from state to ending; the
+> current phase is W5, a step-wise dynamics model on privileged state, where a discontinuity can
+> emerge from integrating contact rather than being fitted directly.
 > Read that, then section 6's Stage 0-3 entries, then NOTES.md from the bottom up.
 
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.
@@ -131,6 +137,18 @@ $PY eval/phase_f_videos2.py --rescore  # select/rescore/render 10 demos (~14 min
 ### Jenga scripts
 
 ```bash
+# --- world-model line (W0-W5, 2026-09-18); see PLAN_WORLDMODEL.md ---
+$PY eval/jenga_w0_response_curves.py     # the scoreboard: response curves, jump ratio and spread
+$PY eval/jenga_bulk_data.py --seeds 10   # 10x image data, only the 5 frames used (~25 min, 24 GB)
+$PY eval/jenga_state_data.py --seeds 10  # 10x privileged state, no rendering (~10 min, 62 MB)
+$PY eval/jenga_state_data.py --per-step --seeds 10   # + state after every action (W5 training data)
+$PY eval/jenga_w1_train.py               # W1: set-based losses (FAILED its gate)
+$PY eval/jenga_w2_discrete.py --bulk --data results/jenga/bulk_data   # W2a discrete ending head
+$PY eval/jenga_w2_curves.py --head k64=<ckpt>        # W2 gate on the response curves
+$PY eval/jenga_w3_privileged.py --data results/jenga/state_data --state-key start_state
+$PY eval/jenga_w3_priv_curves.py --head full_state=<ckpt>   # privileged response curves
+$PY eval/jenga_w3_monitor.py             # the monitor end to end on predicted endings
+
 # --- current line of work (Stage 0-2b, 2026-09-17); see the banner at the top ---
 $PY eval/jenga_stage0_noise_oracle.py    # 64 execution-noise runs/state -> answer key (~2.5 min)
 $PY eval/jenga_stage1_outcome_modes.py   # physics fork test on those endings (CPU only)
@@ -228,6 +246,12 @@ python eval/phase_c_train_gtf.py --tag gtf_warm  # rollout fine-tune         ~19
 The trained predictors are also recoverable from git history if you ever want to reproduce exact
 numbers rather than retrain -- they were tracked until `b48efbc`, so a full clone carries the
 blobs: `git show b48efbc^:results/phase_c/predictor.pt > results/phase_c/predictor.pt`.
+
+**Deleted on 2026-09-18 to free 51 GB, all regenerable:** `results/jenga/w1_data`,
+`w2_data_phase1`, `w2_data_combined`, `gtf_data` (full-frame rollout data, `eval/jenga_gtf_data.py`,
+~20 min each), `visual_trajectories_cache`, `j4_truth_and_short_predictions.npz`,
+`j2_j3_predicted_endings.npz`, the 453-state W2 heads and `w2_setup.npz`. Kept: `bulk_data` (24 GB,
+the 10x image latents), `state_data`, and the W1/GTF checkpoints as documented negative baselines.
 
 **Regenerate, do not copy**, the large caches -- `results/phase_c/latents.npy` (5.3 GB, ~5 min via
 `phase_c_data.py`), `results/phase_a/feat_*.npz` (13 GB), `phase_e_endings_*.npz`.

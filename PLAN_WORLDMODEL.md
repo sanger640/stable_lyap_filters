@@ -105,14 +105,53 @@ quiet-state jump ratio (reality: 14.9 vs 3.6 = 4.1x), and fork/quiet spread rati
 (reality 1.81). Then Stage 3 rerun unchanged, graded against the real-ending numbers on the same
 states.
 
-## W3 — object-centric prediction target (JUSTIFIED 2026-09-18, current phase)
+## W2 — outcome (2026-09-18): jumps, but never where the boundary is
 
-W2a produced real discontinuities (4-5 code switches per curve) but no localisation, and a data
-doubling to 881 states moved the spread contrast to 1.78 (reality 1.81, gate passed) while leaving
-the jump contrast at ~1.0 (reality 4.14). Magnitude was data-limited; sharpness is not. That is
-this phase's entry condition.
+W2a's discrete head produces real discontinuities (4-5 code switches per response curve, within-
+curve jump ratio ~2.4 against W1's 1.5), but the fork/quiet jump contrast stays at ~1.0 against
+reality's 4.14 at 453, 881 and 8,810 states. Doubling the data moved the SPREAD contrast to 1.78
+(reality 1.81, that half of the gate passed) and left sharpness flat, so magnitude was partly
+data-limited and localisation is not.
 
-Only if W2 produces a sharp response in the WRONG PLACE, or none. The signature that justifies it
+End to end with the full privileged state (`eval/jenga_w3_monitor.py`): the frozen fork rules give
+0-34% recall at 7-30% false alarms against 88%/1% on real endings. Ranking states by predicted
+ending spread separates fork from quiet at AUC .93 (2x) and .80 (1x) -- real signal, but a ranking
+needs a threshold, which costs the calibration-free claim.
+
+## W3 — object-centric prediction target: NOT JUSTIFIED, do not build
+
+The privileged probe fed true block poses, gripper pose, relative geometry, velocities and contact
+flags (70 dims) at 10x data. Its fork/quiet jump contrast is 0.88-0.99: camera, blocks-only state
+and perfect physics state all fail identically, so better perception is not the binding constraint.
+
+**Scope of that claim.** What is ruled out is a ONE-SHOT map from state to ending, whatever its
+input -- three dense layers over a flattened action window, predicting an ending code directly.
+That architecture has no integration, therefore no attractors, and must fit a near-discontinuous
+function in a single step, while a topple is a process: contact, tipping, past the balance point.
+The autoregressive DINO-WM's within-curve jump ratio (5.0) was higher than either one-shot head's
+(~2.4), which points the same way.
+
+## W5 — step-wise dynamics model on privileged state (current phase)
+
+This is the other agent's Phase 3 minimum implementation, run oracle-state-first (which that plan
+explicitly permits as a marked oracle variant) so perception is not a confound:
+
+1. **Step function** over 4 nodes (3 blocks + gripper): pose, velocity, contact flags and the
+   current action -> change in block state, applied recurrently for the H=8 chunk plus the 30-step
+   hold. The outcome is read by INTEGRATING, never predicted in one shot.
+2. **Order, from that plan:** a single-expert stochastic baseline first, then an action-conditioned
+   gate over K=2-4 local experts at matched compute, adopted only if it beats the baseline.
+3. **Losses:** pose/velocity regression plus contact classification, a multi-step rollout term, and
+   the W1 branch-preservation terms over the 8 probes of each state (non-divergent pairs included).
+4. **Training order:** teacher-forced first, then rollout fine-tuned -- reversing this collapsed the
+   toy model to "nothing ever happens" (HANDOFF finding 1).
+
+Data: `eval/jenga_state_data.py --per-step` records the state after every action, ~650 MB and ~11
+minutes because nothing is rendered; the existing 70,480 rollouts hold ~2.7M transitions.
+
+**Gate:** the W0 response curves first (fork jump ratio >= 3x the same model's quiet value), then
+`eval/jenga_w3_monitor.py` end to end against the real-ending reference of 88% recall at 1% false
+alarms. The signature that justifies it
 is a model that knows a boundary exists but cannot localise it from patch features. Predict object
 tokens (slots discovered unsupervised, so universality holds) or an interaction network over them,
 instead of 196 patch tokens.
