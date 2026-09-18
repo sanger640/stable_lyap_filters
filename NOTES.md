@@ -2942,3 +2942,33 @@ wrong shape for a fixable optimisation problem. A loss that penalises collapsing
 (distributional or sample-based prediction) is the open research problem. Report:
 `results/jenga/gtf_train.json`; predicted-ending results:
 `results/jenga/holdout2_stage3gtf_shared.json` and `holdout2_stage3gtf_ownhold.json`.
+
+## W0: the response-curve scoreboard (2026-09-17)
+
+`eval/jenga_w0_response_curves.py`, 40 states (20 fork, 20 quiet) x 3 push directions = 120
+curves over a signed -50..+50 mm offset grid, chunk plus the 30-step hold. Metrics are scale-free
+and label-free: spread (median pairwise ending distance over the grid) and jump ratio (largest
+adjacent slope / median adjacent slope; a smooth ramp gives ~1).
+
+| fork curves (n=60) | jump ratio | spread vs real |
+|---|---|---|
+| real (simulator) | **14.9** | 1.0 |
+| shipped checkpoint | 5.0 | 4.2x too large |
+| rollout fine-tuned | 2.3 | 0.18x too small |
+
+Quiet curves: real 3.6, shipped 4.7, fine-tuned 2.1.
+
+Two separate defects, one per model, both visible in a single benchmark:
+
+* **shipped** moves 4x more than reality and its jump ratio (5.0) is barely above its own quiet
+  value (4.7), so its large response is not concentrated at the boundary -- variation without
+  structure. The steepest point of its curve coincides with reality's in 16/60 fork curves.
+* **fine-tuned** has collapsed (0.18x reality's spread) and ramps smoothly (2.3). Steepest point
+  matches in 7/60.
+
+Reality separates fork from quiet by jump ratio (14.9 vs 3.6); neither model does (5.0 vs 4.7,
+2.3 vs 2.1). **That single comparison is the W1-W3 target**: a model is only useful here if its
+jump ratio on fork states is well above its own value on quiet ones.
+
+W0 gate met: benchmark runs, is committed, reproduces the earlier 8-state finding at scale.
+Result: `results/jenga/w0_response_curves.json`. Plan and gates: `PLAN_WORLDMODEL.md`.
