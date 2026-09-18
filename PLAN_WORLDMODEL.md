@@ -212,6 +212,13 @@ probabilities. Expert indices are NOT read as physical modes without a post-hoc 
    without labels (frozen DINO backbone, slots with identity tracking and occlusion flags). The
    oracle result says whether this is worth building; this step is the actual claim.
 
+### Build order as run (user decision, 2026-09-18)
+
+Steps 3-5 run in this order instead: (a) oracle MoE on the EXISTING control-rate data, no
+transition weighting; (b) the same oracle MoE on finer-timestep data; (c) transition weighting only
+later, as an optional step. The deterministic baseline (step 3) is deferred, not dropped: Gate 3
+compares against the best simpler baseline, currently the single-expert model at 19%.
+
 ### Losses
 
 * Multi-step proper predictive loss (NLL or a calibrated sample-based score).
