@@ -1,0 +1,52 @@
+{
+  "protocol": {
+    "plan": "PLAN_WORLDMODEL W1",
+    "start_from": "/home/corey/wksp/stable_lyap_filters/data/jenga/world_model.pt",
+    "loss": "paired MSE + energy score + difference matching + temporal difference, steps weighted by true scene change",
+    "weights_scale_matched_on_first_state": {
+      "paired": 1.0,
+      "energy": 0.0052064391922050784,
+      "difference": 21.10111620222391,
+      "temporal": 27.223073794452077
+    },
+    "K_per_state": 8,
+    "states_per_batch": 1,
+    "rollout_steps": 38,
+    "epochs": 2,
+    "lr": 1e-05,
+    "grade_with": "eval/jenga_w0_response_curves.py (spread and jump ratio), never MSE"
+  },
+  "states": 453,
+  "history": {
+    "validation": [
+      {
+        "paired": 1.9543660466487591,
+        "energy": 396.1535802987906,
+        "difference": 0.11518345194725463
+      },
+      {
+        "paired": 0.6981485268244376,
+        "energy": 236.76702411358173,
+        "difference": 0.06847437335034975
+      },
+      {
+        "paired": 0.4914756188025841,
+        "energy": 197.155335352971,
+        "difference": 0.06939102608997089
+      }
+    ],
+    "train": [
+      {
+        "paired": 1.0808062266530538,
+        "energy": 287.48807367719616,
+        "difference": 0.10099139919230468
+      },
+      {
+        "paired": 0.5936944139865866,
+        "energy": 206.47352512578416,
+        "difference": 0.09071864053476927
+      }
+    ]
+  },
+  "output": "/home/corey/wksp/stable_lyap_filters/results/jenga/world_model_w1.pt"
+}

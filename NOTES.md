@@ -2972,3 +2972,43 @@ jump ratio on fork states is well above its own value on quiet ones.
 
 W0 gate met: benchmark runs, is committed, reproduces the earlier 8-state finding at scale.
 Result: `results/jenga/w0_response_curves.json`. Plan and gates: `PLAN_WORLDMODEL.md`.
+
+## Correction: the "spread relative to real" column mixes units (2026-09-18)
+
+W0 reports real spread in millimetres of block movement and model spread as latent distance, so
+`spread_relative_to_real` is not a like-for-like ratio and must not be read as "0.18x reality".
+The scale-free comparison is each model's OWN fork-state spread divided by its quiet-state spread,
+and the jump ratio, which is already a within-curve ratio:
+
+| | fork/quiet spread | fork jump ratio | quiet jump ratio |
+|---|---|---|---|
+| real | 1.81 | 14.9 | 3.6 |
+| shipped | 2.35 | 5.0 | 4.7 |
+| rollout fine-tuned | 1.52 | 2.3 | 2.1 |
+| W1 | 0.96 | 1.5 | 1.9 |
+
+Reality responds 1.8x more and 4x more sharply near a boundary than away from it. No model does;
+W1 is the worst, responding slightly LESS near a boundary than away from it. The conclusions are
+unchanged -- W1 failed its gate -- but the earlier phrasing was wrong.
+
+## W1: set-based training FAILS its gate (2026-09-17/18)
+
+`eval/jenga_w1_train.py` on `results/jenga/w1_data` (453 states x K=8 perturbations from the same
+snapshot, 21 GB, chunk stride 2). Loss: paired MSE + energy score over the predicted ending set +
+difference matching over all pairs + temporal difference, steps weighted by true scene change,
+term weights scale-matched on the first state (paired 1.0, energy 0.0044, difference 12.7,
+temporal 9.7) and recorded rather than tuned. Two epochs from the SHIPPED checkpoint.
+
+Every term improved on held-out states: paired 1.95 -> 0.49, energy 396 -> 197, difference
+0.115 -> 0.069. On W0 the model is the worst yet: fork jump ratio 1.5 (reality 14.9, shipped 5.0,
+fine-tuned 2.3) and fork/quiet spread ratio 0.96 (reality 1.81).
+
+Reading: scale-matching equalised the terms' MAGNITUDES, not their pull. Paired MSE -- the
+mean-seeking term identified as the cause of collapse -- kept weight 1.0 while the energy term,
+the only one rewarding spread, got 0.0044. The squared-error gradient won. This is the same trap
+as the 10x MSE improvement: the loss improves and the property the monitor needs gets worse.
+
+Decision: do NOT retry W1 with reweighted terms. The W1 evidence plus the architecture argument
+(a deterministic continuous map cannot produce a jump) says loss alone is insufficient, so W2
+changes the loss AND the output space together. Report: `results/jenga/w1_train.json`; benchmark:
+`results/jenga/w0_response_curves_w1.json`.

@@ -55,6 +55,8 @@ def main():
     ap.add_argument("--probes-per-chunk", type=int, default=2)
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--episodes", type=int, default=0, help="first N training episodes only")
+    ap.add_argument("--chunk-stride", type=int, default=1,
+                    help="keep every Nth chunk start (use with a large --probes-per-chunk)")
     args = ap.parse_args()
 
     train_episodes = sorted({r["episode_id"] for r in
@@ -90,9 +92,16 @@ def main():
                 starts = set(chunk_starts(len(episode.actions)))
                 sim.reset(int(episode_id))
                 frames, props = [sim.render()], [sim.proprio()]
-                latents, actions, proprios = [], [], []
+                latents, actions, proprios, state_ids = [], [], [], []
+                kept = 0
                 for step, action in enumerate(episode.actions):
                     if step in starts and step >= 2:
+                        kept += 1
+                        if (kept - 1) % args.chunk_stride:
+                            sim.execute(action)
+                            frames.append(sim.render()); props.append(sim.proprio())
+                            frames, props = frames[-NUM_HIST:], props[-NUM_HIST:]
+                            continue
                         snapshot = sim.snapshot()
                         history_frames = np.stack(frames[-NUM_HIST:])
                         history_proprio = np.stack(props[-NUM_HIST:])
@@ -114,6 +123,7 @@ def main():
                             all_props = np.concatenate([history_proprio, np.stack(seq_props)])
                             latents.append(encode_frames(model, device, all_frames, all_props))
                             actions.append(window); proprios.append(all_props)
+                            state_ids.append(f"{episode_id}:{step}")
                     sim.execute(action)
                     frames.append(sim.render()); props.append(sim.proprio())
                     frames, props = frames[-NUM_HIST:], props[-NUM_HIST:]
@@ -121,6 +131,7 @@ def main():
                     np.savez(target, latents=np.stack(latents),
                              actions=np.stack(actions).astype(np.float32),
                              proprio=np.stack(proprios).astype(np.float32),
+                             state_ids=np.asarray(state_ids),
                              episode_id=np.asarray(episode_id))
                     written += 1
                 print(f"  gtf data {number + 1}/{len(train_episodes)} ep{episode_id} "
@@ -129,6 +140,7 @@ def main():
             sim.close()
             replay.close()
     meta = {"training_episodes": train_episodes, "probes_per_chunk": args.probes_per_chunk,
+            "chunk_stride": args.chunk_stride,
             "horizon": HORIZON, "hold": HOLD, "history": NUM_HIST, "seed": args.seed,
             "snippet_pool": "residuals from the NON-training episodes, seed differs from the "
                             "64 evaluation snippets", "files": written,
