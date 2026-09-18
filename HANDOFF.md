@@ -17,6 +17,8 @@
 > fell 10x (2.095 -> 0.207) while d' moved 0.60 -> 0.68 and recall stayed at 0%. The blocker is a
 > loss that rewards the average future, not an under-trained model.
 > **Plain-language writeup of this whole line of work: [`JENGA_EXPERIMENT.md`](JENGA_EXPERIMENT.md).**
+> **The plan for fixing the predictor is [`PLAN_WORLDMODEL.md`](PLAN_WORLDMODEL.md)**; its W0
+> scoreboard (`eval/jenga_w0_response_curves.py`) replaces rollout MSE as the grading metric.
 > Read that, then section 6's Stage 0-3 entries, then NOTES.md from the bottom up.
 
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.
