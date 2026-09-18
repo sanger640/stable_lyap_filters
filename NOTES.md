@@ -3196,3 +3196,26 @@ row-major (reading it as contiguous columns reports every block as ~90 degrees t
 test), and topple counting must exclude neighbours already down at the chunk start, as the Stage 0
 answer key does (14 of 16 quiet-state "topples" were such neighbours). Results:
 `results/jenga/w5_train.json`, `w5_eval.json`.
+
+## W5 step 2: Gate 3 for the oracle single-expert baseline (2026-09-18)
+
+`eval/jenga_w5_gate3.py`. Score: spread of the W5 model's predicted endings over the same 64
+execution-noise probes (block positions after the hold, mm). Operating point, per error size: the
+95th percentile of the score on DEVELOPMENT quiet states only (batch 1: unanimous no-topple, no
+physical split) -- no failure labels. Evaluated once on batch 2. Intervals: 95% bootstrap over whole
+episodes. Reference: identical score, calibration and test on REAL rendered endings (DINO latent
+spread from Stage 2).
+
+| | 1x recall | 1x FA quiet | 2x recall | 2x FA quiet |
+|---|---|---|---|---|
+| W5 oracle single expert | **19% [0-40]** (n=16) | 4% [0-9] | 38% [23-54] (n=50) | 0% [0-0] |
+| real endings, same procedure | **88% [69-100]** | 0% [0-0] | 98% [94-100] | 8% [2-15] |
+
+Alarms on non-topple physical forks (reported, never used for the threshold): model 21% at 1x,
+real 29%. 0.5x has only 5 fork states and is not interpretable.
+
+**This is the number every later W5 variant must beat: 19% recall at 4% false alarms at 1x**,
+against a ceiling of 88% at 0% with the same score on real endings. The AUC of .90-.98 does not
+translate into recall at a 5% budget because the threshold sits in the upper tail of quiet-state
+scores. Caveats: development and test are distinct states from the same pool of 57 episodes; fork
+counts at 1x are small (16), so intervals are wide. Result: `results/jenga/w5_gate3.json`.

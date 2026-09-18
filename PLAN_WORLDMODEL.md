@@ -190,9 +190,11 @@ probabilities. Expert indices are NOT read as physical modes without a post-hoc 
    fork states at 1x and 1/50 at 2x. With full oracle state the true dynamics are deterministic,
    so this failure is not stochastic averaging: probes a millimetre apart with opposite outcomes
    look almost identical to a smooth network, which interpolates across them.
-2. **Gate 3 number for that baseline.** Its spread score thresholded on SAFE controls only (Phase 4
-   permits this): operating point set on batch-1 quiet states (development), evaluated once on
-   batch 2 (test). This is the number every later variant must beat.
+2. **Gate 3 number for that baseline -- DONE (2026-09-18).** Spread score thresholded on SAFE
+   controls only (95th percentile of batch-1 quiet states), evaluated once on batch 2, episode-
+   clustered intervals (`eval/jenga_w5_gate3.py`): **19% recall [0-40] at 4% false alarms at 1x**;
+   38% [23-54] at 0% at 2x. The same procedure on REAL endings gives 88% [69-100] at 0% (1x) and
+   98% at 8% (2x). This is the number every later variant must beat.
 3. **Oracle, deterministic baseline** at matched compute, per the ablation table.
 4. **Data (additions of this document, labelled as such):**
    * *Finer timestep.* Actions run at 10 Hz with 50 physics substeps each, so a topple onset
