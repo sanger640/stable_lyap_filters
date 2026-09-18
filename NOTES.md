@@ -3148,3 +3148,51 @@ the next block state from the current one plus the current action and rolls forw
 discontinuity emerges from integrating contact dynamics rather than being fitted. The state is 70
 dims and the existing 70,480 rollouts hold ~2.7M transitions; only per-step trajectories need
 regenerating (no rendering, ~10 min). Results: `results/jenga/w3_monitor.json`.
+
+## W5 single-expert baseline: step-wise graph dynamics on privileged state (2026-09-18)
+
+The external plan's Phase 3 minimum implementation, oracle-state variant, single-expert stochastic
+baseline first (`src/state_dynamics.py`, `eval/jenga_w5_train.py`, `eval/jenga_w5_eval.py`).
+Graph net over 3 block nodes + 1 gripper node, fully connected; edges carry relative position,
+distance and the pair's contact flag; 3 rounds of message passing, hidden 128; Gaussian head per
+block (15 state changes) and gripper (3), plus next-step contact logits. The outcome is obtained by
+INTEGRATING the step function over the 8 chunk actions and the 30-step hold. Trained on 2.38M
+transitions (8,810 states, 43 development episodes, reset seeds 100+): teacher forcing, then a
+4 -> 12 -> 38-step rollout curriculum with branch preservation at 38. Unit tests pin graph
+equivariance (swapping the two neighbours swaps their predictions) and exact integration of true
+per-step changes.
+
+Training: 38-step validation state error 5.70 after teacher forcing -> 1.78 -> 0.62 -> 0.38;
+safe-pair false separation 0.038 -> 0.167 -> 0.119 -> 0.056 (spiked, then recovered).
+
+W0, in the SAME millimetres as reality (block positions after the hold):
+
+| | fork jump | quiet jump | fork/quiet jump | fork spread | quiet spread | fork/quiet spread |
+|---|---|---|---|---|---|---|
+| reality | 14.86 | 3.56 | **4.17** | 12.2 mm | 6.8 mm | 1.81 |
+| W5 baseline | 2.96 | 3.55 | **0.84** | 4.1 mm | 0.9 mm | 4.52 |
+
+Jump gate FAILS, spread gate passes. Monitor end to end on the 107 batch-2 holdout states:
+
+| scale | fork/quiet | old rule | revised | dominant | spread AUC |
+|---|---|---|---|---|---|
+| 0.5x | 5/83 | 0% / 7% | 0% / 2% | 0% / 2% | .908 |
+| 1x | 16/73 | 0% / 5% | 12% / 1% | 12% / 1% | .899 |
+| 2x | 50/53 | 12% / 9% | 10% / 6% | 10% / 6% | **.982** |
+
+**The failure mechanism, measured directly.** The model predicts a NEW topple (a neighbour starting
+below 45 degrees ending above it) at 0 of 16 fork states at 1x and 1 of 50 at 2x. It essentially
+never predicts the topple itself: evaluated with mean rollouts, a unimodal Gaussian step function at
+a fork follows the average branch, which is "stays upright". That is the exact failure the plan's
+next rung targets -- sampled stochastic rollouts, an action-conditioned gate over K local experts,
+and a discrete regime latent.
+
+What improved over the one-shot map (same data, same states): spread AUC .80/.93 -> .90/.98, and a
+spread in real millimetres that is 4.5x larger near a boundary. What did not: the jump contrast
+(0.84) and threshold-free recall (0-12%).
+
+Two grading errors of mine, both caught before reporting and pinned: block rotation is stored
+row-major (reading it as contiguous columns reports every block as ~90 degrees tilted; now a unit
+test), and topple counting must exclude neighbours already down at the chunk start, as the Stage 0
+answer key does (14 of 16 quiet-state "topples" were such neighbours). Results:
+`results/jenga/w5_train.json`, `w5_eval.json`.

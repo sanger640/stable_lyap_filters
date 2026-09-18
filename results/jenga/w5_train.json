@@ -1,0 +1,81 @@
+{
+  "protocol": {
+    "plan": "PLAN_WORLDMODEL W5, single-expert stochastic baseline",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 message-passing rounds, Gaussian head",
+    "stages": "teacher forcing, then rollout curriculum (4, 12, 38)",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "states": 8810,
+  "history": {
+    "teacher_forcing": [
+      {
+        "nll": -3.312639665705963,
+        "contact_bce": 0.13959398910467205
+      },
+      {
+        "nll": -4.477418137210633,
+        "contact_bce": 0.08089433757532308
+      },
+      {
+        "nll": -4.905725684391071,
+        "contact_bce": 0.05199701471390131
+      }
+    ],
+    "rollout": {
+      "4": {
+        "train": {
+          "state": 1.2971131869259023,
+          "contact": 0.06222800154058086
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 10.498393286721655
+        },
+        "seconds": 47.55000615119934
+      },
+      "12": {
+        "train": {
+          "state": 1.0349877640020166,
+          "contact": 0.04891614839847595
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 8.704543795119003
+        },
+        "seconds": 140.01398372650146
+      },
+      "38": {
+        "train": {
+          "state": 0.5603546565142247,
+          "contact": 0.0515435801333725,
+          "branch": 0.10341620101766931
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 10.163361084481627,
+          "branch": 26.558169556691148
+        },
+        "seconds": 462.7784652709961
+      }
+    },
+    "validation": {
+      "after_teacher_forcing": {
+        "state_error": 5.702306693204301,
+        "safe_pair_false_separation": 0.03839579519016229
+      },
+      "after_horizon_4": {
+        "state_error": 1.7818984011234331,
+        "safe_pair_false_separation": 0.16654270299910454
+      },
+      "after_horizon_12": {
+        "state_error": 0.6208320338863972,
+        "safe_pair_false_separation": 0.11934179070498024
+      },
+      "after_horizon_38": {
+        "state_error": 0.3799629957561404,
+        "safe_pair_false_separation": 0.0562071552533081
+      }
+    }
+  },
+  "output": "/home/corey/wksp/stable_lyap_filters/results/jenga/w5_stepnet.pt"
+}
