@@ -105,7 +105,12 @@ quiet-state jump ratio (reality: 14.9 vs 3.6 = 4.1x), and fork/quiet spread rati
 (reality 1.81). Then Stage 3 rerun unchanged, graded against the real-ending numbers on the same
 states.
 
-## W3 — object-centric prediction target
+## W3 — object-centric prediction target (JUSTIFIED 2026-09-18, current phase)
+
+W2a produced real discontinuities (4-5 code switches per curve) but no localisation, and a data
+doubling to 881 states moved the spread contrast to 1.78 (reality 1.81, gate passed) while leaving
+the jump contrast at ~1.0 (reality 4.14). Magnitude was data-limited; sharpness is not. That is
+this phase's entry condition.
 
 Only if W2 produces a sharp response in the WRONG PLACE, or none. The signature that justifies it
 is a model that knows a boundary exists but cannot localise it from patch features. Predict object

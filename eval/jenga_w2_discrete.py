@@ -38,7 +38,7 @@ from jenga_runtime import NUM_HIST  # noqa: E402
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_stage0_noise_oracle import HOLD  # noqa: E402
 from jenga_short_held_tails import HORIZON  # noqa: E402
-from jenga_w1_train import load_groups  # noqa: E402
+from jenga_w1_train import load_groups  # noqa: E402,F401 (used by other W2 tooling)
 
 HOLD_STEPS = (10, 30)
 PCA_DIM = 64
@@ -121,16 +121,31 @@ def main():
     ap.add_argument("--setup-cache", default=str(ROOT / "results/jenga/w2_setup.npz"))
     args = ap.parse_args()
 
-    latents, actions, proprio, episodes, groups = load_groups(args.data)
-    index_of = {tuple(g): g for g in groups}
-    del index_of
+    # Load ONLY the frames this model uses (3 history + the two endings). Loading all 41 frames
+    # of every rollout is 43 GB at this dataset size and thrashes the machine.
+    ending_index = {held: NUM_HIST + HORIZON + held - 1 for held in HOLD_STEPS}
+    keep = [0, 1, 2] + [ending_index[held] for held in HOLD_STEPS]
+    frames_list, actions_list, states_list, episodes = [], [], [], []
+    for path in sorted(Path(args.data).glob("ep*.npz")):
+        data = np.load(path, allow_pickle=False)
+        frames_list.append(np.asarray(data["latents"][:, keep], np.float16))
+        actions_list.append(data["actions"])
+        states_list.append(data["state_ids"])
+        episodes += [str(data["episode_id"])] * len(actions_list[-1])
+        del data
+    frames = np.concatenate(frames_list); del frames_list
+    actions = np.concatenate(actions_list); del actions_list
+    states = np.concatenate(states_list)
+    episodes = np.asarray(episodes)
+    grouped = {}
+    for i, s in enumerate(states):
+        grouped.setdefault(str(s), []).append(i)
+    groups = [np.asarray(v) for v in grouped.values()]
     val_ids = set(sorted(set(episodes), key=int)[:args.val_episodes])
     is_val = np.isin(episodes, list(val_ids))
 
-    # Ending latents at each hold step: layout is 3 history frames then one per future action.
-    ending_index = {held: NUM_HIST + HORIZON + held - 1 for held in HOLD_STEPS}
-    endings = {held: latents[:, ending_index[held]].reshape(len(latents), -1).astype(np.float32)
-               for held in HOLD_STEPS}
+    endings = {held: frames[:, NUM_HIST + slot].reshape(len(frames), -1).astype(np.float32)
+               for slot, held in enumerate(HOLD_STEPS)}
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     codebooks, projections, targets, sizes = {}, {}, {}, {}
@@ -164,26 +179,42 @@ def main():
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         np.savez(cache_path, **cache)
 
-    history = torch.from_numpy(
-        latents[:, :NUM_HIST].reshape(len(latents), NUM_HIST, -1).astype(np.float32))
+    print("setup: codebooks done, projecting history", flush=True)
+    history = frames[:, :NUM_HIST].reshape(len(frames), NUM_HIST, -1)
     history_pca = []
     if "mean_h" in cache:
         mean_h, comp_h = cache["mean_h"], cache["comp_h"]
     else:
-        mean_h, comp_h = fit_pca(history[~is_val].reshape(-1, history.shape[-1]).numpy())
+        sample = history[~is_val][:, 0].astype(np.float32)
+        mean_h, comp_h = fit_pca(sample)
+        del sample
         cache["mean_h"], cache["comp_h"] = mean_h, comp_h
         np.savez(cache_path, **cache)
+    print("setup: history PCA fitted", flush=True)
+    mean_t = torch.as_tensor(mean_h, device=device)
+    comp_t = torch.as_tensor(comp_h, device=device)
     for step in range(NUM_HIST):
-        history_pca.append(torch.from_numpy(
-            (history[:, step].numpy() - mean_h) @ comp_h.T))
+        chunks = []
+        for first in range(0, len(history), 512):  # GPU, in slices, to bound memory
+            block = torch.as_tensor(history[first:first + 512, step], device=device).float()
+            chunks.append(((block - mean_t) @ comp_t.T).cpu())
+        history_pca.append(torch.cat(chunks))
     history_features = torch.cat(history_pca, dim=1)
+    print("setup: history projected", flush=True)
     action_input = action_features(torch.from_numpy(actions))
     code_targets = {held: torch.from_numpy(targets[held]).long() for held in HOLD_STEPS}
     centre_tensors = {held: torch.from_numpy(codebooks[held]).float().to(device)
                       for held in HOLD_STEPS}
-    truth_embed = {held: torch.from_numpy(
-        ((endings[held] - projections[held][0]) @ projections[held][1].T).astype(np.float32))
-        for held in HOLD_STEPS}
+    truth_embed = {}
+    for held in HOLD_STEPS:
+        mean_e = torch.as_tensor(projections[held][0], device=device)
+        comp_e = torch.as_tensor(projections[held][1], device=device)
+        blocks = []
+        for first in range(0, len(endings[held]), 512):
+            block = torch.as_tensor(endings[held][first:first + 512], device=device)
+            blocks.append(((block - mean_e) @ comp_e.T).cpu())
+        truth_embed[held] = torch.cat(blocks)
+    print("setup: targets embedded", flush=True)
 
     model = EndingHead(history_features.shape[1], action_input.shape[1],
                        max(sizes[h]["codes"] for h in HOLD_STEPS)).to(device)

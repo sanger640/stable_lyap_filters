@@ -57,6 +57,9 @@ def main():
     ap.add_argument("--episodes", type=int, default=0, help="first N training episodes only")
     ap.add_argument("--chunk-stride", type=int, default=1,
                     help="keep every Nth chunk start (use with a large --probes-per-chunk)")
+    ap.add_argument("--chunk-phase", type=int, default=0,
+                    help="which residue class of chunk starts to keep; with --chunk-stride 2, "
+                         "phase 1 is exactly the complement of phase 0")
     args = ap.parse_args()
 
     train_episodes = sorted({r["episode_id"] for r in
@@ -97,7 +100,7 @@ def main():
                 for step, action in enumerate(episode.actions):
                     if step in starts and step >= 2:
                         kept += 1
-                        if (kept - 1) % args.chunk_stride:
+                        if (kept - 1) % args.chunk_stride != args.chunk_phase % args.chunk_stride:
                             sim.execute(action)
                             frames.append(sim.render()); props.append(sim.proprio())
                             frames, props = frames[-NUM_HIST:], props[-NUM_HIST:]
@@ -140,7 +143,7 @@ def main():
             sim.close()
             replay.close()
     meta = {"training_episodes": train_episodes, "probes_per_chunk": args.probes_per_chunk,
-            "chunk_stride": args.chunk_stride,
+            "chunk_stride": args.chunk_stride, "chunk_phase": args.chunk_phase,
             "horizon": HORIZON, "hold": HOLD, "history": NUM_HIST, "seed": args.seed,
             "snippet_pool": "residuals from the NON-training episodes, seed differs from the "
                             "64 evaluation snippets", "files": written,

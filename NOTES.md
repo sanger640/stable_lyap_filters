@@ -3045,3 +3045,36 @@ cheap discriminator is a data-scaling check: regenerate at chunk stride 1 (~900 
 material movement in validation accuracy and the fork/quiet contrast means data, not
 representation. Results: `results/jenga/w2_response_curves.json`, `w2_train_k256.json`,
 `w2_train_k64.json`.
+
+## W2a data-scaling check: magnitude is data-limited, sharpness is not (2026-09-18)
+
+Regenerated the complementary chunk starts (`--chunk-stride 2 --chunk-phase 1`, same seed and
+probe count) and combined: 881 states / 7,048 rollouts, still the same 43 development episodes.
+Retrained both codebook sizes with the identical protocol and regraded on W0.
+
+| | fork/quiet jump | fork/quiet spread | val acc (best) |
+|---|---|---|---|
+| 453 states, k=64, hold 10/30 | 1.10 / 1.14 | 1.45 / 1.43 | .550 |
+| 881 states, k=64, hold 10/30 | 1.03 / 0.94 | **1.78 / 1.79** | .563 |
+| 453 states, k=256, hold 10/30 | 1.07 / 1.22 | 1.24 / 1.30 | .310 |
+| 881 states, k=256, hold 10/30 | 1.04 / 0.92 | **1.51 / 1.51** | .314 |
+| reality | 4.14 | 1.81 | - |
+
+**Doubling the data fixed the magnitude and did nothing for the sharpness.** The spread half of the
+W2 gate (>=1.5) now passes and nearly matches reality's 1.81, so how strongly the model reacts near
+a boundary was partly data-limited. The jump half is unchanged at ~1.0 against reality's 4.14: the
+response is no better concentrated AT the boundary. Validation accuracy moved by ~1 point, so the
+extra data bought calibration, not localisation.
+
+This is the signature PLAN_WORLDMODEL set for W3: the model knows a boundary region exists but
+cannot localise it from patch features. Caveat: one doubling in one testbed rules out "slightly
+more data", not "10x more data", and only 43 training episodes exist here.
+
+Three engineering faults cost time and are fixed in `eval/jenga_w2_discrete.py`: a full SVD where a
+Gram-matrix PCA was needed, a loader pulling all 41 frames per rollout (43 GB, thrashing) when 5
+are used, and heavy projections left on the CPU. Setup now prints per-step progress. Separately,
+`pkill -f <pattern>` matched the background shell running the same command twice and killed the
+job; use a bracketed pattern that the calling command does not itself contain.
+
+Results: `results/jenga/w2_response_curves_big.json`, `w2_train_big_k64.json`,
+`w2_train_big_k256.json`.
