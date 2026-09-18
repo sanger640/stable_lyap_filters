@@ -219,6 +219,11 @@ transition weighting; (b) the same oracle MoE on finer-timestep data; (c) transi
 later, as an optional step. The deterministic baseline (step 3) is deferred, not dropped: Gate 3
 compares against the best simpler baseline, currently the single-expert model at 19%.
 
+**Result (a), 2026-09-18:** oracle MoE on control-rate data does NOT beat the single expert on
+Gate 3 (best MoE: 19% recall at 10% false alarms at 1x vs the single expert's 19% at 4%). The gate
+learns regimes but mostly misses the onset step, where a topple's cause happens inside one 0.1 s
+control step. Next: (b), finer-timestep data.
+
 ### Losses
 
 * Multi-step proper predictive loss (NLL or a calibrated sample-based score).

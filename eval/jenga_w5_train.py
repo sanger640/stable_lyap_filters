@@ -26,8 +26,8 @@ import torch.nn.functional as F
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-from state_dynamics import (StepGraphNet, contact_targets, delta_targets,  # noqa: E402
-                            rollout)
+from state_dynamics import (StepGraphMoE, StepGraphNet, contact_targets,  # noqa: E402
+                            delta_targets, load_balance, rollout)
 
 HORIZONS = (4, 12, 38)
 FINAL_POSE = slice(0, 27)
@@ -71,6 +71,12 @@ def main():
     ap.add_argument("--states-per-batch", type=int, default=8)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--val-fraction", type=float, default=0.12)
+    ap.add_argument("--model", choices=("single", "moe"), default="single")
+    ap.add_argument("--experts", type=int, default=3)
+    ap.add_argument("--balance-weight", type=float, default=0.01,
+                    help="collapse regularisation, fixed before training and recorded")
+    ap.add_argument("--temperature", type=float, nargs=2, default=(1.0, 0.3),
+                    help="gate temperature annealed over teacher forcing, then held")
     args = ap.parse_args()
 
     trajectories, actions, groups, ids = load(args.data)
@@ -98,7 +104,11 @@ def main():
     state_scale_d = state_scale.to(device)
     del s_now, s_next, block_delta, grip_delta
 
-    model = StepGraphNet(args.hidden, args.rounds).to(device)
+    moe = args.model == "moe"
+    model = (StepGraphMoE(args.hidden, args.rounds, args.experts) if moe
+             else StepGraphNet(args.hidden, args.rounds)).to(device)
+    parameters = sum(p.numel() for p in model.parameters())
+    print(f"model {args.model}: {parameters:,} parameters", flush=True)
     optimiser = torch.optim.AdamW(model.parameters(), lr=args.lr)
 
     def one_step_loss(state, action, nxt):
@@ -112,13 +122,16 @@ def main():
         per_block, pairs = contact_targets(nxt)
         bce = F.binary_cross_entropy_with_logits(out["block_contact_logits"], per_block) + \
             F.binary_cross_entropy_with_logits(out["pair_contact_logits"], pairs)
-        return nll + bce, float(nll.detach()), float(bce.detach())
+        balance = load_balance(out["gate_probabilities"]) if moe else torch.zeros((), device=device)
+        return (nll + bce + args.balance_weight * balance, float(nll.detach()), float(bce.detach()))
 
     history = {"teacher_forcing": [], "rollout": {}, "validation": {}}
 
     # ---- Stage 1: teacher forcing over every transition.
     transitions = np.stack(np.meshgrid(train_rows, np.arange(38), indexing="ij"), -1).reshape(-1, 2)
     rng = np.random.default_rng(0)
+    total_tf_steps = args.tf_epochs * int(np.ceil(len(transitions) / args.tf_batch))
+    tf_step = 0
     for epoch in range(args.tf_epochs):
         rng.shuffle(transitions)
         start, running = time.time(), []
@@ -127,6 +140,11 @@ def main():
             state = traj[rows, steps].to(device)
             nxt = traj[rows, steps + 1].to(device)
             action = acts[rows, steps].to(device)
+            if moe:   # anneal the gate temperature across teacher forcing
+                frac = tf_step / max(total_tf_steps - 1, 1)
+                model.temperature = args.temperature[0] + frac * (args.temperature[1]
+                                                                  - args.temperature[0])
+            tf_step += 1
             loss, nll, bce = one_step_loss(state, action, nxt)
             optimiser.zero_grad(set_to_none=True); loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
@@ -138,12 +156,17 @@ def main():
 
     def rollout_terms(rows, horizon):
         state0 = traj[rows, 0].to(device)
-        predicted = rollout(model, state0, acts[rows, :horizon].to(device), delta_scale)
+        gates = [] if moe else None
+        predicted = rollout(model, state0, acts[rows, :horizon].to(device), delta_scale,
+                            collect=gates)
         truth = traj[rows, 1:horizon + 1].to(device)
         err = ((predicted[..., :45] - truth[..., :45]) / state_scale_d[:45]) ** 2
         contact = F.binary_cross_entropy(predicted[..., 45:57].clamp(1e-5, 1 - 1e-5),
                                          truth[..., 45:57])
-        return predicted, truth, {"state": err.mean(), "contact": contact}
+        terms = {"state": err.mean(), "contact": contact}
+        if moe:
+            terms["balance"] = load_balance(torch.stack(gates, dim=1))
+        return predicted, truth, terms
 
     def branch_and_safe(predicted, truth, group_sizes):
         """Difference matching over all probe pairs within each state, and safe-pair separation."""
@@ -163,20 +186,30 @@ def main():
 
     def evaluate(horizon):
         model.eval()
-        errs, safes = [], []
+        errs, safes, usage = [], [], []
         with torch.no_grad():
             for first in range(0, len(val_states), args.states_per_batch):
                 batch = val_states[first:first + args.states_per_batch]
                 rows = np.concatenate(batch)
                 predicted, truth, terms = rollout_terms(rows, horizon)
                 errs.append(float(terms["state"]))
+                if moe:
+                    gates = []
+                    rollout(model, traj[rows, 0].to(device), acts[rows, :horizon].to(device),
+                            delta_scale, collect=gates)
+                    hard = torch.stack(gates, 1).argmax(-1).reshape(-1)
+                    usage.append(torch.bincount(hard, minlength=args.experts).float().cpu())
                 if horizon == 38:
                     _, safe = branch_and_safe(predicted, truth, [len(g) for g in batch])
                     if safe is not None:
                         safes.append(safe)
         model.train()
-        return {"state_error": float(np.mean(errs)),
-                "safe_pair_false_separation": float(np.mean(safes)) if safes else None}
+        out = {"state_error": float(np.mean(errs)),
+               "safe_pair_false_separation": float(np.mean(safes)) if safes else None}
+        if moe:
+            counts = torch.stack(usage).sum(0)
+            out["expert_usage"] = (counts / counts.sum()).tolist()
+        return out
 
     history["validation"]["after_teacher_forcing"] = evaluate(38)
     print("validation after teacher forcing:", history["validation"]["after_teacher_forcing"],
@@ -197,8 +230,11 @@ def main():
                 terms["branch"] = branch
             if weights is None or set(weights) != set(terms):
                 # Scale-match to the state term on the first batch of this stage; recorded.
+                # The balance term keeps its fixed weight instead: it is a regulariser.
                 weights = {k: float(terms["state"].detach()) / max(float(v.detach()), 1e-8)
-                           for k, v in terms.items()}
+                           for k, v in terms.items() if k != "balance"}
+                if "balance" in terms:
+                    weights["balance"] = args.balance_weight
             loss = sum(weights[k] * v for k, v in terms.items())
             optimiser.zero_grad(set_to_none=True); loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
@@ -213,6 +249,7 @@ def main():
         weights = None
 
     torch.save({"model": model.state_dict(), "hidden": args.hidden, "rounds": args.rounds,
+                "kind": args.model, "experts": args.experts, "parameters": parameters,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
     Path(args.report).write_text(json.dumps(
@@ -221,6 +258,9 @@ def main():
                                       f"{args.rounds} message-passing rounds, Gaussian head",
                       "stages": "teacher forcing, then rollout curriculum " + str(HORIZONS),
                       "input": "privileged simulator state (oracle variant)"},
+         "model": args.model, "experts": args.experts if moe else 1,
+         "parameters": parameters, "balance_weight": args.balance_weight if moe else None,
+         "temperature": list(args.temperature) if moe else None,
          "states": len(groups), "history": history, "output": args.output}, indent=2) + "\n")
 
 

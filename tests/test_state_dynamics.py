@@ -101,3 +101,60 @@ def test_neighbour_tilt_reads_row_major_rotation():
     state[9:15] = upright; state[15:21] = upright; state[21:27] = tipped
     tilt = neighbour_tilt_deg(state[None])[0]
     assert abs(tilt[0]) < 1e-6 and abs(tilt[1] - 90) < 1e-6
+
+
+from state_dynamics import StepGraphMoE, load_balance  # noqa: E402
+
+
+def test_moe_output_matches_the_baseline_contract():
+    model = StepGraphMoE(hidden=32, rounds=2, experts=3)
+    out = model(random_state(), torch.zeros(5, 4))
+    assert out["block_mean"].shape == (5, 3, 15) and out["block_logvar"].shape == (5, 3, 15)
+    assert out["block_contact_logits"].shape == (5, 3, 3)
+    assert out["gate_probabilities"].shape == (5, 3, 3)
+    states = rollout(model, random_state(batch=2), torch.zeros(2, 4, 4), unit_scale())
+    assert states.shape == (2, 4, STATE_DIM)
+
+
+def test_moe_switches_hard_and_trains_the_gate():
+    torch.manual_seed(0)
+    model = StepGraphMoE(hidden=32, rounds=2, experts=3)
+    model.train()
+    out = model(random_state(), torch.zeros(5, 4))
+    assert torch.all(out["regime"].sum(-1) == 1)                       # exactly one expert each
+    (out["block_mean"].sum() + load_balance(out["gate_probabilities"])).backward()
+    assert model.gate[0].weight.grad is not None and model.gate[0].weight.grad.abs().sum() > 0
+
+
+def test_moe_eval_is_deterministic_and_equivariant():
+    torch.manual_seed(0)
+    model = StepGraphMoE(hidden=32, rounds=2, experts=3).eval()
+    state = random_state(batch=1)
+    swapped = state.clone()
+    for base, width in ((0, 3), (9, 6), (27, 6)):
+        a, b = slice(base + width, base + 2 * width), slice(base + 2 * width, base + 3 * width)
+        swapped[:, a], swapped[:, b] = state[:, b].clone(), state[:, a].clone()
+    c, sc = state[:, 45:57], swapped[:, 45:57]
+    sc[:, 0], sc[:, 1] = c[:, 1], c[:, 0]
+    for offset in (3, 6, 9):
+        sc[:, offset + 1], sc[:, offset + 2] = c[:, offset + 2], c[:, offset + 1]
+    action = torch.tensor([[0.001, 0.0, 0.0, 0.0]])
+    with torch.no_grad():
+        a1, a2, b = model(state, action), model(state, action), model(swapped, action)
+    assert torch.equal(a1["block_mean"], a2["block_mean"])
+    assert torch.allclose(a1["block_mean"][0, 1], b["block_mean"][0, 2], atol=1e-5)
+
+
+def test_load_balance_is_zero_when_usage_is_uniform():
+    assert abs(float(load_balance(torch.full((4, 3, 3), 1 / 3)))) < 1e-6
+    assert float(load_balance(torch.tensor([[[1.0, 0.0, 0.0]]]).repeat(4, 3, 1))) > 1.0
+
+
+def test_baseline_checkpoint_still_loads_after_refactor():
+    import os
+    path = ROOT / "results/jenga/w5_stepnet.pt"
+    if not os.path.exists(path):
+        return
+    state = torch.load(path, map_location="cpu", weights_only=False)
+    model = StepGraphNet(state["hidden"], state["rounds"])
+    model.load_state_dict(state["model"])                              # strict: names unchanged

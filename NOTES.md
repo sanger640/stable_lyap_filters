@@ -3219,3 +3219,38 @@ against a ceiling of 88% at 0% with the same score on real endings. The AUC of .
 translate into recall at a 5% budget because the threshold sits in the upper tail of quiet-state
 scores. Caveats: development and test are distinct states from the same pool of 57 episodes; fork
 counts at 1x are small (16), so intervals are wide. Result: `results/jenga/w5_gate3.json`.
+
+## W5 oracle MoE on control-rate data: does not beat the single expert (2026-09-18)
+
+`src/state_dynamics.StepGraphMoE`: the W5 graph trunk, K=3 expert heads per block, a per-block
+action-conditioned gate reading the block's node embedding plus its own contact flags and gripper
+distance, hard switching by straight-through Gumbel-softmax (temperature 1.0 -> 0.3 over teacher
+forcing), load balancing as KL(mean usage || uniform). 795k parameters vs 654k (1.22x). Same data,
+curriculum, grading and Gate 3 procedure as the single expert. The 1-seed smoke test collapsed onto
+one expert (99.6%); on the full data neither run collapsed. Balance weight: A = 0.01 (pre-declared),
+B = 1.0 (scale-matched like every other loss term, chosen from training-set expert usage only).
+
+Gate 3 (threshold = 95th percentile of batch-1 quiet states; test = batch 2; episode-clustered 95%):
+
+| | 1x recall | 1x FA | 2x recall | 2x FA | W0 jump contrast | new topple at fork states |
+|---|---|---|---|---|---|---|
+| single expert | **19%** [0-40] | 4% | **38%** [23-54] | 0% | 0.84 | 0% / 2% |
+| MoE A (0.01) | 19% [0-40] | 10% | 40% [26-54] | 6% | 0.83 | 0% / 0% |
+| MoE B (1.0) | 6% [0-20] | 5% | 30% [16-45] | 4% | 0.70 | 0% / 0% |
+| real endings | 88% | 0% | 98% | 8% | 4.17 | - |
+
+**Neither MoE beats the single expert (plan's Gate 3: FAIL).** Training metrics were fine: B has the
+lowest 38-step validation error (0.34) and safe-pair false separation (0.050) of the three.
+
+Post-hoc expert audit (teacher-forced, true state; descriptive only). Experts DO split by regime:
+in A, one expert takes 80% of still block-steps and another 73% of >5 mm steps; in B the motion
+split is sharper (87-89%) but still steps are spread across experts, as expected when forcing even
+usage. At the ONSET step (still in step t-1, >5 mm in step t), A's gate picks its motion expert only
+37% of the time vs 80% once motion is ongoing: the gate recognises a moving block but mostly misses
+the start. B picks it 100% at onset, but also routes 28% of still steps there, so that is not
+selective, and neither predicts a new topple in rollouts.
+
+Reading: at 10 Hz with 50 physics substeps per action, a topple's onset -- the contact that causes
+it and the regime switch -- happens INSIDE one recorded step. The model sees "still" and then
+"tipping" with the cause hidden. Next, per the decided order: the same models on finer-timestep
+data. Results: `results/jenga/w5_moe_{a,b}_{train,eval,gate3}.json`.

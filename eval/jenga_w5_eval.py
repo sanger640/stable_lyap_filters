@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from jenga_runtime import DEFAULT_LMDB, JengaReplay  # noqa: E402
 from outcome_modes import coarse_persistent_fork, groupings_persist, multi_mode_test  # noqa: E402
-from state_dynamics import StepGraphNet, rollout  # noqa: E402
+from state_dynamics import StepGraphMoE, StepGraphNet, rollout  # noqa: E402
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_short_held_tails import DirectJengaSim, HORIZON, TOPPLE_DEG, extract_sim  # noqa: E402
 from jenga_stage0_noise_oracle import SCALES  # noqa: E402
@@ -44,7 +44,10 @@ HOLD_INDEX = {10: HORIZON + 10 - 1, 30: HORIZON + 30 - 1}   # step index of each
 
 def load_model(path, device):
     state = torch.load(path, map_location="cpu", weights_only=False)
-    model = StepGraphNet(state["hidden"], state["rounds"]).to(device)
+    if state.get("kind", "single") == "moe":
+        model = StepGraphMoE(state["hidden"], state["rounds"], state["experts"]).to(device)
+    else:
+        model = StepGraphNet(state["hidden"], state["rounds"]).to(device)
     model.load_state_dict(state["model"])
     model.eval()
     scale = (state["block_scale"].to(device), state["grip_scale"].to(device))

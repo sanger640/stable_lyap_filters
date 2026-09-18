@@ -110,7 +110,8 @@ class StepGraphNet(nn.Module):
         self.gripper_head = _mlp(hidden, 2 * GRIPPER_OUT, hidden)
         self.pair_head = _mlp(hidden, 1, hidden)                      # block-block contact logit
 
-    def forward(self, state, action):
+    def trunk(self, state, action):
+        """Shared encoder and message passing -> node and edge embeddings plus raw block features."""
         blocks, grip, edges, senders, receivers = node_and_edge_features(state, action)
         nodes = torch.cat([self.block_encoder(blocks), self.gripper_encoder(grip)[:, None]], dim=1)
         e = self.edge_encoder(edges)
@@ -119,17 +120,77 @@ class StepGraphNet(nn.Module):
             e = edge_norm(e + edge_up(torch.cat([e, nodes[:, senders], nodes[:, receivers]], -1)))
             incoming = torch.zeros_like(nodes).index_add_(1, receivers, e)
             nodes = node_norm(nodes + node_up(torch.cat([nodes, incoming], dim=-1)))
-        block_out = self.block_head(nodes[:, :N_BLOCKS])                 # (B, 3, 2*15 + 3)
+        return nodes, e, senders, receivers, blocks
+
+    def shared_heads(self, nodes, e, senders, receivers):
         grip_out = self.gripper_head(nodes[:, N_BLOCKS])                 # (B, 6)
         pair_logits = torch.stack([
             self.pair_head(e[:, i]).squeeze(-1) for i, (s, r) in enumerate(
                 zip(senders.tolist(), receivers.tolist())) if s < r < N_BLOCKS], dim=1)
+        return {"gripper_mean": grip_out[:, :GRIPPER_OUT],
+                "gripper_logvar": grip_out[:, GRIPPER_OUT:].clamp(-10, 5),
+                "pair_contact_logits": pair_logits}                         # (0,1), (0,2), (1,2)
+
+    def forward(self, state, action):
+        nodes, e, senders, receivers, _ = self.trunk(state, action)
+        block_out = self.block_head(nodes[:, :N_BLOCKS])                 # (B, 3, 2*15 + 3)
         return {"block_mean": block_out[..., :BLOCK_OUT],
                 "block_logvar": block_out[..., BLOCK_OUT:2 * BLOCK_OUT].clamp(-10, 5),
                 "block_contact_logits": block_out[..., 2 * BLOCK_OUT:],     # table, floor, robot
-                "gripper_mean": grip_out[:, :GRIPPER_OUT],
-                "gripper_logvar": grip_out[:, GRIPPER_OUT:].clamp(-10, 5),
-                "pair_contact_logits": pair_logits}                         # (0,1), (0,2), (1,2)
+                **self.shared_heads(nodes, e, senders, receivers)}
+
+
+class StepGraphMoE(StepGraphNet):
+    """The hybrid variant: K local experts per block, switched by an action-conditioned gate.
+
+    Hybrid-system reading (PLAN_WORLDMODEL W5): each expert is smooth within one regime; the gate
+    pi_k(s_t, a_t) is the guard; the per-block, per-step one-hot choice is the discrete regime
+    latent. The gate reads the block's node embedding -- which carries the action through the
+    gripper's messages -- plus that block's raw contact flags and distance to the gripper, the
+    contact/event features that trigger switches.
+
+    Switching is HARD: straight-through Gumbel-softmax selects exactly one expert in the forward
+    pass, while gradients flow through the soft probabilities. In eval mode the argmax is used, so
+    mean rollouts are deterministic. Expert indices are not physical modes without an audit.
+    """
+
+    GATE_EXTRA = 4   # the block's own table/floor/robot contacts + distance to the gripper
+
+    def __init__(self, hidden=128, rounds=3, experts=3):
+        super().__init__(hidden, rounds)
+        del self.block_head
+        self.experts = experts
+        self.expert_heads = nn.ModuleList([_mlp(hidden, 2 * BLOCK_OUT, hidden)
+                                           for _ in range(experts)])
+        self.block_contact_head = _mlp(hidden, 3, hidden)
+        self.gate = _mlp(hidden + self.GATE_EXTRA, experts, hidden)
+        self.temperature = 1.0
+
+    def forward(self, state, action):
+        nodes, e, senders, receivers, blocks = self.trunk(state, action)
+        block_nodes = nodes[:, :N_BLOCKS]                                # (B, 3, H)
+        event = torch.cat([blocks[..., 16:19], blocks[..., 0:3].norm(dim=-1, keepdim=True)], -1)
+        logits = self.gate(torch.cat([block_nodes, event], dim=-1))     # (B, 3, K)
+        if self.training:
+            uniform = torch.rand_like(logits).clamp(1e-9, 1 - 1e-9)
+            soft = ((logits - torch.log(-torch.log(uniform))) / self.temperature).softmax(-1)
+        else:
+            soft = (logits / self.temperature).softmax(-1)
+        hard = nn.functional.one_hot(soft.argmax(-1), self.experts).to(soft.dtype)
+        regime = hard - soft.detach() + soft                             # straight-through
+        outputs = torch.stack([head(block_nodes) for head in self.expert_heads], dim=2)  # B,3,K,30
+        chosen = (regime.unsqueeze(-1) * outputs).sum(2)                 # (B, 3, 30)
+        return {"block_mean": chosen[..., :BLOCK_OUT],
+                "block_logvar": chosen[..., BLOCK_OUT:].clamp(-10, 5),
+                "block_contact_logits": self.block_contact_head(block_nodes),
+                "gate_probabilities": logits.softmax(-1), "regime": hard,
+                **self.shared_heads(nodes, e, senders, receivers)}
+
+
+def load_balance(gate_probabilities):
+    """Collapse regularisation: KL between the batch's mean expert usage and uniform usage."""
+    usage = gate_probabilities.reshape(-1, gate_probabilities.shape[-1]).mean(0)
+    return (usage * (usage.clamp_min(1e-9) * usage.shape[0]).log()).sum()
 
 
 def delta_targets(state, next_state):
@@ -186,12 +247,18 @@ def apply_step(state, action, out, delta_scale, sample=False, noise=None):
     return new
 
 
-def rollout(model, state, actions, delta_scale, sample=False, noise=None):
-    """Integrate from `state` through every action. actions (B, T, 4) -> states (B, T, 61)."""
+def rollout(model, state, actions, delta_scale, sample=False, noise=None, collect=None):
+    """Integrate from `state` through every action. actions (B, T, 4) -> states (B, T, 61).
+
+    With `collect` (a list), a hybrid model's gate probabilities are appended per step, so expert
+    usage can be regularised and monitored during rollouts as well.
+    """
     states = []
     current = state
     for t in range(actions.shape[1]):
         out = model(current, actions[:, t])
+        if collect is not None and "gate_probabilities" in out:
+            collect.append(out["gate_probabilities"])
         step_noise = None if noise is None else (noise[0][:, t], noise[1][:, t])
         current = apply_step(current, actions[:, t], out, delta_scale, sample, step_noise)
         states.append(current)
