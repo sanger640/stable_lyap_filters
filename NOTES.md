@@ -3012,3 +3012,36 @@ Decision: do NOT retry W1 with reweighted terms. The W1 evidence plus the archit
 (a deterministic continuous map cannot produce a jump) says loss alone is insufficient, so W2
 changes the loss AND the output space together. Report: `results/jenga/w1_train.json`; benchmark:
 `results/jenga/w0_response_curves_w1.json`.
+
+## W2a: a discrete ending head jumps, but not at the boundary (2026-09-18)
+
+`eval/jenga_w2_discrete.py` and `eval/jenga_w2_curves.py`. History latents plus the whole action
+window -> a distribution over ending codes at hold steps 10 and 30. Codebook: PCA64 then k-means on
+TRAINING endings only (43 development episodes; the holdout episodes are never seen). k is reported
+as a sensitivity, not chosen by a rule -- distortion falls monotonically, so any elbow rule on this
+data just returns the largest candidate. Actions enter as targets relative to the chunk-start pose
+in units of the measured execution error (3.2 mm), so a 1.6 mm perturbation is an O(1) input rather
+than 0.05. Losses: cross-entropy plus the W1 branch terms on the distribution's mean embedding,
+scale-matched to cross-entropy on the first batch.
+
+Gate: fork jump ratio >= 3x the same model's quiet jump ratio, fork/quiet spread >= 1.5.
+Reality is 4.1x and 1.81.
+
+| | fork/quiet jump | fork/quiet spread |
+|---|---|---|
+| k=256, hold 10 / 30 | 1.07 / 1.22 | 1.24 / 1.30 |
+| k=64, hold 10 / 30 | 1.10 / 1.14 | 1.45 / 1.43 |
+
+**FAIL.** But the mechanism works: across the 13-offset grid the head switches code 4-5 times on
+fork curves and visits 4-6 distinct codes, and the within-curve jump ratio rises to ~2.4 from W1's
+1.5. A categorical output does produce discontinuities, which no continuous model here could. It
+simply switches as often on quiet curves (3-4 switches) as on fork curves, i.e. it jumps
+everywhere rather than at the boundary.
+
+**The open confound: overfitting.** Train accuracy 86-91% against validation 23% (k=256) and 46%
+(k=64), on 453 training states from 43 episodes. Learning WHERE a boundary sits is exactly what
+needs many states, so representation-limited (-> W3) and data-limited are not yet separable. The
+cheap discriminator is a data-scaling check: regenerate at chunk stride 1 (~900 states) and retrain;
+material movement in validation accuracy and the fork/quiet contrast means data, not
+representation. Results: `results/jenga/w2_response_curves.json`, `w2_train_k256.json`,
+`w2_train_k64.json`.
