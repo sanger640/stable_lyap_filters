@@ -39,7 +39,10 @@ from jenga_state_data import step_state  # noqa: E402
 from jenga_w0_response_curves import (DIRECTIONS, OFFSETS_MM, curve_metrics,  # noqa: E402
                                       offset_windows, simulate_curve)
 
-HOLD_INDEX = {10: HORIZON + 10 - 1, 30: HORIZON + 30 - 1}   # step index of each hold reading
+
+def hold_index(model, held):
+    """Rollout index of the reading after `held` hold steps, at the model's resolution."""
+    return (HORIZON + held) * getattr(model, "substeps", 1) - 1
 
 
 def load_model(path, device):
@@ -50,14 +53,16 @@ def load_model(path, device):
         model = StepGraphNet(state["hidden"], state["rounds"]).to(device)
     model.load_state_dict(state["model"])
     model.eval()
+    model.substeps = int(state.get("substeps", 1))
     scale = (state["block_scale"].to(device), state["grip_scale"].to(device))
     return model, scale
 
 
 def predict(model, scale, start, windows, device):
-    """start (61,), windows (P, 40, 4) -> predicted states (P, 38, 61)."""
+    """start (61,), windows (P, 40, 4) -> predicted states (P, 38 x sub-steps, 61)."""
     state = torch.as_tensor(np.tile(start, (len(windows), 1)), dtype=torch.float32, device=device)
-    actions = torch.as_tensor(np.asarray(windows)[:, 2:], dtype=torch.float32, device=device)
+    held = np.repeat(np.asarray(windows)[:, 2:], getattr(model, "substeps", 1), axis=1)
+    actions = torch.as_tensor(held, dtype=torch.float32, device=device)
     with torch.no_grad():
         return rollout(model, state, actions, scale).cpu().numpy()
 
@@ -129,7 +134,7 @@ def main():
                                 windows = offset_windows(episode.actions, step, direction,
                                                          OFFSETS_MM)
                                 predicted = predict(model, scale, start, windows, device)
-                                model_pos = 1000 * predicted[:, HOLD_INDEX[30], 0:9]
+                                model_pos = 1000 * predicted[:, hold_index(model, 30), 0:9]
                                 curves.append({
                                     "episode_id": episode_id, "chunk_start": step,
                                     "group": "fork" if key in curve_forks else "quiet",
@@ -142,9 +147,9 @@ def main():
                             windows = action_windows(episode.actions, step, snippets,
                                                      scale_value, own_hold=False)
                             predicted = predict(model, scale, start, windows, device)
-                            endings = np.stack([1000 * predicted[:, HOLD_INDEX[h], 0:9]
+                            endings = np.stack([1000 * predicted[:, hold_index(model, h), 0:9]
                                                 for h in (10, 30)])
-                            tilt = neighbour_tilt_deg(predicted[:, HOLD_INDEX[30]])
+                            tilt = neighbour_tilt_deg(predicted[:, hold_index(model, 30)])
                             # Count only NEW topples, as the Stage 0 answer key does: a neighbour
                             # already down at the chunk start is not a topple caused by this chunk.
                             eligible = neighbour_tilt_deg(start[None])[0] < TOPPLE_DEG

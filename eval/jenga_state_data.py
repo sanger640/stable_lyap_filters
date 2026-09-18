@@ -65,8 +65,31 @@ def step_state(sim):
                            sim.proprio()]).astype(np.float32)
 
 
+def execute_recording(sim, action, every):
+    """DirectJengaSim.execute, recording step_state every `every` physics substeps.
+
+    Mirrors execute() exactly (same target/gripper update, same _control + mj_step loop) so the
+    finer data describes the same physics; tests/test_state_dynamics.py checks the final state is
+    bit-identical to execute(). A topple's onset happens inside one 50-substep control step, which
+    control-rate recording cannot see.
+    """
+    action = np.asarray(action, np.float32)
+    sim.target = action[:3].astype(float)
+    if action[3] > 0.9:
+        sim.gripper = 0.0
+    elif action[3] < -0.9:
+        sim.gripper = 110.0
+    states = []
+    for i in range(sim.steps_per_action):
+        sim._control()
+        sim.mj.mj_step(sim.model, sim.data)
+        if (i + 1) % every == 0:
+            states.append(step_state(sim))
+    return states
+
+
 def simulate(job):
-    episode_id, seed, lmdb, xml, snippets, scales, probes, per_step = job
+    episode_id, seed, lmdb, xml, snippets, scales, probes, per_step, every = job
     replay = JengaReplay(lmdb)
     episode = replay.episode(episode_id)
     replay.close()
@@ -90,6 +113,9 @@ def simulate(job):
                     sim.restore(snapshot)
                     chunk_trace = []
                     for future in window[2:2 + HORIZON]:
+                        if every:
+                            chunk_trace.extend(execute_recording(sim, future, every))
+                            continue
                         sim.execute(future)
                         if per_step:
                             chunk_trace.append(step_state(sim))
@@ -97,9 +123,12 @@ def simulate(job):
                     if per_step:
                         trajectory.extend(chunk_trace)
                     for held in range(1, HOLD + 1):
-                        sim.execute(window[-1])
-                        if per_step:
-                            trajectory.append(step_state(sim))
+                        if every:
+                            trajectory.extend(execute_recording(sim, window[-1], every))
+                        else:
+                            sim.execute(window[-1])
+                            if per_step:
+                                trajectory.append(step_state(sim))
                         if held in HOLD_STEPS:
                             captured.append(all_block_pose(sim))
                     state_endings.append(np.stack(captured))
@@ -136,6 +165,9 @@ def main():
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--per-step", action="store_true",
                     help="record the state after every action: training data for an integrator")
+    ap.add_argument("--substep-every", type=int, default=0,
+                    help="record every N physics substeps instead of once per action (implies "
+                         "--per-step); 10 gives 5 readings per 0.1 s control step")
     args = ap.parse_args()
 
     train_episodes = sorted({r["episode_id"] for r in
@@ -156,7 +188,9 @@ def main():
     seeds = [args.first_seed + i for i in range(args.seeds)]
     with tempfile.TemporaryDirectory(prefix="jenga_state_") as temp:
         xml = str(extract_sim(args.sim_archive, temp))
-        jobs = [(ep, seed, args.lmdb, xml, snippets, scales, args.probes, args.per_step)
+        per_step = args.per_step or bool(args.substep_every)
+        jobs = [(ep, seed, args.lmdb, xml, snippets, scales, args.probes, per_step,
+                 args.substep_every)
                 for seed in seeds for ep in train_episodes]
         print(f"{len(jobs)} jobs", flush=True)
         done = 0
@@ -168,6 +202,8 @@ def main():
                     print(f"  state {done}/{len(jobs)}", flush=True)
     (out / "meta.json").write_text(json.dumps(
         {"episodes": train_episodes, "seeds": seeds, "probes_per_state": args.probes,
+         "substep_every": args.substep_every,
+         "readings_per_action": (50 // args.substep_every) if args.substep_every else 1,
          "state_layout": "27 block pose | 9 blocks relative to gripper | 4 gripper | "
                          "18 block velocities | 12 contact flags",
          "hold_steps": list(HOLD_STEPS), "snippet_seed": args.snippet_seed}, indent=2) + "\n")

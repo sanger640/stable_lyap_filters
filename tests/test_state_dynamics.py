@@ -158,3 +158,30 @@ def test_baseline_checkpoint_still_loads_after_refactor():
     state = torch.load(path, map_location="cpu", weights_only=False)
     model = StepGraphNet(state["hidden"], state["rounds"])
     model.load_state_dict(state["model"])                              # strict: names unchanged
+
+
+def test_substep_recording_matches_the_simulators_own_execute():
+    import os
+    import tempfile
+    import numpy as np
+    archive = ROOT / "vendor/panda_express_sim.tar"
+    if not os.path.exists(archive):
+        return
+    sys.path.insert(0, str(ROOT / "eval"))
+    from jenga_short_held_tails import DirectJengaSim, extract_sim
+    from jenga_state_data import execute_recording, step_state
+    with tempfile.TemporaryDirectory() as temp:
+        sim = DirectJengaSim(str(extract_sim(archive, temp)))
+        try:
+            sim.reset(7)
+            action = np.array([sim.target[0] + 0.01, sim.target[1], sim.target[2] - 0.005, 0.0],
+                              np.float32)
+            snap = sim.snapshot()
+            sim.execute(action)
+            reference = step_state(sim)
+            sim.restore(snap)
+            readings = execute_recording(sim, action, every=10)
+            assert len(readings) == sim.steps_per_action // 10
+            assert np.array_equal(readings[-1], reference)          # bit-identical final state
+        finally:
+            sim.close()

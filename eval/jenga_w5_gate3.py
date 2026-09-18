@@ -37,7 +37,7 @@ from jenga_short_held_tails import DirectJengaSim, extract_sim  # noqa: E402
 from jenga_stage0_noise_oracle import SCALES  # noqa: E402
 from jenga_stage3_predicted_forks import action_windows  # noqa: E402
 from jenga_state_data import step_state  # noqa: E402
-from jenga_w5_eval import HOLD_INDEX, load_model, predict  # noqa: E402
+from jenga_w5_eval import hold_index, load_model, predict  # noqa: E402
 
 BUDGET = 0.05
 NEGATIVE_PHYSICAL = ("nudge_fork", "small_split")
@@ -64,7 +64,7 @@ def model_scores(rows, model, scale, snippets, lmdb, sim_archive, device):
                             windows = action_windows(episode.actions, step, snippets, s,
                                                      own_hold=False)
                             ends = 1000 * predict(model, scale, start, windows,
-                                                  device)[:, HOLD_INDEX[30], 0:9]
+                                                  device)[:, hold_index(model, 30), 0:9]
                             spread = float(np.sqrt(np.mean(np.sum(
                                 (ends - ends.mean(0)) ** 2, 1))))
                             out.append({"episode_id": episode_id, "chunk_start": step,

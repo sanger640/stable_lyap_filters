@@ -29,7 +29,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from state_dynamics import (StepGraphMoE, StepGraphNet, contact_targets,  # noqa: E402
                             delta_targets, load_balance, rollout)
 
-HORIZONS = (4, 12, 38)
+HORIZONS = (4, 12, 38)          # in CONTROL steps; scaled by the recording's sub-steps
+CONTROL_STEPS = 38
 FINAL_POSE = slice(0, 27)
 
 
@@ -40,23 +41,27 @@ def start_from_full_state(full):
 
 
 def load(directory):
-    """-> trajectories (R, 39, 61) including the start state, actions (R, 38, 4), groups, ids."""
+    """-> trajectories (R, T+1, 61) including the start state, actions (R, T, 4), groups, ids,
+    and sub-steps per control action (T = 38 x sub-steps)."""
     trajectories, actions, groups, ids = [], [], [], []
-    index = 0
+    index, substeps = 0, None
     for path in sorted(Path(directory).glob("ep*_seed*.npz")):
         data = np.load(path, allow_pickle=False)
         start = start_from_full_state(data["start_state"])            # (S, 61)
-        traces = data["traces"]                                       # (S, K, 38, 61)
+        traces = data["traces"]                                       # (S, K, T, 61)
         windows = data["actions"]                                     # (S, K, 40, 4)
-        n_states, n_probes = traces.shape[:2]
+        n_states, n_probes, steps = traces.shape[:3]
+        substeps = steps // CONTROL_STEPS
         first = np.repeat(start[:, None, None], n_probes, axis=1)     # (S, K, 1, 61)
-        trajectories.append(np.concatenate([first, traces], axis=2).reshape(-1, 39, 61))
-        actions.append(windows[:, :, 2:].reshape(-1, 38, 4))          # action t drives s_t -> s_t+1
+        trajectories.append(np.concatenate([first, traces], axis=2).reshape(-1, steps + 1, 61))
+        # Each control target is held for its sub-steps, as the simulator does.
+        held = np.repeat(windows[:, :, 2:], substeps, axis=2)          # (S, K, T, 4)
+        actions.append(held.reshape(-1, steps, 4))                    # action t drives s_t -> s_t+1
         for s in range(n_states):
             groups.append(np.arange(index, index + n_probes)); index += n_probes
             ids.append(f"{data['episode_id']}:{data['seed']}")
     return (np.concatenate(trajectories).astype(np.float32),
-            np.concatenate(actions).astype(np.float32), groups, np.asarray(ids))
+            np.concatenate(actions).astype(np.float32), groups, np.asarray(ids), substeps)
 
 
 def main():
@@ -79,14 +84,17 @@ def main():
                     help="gate temperature annealed over teacher forcing, then held")
     args = ap.parse_args()
 
-    trajectories, actions, groups, ids = load(args.data)
+    trajectories, actions, groups, ids, substeps = load(args.data)
+    steps = trajectories.shape[1] - 1
+    horizons = tuple(h * substeps for h in HORIZONS)
     unique = sorted(set(ids))
     val_ids = set(unique[:max(1, int(len(unique) * args.val_fraction))])
     val_states = [g for g, i in zip(groups, ids) if i in val_ids]
     train_states = [g for g, i in zip(groups, ids) if i not in val_ids]
     train_rows = np.concatenate(train_states)
     print(f"{len(groups)} states, {len(trajectories)} rollouts, "
-          f"{len(train_rows) * 38} training transitions, {len(val_states)} validation states",
+          f"{len(train_rows) * steps} training transitions ({substeps} sub-steps per action), "
+          f"{len(val_states)} validation states",
           flush=True)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -128,7 +136,7 @@ def main():
     history = {"teacher_forcing": [], "rollout": {}, "validation": {}}
 
     # ---- Stage 1: teacher forcing over every transition.
-    transitions = np.stack(np.meshgrid(train_rows, np.arange(38), indexing="ij"), -1).reshape(-1, 2)
+    transitions = np.stack(np.meshgrid(train_rows, np.arange(steps), indexing="ij"), -1).reshape(-1, 2)
     rng = np.random.default_rng(0)
     total_tf_steps = args.tf_epochs * int(np.ceil(len(transitions) / args.tf_batch))
     tf_step = 0
@@ -199,7 +207,7 @@ def main():
                             delta_scale, collect=gates)
                     hard = torch.stack(gates, 1).argmax(-1).reshape(-1)
                     usage.append(torch.bincount(hard, minlength=args.experts).float().cpu())
-                if horizon == 38:
+                if horizon == steps:
                     _, safe = branch_and_safe(predicted, truth, [len(g) for g in batch])
                     if safe is not None:
                         safes.append(safe)
@@ -211,21 +219,21 @@ def main():
             out["expert_usage"] = (counts / counts.sum()).tolist()
         return out
 
-    history["validation"]["after_teacher_forcing"] = evaluate(38)
+    history["validation"]["after_teacher_forcing"] = evaluate(steps)
     print("validation after teacher forcing:", history["validation"]["after_teacher_forcing"],
           flush=True)
 
     # ---- Stage 2: rollout fine-tuning, curriculum over horizons.
     order = np.arange(len(train_states))
     weights = None
-    for horizon in HORIZONS:
+    for horizon in horizons:
         rng.shuffle(order)
         start, running = time.time(), []
         for first in range(0, len(order), args.states_per_batch):
             batch = [train_states[i] for i in order[first:first + args.states_per_batch]]
             rows = np.concatenate(batch)
             predicted, truth, terms = rollout_terms(rows, horizon)
-            if horizon == HORIZONS[-1]:
+            if horizon == horizons[-1]:
                 branch, _ = branch_and_safe(predicted, truth, [len(g) for g in batch])
                 terms["branch"] = branch
             if weights is None or set(weights) != set(terms):
@@ -242,7 +250,7 @@ def main():
         history["rollout"][str(horizon)] = {
             "train": {k: float(np.mean([r[k] for r in running])) for k in running[0]},
             "weights": weights, "seconds": time.time() - start}
-        history["validation"][f"after_horizon_{horizon}"] = evaluate(38)
+        history["validation"][f"after_horizon_{horizon}"] = evaluate(steps)
         print(f"rollout horizon {horizon}: train {history['rollout'][str(horizon)]['train']} "
               f"val {history['validation'][f'after_horizon_{horizon}']} "
               f"({time.time() - start:.0f}s)", flush=True)
@@ -250,6 +258,7 @@ def main():
 
     torch.save({"model": model.state_dict(), "hidden": args.hidden, "rounds": args.rounds,
                 "kind": args.model, "experts": args.experts, "parameters": parameters,
+                "substeps": substeps,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
     Path(args.report).write_text(json.dumps(
