@@ -224,6 +224,12 @@ Gate 3 (best MoE: 19% recall at 10% false alarms at 1x vs the single expert's 19
 learns regimes but mostly misses the onset step, where a topple's cause happens inside one 0.1 s
 control step. Next: (b), finer-timestep data.
 
+**Result (b), 2026-09-18:** on finer-timestep data (5 readings per control step) the single expert
+predicts a new topple at 56% / 44% of fork states (was 0% / 2%) and Gate 3 at 2x rises from 38% to
+66% [54-78] at 4% false alarms; 1x is unchanged at 19% on only 16 fork states. The MoE collapsed onto
+one expert and so did not test switching. Next: seeded repeats, the MoE with balance weight 1.0 at
+fine timesteps, and a larger 1x test set.
+
 ### Losses
 
 * Multi-step proper predictive loss (NLL or a calibrated sample-based score).

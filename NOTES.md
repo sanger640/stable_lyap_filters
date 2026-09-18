@@ -3254,3 +3254,39 @@ Reading: at 10 Hz with 50 physics substeps per action, a topple's onset -- the c
 it and the regime switch -- happens INSIDE one recorded step. The model sees "still" and then
 "tipping" with the cause hidden. Next, per the decided order: the same models on finer-timestep
 data. Results: `results/jenga/w5_moe_{a,b}_{train,eval,gate3}.json`.
+
+## W5 on finer-timestep data (2026-09-18)
+
+`eval/jenga_state_data.py --substep-every 10`: state every 10 physics substeps, 5 readings per
+0.1 s control step (test: final state bit-identical to DirectJengaSim.execute). 430 shards, 3.2 GB,
+~12M training transitions. The step function advances one sub-step with each control target held
+for its 5 sub-steps, as the simulator does; horizons 20/60/190 sub-steps. Same models, grading and
+Gate 3 as the control-rate runs; the single expert and MoE A (balance 0.01, pre-declared) trained in
+parallel.
+
+| model | 1x recall | 1x FA | 2x recall | 2x FA | new topple at fork states 1x/2x | W0 jump |
+|---|---|---|---|---|---|---|
+| single, control rate | 19% [0-40] | 4% | 38% [23-54] | 0% | 0% / 2% | 0.84 |
+| MoE A, control rate | 19% [0-40] | 10% | 40% [26-54] | 6% | 0% / 0% | 0.83 |
+| **single, FINE** | 19% [0-40] | 4% | **66% [54-78]** | 4% | **56% / 44%** | 0.56 |
+| MoE A, FINE (collapsed) | 38% [18-60] | 7% | 54% [43-65] | 4% | 0% / 12% | 1.29 |
+| real endings | 88% | 0% | 98% | 8% | - | 4.17 |
+
+**Finer timesteps fixed the diagnosed physical failure.** The single expert now predicts a new
+topple at 56% (1x) and 44% (2x) of fork states, against 0% and 2% at control rate, while inventing
+one at only 3% / 0% of quiet states. Seeing the onset inside the control step was the missing
+ingredient. Gate 3 at 2x rose from 38% to 66% [54-78] within the 5% budget, with zero alarms on
+non-topple physical forks. At 1x -- the realistic error size -- recall is unchanged at 19%, and with
+only 16 fork states the interval (0-40%) cannot resolve much.
+
+**MoE A collapsed onto one expert** at fine timesteps (usage 100/0/0 from the 60-sub-step stage;
+balance penalty at its maximum, ln 3), so it does not test switching. It is effectively a second
+single-expert configuration, and it disagrees with the single expert on almost everything (1x recall
+38% vs 19%, topple prediction 0-12% vs 44-56%). Two near-equivalent models differing this much means
+run-to-run variance is large relative to the effects being measured; no difference between these
+two should be read as an architecture effect without seeded repeats.
+
+Next, in order: (1) seeded repeats of the fine single expert to measure that variance; (2) the MoE
+at fine timesteps with the non-collapsing balance weight (1.0), the actual switching test;
+(3) a larger 1x test set -- 16 fork states is too few at the error size that matters; (4) transition
+weighting, still optional. Results: `results/jenga/w5_fine_{single,moe_a}_{train,eval,gate3}.json`.
