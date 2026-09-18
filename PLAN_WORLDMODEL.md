@@ -64,62 +64,84 @@ Two label-free metrics, both scale-free so models with different latent scales c
 **Acceptance:** the benchmark runs, is committed with its numbers, and reproduces the shipped and
 fine-tuned baselines above. This is the scoreboard for W1-W3. No model changes in this phase.
 
-## W1 — data and loss: identifiability and spread
+## W1 — data and loss (DONE, FAILED)
 
-Not expected to produce the jump on its own; every later phase needs it anyway.
+`eval/jenga_gtf_data.py --probes-per-chunk 8 --chunk-stride 2` (453 states x K=8 perturbations
+from the same snapshot) and `eval/jenga_w1_train.py` (paired MSE + energy score + difference
+matching + temporal difference, steps weighted by true scene change). Every loss term improved on
+held-out states; the response curves got worse (fork jump ratio 1.5, fork/quiet spread 0.96).
 
-1. **K=8 perturbations per simulator state** (`jenga_gtf_data.py --probes-per-chunk 8`, grouped by
-   snapshot). With one action per state, "the action caused this" and "this state usually looks
-   like that" are not distinguishable.
-2. **Difference matching:** `mean over pairs ||(z_i^ - z_j^) - (z_i - z_j)||^2`, the
-   intervention-effect term. This is the geometry the monitor reads.
-3. **Energy score over the predicted set:**
-   `(1/K^2) sum_ij ||z_i^ - z_j|| - (1/2K^2) sum_ij ||z_i^ - z_j^||`, norms not squared. The
-   negative term rewards spread, so collapse is penalised. Proper scoring rule: minimised by
-   matching the distribution, not the mean.
-4. **Reweight the hold steps.** 30 of 38 steps are a held pose where almost nothing moves, so 79%
-   of the loss terms currently teach stasis. Weight by true change magnitude or subsample.
-5. **Delta targets**, so "nothing happens" stops being free.
+Kept for W2 and beyond: **the counterfactual dataset and the branch-preservation losses carry
+forward unchanged.** Dropped: paired MSE at weight 1.0, which is the mean-seeking term.
 
-**Gate:** predicted spread within 2x of real on the W0 benchmark, with zero-action drift near
-zero. Jump ratio is a bonus, not required.
+**Conclusion: loss alone is insufficient.** A deterministic continuous map from actions to endings
+cannot produce a jump, so W2 changes the output space and the loss together.
 
-## W2 — discrete output head (the phase aimed at the discontinuity)
+## W2 — discrete output space (current phase)
 
-Replace continuous latent regression with a categorical prediction:
+Three mechanisms can produce a discontinuity: a discrete latent whose argmax flips, a latent
+variable plus sampling, or structured state where contact logic creates the jump. W2 takes the
+first, in the smallest form that tests it.
 
-1. VQ the ending latents into a codebook (a few hundred codes, learned unsupervised from the
-   training endings; the count is not supplied by hand).
-2. Train the predictor to output a **distribution over codes**, cross-entropy against the true
-   code, keeping the W1 terms for the continuous part if it helps.
-3. At a fork the distribution goes bimodal and per-probe predictions land on one code or the
-   other, so the response is discontinuous by construction.
+**W2a — discrete ending head.** Quantise the settled endings into a codebook learned unsupervised
+on training endings only (PCA then k-means; the count is not supplied by hand). Predict a
+*distribution over codes* for the ending at hold steps 10 and 30, conditioned on the three real
+history latents and the whole action window. Cross-entropy against the true code, plus the W1
+branch terms over the distribution's mean embedding. The action window is rescaled relative to the
+nominal chunk and by the execution-error size, so a 1.6 mm difference arrives as an O(1) input
+instead of 0.05.
 
-The monitor then groups code identities instead of continuous endings -- close to the original
-basin idea, but learned per model rather than as a global atlas, and still label-free.
+This is a temporally abstract (jumpy) world model: it predicts the ending the monitor reads, not
+every intermediate frame. Justified because the monitor only ever reads endings, and it isolates
+the question -- can a discrete output over actions reproduce the jump? -- from rollout drift.
 
-**Gate:** jump ratio >= 10x on the W0 benchmark, then Stage 3 rerun unchanged
-(`eval/jenga_stage3_predicted_forks.py`), with recall and false alarms compared against the real-
-ending numbers on the same states.
+**W2b — switching dynamics, only if W2a jumps.** Put the same discrete bottleneck back into the
+autoregressive predictor, or an action-conditioned mixture-of-experts gate (K=2-4) over local
+dynamics. Control: a stochastic single-expert model at matched compute. Adopt only if it beats
+that control.
+
+**Gate (W2a and W2b):** on the W0 benchmark, fork-state jump ratio at least 3x the same model's
+quiet-state jump ratio (reality: 14.9 vs 3.6 = 4.1x), and fork/quiet spread ratio above 1.5
+(reality 1.81). Then Stage 3 rerun unchanged, graded against the real-ending numbers on the same
+states.
 
 ## W3 — object-centric prediction target
 
-Only if W2 produces the jump in the wrong place, or produces none. The hypothesis then is that the
-bottleneck is representation: a toppling neighbour is a small part of a 224x224 frame, so blurring
-it costs almost nothing, while in an object-slot state it is a large fraction. Predict slot states
-(SOLD/SlotContrast-style, slots discovered unsupervised so universality holds) instead of 196
-patch tokens.
+Only if W2 produces a sharp response in the WRONG PLACE, or none. The signature that justifies it
+is a model that knows a boundary exists but cannot localise it from patch features. Predict object
+tokens (slots discovered unsupervised, so universality holds) or an interaction network over them,
+instead of 196 patch tokens.
 
-**Gate:** same as W2.
+Note the evidence ranking: the ending representation is NOT the demonstrated problem -- real DINO
+endings separate outcomes at d' 4.85 and give 88% recall at 1% false alarms. W3 is a hypothesis
+about the dynamics being easier over objects, so it comes after W2, not before.
 
 ## W4 — structural fallback
 
-A learned rigid-body simulator over object state (FIGNet-style face-interaction graph network,
-built for exactly this contact discontinuity) with a perception front end. Highest accuracy on
-contact, but it gives up "pixels only" and needs object meshes, so it changes what the
-contribution is. Decide deliberately, do not drift into it.
+A learned rigid-body simulator over object state (FIGNet-style face-interaction graph network)
+with a perception front end. Highest accuracy on contact, but it gives up "pixels only" and needs
+object meshes, so it changes what the contribution is. Decide deliberately.
 
----
+## Evaluation rules adopted from the external review (2026-09-18)
+
+An independently written plan (`plan_from_another_agent.md`, assessed 2026-09-18) covered ground
+Stages 0-3 already settled -- its Phases 0-2 map onto the answer key, the physics upper bound, the
+real-DINO result and the predicted-ending failure, and its branch-margin search was already built
+and rejected three times here. Its Gate 2 ("real DINO works, predicted futures fail -> dynamics
+training is justified") routes to this plan. Six of its requirements are adopted:
+
+1. **Per-stratum false-alarm budget of 5%**, on moving non-topple and contacting-pick controls
+   separately, replacing the earlier ~10% overall figure.
+2. **Episode-clustered confidence intervals.** Holdout states share episodes, so the Wilson
+   intervals reported for Stage 2 are too narrow; recompute with a cluster bootstrap by episode.
+3. **A held-out geometry or friction setting** as an OOD test before any generality claim.
+4. **Safe-pair false separation** tracked during training: the branch loss must not win by
+   exaggerating every perturbation.
+5. **Abstention as its own output**, counted with its own burden, plus a p50/p95 latency profile.
+6. **Prevalence-weighted reporting** alongside the stratified numbers.
+
+Not adopted: re-running Phases 0-2, the branch-margin machinery, and the full ablation matrix
+before the binding constraint is fixed.
 
 ## Kill criteria, fixed now
 
