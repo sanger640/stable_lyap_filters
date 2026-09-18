@@ -23,8 +23,11 @@
 > **2026-09-18:** W1 (set-based losses) and W2 (discrete ending head) both failed their gates, and
 > the privileged-state probe showed that perception is NOT the binding constraint, so W3
 > (object-centric) is cancelled. What is ruled out is a one-shot map from state to ending; the
-> current phase is W5, a step-wise dynamics model on privileged state, where a discontinuity can
-> emerge from integrating contact rather than being fitted directly.
+> current phase is W5, the external plan's Phase 3 stochastic HYBRID world model: K smooth
+> experts switched by an action-conditioned gate and a discrete regime latent, so a small action
+> change can switch the dynamics instead of ramping across the boundary. The oracle single-expert
+> baseline is done (spread AUC .98 at 2x, but predicts a new topple at 0/16 fork states); the
+> build order, universality boundary, losses and Gate 3 are in PLAN_WORLDMODEL.md W5.
 > Read that, then section 6's Stage 0-3 entries, then NOTES.md from the bottom up.
 
 Written 2026-09-12. Self-contained brief for picking this up cold, human or agent.

@@ -77,7 +77,7 @@ forward unchanged.** Dropped: paired MSE at weight 1.0, which is the mean-seekin
 **Conclusion: loss alone is insufficient.** A deterministic continuous map from actions to endings
 cannot produce a jump, so W2 changes the output space and the loss together.
 
-## W2 — discrete output space (current phase)
+## W2 — discrete output space (done)
 
 Three mechanisms can produce a discontinuity: a discrete latent whose argmax flips, a latent
 variable plus sampling, or structured state where contact logic creates the jump. W2 takes the
@@ -118,7 +118,10 @@ End to end with the full privileged state (`eval/jenga_w3_monitor.py`): the froz
 ending spread separates fork from quiet at AUC .93 (2x) and .80 (1x) -- real signal, but a ranking
 needs a threshold, which costs the calibration-free claim.
 
-## W3 — object-centric prediction target: NOT JUSTIFIED, do not build
+## W3 — object-centric perception as a fix for a one-shot model: superseded by W5
+
+Object tokens are NOT abandoned: they return as W5's deployable input (step 7). What this section
+rules out is object-centric perception bolted onto a ONE-SHOT ending predictor as the fix.
 
 The privileged probe fed true block poses, gripper pose, relative geometry, velocities and contact
 flags (70 dims) at 10x data. Its fork/quiet jump contrast is 0.88-0.99: camera, blocks-only state
@@ -131,34 +134,104 @@ function in a single step, while a topple is a process: contact, tipping, past t
 The autoregressive DINO-WM's within-curve jump ratio (5.0) was higher than either one-shot head's
 (~2.4), which points the same way.
 
-## W5 — step-wise dynamics model on privileged state (current phase)
+## W5 — stochastic hybrid world model (current phase)
 
-This is the other agent's Phase 3 minimum implementation, run oracle-state-first (which that plan
-explicitly permits as a marked oracle variant) so perception is not a confound:
+This phase follows the external plan's Phase 3 ("branch-aware stochastic hybrid world model")
+directly. Where this document adds something, it says so.
 
-1. **Step function** over 4 nodes (3 blocks + gripper): pose, velocity, contact flags and the
-   current action -> change in block state, applied recurrently for the H=8 chunk plus the 30-step
-   hold. The outcome is read by INTEGRATING, never predicted in one shot.
-2. **Order, from that plan:** a single-expert stochastic baseline first, then an action-conditioned
-   gate over K=2-4 local experts at matched compute, adopted only if it beats the baseline.
-3. **Losses:** pose/velocity regression plus contact classification, a multi-step rollout term, and
-   the W1 branch-preservation terms over the 8 probes of each state (non-divergent pairs included).
-4. **Training order:** teacher-forced first, then rollout fine-tuned -- reversing this collapsed the
-   toy model to "nothing ever happens" (HANDOFF finding 1).
+### Why hybrid
 
-Data: `eval/jenga_state_data.py --per-step` records the state after every action, ~650 MB and ~11
-minutes because nothing is rendered; the existing 70,480 rollouts hold ~2.7M transitions.
+Contact mechanics is a hybrid system: a continuous state (positions, velocities) that flows
+smoothly within a mode, and a discrete mode (no contact, sticking, sliding, tipping, toppled) that
+switches. Within a mode the dynamics are smooth; at a switch they jump. Every model trained so far
+was a single smooth function asked to fake a switch with a steep slope, and all of them ramp across
+the boundary instead of jumping. A hybrid model switches between smooth experts instead:
 
-**Gate:** the W0 response curves first (fork jump ratio >= 3x the same model's quiet value), then
-`eval/jenga_w3_monitor.py` end to end against the real-ending reference of 88% recall at 1% false
-alarms. The signature that justifies it
-is a model that knows a boundary exists but cannot localise it from patch features. Predict object
-tokens (slots discovered unsupervised, so universality holds) or an interaction network over them,
-instead of 196 patch tokens.
+| hybrid-system concept | component |
+|---|---|
+| the modes | K local dynamics experts, each smooth within one regime |
+| which mode applies (the guard) | action-conditioned gate pi_k(s_t, a_t) |
+| the mode variable | latent discrete regime / transition variable |
+| what triggers a switch | contact / event features |
+| an impact's instantaneous jump (reset map) | optional explicit event/reset map, separate ablation |
 
-Note the evidence ranking: the ending representation is NOT the demonstrated problem -- real DINO
-endings separate outcomes at d' 4.85 and give 88% recall at 1% false alarms. W3 is a hypothesis
-about the dynamics being easier over objects, so it comes after W2, not before.
+A small action change can flip the gate, hence a different expert, hence a different trajectory.
+
+### Universality boundary (decided 2026-09-18)
+
+The runtime monitor stays universal: perturb with measured execution error, roll out, test whether
+the endings split or spread; no failure labels and no task knowledge. The world model is trained
+per deployment on unlabelled interaction data, which is learning how things move, not what failure
+is. Within that:
+
+* **Allowed in the deployable model:** object tokens discovered from images WITHOUT labels (slots),
+  with identity tracking and uncertainty/occlusion flags. This assumes the world is made of
+  objects, not what they are or what failure means.
+* **Not allowed in the deployable model:** simulator state, hand-named contacts ("middle-left",
+  "neighbour blocks"), or anything that names a failure. These appear only in the explicitly
+  marked ORACLE variant, whose job is to answer whether the architecture can represent the
+  discontinuity at all when perception is perfect.
+* **Transition weighting** (below) is defined on the change in the model's OWN state, not on any
+  task quantity, so it is a generic prior, not task knowledge.
+
+### Prediction
+
+Step-wise, per control step: a distribution over next object-token states, rolled out over the
+H=8 chunk and the 30-step hold, supporting sampled multi-step trajectories and branch
+probabilities. Expert indices are NOT read as physical modes without a post-hoc audit.
+
+### Build order
+
+1. **Oracle, single-expert stochastic baseline -- DONE (2026-09-18).** Graph net over 3 block
+   tokens and 1 gripper token from simulator state, Gaussian head, teacher forcing then a
+   4 -> 12 -> 38-step rollout curriculum (`src/state_dynamics.py`, `eval/jenga_w5_train.py`,
+   `eval/jenga_w5_eval.py`). Rollout error 5.70 -> 0.38; fork/quiet jump contrast 0.84 (reality
+   4.17); spread contrast 4.52; spread AUC .90 (1x) and .98 (2x); predicts a NEW topple at 0/16
+   fork states at 1x and 1/50 at 2x. With full oracle state the true dynamics are deterministic,
+   so this failure is not stochastic averaging: probes a millimetre apart with opposite outcomes
+   look almost identical to a smooth network, which interpolates across them.
+2. **Gate 3 number for that baseline.** Its spread score thresholded on SAFE controls only (Phase 4
+   permits this): operating point set on batch-1 quiet states (development), evaluated once on
+   batch 2 (test). This is the number every later variant must beat.
+3. **Oracle, deterministic baseline** at matched compute, per the ablation table.
+4. **Data (additions of this document, labelled as such):**
+   * *Finer timestep.* Actions run at 10 Hz with 50 physics substeps each, so a topple onset
+     happens INSIDE one recorded step. Record state every 10 substeps as well.
+   * *Transition weighting.* 87.4% of recorded steps move a neighbour < 0.1 mm and 0.45% move it
+     > 5 mm, so an unweighted loss learns stillness and a gate collapses onto the "nothing
+     happens" expert. Weight each step by the magnitude of change in the model's own state (never
+     by a task quantity), with the rule fixed before training.
+5. **Oracle MoE.** K = 2-4 experts, action-conditioned gate pi_k(s_t, a_t) with contact/event
+   features as input, discrete regime latent with hard switching (straight-through Gumbel-softmax,
+   annealed temperature), regularisation against expert collapse (load balancing). Grow K only if
+   held-out likelihood and branch coverage improve.
+6. **Reset-map ablation,** only if measured impact errors justify it, never as a hidden dependency.
+7. **The universal model:** the winning architecture on image-derived object tokens discovered
+   without labels (frozen DINO backbone, slots with identity tracking and occlusion flags). The
+   oracle result says whether this is worth building; this step is the actual claim.
+
+### Losses
+
+* Multi-step proper predictive loss (NLL or a calibrated sample-based score).
+* Object pose, velocity and contact terms (contact supervised in the oracle variant only).
+* Branch preservation on matched counterfactual pairs over rollout samples paired by common random
+  numbers: predicted distance between branches i and j should match the real distance.
+* Regime-probability calibration.
+* Divergent AND non-divergent pairs, distances normalised by physical scale, large outcomes capped,
+  branch weight chosen on development data only.
+
+### Monitored during training
+
+One-step likelihood, rollout likelihood, branch calibration, safe-pair false separation, and expert
+usage (collapse or overdispersion).
+
+### Gate 3
+
+Advance only if a variant improves held-out persistent-branch recall at the fixed safe-control
+false-alarm budget (5% per stratum, episode-clustered 95% intervals) over the best simpler
+baseline, without losing ordinary-motion fidelity. **A stochastic model that emits both futures
+everywhere is not a success.** If the simple stochastic model matches the MoE, prefer it and report
+that switching was unnecessary. The W0 response curves are reported alongside as a diagnostic.
 
 ## W4 — structural fallback
 
@@ -189,12 +262,13 @@ before the binding constraint is fixed.
 
 ## Kill criteria, fixed now
 
-* W1 restores spread but W2's jump ratio stays under ~5x -> the dynamics model is not the
-  bottleneck; go to W3.
-* W2 clears the jump gate but Stage 3 recall stays under ~40% -> the split is real but mislocated;
-  go to W3.
-* Neither W2 nor W3 clears it -> stop. Write up the simulator-based monitor as the result and the
-  predicted-ending path as the documented barrier. The holdout numbers already stand on their own.
+* The oracle MoE (W5 step 5) does not beat the oracle baselines on Gate 3 -> switching does not
+  help even with perfect state; do not build the image-token model (step 7). Write up the
+  simulator-based monitor as the result and the predicted-ending path as the documented barrier.
+* The oracle MoE passes but the image-token model fails -> the barrier is unsupervised perception
+  of contact-relevant state; report that gap.
+* A variant passes only by emitting both futures everywhere (safe-pair false separation rising,
+  quiet-state alarms above budget) -> rejected, per Gate 3.
 
 ## References that informed this plan
 
