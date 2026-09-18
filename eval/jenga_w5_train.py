@@ -85,7 +85,7 @@ def main():
     args = ap.parse_args()
 
     trajectories, actions, groups, ids, substeps = load(args.data)
-    steps = trajectories.shape[1] - 1
+    n_steps = trajectories.shape[1] - 1     # NOT `steps`: the teacher-forcing loop reuses that name
     horizons = tuple(h * substeps for h in HORIZONS)
     unique = sorted(set(ids))
     val_ids = set(unique[:max(1, int(len(unique) * args.val_fraction))])
@@ -93,7 +93,7 @@ def main():
     train_states = [g for g, i in zip(groups, ids) if i not in val_ids]
     train_rows = np.concatenate(train_states)
     print(f"{len(groups)} states, {len(trajectories)} rollouts, "
-          f"{len(train_rows) * steps} training transitions ({substeps} sub-steps per action), "
+          f"{len(train_rows) * n_steps} training transitions ({substeps} sub-steps per action), "
           f"{len(val_states)} validation states",
           flush=True)
 
@@ -136,7 +136,7 @@ def main():
     history = {"teacher_forcing": [], "rollout": {}, "validation": {}}
 
     # ---- Stage 1: teacher forcing over every transition.
-    transitions = np.stack(np.meshgrid(train_rows, np.arange(steps), indexing="ij"), -1).reshape(-1, 2)
+    transitions = np.stack(np.meshgrid(train_rows, np.arange(n_steps), indexing="ij"), -1).reshape(-1, 2)
     rng = np.random.default_rng(0)
     total_tf_steps = args.tf_epochs * int(np.ceil(len(transitions) / args.tf_batch))
     tf_step = 0
@@ -207,7 +207,7 @@ def main():
                             delta_scale, collect=gates)
                     hard = torch.stack(gates, 1).argmax(-1).reshape(-1)
                     usage.append(torch.bincount(hard, minlength=args.experts).float().cpu())
-                if horizon == steps:
+                if horizon == n_steps:
                     _, safe = branch_and_safe(predicted, truth, [len(g) for g in batch])
                     if safe is not None:
                         safes.append(safe)
@@ -219,7 +219,7 @@ def main():
             out["expert_usage"] = (counts / counts.sum()).tolist()
         return out
 
-    history["validation"]["after_teacher_forcing"] = evaluate(steps)
+    history["validation"]["after_teacher_forcing"] = evaluate(n_steps)
     print("validation after teacher forcing:", history["validation"]["after_teacher_forcing"],
           flush=True)
 
@@ -250,7 +250,7 @@ def main():
         history["rollout"][str(horizon)] = {
             "train": {k: float(np.mean([r[k] for r in running])) for k in running[0]},
             "weights": weights, "seconds": time.time() - start}
-        history["validation"][f"after_horizon_{horizon}"] = evaluate(steps)
+        history["validation"][f"after_horizon_{horizon}"] = evaluate(n_steps)
         print(f"rollout horizon {horizon}: train {history['rollout'][str(horizon)]['train']} "
               f"val {history['validation'][f'after_horizon_{horizon}']} "
               f"({time.time() - start:.0f}s)", flush=True)
