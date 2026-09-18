@@ -3078,3 +3078,39 @@ job; use a bracketed pattern that the calling command does not itself contain.
 
 Results: `results/jenga/w2_response_curves_big.json`, `w2_train_big_k64.json`,
 `w2_train_big_k256.json`.
+
+## The localisation question, settled: it is not the representation (2026-09-18)
+
+Generated 10x data two ways, both from the 43 development episodes with reset seeds 100+ (the
+simulator's seed jitters block placement +-2 mm and +-3 degrees of yaw, which is this dataset's
+episode-to-episode variation, and seeds 0-99 are the bundle's own episodes, so the holdout is
+untouched). `eval/jenga_bulk_data.py` stores images-as-latents for only the 5 frames the models use
+(22 GB, 8,810 states, 70,480 rollouts); `eval/jenga_state_data.py` stores privileged state only and
+runs in minutes (62 MB).
+
+The first privileged probe fed blocks-only world poses while the actions were expressed relative to
+the gripper, so it could not compute gripper-to-block geometry, had no velocities and no contact
+flags. Corrected state: block pose, blocks relative to the gripper, gripper pose, block linear and
+angular velocities, contact flags (70 dims).
+
+| | fork/quiet jump | fork/quiet spread |
+|---|---|---|
+| reality | **4.17** | 1.81 |
+| image (DINO), 881 states | 0.92-1.04 | 1.51-1.79 |
+| privileged, blocks only, 8,810 states | 0.76-0.81 | 1.90 |
+| privileged, FULL state, 8,810 states | 0.88-0.99 | **8.2-9.0** |
+
+**Localisation is not a representation problem.** Perfect physics state, 10x data, and the same
+failure: no sharpening at the boundary. Camera, blocks-only and full simulator state all sit near
+1.0 against reality's 4.17. W3 as planned (object-centric perception) would be solving a problem
+that is not the binding constraint; do not build it on this evidence.
+
+**But the full-state model's response is 8-9x larger at fork states than at quiet ones**, against
+reality's 1.81 and every other model's <=1.9. It cannot say WHERE the boundary is; it says loudly
+THAT it is near one. The monitor's question is a magnitude question ("could nearby executions end
+differently?"), not a localisation one, so the sharpness gate this plan has been chasing may not be
+necessary. Next: run the frozen fork rules end to end on the full-state model's predicted endings
+over the holdout states and compare with the real-ending numbers (88% recall at 1% false alarms).
+
+Results: `results/jenga/w3_privileged_curves.json`, `w3_fullstate_train.json`,
+`w3_privileged_train.json`.

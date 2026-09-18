@@ -119,29 +119,61 @@ def main():
     ap.add_argument("--branch-weight", type=float, default=1.0)
     ap.add_argument("--codes", type=int, default=256, help="codebook size (reported, not tuned)")
     ap.add_argument("--setup-cache", default=str(ROOT / "results/jenga/w2_setup.npz"))
+    ap.add_argument("--bulk", action="store_true",
+                    help="read the bulk-data format (ep*_seed*.npz) instead of the gtf format")
     args = ap.parse_args()
 
+    if args.bulk:
+        # Bulk shards already store only the used frames, grouped by state.
+        hist, ends, acts, groups, episodes = [], [], [], [], []
+        index = 0
+        for path in sorted(Path(args.data).glob("ep*_seed*.npz")):
+            data = np.load(path, allow_pickle=False)
+            probe_latents = data["probe_latents"]      # (states, K, holds, patches, dim)
+            history_latents = data["history_latents"]  # (states, 3, patches, dim)
+            windows = data["actions"]
+            n_states, n_probes = probe_latents.shape[:2]
+            for s in range(n_states):
+                groups.append(np.arange(index, index + n_probes)); index += n_probes
+                hist.append(np.repeat(history_latents[s][None], n_probes, axis=0))
+                ends.append(probe_latents[s])
+                acts.append(windows[s])
+                episodes += [f"{data['episode_id']}:{data['seed']}"] * n_probes
+            del data
+        history_all = np.concatenate(hist); del hist
+        endings_all = np.concatenate(ends); del ends
+        actions = np.concatenate(acts).astype(np.float32); del acts
+        episodes = np.asarray(episodes)
+        frames = np.concatenate([history_all, endings_all], axis=1)  # 3 history + 2 endings
+        del history_all, endings_all
+        frames = frames.reshape(len(frames), 5, -1)
+        is_val_mask = None
+    else:
+        frames = None
     # Load ONLY the frames this model uses (3 history + the two endings). Loading all 41 frames
     # of every rollout is 43 GB at this dataset size and thrashes the machine.
     ending_index = {held: NUM_HIST + HORIZON + held - 1 for held in HOLD_STEPS}
     keep = [0, 1, 2] + [ending_index[held] for held in HOLD_STEPS]
-    frames_list, actions_list, states_list, episodes = [], [], [], []
+    frames_list, actions_list, states_list, episodes_gtf = [], [], [], []
     for path in sorted(Path(args.data).glob("ep*.npz")):
         data = np.load(path, allow_pickle=False)
         frames_list.append(np.asarray(data["latents"][:, keep], np.float16))
         actions_list.append(data["actions"])
         states_list.append(data["state_ids"])
-        episodes += [str(data["episode_id"])] * len(actions_list[-1])
+        episodes_gtf += [str(data["episode_id"])] * len(actions_list[-1])
         del data
-    frames = np.concatenate(frames_list); del frames_list
-    actions = np.concatenate(actions_list); del actions_list
-    states = np.concatenate(states_list)
-    episodes = np.asarray(episodes)
-    grouped = {}
-    for i, s in enumerate(states):
-        grouped.setdefault(str(s), []).append(i)
-    groups = [np.asarray(v) for v in grouped.values()]
-    val_ids = set(sorted(set(episodes), key=int)[:args.val_episodes])
+    if not args.bulk:
+        frames = np.concatenate(frames_list); del frames_list
+        actions = np.concatenate(actions_list); del actions_list
+        states = np.concatenate(states_list)
+        episodes = np.asarray(episodes_gtf)
+        grouped = {}
+        for i, s in enumerate(states):
+            grouped.setdefault(str(s), []).append(i)
+        groups = [np.asarray(v) for v in grouped.values()]
+    frames = frames.reshape(len(frames), 5, -1)
+    unique_episodes = sorted(set(episodes), key=lambda s: tuple(int(x) for x in s.split(":")))
+    val_ids = set(unique_episodes[:args.val_episodes])
     is_val = np.isin(episodes, list(val_ids))
 
     endings = {held: frames[:, NUM_HIST + slot].reshape(len(frames), -1).astype(np.float32)
