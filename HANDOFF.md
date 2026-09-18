@@ -21,8 +21,9 @@
 > scoreboard (`eval/jenga_w0_response_curves.py`) replaces rollout MSE as the grading metric.
 >
 > **2026-09-18:** W1 (set-based losses) and W2 (discrete ending head) both failed their gates, and
-> the privileged-state probe showed that perception is NOT the binding constraint, so W3
-> (object-centric) is cancelled. What is ruled out is a one-shot map from state to ending; the
+> the privileged-state probe showed that perception is NOT the binding constraint for a one-shot
+> ending predictor (W3 superseded; object tokens return as W5's deployable input). What is ruled
+> out is a one-shot map from state to ending; the
 > current phase is W5, the external plan's Phase 3 stochastic HYBRID world model: K smooth
 > experts switched by an action-conditioned gate and a discrete regime latent, so a small action
 > change can switch the dynamics instead of ramping across the boundary. The oracle single-expert
