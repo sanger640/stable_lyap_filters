@@ -230,6 +230,13 @@ predicts a new topple at 56% / 44% of fork states (was 0% / 2%) and Gate 3 at 2x
 one expert and so did not test switching. Next: seeded repeats, the MoE with balance weight 1.0 at
 fine timesteps, and a larger 1x test set.
 
+**Correction after seeded repeats, 2026-09-18:** result (b) was one favourable draw. Across four
+fine-timestep single-expert runs, 2x recall averages 41% (18-66%) and 1x 16% (6-19%); whether the
+model predicts topples at all ranges 0-92% by seed. The non-collapsing MoE (balance 1.0) reaches
+31% at 1x (7% FA, over budget) and 38% at 2x from one seed -- not a Gate 3 pass. Seed variance
+exceeds every effect measured so far: from here, every arm needs >= 3 seeds, and the 1x test set
+(16 fork states) must grow before 1x comparisons mean anything.
+
 ### Losses
 
 * Multi-step proper predictive loss (NLL or a calibrated sample-based score).

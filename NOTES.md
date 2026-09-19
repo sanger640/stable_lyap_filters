@@ -3290,3 +3290,45 @@ Next, in order: (1) seeded repeats of the fine single expert to measure that var
 at fine timesteps with the non-collapsing balance weight (1.0), the actual switching test;
 (3) a larger 1x test set -- 16 fork states is too few at the error size that matters; (4) transition
 weighting, still optional. Results: `results/jenga/w5_fine_{single,moe_a}_{train,eval,gate3}.json`.
+
+## Seeded repeats and the non-collapsing MoE at fine timesteps (2026-09-18)
+
+`eval/jenga_w5_train.py --seed` now fixes initialisation, data order and gate noise. Four runs in
+parallel on the fine-timestep data: the single expert with seeds 1-3, and the MoE with balance
+weight 1.0 (seed 1). Same grading and Gate 3 as every W5 run.
+
+| model | 1x recall | 1x FA | 2x recall | 2x FA | new topple at fork states 1x/2x |
+|---|---|---|---|---|---|
+| single, control rate (one run) | 19% [0-40] | 4% | 38% [23-54] | 0% | 0% / 2% |
+| single, fine, unseeded | 19% [0-40] | 4% | 66% [54-78] | 4% | 56% / 44% |
+| single, fine, seed 1 | 19% [0-40] | 1% | 30% [19-43] | 4% | 6% / 10% |
+| single, fine, seed 2 | 19% [0-40] | 10% | 18% [8-29] | 6% | 0% / 0% |
+| single, fine, seed 3 | 6% [0-20] | 1% | 50% [36-64] | 2% | 69% / 92% |
+| **single, fine, 4 runs** | **mean 16%** (6-19) | | **mean 41%** (18-66) | | 0-69% / 0-92% |
+| MoE B (1.0), fine, seed 1 | 31% [11-56] | 7% | 38% [22-54] | 0% | 44% / 28% |
+| real endings | 88% | 0% | 98% | 8% | - |
+
+**This overturns two earlier readings.**
+
+1. "Finer timesteps fixed the physical failure" is not robust. Whether the model learns to predict
+   topples at all swings from 0% to 92% of fork states across seeds with identical data and
+   training. Two of four runs predict them strongly, two barely at all.
+2. "Gate 3 at 2x rose from 38% to 66%" was the best of four draws. Across four fine-timestep runs
+   2x recall averages 41% (18-66%), the same as control rate's single 38% run. There is no
+   demonstrated improvement from finer timesteps on the monitor's score.
+
+**The MoE with balance weight 1.0 did not collapse** (final usage 13/49/38 after surviving the stage
+where the 0.01 run collapsed): the first real test of switching on fine data. It predicts a topple
+at 44% / 28% of fork states and ~0-1% of quiet ones, has the best 2x spread AUC so far (.989) and
+the first W0 jump contrast above 1 (1.29, reality 4.17). On Gate 3 it gives 31% [11-56] at 1x, at
+7% false alarms (over the 5% budget), and 38% at 2x. That is inside the single expert's seed range
+at 2x and above it at 1x, but from ONE seed, with a 1x interval spanning 11-56% on 16 fork states.
+Per the plan's Gate 3 (improvement over the best simpler baseline with a lower confidence bound
+above zero) it does NOT pass.
+
+What this means: seed-to-seed variance (18-66% at 2x) is larger than any architecture or data
+effect measured so far, so single-run comparisons -- including every earlier W1-W5 comparison --
+cannot establish a difference. The 1x test set (16 fork states) is too small to resolve anything
+either. Whether a model learns the rare topple branch is a matter of training luck, which points
+at the training signal for onset steps (~1 in 200 transitions) rather than at resolution or
+architecture. Results: `results/jenga/w5_fine_single_s{1,2,3}_*.json`, `w5_fine_moe_b_s1_*.json`.
