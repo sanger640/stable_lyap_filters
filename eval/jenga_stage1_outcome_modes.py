@@ -70,7 +70,10 @@ def main():
     ap.add_argument("--output", default=str(ROOT / "results/jenga/stage1_outcome_modes.json"))
     args = ap.parse_args()
     stage0 = json.loads(Path(args.stage0).read_text())
-    cache = np.load(args.cache, allow_pickle=False)
+    npz = np.load(args.cache, allow_pickle=False)
+    # Load each array ONCE: indexing an NpzFile decompresses the whole array on every access,
+    # which made this loop quadratic in the number of states (~40 min at 2,308 states).
+    cache = {k: npz[k] for k in ("snippets", "pose", "start_pose")}
     snippet_mm = 1000 * np.linalg.norm(cache["snippets"], axis=2)
     base_perturbation = float(np.median(snippet_mm.max(1)))
 
