@@ -77,6 +77,9 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--val-fraction", type=float, default=0.12)
     ap.add_argument("--model", choices=("single", "moe"), default="single")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="fixes weight initialisation, data order and gate noise; runs before "
+                         "2026-09-18 evening had random initialisation and data-order seed 0")
     ap.add_argument("--experts", type=int, default=3)
     ap.add_argument("--balance-weight", type=float, default=0.01,
                     help="collapse regularisation, fixed before training and recorded")
@@ -84,6 +87,9 @@ def main():
                     help="gate temperature annealed over teacher forcing, then held")
     args = ap.parse_args()
 
+    if args.seed is not None:
+        torch.manual_seed(args.seed)
+        torch.cuda.manual_seed_all(args.seed)
     trajectories, actions, groups, ids, substeps = load(args.data)
     n_steps = trajectories.shape[1] - 1     # NOT `steps`: the teacher-forcing loop reuses that name
     horizons = tuple(h * substeps for h in HORIZONS)
@@ -137,7 +143,7 @@ def main():
 
     # ---- Stage 1: teacher forcing over every transition.
     transitions = np.stack(np.meshgrid(train_rows, np.arange(n_steps), indexing="ij"), -1).reshape(-1, 2)
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(0 if args.seed is None else args.seed)
     total_tf_steps = args.tf_epochs * int(np.ceil(len(transitions) / args.tf_batch))
     tf_step = 0
     for epoch in range(args.tf_epochs):
@@ -258,7 +264,7 @@ def main():
 
     torch.save({"model": model.state_dict(), "hidden": args.hidden, "rounds": args.rounds,
                 "kind": args.model, "experts": args.experts, "parameters": parameters,
-                "substeps": substeps,
+                "substeps": substeps, "seed": args.seed,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
     Path(args.report).write_text(json.dumps(
@@ -267,7 +273,7 @@ def main():
                                       f"{args.rounds} message-passing rounds, Gaussian head",
                       "stages": "teacher forcing, then rollout curriculum " + str(HORIZONS),
                       "input": "privileged simulator state (oracle variant)"},
-         "model": args.model, "experts": args.experts if moe else 1,
+         "model": args.model, "experts": args.experts if moe else 1, "seed": args.seed,
          "parameters": parameters, "balance_weight": args.balance_weight if moe else None,
          "temperature": list(args.temperature) if moe else None,
          "states": len(groups), "history": history, "output": args.output}, indent=2) + "\n")
