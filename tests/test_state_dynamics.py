@@ -185,3 +185,36 @@ def test_substep_recording_matches_the_simulators_own_execute():
             assert np.array_equal(readings[-1], reference)          # bit-identical final state
         finally:
             sim.close()
+
+
+from state_dynamics import TransitionWeights, change_magnitude  # noqa: E402
+
+
+def test_transition_weights_favour_rare_large_changes():
+    torch.manual_seed(0)
+    still = torch.rand(9800) * 1e-3 + 1e-4          # the common case: almost nothing moves
+    large = torch.rand(200) * 1.0 + 1.0             # rare large changes
+    m = torch.cat([still, large])
+    w = TransitionWeights(m)
+    assert abs(float(w(m).mean()) - 1.0) < 0.05                 # normalised to mean 1
+    # Rare large changes are clearly up-weighted (about 4x for this 98/2 split).
+    assert float(w(large).mean()) > 2 * float(w(still).mean())
+    assert float(w(m).max()) <= TransitionWeights.CAP
+
+
+def test_change_magnitude_ignores_contacts_and_gripper():
+    a = torch.zeros(1, 61); b = a.clone()
+    b[0, 45:61] = 5.0                                # contacts and gripper change only
+    assert float(change_magnitude(a, b, torch.ones(61))) == 0.0
+    b[0, 0] = 3.0; b[0, 1] = 4.0
+    assert abs(float(change_magnitude(a, b, torch.ones(61))) - 5.0) < 1e-6
+
+
+def test_transition_weights_never_boost_rare_tiny_changes():
+    torch.manual_seed(0)
+    jitter = torch.rand(50) * 1e-9 + 1e-10           # rare, but TINY: must not be up-weighted
+    still = torch.rand(9750) * 1e-3 + 1e-4
+    large = torch.rand(200) * 1.0 + 1.0
+    w = TransitionWeights(torch.cat([jitter, still, large]))
+    assert float(w(jitter).max()) <= float(w(still).max()) + 1e-6
+    assert float(w(large).mean()) > 2 * float(w(still).mean())

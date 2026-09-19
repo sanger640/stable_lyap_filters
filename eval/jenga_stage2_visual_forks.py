@@ -43,14 +43,15 @@ FRAME_AT = (10, 30)
 
 
 def render_episode(job):
-    episode_id, starts, lmdb, xml, snippets, own_hold = job
+    episode_id, starts, lmdb, xml, snippets, own_hold, reset_base = job
     replay = JengaReplay(lmdb)
     episode = replay.episode(episode_id)
     replay.close()
     sim = DirectJengaSim(xml)
     out = {}
     try:
-        sim.reset(int(episode_id))
+        sim.reset(int(episode_id) + reset_base if reset_base is not None
+                  else int(episode_id))
         for index, action in enumerate(episode.actions):
             if index in starts:
                 chunk = episode.actions[index:index + HORIZON]
@@ -160,6 +161,8 @@ def main():
     ap.add_argument("--output", default=str(ROOT / "results/jenga/stage2_visual_forks.json"))
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--reuse-cache", action="store_true")
+    ap.add_argument("--reset-seed-base", type=int, default=None,
+                    help="reset with seed BASE + episode_id (new configurations); default: episode_id")
     ap.add_argument("--own-hold", action="store_true",
                     help="arm check: each probe holds its own perturbed final target")
     args = ap.parse_args()
@@ -184,7 +187,7 @@ def main():
         index = {k: i for i, k in enumerate(keys)}
         with tempfile.TemporaryDirectory(prefix="jenga_stage2_") as temp:
             xml = str(extract_sim(args.sim_archive, temp))
-            jobs = [(ep, starts, args.lmdb, xml, stage0["snippets"], args.own_hold)
+            jobs = [(ep, starts, args.lmdb, xml, stage0["snippets"], args.own_hold, args.reset_seed_base)
                     for ep, starts in sorted(by_episode.items(), key=lambda x: int(x[0]))]
             with ProcessPoolExecutor(args.workers) as pool:
                 for done, (ep, out) in enumerate(pool.map(render_episode, jobs), 1):

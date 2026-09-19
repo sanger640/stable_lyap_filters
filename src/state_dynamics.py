@@ -263,3 +263,47 @@ def rollout(model, state, actions, delta_scale, sample=False, noise=None, collec
         current = apply_step(current, actions[:, t], out, delta_scale, sample, step_noise)
         states.append(current)
     return torch.stack(states, dim=1)
+
+
+def change_magnitude(state, next_state, state_scale):
+    """Size of a transition in the model's OWN normalised state (pose, rotation, velocity).
+
+    Generic by construction: no task quantity, no notion of which object matters or what failure
+    is. Used only to weight transitions.
+    """
+    return ((next_state[..., :45] - state[..., :45]) / state_scale[:45]).norm(dim=-1)
+
+
+class TransitionWeights:
+    """Square-root inverse-frequency weights over log change magnitude (fixed before training).
+
+    87% of recorded steps barely move anything and ~0.5% are large, so an unweighted loss learns
+    stillness. A 20-bin histogram of log10(magnitude) over TRAINING transitions gives each bin a
+    frequency f; weight = 1/sqrt(f) for bins ABOVE the median change, and the median bin's weight
+    for every bin at or below it -- so only rare LARGE changes are up-weighted, never rare tiny
+    ones (near-zero jitter is also rare in log space, and boosting it would teach stillness).
+    Normalised to mean 1 over the training transitions and capped at 20. The square root is the
+    standard long-tail compromise: rare steps count more without a few extreme ones dominating.
+    """
+
+    BINS, CAP = 20, 20.0
+
+    def __init__(self, magnitudes):
+        logm = torch.log10(magnitudes.clamp_min(1e-12))
+        self.low, self.high = float(logm.min()), float(logm.max())
+        index = self._bin(logm)
+        counts = torch.bincount(index, minlength=self.BINS).float()
+        freq = counts / counts.sum()
+        table = torch.where(counts > 0, 1.0 / freq.clamp_min(1e-12).sqrt(), torch.zeros_like(freq))
+        median_bin = int(self._bin(logm.median().reshape(1))[0])
+        table[:median_bin + 1] = table[median_bin]          # never up-weight small changes
+        mean = float((table[index]).mean())
+        self.table = (table / mean).clamp(max=self.CAP)
+
+    def _bin(self, logm):
+        span = max(self.high - self.low, 1e-9)
+        return ((logm - self.low) / span * self.BINS).long().clamp(0, self.BINS - 1)
+
+    def __call__(self, magnitudes):
+        index = self._bin(torch.log10(magnitudes.clamp_min(1e-12)))
+        return self.table.to(magnitudes.device)[index.to(self.table.device)].to(magnitudes.device)

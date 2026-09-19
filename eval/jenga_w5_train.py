@@ -26,8 +26,9 @@ import torch.nn.functional as F
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-from state_dynamics import (StepGraphMoE, StepGraphNet, contact_targets,  # noqa: E402
-                            delta_targets, load_balance, rollout)
+from state_dynamics import (StepGraphMoE, StepGraphNet, TransitionWeights,  # noqa: E402
+                            change_magnitude, contact_targets, delta_targets, load_balance,
+                            rollout)
 
 HORIZONS = (4, 12, 38)          # in CONTROL steps; scaled by the recording's sub-steps
 CONTROL_STEPS = 38
@@ -77,6 +78,9 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--val-fraction", type=float, default=0.12)
     ap.add_argument("--model", choices=("single", "moe"), default="single")
+    ap.add_argument("--transition-weighting", action="store_true",
+                    help="weight transitions by 1/sqrt(frequency) of their change magnitude in "
+                         "the model's own state (state_dynamics.TransitionWeights)")
     ap.add_argument("--seed", type=int, default=None,
                     help="fixes weight initialisation, data order and gate noise; runs before "
                          "2026-09-18 evening had random initialisation and data-order seed 0")
@@ -118,6 +122,18 @@ def main():
     state_scale_d = state_scale.to(device)
     del s_now, s_next, block_delta, grip_delta
 
+    # Per-transition weights from the TRUE change at that step (all ones when weighting is off).
+    step_weight = torch.ones(traj.shape[0], traj.shape[1] - 1)
+    if args.transition_weighting:
+        magnitudes = torch.cat([change_magnitude(traj[i:i + 4096, :-1], traj[i:i + 4096, 1:],
+                                                 state_scale)
+                                for i in range(0, traj.shape[0], 4096)])
+        weigher = TransitionWeights(magnitudes[train_rows].reshape(-1))
+        step_weight = weigher(magnitudes)
+        print(f"transition weighting: weight range {float(step_weight.min()):.2f}-"
+              f"{float(step_weight.max()):.2f}, table {[round(float(x), 2) for x in weigher.table]}",
+              flush=True)
+
     moe = args.model == "moe"
     model = (StepGraphMoE(args.hidden, args.rounds, args.experts) if moe
              else StepGraphNet(args.hidden, args.rounds)).to(device)
@@ -125,17 +141,21 @@ def main():
     print(f"model {args.model}: {parameters:,} parameters", flush=True)
     optimiser = torch.optim.AdamW(model.parameters(), lr=args.lr)
 
-    def one_step_loss(state, action, nxt):
+    def one_step_loss(state, action, nxt, weight):
         out = model(state, action)
         blocks, grip = delta_targets(state, nxt)
         blocks = blocks / delta_scale[0]; grip = grip / delta_scale[1]
+        # Per-sample losses, then the transition-weighted mean (weight is all ones when off).
         nll = (0.5 * (out["block_logvar"] + (blocks - out["block_mean"]) ** 2
-                      / out["block_logvar"].exp())).mean()
+                      / out["block_logvar"].exp())).mean((1, 2))
         nll = nll + (0.5 * (out["gripper_logvar"] + (grip - out["gripper_mean"]) ** 2
-                            / out["gripper_logvar"].exp())).mean()
+                            / out["gripper_logvar"].exp())).mean(1)
         per_block, pairs = contact_targets(nxt)
-        bce = F.binary_cross_entropy_with_logits(out["block_contact_logits"], per_block) + \
-            F.binary_cross_entropy_with_logits(out["pair_contact_logits"], pairs)
+        bce = F.binary_cross_entropy_with_logits(out["block_contact_logits"], per_block,
+                                                 reduction="none").mean((1, 2)) + \
+            F.binary_cross_entropy_with_logits(out["pair_contact_logits"], pairs,
+                                               reduction="none").mean(1)
+        nll = (weight * nll).mean(); bce = (weight * bce).mean()
         balance = load_balance(out["gate_probabilities"]) if moe else torch.zeros((), device=device)
         return (nll + bce + args.balance_weight * balance, float(nll.detach()), float(bce.detach()))
 
@@ -159,7 +179,8 @@ def main():
                 model.temperature = args.temperature[0] + frac * (args.temperature[1]
                                                                   - args.temperature[0])
             tf_step += 1
-            loss, nll, bce = one_step_loss(state, action, nxt)
+            weight = step_weight[rows, steps].to(device)
+            loss, nll, bce = one_step_loss(state, action, nxt, weight)
             optimiser.zero_grad(set_to_none=True); loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
             running.append((nll, bce))
@@ -174,10 +195,11 @@ def main():
         predicted = rollout(model, state0, acts[rows, :horizon].to(device), delta_scale,
                             collect=gates)
         truth = traj[rows, 1:horizon + 1].to(device)
-        err = ((predicted[..., :45] - truth[..., :45]) / state_scale_d[:45]) ** 2
+        weight = step_weight[rows, :horizon].to(device)                       # (B, horizon)
+        err = (((predicted[..., :45] - truth[..., :45]) / state_scale_d[:45]) ** 2).mean(-1)
         contact = F.binary_cross_entropy(predicted[..., 45:57].clamp(1e-5, 1 - 1e-5),
-                                         truth[..., 45:57])
-        terms = {"state": err.mean(), "contact": contact}
+                                         truth[..., 45:57], reduction="none").mean(-1)
+        terms = {"state": (weight * err).mean(), "contact": (weight * contact).mean()}
         if moe:
             terms["balance"] = load_balance(torch.stack(gates, dim=1))
         return predicted, truth, terms
@@ -265,6 +287,7 @@ def main():
     torch.save({"model": model.state_dict(), "hidden": args.hidden, "rounds": args.rounds,
                 "kind": args.model, "experts": args.experts, "parameters": parameters,
                 "substeps": substeps, "seed": args.seed,
+                "transition_weighting": args.transition_weighting,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
     Path(args.report).write_text(json.dumps(
@@ -274,6 +297,7 @@ def main():
                       "stages": "teacher forcing, then rollout curriculum " + str(HORIZONS),
                       "input": "privileged simulator state (oracle variant)"},
          "model": args.model, "experts": args.experts if moe else 1, "seed": args.seed,
+         "transition_weighting": args.transition_weighting,
          "parameters": parameters, "balance_weight": args.balance_weight if moe else None,
          "temperature": list(args.temperature) if moe else None,
          "states": len(groups), "history": history, "output": args.output}, indent=2) + "\n")

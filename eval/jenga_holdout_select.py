@@ -33,6 +33,8 @@ def main():
                     help="a previous selection JSON whose states must not be reused")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--counts", default="60,20,60", help="topple,physical,quiet")
+    ap.add_argument("--topple-scale", default=None,
+                    help="only states mixed at THIS scale count as topple forks (e.g. 1.0)")
     args = ap.parse_args()
     stage1 = json.loads(Path(args.stage1).read_text())
     used = set()
@@ -42,7 +44,9 @@ def main():
     rows = [r for r in stage1["rows"] if (r["episode_id"], r["chunk_start"]) not in used]
     counts = [int(x) for x in args.counts.split(",")]
     rng = np.random.default_rng(args.seed)
-    topple = [r for r in rows if "mixed" in (r["grade"]["1.0"], r["grade"]["2.0"])]
+    topple = [r for r in rows if (r["grade"][args.topple_scale] == "mixed"
+                                  if args.topple_scale else
+                                  "mixed" in (r["grade"]["1.0"], r["grade"]["2.0"]))]
     safe = [r for r in rows
             if r["grade"]["1.0"] == "unanimous_safe" and r["grade"]["2.0"] == "unanimous_safe"]
     physical = [r for r in safe if r["scores"]["1.0"]["all_blocks"]]

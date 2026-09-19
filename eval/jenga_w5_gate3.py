@@ -43,7 +43,7 @@ BUDGET = 0.05
 NEGATIVE_PHYSICAL = ("nudge_fork", "small_split")
 
 
-def model_scores(rows, model, scale, snippets, lmdb, sim_archive, device):
+def model_scores(rows, model, scale, snippets, lmdb, sim_archive, device, reset_base=None):
     """Predicted ending spread (mm) per state and error size, plus class and episode."""
     wanted = {}
     for r in rows:
@@ -55,7 +55,8 @@ def model_scores(rows, model, scale, snippets, lmdb, sim_archive, device):
         try:
             for episode_id in sorted(wanted, key=int):
                 episode = replay.episode(episode_id)
-                sim.reset(int(episode_id))
+                sim.reset(int(episode_id) + reset_base if reset_base is not None
+                          else int(episode_id))
                 for step, action in enumerate(episode.actions):
                     if step in wanted[episode_id]:
                         row = wanted[episode_id][step]
@@ -129,6 +130,8 @@ def main():
     ap.add_argument("--test", default=str(ROOT / "results/jenga/holdout2_stage2_shared.json"))
     ap.add_argument("--stage0-cache", default=str(ROOT / "results/jenga/holdout_stage0_cache.npz"))
     ap.add_argument("--output", default=str(ROOT / "results/jenga/w5_gate3.json"))
+    ap.add_argument("--test-reset-seed-base", type=int, default=None,
+                    help="reset base the TEST states were generated with (batch 3: 1000)")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -139,7 +142,7 @@ def main():
 
     model_dev = model_scores(dev_rows, model, scale, snippets, args.lmdb, args.sim_archive, device)
     model_test = model_scores(test_rows, model, scale, snippets, args.lmdb, args.sim_archive,
-                              device)
+                              device, args.test_reset_seed_base)
     result = {"protocol": {"score": "spread of predicted endings over 64 execution-noise probes",
                            "operating_point": f"{int(100 * (1 - BUDGET))}th percentile of "
                                               "development QUIET-state scores, per error size",

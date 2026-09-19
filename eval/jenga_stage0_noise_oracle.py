@@ -91,14 +91,15 @@ def rollout(sim, snapshot, chunk, noise, start_pose, start_tilt):
 
 
 def run_episode(job):
-    episode_id, starts, lmdb, xml, noise_by_scale = job
+    episode_id, starts, lmdb, xml, noise_by_scale, reset_base = job
     replay = JengaReplay(lmdb)
     episode = replay.episode(episode_id)
     replay.close()
     sim = DirectJengaSim(xml)
     out = {}
     try:
-        sim.reset(int(episode_id))
+        sim.reset(int(episode_id) + (reset_base or 0) if reset_base is not None
+                  else int(episode_id))
         for index, action in enumerate(episode.actions):
             if index in starts:
                 chunk = episode.actions[index:index + HORIZON]
@@ -154,6 +155,8 @@ def main():
     ap.add_argument("--cache", default=str(ROOT / "results/jenga/stage0_noise_oracle_cache.npz"))
     ap.add_argument("--output", default=str(ROOT / "results/jenga/stage0_noise_oracle.json"))
     ap.add_argument("--workers", type=int, default=16)
+    ap.add_argument("--reset-seed-base", type=int, default=None,
+                    help="reset with seed BASE + episode_id (new configurations); default: episode_id")
     ap.add_argument("--reuse-cache", action="store_true")
     args = ap.parse_args()
 
@@ -186,7 +189,7 @@ def main():
         noise_by_scale = [snippets * s for s in SCALES]
         with tempfile.TemporaryDirectory(prefix="jenga_stage0_") as temp:
             xml = str(extract_sim(args.sim_archive, temp))
-            jobs = [(ep, starts, args.lmdb, xml, noise_by_scale)
+            jobs = [(ep, starts, args.lmdb, xml, noise_by_scale, args.reset_seed_base)
                     for ep, starts in sorted(by_episode.items(), key=lambda x: int(x[0]))]
             results = {}
             with ProcessPoolExecutor(args.workers) as pool:
