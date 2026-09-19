@@ -3365,3 +3365,43 @@ intervals, which also absorb the correlation between neighbouring chunk starts.
    which bears on deployment calibration.
 
 Results: `results/jenga/*_gate3_b3.json`, `holdout3_*`.
+
+## Steps 1+2: transition weighting (3 seeds) and the non-collapsing MoE (3 seeds), fine data (2026-09-19)
+
+All on fine-timestep oracle state, same trainer and curriculum. Transition weighting = 1/sqrt
+frequency of the step's change magnitude in the model's own normalised state (median floor, mean 1,
+cap 20; `state_dynamics.TransitionWeights`). MoE B = 3 experts, balance weight 1.0. Gate 3
+threshold unchanged (batch-1 quiet states). Recall on fork states, false alarms on quiet states.
+
+| model | b2 1x | b3 1x (84 forks) | b3 1x FA | b2 2x | b3 2x | b3 2x FA |
+|---|---|---|---|---|---|---|
+| single s1 / s2 / s3 (earlier) | 19 / 19 / 6% | 17 / 23 / 7% | 1-9% | 30 / 18 / 50% | 32 / 20 / 24% | 6-9% |
+| weighted s1 | 31% | 21% [12-31] | 1% | 46% | 59% | 9% |
+| weighted s2 | 12% | 14% [5-24] | 7% | 16% | 29% | 8% |
+| weighted s3 | 44% | 46% [35-58] | 3% | 44% | 56% | 5% |
+| MoE B s1 (earlier) | 31% | 24% [14-34] | 1% | 38% | 35% | 6% |
+| MoE B s2 | 12% | 20% [12-30] | 5% | 6% | 6% | 3% |
+| MoE B s3 | 50% | **57% [42-70]** | 2% | 50% | **74% [61-85]** | 6% |
+| real endings (ceiling) | 88% | 88% [78-95] | 3% | - | 99% | 13% |
+
+Batch-3 1x means over three seeds: single 16%, weighted 27%, MoE B 34%. At 2x: 25%, 48%, 38%.
+
+Batch-2 diagnostics (fork states where the model predicts any new topple, 1x; W0 fork/quiet jump
+ratio, reality 4.17): weighted s1-s3 6 / 0 / 6%, jump 1.03 / 1.23 / 0.82; MoE B s1-s3 44 / 0 / 25%,
+jump 1.29 / 1.01 / **2.80**. Validation state error: weighted ~1.05-1.11 vs ~0.40-0.43 unweighted
+(single and MoE B) -- weighting trades average accuracy for rare-change emphasis.
+
+1. MoE B seed 3 is the best model measured: 57% [42-70] at 1x with 2% false alarms on batch 3, 74%
+   at 2x, and the only model whose response curves are clearly sharper at forks than at quiet
+   states (jump ratio 2.80). Its experts stayed in use (22/55/23%), so this is the first evidence
+   from a genuinely switching model. It is still well below the 88% ceiling, and it is one seed of
+   three: seed 2 of the same setting predicts no topples at all (20% at 1x, 6% at 2x).
+2. Transition weighting does not reliably make the model predict topples (batch-2 topple
+   prediction 0-6% for all three seeds, jump ratios ~1). Its mean Gate 3 is higher than the
+   unweighted seeds', driven by seed 3 (46%); with 3 seeds per arm and this spread, the difference
+   between arms is not established.
+3. Seed variance remains the dominant effect in every arm: the per-arm ranges (7-23%, 14-46%,
+   20-57% at 1x) overlap. Mean-over-seeds ranks MoE B > weighted > single at 1x, but no arm passes
+   Gate 3 reliably.
+
+Results: `results/jenga/w5_fine_{tw_s1,tw_s2,tw_s3,moe_b_s2,moe_b_s3}_{train,eval,gate3,gate3_b3}.json`.

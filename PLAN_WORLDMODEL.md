@@ -237,6 +237,14 @@ model predicts topples at all ranges 0-92% by seed. The non-collapsing MoE (bala
 exceeds every effect measured so far: from here, every arm needs >= 3 seeds, and the 1x test set
 (16 fork states) must grow before 1x comparisons mean anything.
 
+**Steps 1+2, 2026-09-19 (batch 3, 84 fork states at 1x):** three seeds per arm on fine data. Mean 1x
+recall: single 16% (7-23%), transition-weighted single 27% (14-46%), non-collapsing MoE (balance
+1.0) 34% (20-57%). MoE B seed 3 is the best model so far (57% [42-70] at 1x, 2% FA; 74% at 2x; W0
+jump ratio 2.80 vs reality 4.17) and the first gain from a model that really switches, but a sibling
+seed predicts no topples at all. Weighting does not make models predict topples (0-6% on batch 2).
+Ranges overlap; no arm passes Gate 3 reliably. The open problem is training reliability: making the
+good draw the typical one.
+
 ### Losses
 
 * Multi-step proper predictive loss (NLL or a calibrated sample-based score).
