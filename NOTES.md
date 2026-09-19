@@ -3332,3 +3332,36 @@ cannot establish a difference. The 1x test set (16 fork states) is too small to 
 either. Whether a model learns the rare topple branch is a matter of training luck, which points
 at the training signal for onset steps (~1 in 200 transitions) rather than at resolution or
 architecture. Results: `results/jenga/w5_fine_single_s{1,2,3}_*.json`, `w5_fine_moe_b_s1_*.json`.
+
+## Step 3: a bigger 1x test set (batch 3) and every W5 model re-measured (2026-09-19)
+
+Batch 3: new configurations of the 57 held-out episodes only (reset seed 1000 + episode_id;
+originals use 0-99, training 100-109), chunk start every 4 steps, 2,308 chunks screened with the
+Stage 0 physics. 84 states are mixed at 1x (vs 16 in batch 2). Selection declared before the screen:
+all 84 1x forks, 30 of 46 non-topple physical forks, 100 of 1,371 quiet states (214 total), rendered
+for the real-ending reference. Gate 3 threshold unchanged (batch-1 quiet states). Episode-clustered
+intervals, which also absorb the correlation between neighbouring chunk starts.
+
+| model | 1x recall | 1x FA | 2x recall | 2x FA |
+|---|---|---|---|---|
+| single, control rate | 23% [13-33] | 3% | 52% [41-63] | 8% |
+| MoE A, control | 21% [12-32] | 4% | 38% [25-51] | 7% |
+| MoE B, control | 14% [5-25] | 3% | 38% [26-51] | 6% |
+| single, fine, unseeded / s1 / s2 / s3 | 19 / 17 / 23 / 7% | 0-9% | 61 / 32 / 20 / 24% | 6-9% |
+| MoE A, fine (collapsed) | **46% [32-58]** | 4% | **66% [53-77]** | 8% |
+| MoE B, fine, seed 1 | 24% [14-34] | 1% | 35% [23-48] | 6% |
+| real endings (ceiling) | **88% [78-95]** | 3% | 99% [96-100] | 13% |
+
+1. The real-ending ceiling at 1x is now well measured: 88% [78-95].
+2. With 84 forks the intervals are ~+-10 points, and nearly every model sits at 7-24% at 1x, so the
+   small test set was not what hid the differences: training-seed variance is.
+3. The fine-timestep MoE A -- the run that COLLAPSED onto one expert -- reaches 46% [32-58] at 1x,
+   above every other model's interval, and it was also best at 1x on batch 2 (38%). Collapsed, it
+   is a single-expert model with a slightly different head arrangement (a separate contact head),
+   from one unseeded run: not evidence for switching, and not yet evidence of anything without
+   seeds.
+4. At 2x the batch-1 threshold gives 6-13% false alarms on batch 3's new configurations, including
+   13% for real endings. The operating point does not fully transfer across scene configurations,
+   which bears on deployment calibration.
+
+Results: `results/jenga/*_gate3_b3.json`, `holdout3_*`.
