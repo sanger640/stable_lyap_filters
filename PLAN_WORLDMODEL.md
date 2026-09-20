@@ -239,11 +239,16 @@ exceeds every effect measured so far: from here, every arm needs >= 3 seeds, and
 
 **Steps 1+2, 2026-09-19 (batch 3, 84 fork states at 1x):** three seeds per arm on fine data. Mean 1x
 recall: single 16% (7-23%), transition-weighted single 27% (14-46%), non-collapsing MoE (balance
-1.0) 34% (20-57%). MoE B seed 3 is the best model so far (57% [42-70] at 1x, 2% FA; 74% at 2x; W0
-jump ratio 2.80 vs reality 4.17) and the first gain from a model that really switches, but a sibling
-seed predicts no topples at all. Weighting does not make models predict topples (0-6% on batch 2).
-Ranges overlap; no arm passes Gate 3 reliably. The open problem is training reliability: making the
-good draw the typical one.
+1.0) 34% (20-57%). MoE B seed 3 is the best model so far (57% [42-70] at 1x, 2% FA; 74% at 2x), but
+a sibling seed predicts no topples at all. Weighting does not make models predict topples (0-6% on
+batch 2). Ranges overlap; no arm passes Gate 3 reliably.
+
+**Superseded the same day by the implementation audit (NOTES.md).** Two claims above are withdrawn.
+The W0 jump ratio is measured 4x outside the training action range, so MoE B s3's 2.80 is not
+evidence of a learned discontinuity. And the spread is not irreducible seed luck: no model fits even
+half the topples in its OWN training data (6.9-43.1%), and the training-fit ranking is the test
+ranking. The open problem is UNDERFITTING -- one epoch per rollout horizon, ~970 branch-preservation
+steps ever, and mean-only rollouts although the plan specifies sampling with common random numbers.
 
 ### Losses
 
