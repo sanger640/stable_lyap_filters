@@ -3465,3 +3465,49 @@ Not a bug but worth stating: the 88% real-ending "ceiling" is close to definitio
 topple_fork when some of the 64 probes topple and some do not, and the real-ending score is the
 spread of those same endings, so the reference largely measures its own definition. It is a valid
 upper bound on what a perfect world model would buy, not independent evidence that the score works.
+
+## Correction to the audit: training fit does NOT predict Gate 3 (2026-09-19, same day)
+
+The audit above reported "the training-fit ranking is the test ranking, 4 of 4". That was a
+selection artifact. I measured four models, not chosen at random, and read a relationship off them.
+Measuring ALL ELEVEN fine-data models destroys it.
+
+| model | train fit | fit FA | forks with predicted topple (b2 1x) | quiet with one | Gate 3 b3 1x | FA |
+|---|---|---|---|---|---|---|
+| single_s3 | **78.4%** | 3.6% | 69% | 12% | **7%** | 1% |
+| moe_b_s1 | 69.6% | 2.1% | 44% | 1% | 24% | 1% |
+| single (unseeded) | 64.7% | 1.6% | 56% | 3% | 19% | 0% |
+| single_s1 | 60.8% | 1.1% | 6% | 1% | 17% | 4% |
+| tw_s1 | 48.0% | 0.7% | 6% | 3% | 21% | 1% |
+| moe_b_s3 | 43.1% | 0.3% | 25% | 1% | **57%** | 2% |
+| moe_a | 40.2% | 0.2% | **0%** | 0% | 46% | 4% |
+| tw_s3 | 29.4% | 0.4% | 6% | 0% | 46% | 3% |
+| single_s2 | 12.7% | 0.0% | 0% | 0% | 23% | 9% |
+| tw_s2 | 8.8% | 0.0% | 0% | 0% | 14% | 7% |
+| moe_b_s2 | 6.9% | 0.0% | 0% | 0% | 20% | 5% |
+
+Spearman against Gate 3 recall, n = 11: training fit **-0.20**, fraction of forks where the model
+predicts a topple **-0.14**, fraction of quiet states where it does -0.36, and the discrimination
+gap between them -0.11. Nothing here predicts the ranking; the best-fitting model is the worst
+detector.
+
+Two claims I have repeated for days do not survive this:
+
+1. **"Training fit explains the seed spread."** Withdrawn. It explains nothing (-0.20). What
+   remains is only that every model fits under all of its own training topples (6.9-78.4%), which
+   is much weaker than what I said, and at 78% is not obviously a problem at all.
+2. **"The models fail because they cannot predict topples."** Not supported. MoE A predicts a
+   topple at 0% of fork states and scores 46% on Gate 3; single_s3 predicts one at 69% of fork
+   states and scores 7%. The Gate 3 score is the SPREAD of predicted endings over the probes, and
+   it evidently responds to something other than a predicted topple -- plausibly sub-topple
+   position differences at states near an instability, which is what the monitor is meant to
+   detect. If so, predicting the topple itself was never the requirement.
+
+Also confounding every cross-model recall comparison above: the Gate 3 threshold is set on batch-1
+quiet states, and the realised test false-alarm rate then ranges 0-9% against a 5% budget. Models
+are therefore NOT compared at a common operating point, and a recall gap partly reflects that.
+
+What I do not know: what does drive the ranking. With n = 11 and +-10-15 point intervals, some of
+the spread is noise. The loop defects found in the audit (one epoch per horizon, one epoch of
+branch preservation, mean-only rollouts although the plan specifies sampling) are facts about the
+code and still worth fixing, but the fix is now an open question, not a predicted win.
