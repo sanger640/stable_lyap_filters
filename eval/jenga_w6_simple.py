@@ -29,13 +29,50 @@ import torch.nn.functional as F
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-from state_dynamics import (StepGraphNet, contact_targets,  # noqa: E402
-                            delta_targets, neighbour_tilt_deg, rollout)
+from state_dynamics import (StepGraphMoE, StepGraphNet, contact_targets,  # noqa: E402
+                            delta_targets, load_balance, neighbour_tilt_deg, rollout)
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_w5_train import load  # noqa: E402
 
 CONTINUOUS = list(range(0, 45)) + [57, 58, 59]   # pose, rotation, velocity, gripper position
 TOPPLE_DEG = 45.0
+POSE = slice(0, 27)
+SEPARATION = 1.0    # a pair counts as truly separating at one std of the normalised pose
+
+
+def branch_terms(predicted, truth, group_sizes, state_scale):
+    """Branch separation over the WHOLE rollout, weighted towards persistent divergence.
+
+    For every probe pair in a state, the predicted distance between the two trajectories must
+    match the true distance at every step, with a linear ramp so late (persistent) divergence
+    counts more than an early transient. Matching the distance rather than the difference VECTOR
+    is deliberate: the monitor scores the spread of endings, so magnitude is what must be right,
+    and demanding the direction too is a stronger requirement than the task needs.
+
+    Returns (loss, mean predicted/true end distance ratio over pairs that truly separate).
+    """
+    steps = predicted.shape[1]
+    ramp = torch.linspace(0.0, 1.0, steps, device=predicted.device)
+    losses, ratios = [], []
+    offset = 0
+    for size in group_sizes:
+        p = predicted[offset:offset + size, :, POSE] / state_scale[POSE]
+        q = truth[offset:offset + size, :, POSE] / state_scale[POSE]
+        i, j = torch.triu_indices(size, size, offset=1, device=p.device)
+        predicted_gap = (p[i] - p[j]).norm(dim=-1)                      # (pairs, steps)
+        true_gap = (q[i] - q[j]).norm(dim=-1)
+        losses.append((ramp * (predicted_gap - true_gap) ** 2).mean())
+        # Ratio over pairs that TRULY separate, aggregated rather than averaged per pair: a
+        # per-pair ratio divides by near-zero true gaps at quiet states and explodes.
+        separating = true_gap[:, -1] > SEPARATION
+        if separating.any():
+            ratios.append((float(predicted_gap[separating, -1].sum().detach()),
+                           float(true_gap[separating, -1].sum().detach())))
+        offset += size
+    if not ratios:
+        return torch.stack(losses).mean(), None
+    predicted_total = sum(r[0] for r in ratios)
+    return torch.stack(losses).mean(), predicted_total / max(sum(r[1] for r in ratios), 1e-9)
 
 
 def main():
@@ -52,6 +89,20 @@ def main():
                     help="input-state noise, in units of the per-dimension standard deviation of "
                          "one true step; 0 disables it (GNS-style corruption)")
     ap.add_argument("--val-fraction", type=float, default=0.12)
+    ap.add_argument("--model", choices=("single", "moe"), default="single")
+    ap.add_argument("--experts", type=int, default=3)
+    ap.add_argument("--balance-weight", type=float, default=1.0)
+    ap.add_argument("--rollout-epochs", type=int, default=0,
+                    help="epochs of full-horizon rollout training after the one-step stage; "
+                         "required for the branch term, which needs trajectories")
+    ap.add_argument("--branch-weight", type=float, default=0.0,
+                    help="weight on branch separation over the rollout (0 = off). Scale-matched "
+                         "to the state term on the stage's first batch, then multiplied by this")
+    ap.add_argument("--states-per-batch", type=int, default=8)
+    ap.add_argument("--hard-contacts", action="store_true",
+                    help="feed back rounded contact flags instead of the probability")
+    ap.add_argument("--no-orthonormalise", action="store_true",
+                    help="skip re-projecting the rotation after each step (the old behaviour)")
     ap.add_argument("--seed", type=int, default=None)
     args = ap.parse_args()
 
@@ -65,7 +116,6 @@ def main():
     val_states = [g for g, i in zip(groups, ids) if i in val_ids]
     train_states = [g for g, i in zip(groups, ids) if i not in val_ids]
     train_rows = np.concatenate(train_states)
-    val_rows = np.concatenate(val_states)
     print(f"{len(groups)} states, {len(trajectories)} rollouts, {n_steps} steps each "
           f"({substeps} sub-step(s) per action), {len(train_rows) * n_steps} training transitions",
           flush=True)
@@ -87,9 +137,14 @@ def main():
     state_scale_d = state_scale.to(device)
     del s_now, s_next, block_delta, grip_delta
 
-    model = StepGraphNet(args.hidden, args.rounds).to(device)
+    moe = args.model == "moe"
+    model = (StepGraphMoE(args.hidden, args.rounds, args.experts) if moe
+             else StepGraphNet(args.hidden, args.rounds)).to(device)
+    model.orthonormalise = not args.no_orthonormalise
+    model.hard_contacts = args.hard_contacts
     parameters = sum(p.numel() for p in model.parameters())
-    print(f"model single: {parameters:,} parameters", flush=True)
+    print(f"model {args.model}: {parameters:,} parameters, orthonormalise "
+          f"{model.orthonormalise}, hard contacts {model.hard_contacts}", flush=True)
     optimiser = torch.optim.AdamW(model.parameters(), lr=args.lr)
 
     def transitions_of(rows):
@@ -124,10 +179,11 @@ def main():
     def evaluate():
         """One-step error, and the full-horizon rollout the monitor actually uses."""
         model.eval()
-        step_err, roll_err, predicted_flags, true_flags = [], [], [], []
+        step_err, roll_err, predicted_flags, true_flags, ratios = [], [], [], [], []
         with torch.no_grad():
-            for first in range(0, len(val_rows), 256):
-                rows = val_rows[first:first + 256]
+            for batch_start in range(0, len(val_states), 32):
+                batch = val_states[batch_start:batch_start + 32]
+                rows = np.concatenate(batch)
                 state = traj[rows, :-1].reshape(-1, 61).to(device)
                 nxt = traj[rows, 1:].reshape(-1, 61).to(device)
                 action = acts[rows].reshape(-1, 4).to(device)
@@ -143,11 +199,16 @@ def main():
                                         >= TOPPLE_DEG) & eligible)
                 true_flags.append((neighbour_tilt_deg(truth[:, -1].cpu().numpy())
                                    >= TOPPLE_DEG) & eligible)
+                _, ratio = branch_terms(predicted, truth, [len(g) for g in batch], state_scale_d)
+                if ratio is not None:
+                    ratios.append(ratio)
+                del predicted, truth
         model.train()
         predicted_flags = np.concatenate(predicted_flags).any(-1)
         true_flags = np.concatenate(true_flags).any(-1)
         return {"one_step_mse": float(np.mean(step_err)),
                 "rollout_state_error": float(np.mean(roll_err)),
+                "branch_ratio": (float(np.mean(ratios)) if ratios else None),
                 "topple_recall": (float(predicted_flags[true_flags].mean())
                                   if true_flags.any() else None),
                 "topple_false_rate": (float(predicted_flags[~true_flags].mean())
@@ -172,9 +233,58 @@ def main():
         print(f"epoch {epoch + 1}/{args.epochs}: train mse {history[-1]['train_mse']:.4f} "
               f"val {validation} ({time.time() - start:.0f}s)", flush=True)
 
+    # ---- Optional rollout stage: the branch term needs trajectories, not single steps.
+    rollout_history = []
+    if args.rollout_epochs:
+        order = np.arange(len(train_states))
+        weights = None
+        for epoch in range(args.rollout_epochs):
+            rng.shuffle(order)
+            start, running = time.time(), []
+            for first in range(0, len(order), args.states_per_batch):
+                batch = [train_states[i] for i in order[first:first + args.states_per_batch]]
+                rows = np.concatenate(batch)
+                gates = [] if moe else None
+                predicted = rollout(model, traj[rows, 0].to(device), acts[rows].to(device),
+                                    delta_scale, collect=gates)
+                truth = traj[rows, 1:].to(device)
+                terms = {"state": (((predicted[..., :45] - truth[..., :45])
+                                    / state_scale_d[:45]) ** 2).mean(),
+                         "contact": F.binary_cross_entropy(
+                             predicted[..., 45:57].clamp(1e-5, 1 - 1e-5), truth[..., 45:57])}
+                if args.branch_weight:
+                    terms["branch"], _ = branch_terms(predicted, truth,
+                                                      [len(g) for g in batch], state_scale_d)
+                if moe:
+                    terms["balance"] = load_balance(torch.stack(gates, dim=1))
+                if weights is None:
+                    # Scale-match to the state term once, then apply the chosen multipliers.
+                    weights = {k: float(terms["state"].detach()) / max(float(v.detach()), 1e-8)
+                               for k, v in terms.items()}
+                    weights["state"] = 1.0
+                    if "branch" in weights:
+                        weights["branch"] *= args.branch_weight
+                    if "balance" in weights:
+                        weights["balance"] = args.balance_weight
+                loss = sum(weights[k] * v for k, v in terms.items())
+                optimiser.zero_grad(set_to_none=True); loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
+                running.append({k: float(v.detach()) for k, v in terms.items()})
+            validation = evaluate()
+            rollout_history.append({"epoch": epoch + 1, "weights": weights,
+                                    "train": {k: float(np.mean([r[k] for r in running]))
+                                              for k in running[0]},
+                                    "validation": validation, "seconds": time.time() - start})
+            print(f"rollout epoch {epoch + 1}/{args.rollout_epochs}: "
+                  f"{rollout_history[-1]['train']} val {validation} "
+                  f"({time.time() - start:.0f}s)", flush=True)
+
     torch.save({"model": model.state_dict(), "hidden": args.hidden, "rounds": args.rounds,
-                "kind": "single", "experts": 1, "parameters": parameters,
+                "kind": args.model, "experts": args.experts if moe else 1,
+                "parameters": parameters,
                 "substeps": substeps, "seed": args.seed, "noise": args.noise,
+                "orthonormalise": model.orthonormalise, "hard_contacts": model.hard_contacts,
+                "branch_weight": args.branch_weight, "rollout_epochs": args.rollout_epochs,
                 "transition_weighting": False,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
@@ -186,7 +296,10 @@ def main():
                                   f"{args.noise} x one-step sigma, no curriculum, no branch loss",
                       "input": "privileged simulator state (oracle variant)"},
          "seed": args.seed, "noise": args.noise, "parameters": parameters,
-         "states": len(groups), "history": history, "output": args.output}, indent=2) + "\n")
+         "model": args.model, "branch_weight": args.branch_weight,
+         "orthonormalise": model.orthonormalise, "hard_contacts": model.hard_contacts,
+         "states": len(groups), "history": history, "rollout_history": rollout_history,
+         "output": args.output}, indent=2) + "\n")
 
 
 if __name__ == "__main__":

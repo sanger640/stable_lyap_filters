@@ -228,12 +228,36 @@ def contact_targets(next_state):
     return per_block, c[:, [0, 1, 2]]
 
 
-def apply_step(state, action, out, delta_scale, sample=False, noise=None):
+def orthonormalise_rotation(rot):
+    """Gram-Schmidt on the stored 6D rotation, per block. rot (B, 18) -> (B, 18).
+
+    The six numbers per block are the first two columns of the rotation matrix, flattened
+    ROW-major: (r00, r01, r10, r11, r20, r21), so column 0 is the even entries. Integrating an
+    additive delta for tens of steps lets those columns lose unit norm and orthogonality, and the
+    drift accumulates; this projects them back onto a valid pair (Zhou et al. 2019, the standard
+    6D rotation representation).
+    """
+    batch = rot.shape[0]
+    blocks = rot.view(batch, N_BLOCKS, 3, 2)
+    c0, c1 = blocks[..., 0], blocks[..., 1]
+    b0 = c0 / c0.norm(dim=-1, keepdim=True).clamp_min(1e-9)
+    c1 = c1 - (b0 * c1).sum(-1, keepdim=True) * b0
+    b1 = c1 / c1.norm(dim=-1, keepdim=True).clamp_min(1e-9)
+    return torch.stack([b0, b1], dim=-1).reshape(batch, 18)
+
+
+def apply_step(state, action, out, delta_scale, sample=False, noise=None,
+               orthonormalise=False, hard_contacts=False):
     """Integrate one step: add the (normalised) predicted change, set contacts from the logits.
 
     delta_scale: (blocks (15,), gripper (3,)) standard deviations of the true per-step change,
     used to un-normalise. With sample=True a Gaussian draw replaces the mean; pass `noise` to use
     common random numbers across probes.
+
+    orthonormalise re-projects the rotation after integrating (see orthonormalise_rotation).
+    hard_contacts rounds the predicted contact probabilities to 0/1 instead of feeding the
+    probability back; soft is the default because a hard flag creates an artificial switch as soon
+    as the probability crosses 0.5.
     """
     block_scale, grip_scale = delta_scale
     block_delta = out["block_mean"]
@@ -248,7 +272,10 @@ def apply_step(state, action, out, delta_scale, sample=False, noise=None):
     batch = state.shape[0]
     new = state.clone()
     new[:, POS] = state[:, POS] + block_delta[..., 0:3].reshape(batch, 9)
-    new[:, ROT] = state[:, ROT] + block_delta[..., 3:9].reshape(batch, 18)
+    # Build the rotation once and assign once: reading back from `new` after writing to it
+    # breaks autograd through the rollout (in-place modification of a needed variable).
+    rotation = state[:, ROT] + block_delta[..., 3:9].reshape(batch, 18)
+    new[:, ROT] = orthonormalise_rotation(rotation) if orthonormalise else rotation
     new[:, VEL] = state[:, VEL] + block_delta[..., 9:15].reshape(batch, 18)
     new[:, 57:60] = state[:, 57:60] + grip_delta
     closed = state[:, 60].clone()
@@ -262,7 +289,7 @@ def apply_step(state, action, out, delta_scale, sample=False, noise=None):
         contacts[:, SUPPORT[b][1]] = per_block[:, b, 1]
         contacts[:, ROBOT[b]] = per_block[:, b, 2]
     contacts[:, 0:3] = torch.sigmoid(out["pair_contact_logits"])
-    new[:, CONTACT] = contacts
+    new[:, CONTACT] = (contacts > 0.5).to(contacts.dtype) if hard_contacts else contacts
     return new
 
 
@@ -279,7 +306,11 @@ def rollout(model, state, actions, delta_scale, sample=False, noise=None, collec
         if collect is not None and "gate_probabilities" in out:
             collect.append(out["gate_probabilities"])
         step_noise = None if noise is None else (noise[0][:, t], noise[1][:, t])
-        current = apply_step(current, actions[:, t], out, delta_scale, sample, step_noise)
+        # Integration options travel on the model so every call site -- trainer, eval, Gate 3 --
+        # rolls out exactly the way the checkpoint was trained. Old checkpoints default to off.
+        current = apply_step(current, actions[:, t], out, delta_scale, sample, step_noise,
+                             getattr(model, "orthonormalise", False),
+                             getattr(model, "hard_contacts", False))
         states.append(current)
     return torch.stack(states, dim=1)
 

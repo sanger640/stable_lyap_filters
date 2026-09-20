@@ -218,3 +218,47 @@ def test_transition_weights_never_boost_rare_tiny_changes():
     w = TransitionWeights(torch.cat([jitter, still, large]))
     assert float(w(jitter).max()) <= float(w(still).max()) + 1e-6
     assert float(w(large).mean()) > 2 * float(w(still).mean())
+
+
+def test_orthonormalise_rotation_restores_a_drifted_frame():
+    """Integrating additive deltas lets the stored columns drift; the projection undoes that."""
+    import numpy as np
+    from state_dynamics import N_BLOCKS, neighbour_tilt_deg, orthonormalise_rotation
+    torch.manual_seed(0)
+    # A valid rotation per block, stored ROW-major as the first two columns.
+    rot = []
+    for _ in range(N_BLOCKS):
+        q, _ = torch.linalg.qr(torch.randn(3, 3, dtype=torch.float64))
+        rot.append(q[:, :2].reshape(-1).float())
+    clean = torch.cat(rot)[None]
+    drifted = clean + 0.05 * torch.randn_like(clean)
+    fixed = orthonormalise_rotation(drifted)
+
+    columns = fixed.view(1, N_BLOCKS, 3, 2)
+    c0, c1 = columns[..., 0], columns[..., 1]
+    assert torch.allclose(c0.norm(dim=-1), torch.ones(1, N_BLOCKS), atol=1e-5)
+    assert torch.allclose(c1.norm(dim=-1), torch.ones(1, N_BLOCKS), atol=1e-5)
+    assert torch.allclose((c0 * c1).sum(-1), torch.zeros(1, N_BLOCKS), atol=1e-5)
+    # An already-valid frame is left alone, so the tilt read from it does not move.
+    assert torch.allclose(orthonormalise_rotation(clean), clean, atol=1e-5)
+    state = np.zeros((1, 61), np.float32)
+    state[0, 9:27] = clean[0].numpy()
+    before = neighbour_tilt_deg(state)
+    state[0, 9:27] = orthonormalise_rotation(clean)[0].numpy()
+    assert np.allclose(before, neighbour_tilt_deg(state), atol=1e-4)
+
+
+def test_hard_contacts_round_and_soft_contacts_do_not():
+    from state_dynamics import CONTACT, StepGraphNet, apply_step
+    torch.manual_seed(0)
+    model = StepGraphNet(32, 1)
+    state = torch.randn(4, 61)
+    state[:, CONTACT] = torch.rand(4, 12)
+    action = torch.randn(4, 4)
+    out = model(state, action)
+    scale = (torch.ones(15), torch.ones(3))
+    soft = apply_step(state, action, out, scale)[:, CONTACT]
+    hard = apply_step(state, action, out, scale, hard_contacts=True)[:, CONTACT]
+    assert set(hard.unique().tolist()) <= {0.0, 1.0}
+    assert torch.equal(hard, (soft > 0.5).to(soft.dtype))
+    assert not torch.equal(soft, hard)
