@@ -94,7 +94,7 @@ def test_rollout_length_and_gradients():
 def test_neighbour_tilt_reads_row_major_rotation():
     import numpy as np
     sys.path.insert(0, str(ROOT / "eval"))
-    from jenga_w5_eval import neighbour_tilt_deg
+    from state_dynamics import neighbour_tilt_deg
     upright = np.eye(3)[:, :2].reshape(-1)                   # row-major first two columns
     tipped = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]], float)[:, :2].reshape(-1)  # 90 deg
     state = np.zeros(61)

@@ -29,7 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from jenga_runtime import DEFAULT_LMDB, JengaReplay  # noqa: E402
 from outcome_modes import coarse_persistent_fork, groupings_persist, multi_mode_test  # noqa: E402
-from state_dynamics import StepGraphMoE, StepGraphNet, rollout  # noqa: E402
+from state_dynamics import (StepGraphMoE, StepGraphNet, neighbour_tilt_deg,  # noqa: E402,F401
+                            rollout)
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_short_held_tails import DirectJengaSim, HORIZON, TOPPLE_DEG, extract_sim  # noqa: E402
 from jenga_stage0_noise_oracle import SCALES  # noqa: E402
@@ -65,24 +66,6 @@ def predict(model, scale, start, windows, device):
     actions = torch.as_tensor(held, dtype=torch.float32, device=device)
     with torch.no_grad():
         return rollout(model, state, actions, scale).cpu().numpy()
-
-
-def neighbour_tilt_deg(states):
-    """Tilt of blocks 1 and 2 from the predicted rotation: arccos of the body z-axis's z.
-
-    all_block_pose stores xmat[:, :, :2] flattened ROW-major, so the six numbers per block are
-    (r00, r01, r10, r11, r20, r21): column 0 is the even entries, column 1 the odd ones. Reading
-    them as two contiguous columns reports every block as ~90 degrees tilted.
-    """
-    tilts = []
-    for b in (1, 2):
-        block = states[..., 9 + 6 * b: 15 + 6 * b]
-        c0, c1 = block[..., 0::2], block[..., 1::2]
-        c0 = c0 / np.linalg.norm(c0, axis=-1, keepdims=True).clip(1e-9)
-        c1 = c1 / np.linalg.norm(c1, axis=-1, keepdims=True).clip(1e-9)
-        z = np.cross(c0, c1)[..., 2]
-        tilts.append(np.degrees(np.arccos(np.clip(z, -1, 1))))
-    return np.stack(tilts, axis=-1)
 
 
 def main():

@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from state_dynamics import (StepGraphMoE, StepGraphNet, TransitionWeights,  # noqa: E402
                             change_magnitude, contact_targets, delta_targets, load_balance,
-                            rollout)
+                            neighbour_tilt_deg, rollout)
 
 HORIZONS = (4, 12, 38)          # in CONTROL steps; scaled by the recording's sub-steps
 CONTROL_STEPS = 38
@@ -73,6 +73,9 @@ def main():
     ap.add_argument("--hidden", type=int, default=128)
     ap.add_argument("--rounds", type=int, default=3)
     ap.add_argument("--tf-epochs", type=int, default=3)
+    ap.add_argument("--rollout-epochs", type=int, default=3,
+                    help="epochs per curriculum horizon; runs before 2026-09-19 did exactly one, "
+                         "~970 gradient steps, and underfitted their own training topples")
     ap.add_argument("--tf-batch", type=int, default=2048)
     ap.add_argument("--states-per-batch", type=int, default=8)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -220,6 +223,39 @@ def main():
             offset += size
         return torch.stack(diff_losses).mean(), (float(np.mean(safe)) if safe else None)
 
+    # ---- Training fit on the branch: can the model reproduce topples it was TRAINED on?
+    # The 2026-09-19 audit found every model fits under half of them, and that this, not seed
+    # luck, ranks the models on test. Tracked every epoch so undertraining is visible while it
+    # happens. Topple labels are used only to grade, never in a loss.
+    TOPPLE_DEG = 45.0
+    truth_end = traj[:, -1].numpy()
+    start_tilt = neighbour_tilt_deg(traj[:, 0].numpy())
+    eligible_all = start_tilt < TOPPLE_DEG
+    true_topple = ((neighbour_tilt_deg(truth_end) >= TOPPLE_DEG) & eligible_all).any(-1)
+    fit_states = [g for g in train_states if true_topple[g].any()][:150]
+    fit_rows = np.concatenate(fit_states) if fit_states else np.zeros(0, int)
+    print(f"training-fit probe: {len(fit_states)} train states containing a topple, "
+          f"{int(true_topple[fit_rows].sum())} toppling rollouts", flush=True)
+
+    def training_fit():
+        """Mean-rollout topple recall on TRAIN states, at the model's own resolution."""
+        if not len(fit_rows):
+            return None
+        model.eval()
+        predicted_flags = []
+        with torch.no_grad():
+            for first in range(0, len(fit_rows), 512):
+                rows = fit_rows[first:first + 512]
+                ends = rollout(model, traj[rows, 0].to(device), acts[rows].to(device),
+                               delta_scale)[:, -1].cpu().numpy()
+                predicted_flags.append((neighbour_tilt_deg(ends) >= TOPPLE_DEG)
+                                       & eligible_all[rows])
+        model.train()
+        predicted_flags = np.concatenate(predicted_flags).any(-1)
+        hit = true_topple[fit_rows]
+        return {"recall": float(predicted_flags[hit].mean()) if hit.any() else None,
+                "false_rate": float(predicted_flags[~hit].mean()) if (~hit).any() else None}
+
     def evaluate(horizon):
         model.eval()
         errs, safes, usage = [], [], []
@@ -248,56 +284,68 @@ def main():
         return out
 
     history["validation"]["after_teacher_forcing"] = evaluate(n_steps)
+    history["training_fit"] = {"after_teacher_forcing": training_fit()}
     print("validation after teacher forcing:", history["validation"]["after_teacher_forcing"],
-          flush=True)
+          "fit", history["training_fit"]["after_teacher_forcing"], flush=True)
 
     # ---- Stage 2: rollout fine-tuning, curriculum over horizons.
     order = np.arange(len(train_states))
     weights = None
     for horizon in horizons:
-        rng.shuffle(order)
-        start, running = time.time(), []
-        for first in range(0, len(order), args.states_per_batch):
-            batch = [train_states[i] for i in order[first:first + args.states_per_batch]]
-            rows = np.concatenate(batch)
-            predicted, truth, terms = rollout_terms(rows, horizon)
-            if horizon == horizons[-1]:
+        history["rollout"][str(horizon)] = []
+        for epoch in range(args.rollout_epochs):
+            rng.shuffle(order)
+            start, running = time.time(), []
+            for first in range(0, len(order), args.states_per_batch):
+                batch = [train_states[i] for i in order[first:first + args.states_per_batch]]
+                rows = np.concatenate(batch)
+                predicted, truth, terms = rollout_terms(rows, horizon)
+                # Branch preservation at EVERY horizon: before 2026-09-19 it was added only at the
+                # last one, so the loss meant to keep forks apart trained for a single epoch.
                 branch, _ = branch_and_safe(predicted, truth, [len(g) for g in batch])
                 terms["branch"] = branch
-            if weights is None or set(weights) != set(terms):
-                # Scale-match to the state term on the first batch of this stage; recorded.
-                # The balance term keeps its fixed weight instead: it is a regulariser.
-                weights = {k: float(terms["state"].detach()) / max(float(v.detach()), 1e-8)
-                           for k, v in terms.items() if k != "balance"}
-                if "balance" in terms:
-                    weights["balance"] = args.balance_weight
-            loss = sum(weights[k] * v for k, v in terms.items())
-            optimiser.zero_grad(set_to_none=True); loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
-            running.append({k: float(v.detach()) for k, v in terms.items()})
-        history["rollout"][str(horizon)] = {
-            "train": {k: float(np.mean([r[k] for r in running])) for k in running[0]},
-            "weights": weights, "seconds": time.time() - start}
-        history["validation"][f"after_horizon_{horizon}"] = evaluate(n_steps)
-        print(f"rollout horizon {horizon}: train {history['rollout'][str(horizon)]['train']} "
-              f"val {history['validation'][f'after_horizon_{horizon}']} "
-              f"({time.time() - start:.0f}s)", flush=True)
+                if weights is None or set(weights) != set(terms):
+                    # Scale-match to the state term on the first batch of this stage; recorded.
+                    # The balance term keeps its fixed weight instead: it is a regulariser.
+                    weights = {k: float(terms["state"].detach()) / max(float(v.detach()), 1e-8)
+                               for k, v in terms.items() if k != "balance"}
+                    if "balance" in terms:
+                        weights["balance"] = args.balance_weight
+                loss = sum(weights[k] * v for k, v in terms.items())
+                optimiser.zero_grad(set_to_none=True); loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
+                running.append({k: float(v.detach()) for k, v in terms.items()})
+            validation = evaluate(n_steps)
+            fit = training_fit()
+            history["rollout"][str(horizon)].append({
+                "epoch": epoch + 1,
+                "train": {k: float(np.mean([r[k] for r in running])) for k in running[0]},
+                "validation": validation, "training_fit": fit, "weights": weights,
+                "seconds": time.time() - start})
+            history["validation"][f"after_horizon_{horizon}"] = validation
+            print(f"rollout horizon {horizon} epoch {epoch + 1}/{args.rollout_epochs}: "
+                  f"train {history['rollout'][str(horizon)][-1]['train']} val {validation} "
+                  f"fit {fit} ({time.time() - start:.0f}s)", flush=True)
         weights = None
 
     torch.save({"model": model.state_dict(), "hidden": args.hidden, "rounds": args.rounds,
                 "kind": args.model, "experts": args.experts, "parameters": parameters,
                 "substeps": substeps, "seed": args.seed,
                 "transition_weighting": args.transition_weighting,
+                "rollout_epochs": args.rollout_epochs,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
     Path(args.report).write_text(json.dumps(
         {"protocol": {"plan": "PLAN_WORLDMODEL W5, single-expert stochastic baseline",
                       "architecture": f"graph net, 4 nodes, hidden {args.hidden}, "
                                       f"{args.rounds} message-passing rounds, Gaussian head",
-                      "stages": "teacher forcing, then rollout curriculum " + str(HORIZONS),
+                      "stages": f"teacher forcing x{args.tf_epochs}, then rollout curriculum "
+                                f"{HORIZONS} x{args.rollout_epochs} epochs, branch preservation "
+                                "at every horizon",
                       "input": "privileged simulator state (oracle variant)"},
          "model": args.model, "experts": args.experts if moe else 1, "seed": args.seed,
          "transition_weighting": args.transition_weighting,
+         "rollout_epochs": args.rollout_epochs,
          "parameters": parameters, "balance_weight": args.balance_weight if moe else None,
          "temperature": list(args.temperature) if moe else None,
          "states": len(groups), "history": history, "output": args.output}, indent=2) + "\n")

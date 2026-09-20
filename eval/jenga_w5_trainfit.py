@@ -17,10 +17,10 @@ import torch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-from state_dynamics import rollout  # noqa: E402
+from state_dynamics import neighbour_tilt_deg, rollout  # noqa: E402
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_short_held_tails import TOPPLE_DEG  # noqa: E402
-from jenga_w5_eval import load_model, neighbour_tilt_deg  # noqa: E402
+from jenga_w5_eval import load_model  # noqa: E402
 from jenga_w5_train import start_from_full_state  # noqa: E402
 
 
