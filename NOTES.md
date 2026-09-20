@@ -3511,3 +3511,54 @@ What I do not know: what does drive the ranking. With n = 11 and +-10-15 point i
 the spread is noise. The loop defects found in the audit (one epoch per horizon, one epoch of
 branch preservation, mean-only rollouts although the plan specifies sampling) are facts about the
 code and still worth fixing, but the fix is now an open question, not a predicted win.
+
+## W6: three controlled models, and the rollout curriculum was the problem (2026-09-20)
+
+Same counterfactual dataset for all arms (control-rate `trace_data`, 38 steps, 8,810 states x 8
+probes), same architecture, 3 seeds each, rotation re-orthonormalised every step, contacts soft.
+Graded on batch 3 (84 fork states at 1x). Recall on topple forks, FP on quiet states, D = ratio of
+predicted to real ending spread in mm over the same 64 probes, inside injected error only.
+
+| model | training | mean 1x recall | range | D fork (s1/s2/s3) | 2x recall |
+|---|---|---|---|---|---|
+| **m1** | one-step + input noise | **54%** | 42-64 | 0.67 / 0.29 / 0.64 | 89-99% |
+| m1b | + rollout stage, NO branch | 28% | 20-35 | 0.07 / 0.03 / 0.05 | 21-68% |
+| m2 | + rollout stage + branch | 46% | 23-71 | 0.08 / 0.04 / 0.19 | 45-95% |
+| m3 | + MoE + branch | 29% | 13-43 | 0.13 / 0.06 / 0.42 | 39-94% |
+| real endings (ceiling) | -- | 88% [78-95] | -- | 1.0 | 99% |
+
+Every W5 model, for comparison, scored 7-57% at 1x (mean ~25%) after six hours of training each.
+m1 takes 14 minutes.
+
+1. **The rollout curriculum was suppressing the branching it was meant to teach.** m1 -> m1b is a
+   paired within-seed comparison whose only difference is a rollout stage with no branch term. It
+   halves recall (54 -> 28%) in every seed and drives the fork separation ratio to 0.03-0.07: on
+   held-out configurations the model produces almost NO differential spread at fork states. It
+   buys a rollout state error of 0.21 instead of 0.25. Minimising average trajectory error teaches
+   the model to hug the mean path, and the mean path is what a fork does not have. This is the
+   most likely single explanation for the whole W5 line failing at its own objective.
+2. **Branch preservation does not beat the plain baseline.** m2 recovers much of what the rollout
+   stage destroys (28 -> 46%) but does not reach m1's 54%, and it triples the seed spread. Its
+   separation ratios stay at 0.04-0.19, so it recovers recall WITHOUT recovering branch separation;
+   what it keys on instead is not yet known.
+3. **The MoE adds nothing and is unstable.** Mean 29%, worst arm. Seed 3 diverged outright in the
+   rollout stage (one-step error 0.31 -> 136.9, final rollout error 1.42) and still scored 43%,
+   which is a warning that a broken model can score: it over-separates everywhere (D quiet 2.25).
+4. **Validation badly understated the damage.** m1b's validation branch ratio was 0.43 against
+   m1's 0.72 -- a mild effect. On test it is 0.05 against 0.65. m2 looked like full repair on
+   validation (0.68/0.42/0.76) and is 0.08/0.04/0.19 on test. Validation episodes come from the
+   training pool; branch structure fitted there does not transfer to new scene configurations.
+   Any tuning done on validation would have chosen the wrong arm.
+5. **The separation ratio is the first diagnostic that tracks recall.** Within m1, fork ratios
+   0.67/0.29/0.64 give recalls 64/42/57%. Training fit (Spearman -0.20) and topple prediction
+   (-0.14) predicted nothing. The failure mode it reveals is not collapse but lost CONTRAST: the
+   model under-separates at forks (0.65) and over-separates at quiet states (2.0), so predicted
+   spread is too flat for a threshold to cut cleanly.
+
+Answer to the question this phase was built to settle -- with perfect state, can a learned dynamics
+model preserve the branching structure caused by small realistic action perturbations? **Yes,
+partially and usefully.** m1 reaches 54% mean (best seed 64%) at 1x against an 88% physics ceiling,
+and 89-99% at 2x against 99%, at comparable false-positive rates. The gap that remains is contrast,
+not blindness. Vision is now a legitimate next stage rather than a distraction.
+
+Results: `results/jenga/w6_m{1,1b,2,3}_s{1,2,3}_{train,gate3_b3,report}.json`.

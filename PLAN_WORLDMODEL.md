@@ -273,6 +273,22 @@ baseline, without losing ordinary-motion fidelity. **A stochastic model that emi
 everywhere is not a success.** If the simple stochastic model matches the MoE, prefer it and report
 that switching was unnecessary. The W0 response curves are reported alongside as a diagnostic.
 
+## W6 — the simple model wins (2026-09-20)
+
+Three controlled models on one dataset, 3 seeds each, after the audit removed every unjustified
+addition. Mean 1x recall on batch 3: one-step + input noise **54%** (42-64), + rollout stage 28%,
++ rollout and branch 46%, + MoE and branch 29%; physics ceiling 88%. At 2x the plain model reaches
+89-99% against a 99% ceiling.
+
+The rollout curriculum, not the architecture, was the problem: a paired within-seed comparison
+shows it halves recall and drives fork separation to 0.03-0.07. Branch preservation repairs part of
+that but never beats the plain baseline; the MoE is worst and diverged on one seed. Validation
+understated all of this, so it cannot be used to choose between arms. Details and the five
+findings are in NOTES.md.
+
+Next: close the contrast gap (the model under-separates at forks, over-separates at quiet states),
+then replace privileged state with vision.
+
 ## W4 — structural fallback
 
 A learned rigid-body simulator over object state (FIGNet-style face-interaction graph network)
