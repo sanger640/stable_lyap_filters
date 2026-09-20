@@ -3405,3 +3405,63 @@ jump 1.29 / 1.01 / **2.80**. Validation state error: weighted ~1.05-1.11 vs ~0.4
    Gate 3 reliably.
 
 Results: `results/jenga/w5_fine_{tw_s1,tw_s2,tw_s3,moe_b_s2,moe_b_s3}_{train,eval,gate3,gate3_b3}.json`.
+
+## Implementation audit (2026-09-19, after steps 1+2)
+
+Six findings, in order of how much they change the conclusions.
+
+**1. Every model underfits its own training data, and that -- not seed luck -- explains the
+spread.** `eval/jenga_w5_trainfit.py` rolls each recorded TRAINING window forward from its true
+start state (the same mean rollout the monitor uses) and counts new neighbour topples against the
+simulator's. On 9,040 training rollouts (102 true topples):
+
+| model | recall on TRAINING rollouts | false rate | Gate 3 batch-3 1x |
+|---|---|---|---|
+| MoE B s3 | 43.1% | 0.3% | 57% |
+| weighted s3 | 29.4% | 0.4% | 46% |
+| single s2 | 12.7% | 0.0% | 23% |
+| MoE B s2 | 6.9% | 0.0% | 20% |
+
+The training-fit ranking is the test ranking, 4 of 4. No model fits even half the topples it was
+trained on, so the earlier framing ("training reliability, make the good draw typical") was wrong:
+this is underfitting, and test performance is bounded by it. Every W5 comparison so far compared
+underfits.
+
+**2. Undertrained by construction.** The rollout curriculum runs exactly ONE epoch per horizon
+(`for first in range(0, len(order), states_per_batch)`, no inner epoch loop): ~970 gradient steps
+per horizon, ~2,900 rollout steps in total, after 3 teacher-forcing epochs. Branch preservation is
+added only at the final horizon, so the loss meant to keep forks apart trains for ~970 steps ever.
+
+**3. The stochastic model is trained and evaluated deterministically.** `rollout(..., sample=True,
+noise=...)` -- the plan's "rollout samples paired by common random numbers" -- is implemented in
+`src/state_dynamics.py` and never called outside `tests/`. Teacher forcing fits a Gaussian NLL, and
+then every rollout (curriculum, branch preservation, W0, the monitor, Gate 3) uses only the mean.
+Averaging through a bifurcation is exactly the failure being measured.
+   Switching it on is NOT a drop-in fix, which I checked before claiming it: the one-step variance
+   is calibrated for teacher forcing (sigma ~ 1.0 x the typical per-step change) and compounds over
+   190 steps. With common random numbers across a state's probes, the ending spread at QUIET
+   training states is 76 mm (mean rollout: 0.63 mm) and the fork/quiet AUC falls from 0.960 to
+   0.869. Sampling needs rollout-calibrated variance first.
+
+**4. The W0 jump ratio is measured outside the training distribution; retract the "sharpening"
+claim.** The gripper node sees `(target - position) / 0.0032`. Over training transitions that
+feature has median 0.34, 99th percentile 3.87, max 7.32. The W0 sweep's +-50 mm offsets are 15.6 --
+4x beyond the 99th percentile -- and the recorded `max_slope_at_mm` for model curves sits at the
++-50 mm endpoint, i.e. pure extrapolation. MoE B s3's jump ratio of 2.80, reported on 2026-09-19 as
+the first sign of a real discontinuity, does not support that claim. The injected noise itself is
+fine: 1x is 0.50 in the same units, inside the training range.
+
+**5. Train/eval mismatch in the hold.** `jenga_state_data.simulate` builds every training window
+with the hold on the PERTURBED final action (`np.repeat(perturbed[-1:], HOLD)`), while every
+evaluation uses `action_windows(..., own_hold=False)`, holding on the common unperturbed action.
+The model is never trained under the condition it is graded on.
+
+**6. Latent trap (no effect here).** `jenga_w5_gate3.py --stage0-cache` defaults to the batch-1
+cache whatever `--test` says, so the model's probes always come from batch 1. Verified harmless:
+the batch-1 and batch-3 snippet arrays are byte-identical. It would silently mis-probe a future
+batch drawn with a different snippet seed.
+
+Not a bug but worth stating: the 88% real-ending "ceiling" is close to definitional. A state is a
+topple_fork when some of the 64 probes topple and some do not, and the real-ending score is the
+spread of those same endings, so the reference largely measures its own definition. It is a valid
+upper bound on what a perfect world model would buy, not independent evidence that the score works.

@@ -1,0 +1,117 @@
+{
+  "protocol": {
+    "plan": "PLAN_WORLDMODEL W5, single-expert stochastic baseline",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 message-passing rounds, Gaussian head",
+    "stages": "teacher forcing, then rollout curriculum (4, 12, 38)",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "model": "moe",
+  "experts": 3,
+  "seed": 2,
+  "transition_weighting": false,
+  "parameters": 794727,
+  "balance_weight": 1.0,
+  "temperature": [
+    1.0,
+    0.3
+  ],
+  "states": 8810,
+  "history": {
+    "teacher_forcing": [
+      {
+        "nll": -4.486584081014676,
+        "contact_bce": 0.03776863587418949
+      },
+      {
+        "nll": -5.488712141264388,
+        "contact_bce": 0.017586663639593055
+      },
+      {
+        "nll": -6.091576157781886,
+        "contact_bce": 0.01552557455591142
+      }
+    ],
+    "rollout": {
+      "20": {
+        "train": {
+          "state": 1.4427103695329602,
+          "contact": 0.08443592647700518,
+          "balance": 0.07595678005360042
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 23.351603385365703,
+          "balance": 1.0
+        },
+        "seconds": 478.8125653266907
+      },
+      "60": {
+        "train": {
+          "state": 1.1147910847872586,
+          "contact": 0.04500939480405409,
+          "balance": 0.020009696288993174
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 30.752681151493782,
+          "balance": 1.0
+        },
+        "seconds": 1485.7987291812897
+      },
+      "190": {
+        "train": {
+          "state": 0.5674385368334135,
+          "contact": 0.037068776206505484,
+          "balance": 0.0025084186262334684,
+          "branch": 0.10429321461908754
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 6.611776962540165,
+          "branch": 4.726615244770883,
+          "balance": 1.0
+        },
+        "seconds": 4473.3988716602325
+      }
+    },
+    "validation": {
+      "after_teacher_forcing": {
+        "state_error": 2.849633243519905,
+        "safe_pair_false_separation": 0.23909304429015577,
+        "expert_usage": [
+          0.5283159613609314,
+          0.4222494959831238,
+          0.04943453520536423
+        ]
+      },
+      "after_horizon_20": {
+        "state_error": 1.060972525191701,
+        "safe_pair_false_separation": 0.22712045302999415,
+        "expert_usage": [
+          0.212707057595253,
+          0.2897953689098358,
+          0.49749755859375
+        ]
+      },
+      "after_horizon_60": {
+        "state_error": 0.5828743113959132,
+        "safe_pair_false_separation": 0.20375666220615665,
+        "expert_usage": [
+          0.34853243827819824,
+          0.284618079662323,
+          0.36684948205947876
+        ]
+      },
+      "after_horizon_190": {
+        "state_error": 0.40135654957949624,
+        "safe_pair_false_separation": 0.08300732364115586,
+        "expert_usage": [
+          0.5691625475883484,
+          0.32050278782844543,
+          0.11033465713262558
+        ]
+      }
+    }
+  },
+  "output": "results/jenga/w5_fine_moe_b_s2.pt"
+}

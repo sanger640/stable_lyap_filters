@@ -1,0 +1,88 @@
+{
+  "protocol": {
+    "plan": "PLAN_WORLDMODEL W5, single-expert stochastic baseline",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 message-passing rounds, Gaussian head",
+    "stages": "teacher forcing, then rollout curriculum (4, 12, 38)",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "model": "single",
+  "experts": 1,
+  "seed": 2,
+  "transition_weighting": true,
+  "parameters": 653992,
+  "balance_weight": null,
+  "temperature": null,
+  "states": 8810,
+  "history": {
+    "teacher_forcing": [
+      {
+        "nll": -3.166456839199319,
+        "contact_bce": 0.06812457380161327
+      },
+      {
+        "nll": -4.801189199353673,
+        "contact_bce": 0.027888348202251976
+      },
+      {
+        "nll": -5.226431156327032,
+        "contact_bce": 0.024542160501476108
+      }
+    ],
+    "rollout": {
+      "20": {
+        "train": {
+          "state": 3.8936563950643386,
+          "contact": 0.07771292742548006
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 78.56700148987412
+        },
+        "seconds": 418.37698459625244
+      },
+      "60": {
+        "train": {
+          "state": 3.1400472270657103,
+          "contact": 0.05559215308934835
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 19.942691132834703
+        },
+        "seconds": 1273.4551026821136
+      },
+      "190": {
+        "train": {
+          "state": 1.3624771855710782,
+          "contact": 0.03823996546091303,
+          "branch": 0.10372084552602781
+        },
+        "weights": {
+          "state": 1.0,
+          "contact": 16.952918604519706,
+          "branch": 9.011331945307747
+        },
+        "seconds": 4299.692745447159
+      }
+    },
+    "validation": {
+      "after_teacher_forcing": {
+        "state_error": 7.136438601765751,
+        "safe_pair_false_separation": 0.15753740878952624
+      },
+      "after_horizon_20": {
+        "state_error": 2.413664858203289,
+        "safe_pair_false_separation": 0.21166890301483815
+      },
+      "after_horizon_60": {
+        "state_error": 1.3302470365585375,
+        "safe_pair_false_separation": 0.14587283410489837
+      },
+      "after_horizon_190": {
+        "state_error": 1.1149742812041408,
+        "safe_pair_false_separation": 0.06740396922107397
+      }
+    }
+  },
+  "output": "results/jenga/w5_fine_tw_s2.pt"
+}
