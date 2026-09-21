@@ -3626,3 +3626,69 @@ that measure noise keeps helping past 0.5 even as recall falls.
 
 Results: `results/jenga/w6_{gnn,mlp}_n{0,25,5,10,20}_s*_{train,gate3_b3,report}.json`,
 `w6_curves_{grid,arms,noise}.json`, `w6_*_diag.json`.
+
+## V1 vision: DINO -> 61-dim state -> FROZEN dynamics (2026-09-21)
+
+Everything except the initial condition is unchanged from the privileged run: same batch-3 states,
+same 64 probes, same scales, same score, same threshold rule, same intervals, same frozen W6
+checkpoint (`gnn_n5_s1`). Probe and PCA basis fitted on TRAINING configurations only and graded on
+the held-out batch-3 scenes. `eval/jenga_v1_probe.py`, `eval/jenga_v1_gate.py`.
+
+### The probe: what DINO gives back
+
+| quantity | held-out error | note |
+|---|---|---|
+| block position, 3D | 8.56 mm | of which **7.77 mm is common-mode** (all blocks shift together) |
+| ... residual after removing common-mode | **3.59 mm** | |
+| block-to-block gaps | **1.7-2.7 mm** | against true gaps of 41-80 mm |
+| gripper xyz | 7.72 mm | nearly identical to the block common-mode: a shared global offset |
+| rotation | 0.043 (0.09 relative) | |
+| contact flags | **98.2% correct** | |
+| gripper closed flag | **99.1% correct** | |
+| velocity | 0.73 relative (linear), 0.55 (MLP + 3 frames) | the only group no probe recovers |
+
+Two methodology traps hit and fixed:
+* 512 PCA components gave 16.4 mm position error; 2048 gives 4.9 mm per-coordinate. The BASIS was
+  the bottleneck, not DINO. "Bad decoder" would have been read as "bad representation".
+* The gripper group mixes xyz (metres) with a 0/1 flag; scaling the group by 1000 reported a
+  "110 mm gripper error" that was really a flag misprediction. Split, it is 7.72 mm and 99.1%.
+
+State estimation TRANSFERS: median block position RMSE is 4.44 mm on the held-out batch-3 scenes
+against 4.93 mm on held-out training-pool episodes. The representation is not the thing that fails
+on new configurations.
+
+### The gate: which estimation errors the monitor is sensitive to
+
+| initial condition | 1x recall | blind forks | 2x recall |
+|---|---|---|---|
+| all estimated | 20% [12-29] | 45/84 (54%) | 48% |
+| + true velocity | 21% | 50/84 (60%) | 50% |
+| + true rotation | 21% | 51/84 (61%) | 51% |
+| + true gripper (= proprioception, the REALISTIC setting) | **36% [27-44]** | 38/84 (45%) | 54% |
+| + true position | 38% | 38/84 (45%) | 65% |
+| + true position AND rotation | **50%** | 26/84 (31%) | **93%** |
+| + true contact and gripper | 33% | 40/84 (48%) | 71% |
+| privileged | 67% | 24/84 (29%) | 99% |
+
+1. **Blind forks roughly double** with estimated state (29% -> 54% at 1x, 1% -> 33% at 2x). This is
+   NOT "perception destroys the information": reconstruction is accurate and transfers. It is the
+   third branch -- small geometric errors are disproportionately important near forks.
+2. **Velocity is irrelevant**, twice confirmed. The group the probe recovers WORST is the one the
+   monitor does not need; blind forks even rise slightly. Relative reconstruction error is a bad
+   guide to what matters, and I would have prioritised velocity on the probe numbers alone.
+3. **Pose must be jointly correct.** Rotation alone +1 point, position alone +18, both together
+   +30 -- far more than the sum. What matters is where a block's FACE sits relative to its
+   neighbour, not where its centre is.
+4. **Proprioception is worth +16 points on its own** (20% -> 36%). The dynamics model's action
+   feature is (action - gripper)/0.0032 m, so a 7.72 mm gripper error is 2.4 units while a 1x
+   perturbation is 0.50 units: the estimation error in the action channel is ~5x the signal being
+   detected. A real robot reads end-effector pose from joint encoders, so estimating it from images
+   was an artificial handicap, and not one the universal-monitor constraint requires (that rules
+   out object and task features, not the robot's own state).
+5. **At 2x, accurate pose nearly suffices** (93% vs 99% privileged). The pose precision required
+   scales with the perturbation size, as a proximity monitor should.
+
+Where this leaves vision: the bottleneck is precise, jointly-correct block pose / contact geometry,
+not semantic richness and not temporal observability. An object-centric keypoint readout starts
+from the 3.6 mm common-mode-free residual and 1.7-2.7 mm gaps, so it needs to close ~2-3 mm, not
+~9 mm. Results: `results/jenga/v1_probe_*.json`, `v1_gate_*.json`.

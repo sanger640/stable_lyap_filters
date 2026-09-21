@@ -39,6 +39,7 @@ from jenga_short_held_tails import DirectJengaSim, extract_sim  # noqa: E402
 from jenga_stage0_noise_oracle import SCALES  # noqa: E402
 from jenga_stage3_predicted_forks import action_windows  # noqa: E402
 from jenga_state_data import step_state  # noqa: E402
+from jenga_v1_probe import GROUPS  # noqa: E402
 from jenga_w5_gate3 import gate3, real_scores  # noqa: E402
 from jenga_w5_eval import hold_index, load_model, predict  # noqa: E402
 
@@ -89,7 +90,7 @@ def encode_frames(model, device, frames, proprio):
 
 
 def model_scores(rows, dynamics, scale, snippets, lmdb, sim_archive, device, reset_base,
-                 estimator=None, encoder=None, collect=None):
+                 estimator=None, encoder=None, collect=None, true_groups=()):
     """Predicted ending spread per state and error size; estimated state when a probe is given."""
     wanted = {}
     for r in rows:
@@ -115,6 +116,10 @@ def model_scores(rows, dynamics, scale, snippets, lmdb, sim_archive, device, res
                                                     history[-NUM_HIST:][-estimator.frames:],
                                                     proprio[-NUM_HIST:][-estimator.frames:])
                             start = estimator(latents)
+                            # Ablation: hand back the TRUE value of some groups, to find which
+                            # estimation error the monitor is actually sensitive to.
+                            for name in true_groups:
+                                start[GROUPS[name][0]] = truth[GROUPS[name][0]]
                             if collect is not None:
                                 collect.append({"episode_id": episode_id, "chunk_start": step,
                                                 "position_error_mm": float(np.sqrt(np.mean(
@@ -162,6 +167,8 @@ def main():
     ap.add_argument("--test", default=str(ROOT / "results/jenga/holdout3_stage2_shared.json"))
     ap.add_argument("--test-reset-seed-base", type=int, default=1000)
     ap.add_argument("--stage0-cache", default=str(ROOT / "results/jenga/holdout_stage0_cache.npz"))
+    ap.add_argument("--true-groups", nargs="*", default=[], choices=list(GROUPS),
+                    help="state groups to take from the simulator instead of the probe")
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
 
@@ -175,14 +182,16 @@ def main():
 
     accuracy = []
     dev = model_scores(dev_rows, dynamics, scale, snippets, args.lmdb, args.sim_archive, device,
-                       None, estimator, encoder)
+                       None, estimator, encoder, true_groups=args.true_groups)
     test = model_scores(test_rows, dynamics, scale, snippets, args.lmdb, args.sim_archive, device,
-                        args.test_reset_seed_base, estimator, encoder, accuracy)
+                        args.test_reset_seed_base, estimator, encoder, accuracy,
+                        true_groups=args.true_groups)
     result = {"protocol": {"pipeline": "DINO latents -> probe -> frozen dynamics",
                            "probe": args.probe, "probe_kind": args.probe_kind,
                            "dynamics": args.model,
                            "unchanged": "test states, probes, scales, score, threshold rule, "
                                         "intervals"},
+              "true_groups": args.true_groups,
               "state_estimation": {
                   "position_rmse_mm_median": float(np.median(
                       [a["position_error_mm"] for a in accuracy])) if accuracy else None},

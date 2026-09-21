@@ -1,0 +1,4725 @@
+{
+  "protocol": {
+    "pipeline": "DINO latents -> probe -> frozen dynamics",
+    "probe": "results/jenga/v1_probe_f1_c2048.pt",
+    "probe_kind": "linear",
+    "dynamics": "results/jenga/w6_gnn_n5_s1.pt",
+    "unchanged": "test states, probes, scales, score, threshold rule, intervals"
+  },
+  "true_groups": [
+    "gripper"
+  ],
+  "state_estimation": {
+    "position_rmse_mm_median": 4.4444334506988525
+  },
+  "model": {
+    "0.5": {
+      "threshold": 14.193185806274414,
+      "dev_quiet_states": 101,
+      "dev_false_alarms": 0.04950495049504951,
+      "test_recall": {
+        "rate": 0.19047619047619047,
+        "ci95": [
+          0.0666304347826087,
+          0.3404255319148936
+        ],
+        "n": 42,
+        "episodes": 21
+      },
+      "test_false_alarms_quiet": {
+        "rate": 0.06896551724137931,
+        "ci95": [
+          0.034482758620689655,
+          0.10625332446808508
+        ],
+        "n": 145,
+        "episodes": 49
+      },
+      "test_alarms_on_nontopple_physical_forks": {
+        "rate": 0.1111111111111111,
+        "ci95": [
+          0.0,
+          0.29411764705882354
+        ],
+        "n": 18,
+        "episodes": 13
+      },
+      "blind_forks": {
+        "fork_states": 42,
+        "blind": 29,
+        "rate": 0.6904761904761905,
+        "median_score_of_blind": 1.4486596584320068
+      }
+    },
+    "1.0": {
+      "threshold": 18.654638290405273,
+      "dev_quiet_states": 89,
+      "dev_false_alarms": 0.0449438202247191,
+      "test_recall": {
+        "rate": 0.35714285714285715,
+        "ci95": [
+          0.2727272727272727,
+          0.4415954298865689
+        ],
+        "n": 84,
+        "episodes": 38
+      },
+      "test_false_alarms_quiet": {
+        "rate": 0.017699115044247787,
+        "ci95": [
+          0.0,
+          0.04348779557589621
+        ],
+        "n": 113,
+        "episodes": 47
+      },
+      "test_alarms_on_nontopple_physical_forks": {
+        "rate": 0.058823529411764705,
+        "ci95": [
+          0.0,
+          0.166911764705881
+        ],
+        "n": 17,
+        "episodes": 13
+      },
+      "blind_forks": {
+        "fork_states": 84,
+        "blind": 38,
+        "rate": 0.4523809523809524,
+        "median_score_of_blind": 1.5454036593437195
+      }
+    },
+    "2.0": {
+      "threshold": 14.390775680541992,
+      "dev_quiet_states": 64,
+      "dev_false_alarms": 0.046875,
+      "test_recall": {
+        "rate": 0.5365853658536586,
+        "ci95": [
+          0.40736714975845406,
+          0.6517127028714106
+        ],
+        "n": 82,
+        "episodes": 36
+      },
+      "test_false_alarms_quiet": {
+        "rate": 0.07627118644067797,
+        "ci95": [
+          0.02702702702702703,
+          0.13447081535316818
+        ],
+        "n": 118,
+        "episodes": 48
+      },
+      "test_alarms_on_nontopple_physical_forks": {
+        "rate": 0.3076923076923077,
+        "ci95": [
+          0.07692307692307693,
+          0.5833333333333334
+        ],
+        "n": 13,
+        "episodes": 10
+      },
+      "blind_forks": {
+        "fork_states": 82,
+        "blind": 25,
+        "rate": 0.3048780487804878,
+        "median_score_of_blind": 1.8203823566436768
+      }
+    }
+  },
+  "real_endings_reference": {
+    "0.5": {
+      "threshold": 22.907794952392578,
+      "dev_quiet_states": 101,
+      "dev_false_alarms": 0.04950495049504951,
+      "test_recall": {
+        "rate": 0.9761904761904762,
+        "ci95": [
+          0.919972972972973,
+          1.0
+        ],
+        "n": 42,
+        "episodes": 21
+      },
+      "test_false_alarms_quiet": {
+        "rate": 0.041379310344827586,
+        "ci95": [
+          0.013422818791946308,
+          0.07586206896551724
+        ],
+        "n": 145,
+        "episodes": 49
+      },
+      "test_alarms_on_nontopple_physical_forks": {
+        "rate": 0.2777777777777778,
+        "ci95": [
+          0.058823529411764705,
+          0.5294117647058824
+        ],
+        "n": 18,
+        "episodes": 13
+      }
+    },
+    "1.0": {
+      "threshold": 29.5584774017334,
+      "dev_quiet_states": 89,
+      "dev_false_alarms": 0.0449438202247191,
+      "test_recall": {
+        "rate": 0.8809523809523809,
+        "ci95": [
+          0.7777412280701754,
+          0.9531340843023255
+        ],
+        "n": 84,
+        "episodes": 38
+      },
+      "test_false_alarms_quiet": {
+        "rate": 0.02654867256637168,
+        "ci95": [
+          0.0,
+          0.07339449541284404
+        ],
+        "n": 113,
+        "episodes": 47
+      },
+      "test_alarms_on_nontopple_physical_forks": {
+        "rate": 0.4117647058823529,
+        "ci95": [
+          0.17647058823529413,
+          0.6666666666666666
+        ],
+        "n": 17,
+        "episodes": 13
+      }
+    },
+    "2.0": {
+      "threshold": 24.85647201538086,
+      "dev_quiet_states": 64,
+      "dev_false_alarms": 0.046875,
+      "test_recall": {
+        "rate": 0.9878048780487805,
+        "ci95": [
+          0.958904109589041,
+          1.0
+        ],
+        "n": 82,
+        "episodes": 36
+      },
+      "test_false_alarms_quiet": {
+        "rate": 0.1271186440677966,
+        "ci95": [
+          0.07437251300887665,
+          0.19090909090909092
+        ],
+        "n": 118,
+        "episodes": 48
+      },
+      "test_alarms_on_nontopple_physical_forks": {
+        "rate": 0.7692307692307693,
+        "ci95": [
+          0.5333333333333333,
+          1.0
+        ],
+        "n": 13,
+        "episodes": 10
+      }
+    }
+  },
+  "scores": [
+    {
+      "episode_id": "3",
+      "chunk_start": 18,
+      "scale": "0.5",
+      "score": 0.012119028717279434,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "score": 0.018681833520531654,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 18,
+      "scale": "2.0",
+      "score": 0.03243538364768028,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 1.4863125085830688,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 6.205697059631348,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 14.056657791137695,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 114,
+      "scale": "0.5",
+      "score": 8.926709175109863,
+      "class": "weak"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "score": 12.240750312805176,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 114,
+      "scale": "2.0",
+      "score": 13.489909172058105,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 118,
+      "scale": "0.5",
+      "score": 6.523723125457764,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "score": 10.735017776489258,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 118,
+      "scale": "2.0",
+      "score": 12.25955867767334,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "0.5",
+      "score": 0.24547705054283142,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "score": 0.37283098697662354,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "2.0",
+      "score": 0.608161985874176,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 1.1501950025558472,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 1.7619320154190063,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 1.7375593185424805,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 1.6100754737854004,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 3.4862968921661377,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 4.732666015625,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 110,
+      "scale": "0.5",
+      "score": 23.49936294555664,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "score": 24.598739624023438,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 110,
+      "scale": "2.0",
+      "score": 18.30695152282715,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 134,
+      "scale": "0.5",
+      "score": 0.07297113537788391,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "score": 0.10479993373155594,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 134,
+      "scale": "2.0",
+      "score": 0.20097385346889496,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 142,
+      "scale": "0.5",
+      "score": 0.05234232172369957,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 142,
+      "scale": "1.0",
+      "score": 0.09526155889034271,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 142,
+      "scale": "2.0",
+      "score": 0.128011554479599,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 150,
+      "scale": "0.5",
+      "score": 0.0750388652086258,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "score": 0.13974520564079285,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 150,
+      "scale": "2.0",
+      "score": 0.2716066241264343,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 0.015858108177781105,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 0.039201270788908005,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "4",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 0.08782114088535309,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 22,
+      "scale": "0.5",
+      "score": 0.034841619431972504,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "score": 0.07749167829751968,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 22,
+      "scale": "2.0",
+      "score": 0.24527457356452942,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 14.990852355957031,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 24.119346618652344,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 25.45755386352539,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 0.892094612121582,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 14.031729698181152,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 13.993281364440918,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 1.016922116279602,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 1.2825438976287842,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 2.365652561187744,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 154,
+      "scale": "0.5",
+      "score": 4.510210037231445,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "score": 11.203645706176758,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 154,
+      "scale": "2.0",
+      "score": 11.273616790771484,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 42,
+      "scale": "0.5",
+      "score": 0.46949493885040283,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "score": 0.5555195808410645,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 42,
+      "scale": "2.0",
+      "score": 0.7611112594604492,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 0.18095922470092773,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 0.34273651242256165,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 0.5722687244415283,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "0.5",
+      "score": 0.08724728971719742,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "score": 0.1424395740032196,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "2.0",
+      "score": 0.34245482087135315,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 42,
+      "scale": "0.5",
+      "score": 0.008698098361492157,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "score": 0.019500866532325745,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 42,
+      "scale": "2.0",
+      "score": 0.03215287998318672,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 5.844075679779053,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 11.10198974609375,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 11.312554359436035,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 2.830825090408325,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 7.776711463928223,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 10.54617691040039,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 134,
+      "scale": "0.5",
+      "score": 2.326446771621704,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "score": 3.7512733936309814,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 134,
+      "scale": "2.0",
+      "score": 5.011033058166504,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 226,
+      "scale": "0.5",
+      "score": 9.1626558303833,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 226,
+      "scale": "1.0",
+      "score": 11.385777473449707,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 226,
+      "scale": "2.0",
+      "score": 49.93610763549805,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "0.5",
+      "score": 0.49788132309913635,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "score": 0.9085476994514465,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "2.0",
+      "score": 21.407400131225586,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 86,
+      "scale": "0.5",
+      "score": 0.9082208275794983,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "score": 1.2369683980941772,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 86,
+      "scale": "2.0",
+      "score": 1.4436005353927612,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 12.665038108825684,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 23.78921127319336,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 26.630064010620117,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 24.456140518188477,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 18.739412307739258,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 16.248687744140625,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 122,
+      "scale": "0.5",
+      "score": 0.11152554303407669,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "score": 0.15981216728687286,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 122,
+      "scale": "2.0",
+      "score": 0.21393364667892456,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 7.96683406829834,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 14.279699325561523,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 19.71108055114746,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 0.1940760314464569,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 0.44216716289520264,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 1.104937195777893,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 134,
+      "scale": "0.5",
+      "score": 0.5458123087882996,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "score": 9.446398735046387,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 134,
+      "scale": "2.0",
+      "score": 24.737661361694336,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 138,
+      "scale": "0.5",
+      "score": 11.22624683380127,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "score": 14.15907096862793,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "14",
+      "chunk_start": 138,
+      "scale": "2.0",
+      "score": 18.55596923828125,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 0.764714777469635,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 1.4390355348587036,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 9.688326835632324,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 19.621862411499023,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 20.97196388244629,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 22.710512161254883,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 23.226306915283203,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 25.17037582397461,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 24.614355087280273,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 198,
+      "scale": "0.5",
+      "score": 0.19771578907966614,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 198,
+      "scale": "1.0",
+      "score": 0.517626941204071,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 198,
+      "scale": "2.0",
+      "score": 1.671381950378418,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 202,
+      "scale": "0.5",
+      "score": 0.106949582695961,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 202,
+      "scale": "1.0",
+      "score": 0.2336246371269226,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 202,
+      "scale": "2.0",
+      "score": 0.46856799721717834,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 210,
+      "scale": "0.5",
+      "score": 0.2808993458747864,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "score": 0.5126523971557617,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 210,
+      "scale": "2.0",
+      "score": 1.0615360736846924,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 25.534570693969727,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 28.71215057373047,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 33.39472961425781,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 14.690718650817871,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 17.473602294921875,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 15.491066932678223,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 138,
+      "scale": "0.5",
+      "score": 0.0744578093290329,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "score": 0.1458185911178589,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "18",
+      "chunk_start": 138,
+      "scale": "2.0",
+      "score": 0.2808668613433838,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 38,
+      "scale": "0.5",
+      "score": 2.831035852432251,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "score": 3.3418755531311035,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 38,
+      "scale": "2.0",
+      "score": 3.7004172801971436,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 1.348265528678894,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 1.3412584066390991,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 1.5103402137756348,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 1.4643603563308716,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 1.5623164176940918,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 1.5943951606750488,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 70,
+      "scale": "0.5",
+      "score": 0.2854507565498352,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "score": 0.6084961295127869,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "19",
+      "chunk_start": 70,
+      "scale": "2.0",
+      "score": 1.1772912740707397,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 2,
+      "scale": "0.5",
+      "score": 0.010042292065918446,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "score": 0.018321411684155464,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 2,
+      "scale": "2.0",
+      "score": 0.03542795777320862,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 38,
+      "scale": "0.5",
+      "score": 0.17133907973766327,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "score": 0.3846752941608429,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 38,
+      "scale": "2.0",
+      "score": 7.006782531738281,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 1.2948676347732544,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 1.6250582933425903,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 1.9720193147659302,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 0.03323693946003914,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 0.06143893301486969,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 0.09548959136009216,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "22",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 0.26585420966148376,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "22",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 0.42927438020706177,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "22",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 0.6033608317375183,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "23",
+      "chunk_start": 74,
+      "scale": "0.5",
+      "score": 6.644291400909424,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "23",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "score": 13.501747131347656,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "23",
+      "chunk_start": 74,
+      "scale": "2.0",
+      "score": 25.103797912597656,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "24",
+      "chunk_start": 38,
+      "scale": "0.5",
+      "score": 0.7463091015815735,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "24",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "score": 1.2787909507751465,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "24",
+      "chunk_start": 38,
+      "scale": "2.0",
+      "score": 1.8946712017059326,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 12.289761543273926,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 24.63709831237793,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 21.15363311767578,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 2.0138280391693115,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 2.5326716899871826,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 2.9703891277313232,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 11.221296310424805,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 13.865388870239258,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 16.44037628173828,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 0.2527259588241577,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 18.773874282836914,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 25.212501525878906,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 1.6537973880767822,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 16.564435958862305,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 31.41629409790039,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 122,
+      "scale": "0.5",
+      "score": 0.0631067305803299,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "score": 0.11917759478092194,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 122,
+      "scale": "2.0",
+      "score": 0.20903237164020538,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 2,
+      "scale": "0.5",
+      "score": 0.022617841139435768,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "score": 0.030177950859069824,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 2,
+      "scale": "2.0",
+      "score": 0.03903587535023689,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 2.0600764751434326,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 15.3947172164917,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 24.83709144592285,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 32.117393493652344,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 33.60010528564453,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 34.90482711791992,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 23.223875045776367,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 23.12520408630371,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 22.32640266418457,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 6.245172023773193,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 10.589816093444824,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 10.521058082580566,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 70,
+      "scale": "0.5",
+      "score": 13.339223861694336,
+      "class": "weak"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "score": 15.867196083068848,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 70,
+      "scale": "2.0",
+      "score": 19.06159019470215,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 114,
+      "scale": "0.5",
+      "score": 0.13434983789920807,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "score": 0.19363686442375183,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 114,
+      "scale": "2.0",
+      "score": 0.23333263397216797,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 118,
+      "scale": "0.5",
+      "score": 0.039278920739889145,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "score": 0.10351132601499557,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 118,
+      "scale": "2.0",
+      "score": 0.18539614975452423,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 18,
+      "scale": "0.5",
+      "score": 0.00581104913726449,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "score": 0.011508159339427948,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 18,
+      "scale": "2.0",
+      "score": 0.02508399821817875,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 0.3488216698169708,
+      "class": "weak"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 20.61212921142578,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 33.136207580566406,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 2.7378268241882324,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 2.6251769065856934,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 7.884889602661133,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 126,
+      "scale": "0.5",
+      "score": 0.22024141252040863,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "score": 0.5428528785705566,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 126,
+      "scale": "2.0",
+      "score": 1.5987844467163086,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 0.971001923084259,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 1.6123771667480469,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 2.0614984035491943,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 2,
+      "scale": "0.5",
+      "score": 0.010825563222169876,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "score": 0.01957734301686287,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 2,
+      "scale": "2.0",
+      "score": 0.032340481877326965,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 2.0157721042633057,
+      "class": "weak"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 3.052677869796753,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 3.0547986030578613,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 86,
+      "scale": "0.5",
+      "score": 0.21468068659305573,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "score": 0.48635801672935486,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 86,
+      "scale": "2.0",
+      "score": 1.0149813890457153,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 0.6323915719985962,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 1.1467194557189941,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 6.539194107055664,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 174,
+      "scale": "0.5",
+      "score": 0.11754294484853745,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 174,
+      "scale": "1.0",
+      "score": 0.30780866742134094,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 174,
+      "scale": "2.0",
+      "score": 1.4629452228546143,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 218,
+      "scale": "0.5",
+      "score": 0.010426963679492474,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 218,
+      "scale": "1.0",
+      "score": 0.01628717966377735,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 218,
+      "scale": "2.0",
+      "score": 0.02352002076804638,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 226,
+      "scale": "0.5",
+      "score": 0.05174177885055542,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 226,
+      "scale": "1.0",
+      "score": 0.10286965221166611,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "29",
+      "chunk_start": 226,
+      "scale": "2.0",
+      "score": 0.21742159128189087,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 6,
+      "scale": "0.5",
+      "score": 0.008939620107412338,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 6,
+      "scale": "1.0",
+      "score": 0.016392717137932777,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 6,
+      "scale": "2.0",
+      "score": 0.02536235749721527,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 13.80968952178955,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 19.23137855529785,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 18.500503540039062,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 154,
+      "scale": "0.5",
+      "score": 0.09145181626081467,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "score": 0.14462456107139587,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "32",
+      "chunk_start": 154,
+      "scale": "2.0",
+      "score": 0.2223093956708908,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 38,
+      "scale": "0.5",
+      "score": 0.4320904612541199,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "score": 0.8740001320838928,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 38,
+      "scale": "2.0",
+      "score": 1.391385555267334,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 0.3453714847564697,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 0.6538310647010803,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 19.518402099609375,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 0.23162157833576202,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 0.4307771921157837,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 21.464679718017578,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 0.8206934928894043,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 1.0511575937271118,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 1.6427383422851562,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 0.9557697772979736,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 1.1738498210906982,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 1.2095363140106201,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 13.460128784179688,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 20.105915069580078,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 21.782743453979492,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 70,
+      "scale": "0.5",
+      "score": 1.0984421968460083,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "score": 1.4874894618988037,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 70,
+      "scale": "2.0",
+      "score": 6.720681667327881,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 134,
+      "scale": "0.5",
+      "score": 0.0695396140217781,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "score": 0.141902357339859,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 134,
+      "scale": "2.0",
+      "score": 0.33487048745155334,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 150,
+      "scale": "0.5",
+      "score": 0.0552094466984272,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "score": 0.1085001602768898,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 150,
+      "scale": "2.0",
+      "score": 0.19789615273475647,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "39",
+      "chunk_start": 82,
+      "scale": "0.5",
+      "score": 0.13452979922294617,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "39",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "score": 1.0567840337753296,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "39",
+      "chunk_start": 82,
+      "scale": "2.0",
+      "score": 9.149378776550293,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "39",
+      "chunk_start": 110,
+      "scale": "0.5",
+      "score": 0.12657271325588226,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "39",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "score": 0.20223061740398407,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "39",
+      "chunk_start": 110,
+      "scale": "2.0",
+      "score": 0.39856213331222534,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 0.15145400166511536,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 0.3005138337612152,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 13.5977144241333,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 146,
+      "scale": "0.5",
+      "score": 3.1845834255218506,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "score": 3.420097589492798,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 146,
+      "scale": "2.0",
+      "score": 4.490346431732178,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 206,
+      "scale": "0.5",
+      "score": 0.07412336021661758,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 206,
+      "scale": "1.0",
+      "score": 0.1492912620306015,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 206,
+      "scale": "2.0",
+      "score": 0.3066278100013733,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 222,
+      "scale": "0.5",
+      "score": 0.07551601529121399,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 222,
+      "scale": "1.0",
+      "score": 0.17666244506835938,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "44",
+      "chunk_start": 222,
+      "scale": "2.0",
+      "score": 0.2967455983161926,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "0.5",
+      "score": 4.094032287597656,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "score": 4.519964218139648,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "2.0",
+      "score": 8.327658653259277,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 30,
+      "scale": "0.5",
+      "score": 12.1308012008667,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "score": 21.404340744018555,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 30,
+      "scale": "2.0",
+      "score": 26.475191116333008,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 174,
+      "scale": "0.5",
+      "score": 0.26560479402542114,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 174,
+      "scale": "1.0",
+      "score": 0.6648446321487427,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 174,
+      "scale": "2.0",
+      "score": 1.5255861282348633,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 210,
+      "scale": "0.5",
+      "score": 2.1517043113708496,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "score": 2.398343563079834,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 210,
+      "scale": "2.0",
+      "score": 3.07338809967041,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 314,
+      "scale": "0.5",
+      "score": 0.01922660507261753,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 314,
+      "scale": "1.0",
+      "score": 0.037960682064294815,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "52",
+      "chunk_start": 314,
+      "scale": "2.0",
+      "score": 0.07355698943138123,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "53",
+      "chunk_start": 30,
+      "scale": "0.5",
+      "score": 0.008450040593743324,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "53",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "score": 0.018426362425088882,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "53",
+      "chunk_start": 30,
+      "scale": "2.0",
+      "score": 0.030820658430457115,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "53",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 0.861698567867279,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "53",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 2.0923779010772705,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "53",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 3.457928419113159,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 2,
+      "scale": "0.5",
+      "score": 0.011555959470570087,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "score": 0.022082984447479248,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 2,
+      "scale": "2.0",
+      "score": 0.04167301580309868,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 30,
+      "scale": "0.5",
+      "score": 0.024275289848446846,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "score": 0.04313502833247185,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 30,
+      "scale": "2.0",
+      "score": 0.07408735156059265,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 0.7672242522239685,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 1.0061029195785522,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 1.3473843336105347,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 24.20229148864746,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 26.072486877441406,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 25.88416862487793,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 126,
+      "scale": "0.5",
+      "score": 0.07994268089532852,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "score": 0.10672174394130707,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 126,
+      "scale": "2.0",
+      "score": 0.11913371086120605,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 18.15207862854004,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 25.465272903442383,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 29.134540557861328,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 5.216784477233887,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 7.411062717437744,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 10.217325210571289,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 6.449120044708252,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 12.378267288208008,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 12.342083930969238,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 5.109280586242676,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 9.47480583190918,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 15.424164772033691,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 91.30146026611328,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 82.90518188476562,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 81.83582305908203,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "60",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 0.07347401231527328,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "60",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 0.1850827932357788,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "60",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 0.3788479268550873,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "60",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 0.163170725107193,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "60",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 0.2771272659301758,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "60",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 0.4479556381702423,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "0.5",
+      "score": 0.1940847784280777,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "score": 0.4919212758541107,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "2.0",
+      "score": 20.60990333557129,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 86,
+      "scale": "0.5",
+      "score": 1.2170028686523438,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "score": 3.22373366355896,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 86,
+      "scale": "2.0",
+      "score": 9.023755073547363,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 0.6596115827560425,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 1.0699727535247803,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 1.7795953750610352,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 114,
+      "scale": "0.5",
+      "score": 0.14518789947032928,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "score": 0.23528604209423065,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 114,
+      "scale": "2.0",
+      "score": 0.31420034170150757,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 9.461172103881836,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 18.797515869140625,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 25.09083366394043,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 118,
+      "scale": "0.5",
+      "score": 0.6946306228637695,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "score": 1.1692808866500854,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 118,
+      "scale": "2.0",
+      "score": 1.961367130279541,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 162,
+      "scale": "0.5",
+      "score": 1.0452184677124023,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "score": 3.2422597408294678,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 162,
+      "scale": "2.0",
+      "score": 4.930490970611572,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 166,
+      "scale": "0.5",
+      "score": 0.06977121531963348,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 166,
+      "scale": "1.0",
+      "score": 0.12963064014911652,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 166,
+      "scale": "2.0",
+      "score": 0.20345227420330048,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 194,
+      "scale": "0.5",
+      "score": 0.20219813287258148,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "score": 0.4650472104549408,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "65",
+      "chunk_start": 194,
+      "scale": "2.0",
+      "score": 0.998255729675293,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 6,
+      "scale": "0.5",
+      "score": 0.004860105458647013,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 6,
+      "scale": "1.0",
+      "score": 0.009773789905011654,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 6,
+      "scale": "2.0",
+      "score": 0.01887744478881359,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 22,
+      "scale": "0.5",
+      "score": 0.009746643714606762,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "score": 0.018571119755506516,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 22,
+      "scale": "2.0",
+      "score": 0.037413522601127625,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 78,
+      "scale": "0.5",
+      "score": 0.14151500165462494,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 78,
+      "scale": "1.0",
+      "score": 0.26731181144714355,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 78,
+      "scale": "2.0",
+      "score": 0.6559775471687317,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 0.1700325459241867,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 0.40612831711769104,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 1.2080320119857788,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 3.7637853622436523,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 11.935625076293945,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 19.052274703979492,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 150,
+      "scale": "0.5",
+      "score": 7.689540386199951,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "score": 19.12375259399414,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 150,
+      "scale": "2.0",
+      "score": 17.392921447753906,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 182,
+      "scale": "0.5",
+      "score": 0.21021783351898193,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 182,
+      "scale": "1.0",
+      "score": 6.5737833976745605,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 182,
+      "scale": "2.0",
+      "score": 11.753104209899902,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 218,
+      "scale": "0.5",
+      "score": 0.029251661151647568,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 218,
+      "scale": "1.0",
+      "score": 0.05999637767672539,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "66",
+      "chunk_start": 218,
+      "scale": "2.0",
+      "score": 0.10945747047662735,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 0.9993128776550293,
+      "class": "weak"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 1.242118000984192,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 1.159613013267517,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 1.225346326828003,
+      "class": "weak"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 1.5028595924377441,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 1.8203823566436768,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 0.32575923204421997,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 0.600089967250824,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 1.2729027271270752,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 0.03524605929851532,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 0.08144611865282059,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "69",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 0.28120163083076477,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 1.3620514869689941,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 1.1733589172363281,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 1.3569883108139038,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "0.5",
+      "score": 1.312804102897644,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "score": 1.5214016437530518,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "2.0",
+      "score": 1.480496883392334,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 194,
+      "scale": "0.5",
+      "score": 0.112323097884655,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "score": 0.273252010345459,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 194,
+      "scale": "2.0",
+      "score": 0.5033702254295349,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 202,
+      "scale": "0.5",
+      "score": 0.04418561980128288,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 202,
+      "scale": "1.0",
+      "score": 0.09441819041967392,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 202,
+      "scale": "2.0",
+      "score": 0.3903845250606537,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 234,
+      "scale": "0.5",
+      "score": 0.04392312467098236,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 234,
+      "scale": "1.0",
+      "score": 0.07054638117551804,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 234,
+      "scale": "2.0",
+      "score": 0.13561581075191498,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "0.5",
+      "score": 0.03664072975516319,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "score": 0.06250422447919846,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "2.0",
+      "score": 0.11768230050802231,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 0.13165989518165588,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 6.020219802856445,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 13.949458122253418,
+      "class": "weak"
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "0.5",
+      "score": 0.2568046748638153,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "score": 0.46267279982566833,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "2.0",
+      "score": 0.8271512389183044,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 30,
+      "scale": "0.5",
+      "score": 17.735958099365234,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "score": 27.176855087280273,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 30,
+      "scale": "2.0",
+      "score": 26.09072494506836,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "0.5",
+      "score": 35.13148880004883,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "score": 37.081974029541016,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "2.0",
+      "score": 35.22433090209961,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 38,
+      "scale": "0.5",
+      "score": 9.691905975341797,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "score": 17.659807205200195,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "73",
+      "chunk_start": 38,
+      "scale": "2.0",
+      "score": 19.497228622436523,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 30,
+      "scale": "0.5",
+      "score": 0.26323601603507996,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "score": 0.4542061686515808,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 30,
+      "scale": "2.0",
+      "score": 0.8528900742530823,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 0.29603978991508484,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 8.630302429199219,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 17.691226959228516,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 1.6936607360839844,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 1.9870766401290894,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 11.302430152893066,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 134,
+      "scale": "0.5",
+      "score": 0.04393894225358963,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "score": 0.10746823996305466,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 134,
+      "scale": "2.0",
+      "score": 0.19933165609836578,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 138,
+      "scale": "0.5",
+      "score": 0.1583692729473114,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "score": 0.25966188311576843,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 138,
+      "scale": "2.0",
+      "score": 0.3051121234893799,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "0.5",
+      "score": 0.8289865255355835,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "score": 1.0133484601974487,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "2.0",
+      "score": 1.2003989219665527,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 0.04383935406804085,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 0.08271771669387817,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "76",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 0.15333139896392822,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 22,
+      "scale": "0.5",
+      "score": 0.0054009598679840565,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "score": 0.011164805851876736,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 22,
+      "scale": "2.0",
+      "score": 0.0241136085242033,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 26,
+      "scale": "0.5",
+      "score": 0.009766817092895508,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "score": 0.01628047227859497,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 26,
+      "scale": "2.0",
+      "score": 0.028206367045640945,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 0.015384056605398655,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 0.03109310008585453,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 0.04812707379460335,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 9.363844871520996,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 20.83347511291504,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 23.836912155151367,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 27.71219253540039,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 32.85940170288086,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 35.074928283691406,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 18,
+      "scale": "0.5",
+      "score": 0.01724960282444954,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "score": 0.029022227972745895,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 18,
+      "scale": "2.0",
+      "score": 0.04786832630634308,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "0.5",
+      "score": 0.12574326992034912,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "score": 0.26121506094932556,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "2.0",
+      "score": 0.5146031379699707,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 1.2936955690383911,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 1.8049284219741821,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 9.063608169555664,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 24.300718307495117,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 25.482013702392578,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 24.221317291259766,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 7.131654739379883,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 21.08222770690918,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 27.17253303527832,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 150,
+      "scale": "0.5",
+      "score": 0.038162942975759506,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "score": 0.06935843080282211,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "79",
+      "chunk_start": 150,
+      "scale": "2.0",
+      "score": 0.18063095211982727,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 38,
+      "scale": "0.5",
+      "score": 21.285823822021484,
+      "class": "weak"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "score": 25.09223747253418,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 38,
+      "scale": "2.0",
+      "score": 26.47235107421875,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 42,
+      "scale": "0.5",
+      "score": 1.281688928604126,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "score": 1.2628093957901,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 42,
+      "scale": "2.0",
+      "score": 2.2351062297821045,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 46,
+      "scale": "0.5",
+      "score": 11.741226196289062,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 46,
+      "scale": "1.0",
+      "score": 16.340696334838867,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 46,
+      "scale": "2.0",
+      "score": 20.631959915161133,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 12.777694702148438,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 19.847171783447266,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 22.53813362121582,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 0.036693572998046875,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 0.06670656055212021,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 0.12006532400846481,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 98,
+      "scale": "0.5",
+      "score": 0.0659576877951622,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "score": 0.1256260722875595,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 98,
+      "scale": "2.0",
+      "score": 0.30431631207466125,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 86,
+      "scale": "0.5",
+      "score": 0.9492107033729553,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "score": 1.6194071769714355,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 86,
+      "scale": "2.0",
+      "score": 2.8856325149536133,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 0.42291459441185,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 0.8075911998748779,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 2.8899707794189453,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 158,
+      "scale": "0.5",
+      "score": 0.08158166706562042,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "score": 0.14854761958122253,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "81",
+      "chunk_start": 158,
+      "scale": "2.0",
+      "score": 0.2969302535057068,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 1.6200345754623413,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 2.540306329727173,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 2.384685754776001,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 16.68759536743164,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 18.697021484375,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 20.439775466918945,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 0.27770134806632996,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 0.5389230847358704,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 1.1661014556884766,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "0.5",
+      "score": 0.011970322579145432,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "score": 0.022394094616174698,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "2.0",
+      "score": 0.04038628935813904,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 1.1264010667800903,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 2.5196311473846436,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 14.058675765991211,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 1.1320226192474365,
+      "class": "weak"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 1.5284909009933472,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 3.5956220626831055,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 82,
+      "scale": "0.5",
+      "score": 0.0529659278690815,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "score": 0.11512753367424011,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 82,
+      "scale": "2.0",
+      "score": 0.2332572489976883,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 0.2550117075443268,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 0.5118599534034729,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 26.59909439086914,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 70,
+      "scale": "0.5",
+      "score": 1.300249457359314,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "score": 7.458076477050781,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 70,
+      "scale": "2.0",
+      "score": 22.585176467895508,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 1.608359694480896,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 2.360304355621338,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 2.891239643096924,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 154,
+      "scale": "0.5",
+      "score": 0.16296231746673584,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "score": 0.25102460384368896,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 154,
+      "scale": "2.0",
+      "score": 0.3328273296356201,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 54,
+      "scale": "0.5",
+      "score": 24.390029907226562,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "score": 24.9567928314209,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 54,
+      "scale": "2.0",
+      "score": 24.457536697387695,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 1.283995509147644,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 1.5098254680633545,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 18.532474517822266,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 66,
+      "scale": "0.5",
+      "score": 0.1479187160730362,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "score": 0.28410208225250244,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 66,
+      "scale": "2.0",
+      "score": 0.655329167842865,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 0.09876497089862823,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 0.23117445409297943,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 0.4851212501525879,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 106,
+      "scale": "0.5",
+      "score": 0.10071327537298203,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "score": 0.15174205601215363,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 106,
+      "scale": "2.0",
+      "score": 0.22110286355018616,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "0.5",
+      "score": 0.07813338190317154,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "score": 0.13087593019008636,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "2.0",
+      "score": 0.19683440029621124,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "90",
+      "chunk_start": 138,
+      "scale": "0.5",
+      "score": 0.06918930262327194,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "90",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "score": 0.1530243456363678,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "90",
+      "chunk_start": 138,
+      "scale": "2.0",
+      "score": 0.3390001058578491,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 22,
+      "scale": "0.5",
+      "score": 0.017851851880550385,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "score": 0.03183574602007866,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 22,
+      "scale": "2.0",
+      "score": 0.04742676764726639,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 58,
+      "scale": "0.5",
+      "score": 26.36323356628418,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "score": 26.284448623657227,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 58,
+      "scale": "2.0",
+      "score": 26.19514274597168,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 62,
+      "scale": "0.5",
+      "score": 10.772397994995117,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "score": 19.266918182373047,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 62,
+      "scale": "2.0",
+      "score": 25.333572387695312,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "0.5",
+      "score": 1.0006248950958252,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "score": 11.291419982910156,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "2.0",
+      "score": 22.960987091064453,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 78,
+      "scale": "0.5",
+      "score": 1.0816580057144165,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 78,
+      "scale": "1.0",
+      "score": 1.3500603437423706,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 78,
+      "scale": "2.0",
+      "score": 1.3853708505630493,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 82,
+      "scale": "0.5",
+      "score": 1.095120906829834,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "score": 1.0155558586120605,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 82,
+      "scale": "2.0",
+      "score": 1.2217475175857544,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 86,
+      "scale": "0.5",
+      "score": 23.442333221435547,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "score": 28.564861297607422,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 86,
+      "scale": "2.0",
+      "score": 28.910663604736328,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 90,
+      "scale": "0.5",
+      "score": 7.342337608337402,
+      "class": "weak"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "score": 14.11069393157959,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 90,
+      "scale": "2.0",
+      "score": 23.98854637145996,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 102,
+      "scale": "0.5",
+      "score": 0.046126075088977814,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "score": 0.09269678592681885,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 102,
+      "scale": "2.0",
+      "score": 0.19168789684772491,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "92",
+      "chunk_start": 22,
+      "scale": "0.5",
+      "score": 0.11943461000919342,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "92",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "score": 0.22935499250888824,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "92",
+      "chunk_start": 22,
+      "scale": "2.0",
+      "score": 0.5857887268066406,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "0.5",
+      "score": 2.5193748474121094,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "score": 3.371593952178955,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "2.0",
+      "score": 4.22933292388916,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "0.5",
+      "score": 0.008508305065333843,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "score": 0.017193032428622246,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "2.0",
+      "score": 0.028431804850697517,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 42,
+      "scale": "0.5",
+      "score": 0.011979070492088795,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "score": 0.020494230091571808,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 42,
+      "scale": "2.0",
+      "score": 0.03192188963294029,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 50,
+      "scale": "0.5",
+      "score": 0.010774130001664162,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "score": 0.020900964736938477,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 50,
+      "scale": "2.0",
+      "score": 0.03939797356724739,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 94,
+      "scale": "0.5",
+      "score": 1.4486596584320068,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "score": 1.3004707098007202,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 94,
+      "scale": "2.0",
+      "score": 1.5105737447738647,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 126,
+      "scale": "0.5",
+      "score": 0.31737685203552246,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "score": 0.5229685306549072,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 126,
+      "scale": "2.0",
+      "score": 0.7256163358688354,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "96",
+      "chunk_start": 46,
+      "scale": "0.5",
+      "score": 0.2873607873916626,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "96",
+      "chunk_start": 46,
+      "scale": "1.0",
+      "score": 1.3839750289916992,
+      "class": "nudge_fork"
+    },
+    {
+      "episode_id": "96",
+      "chunk_start": 46,
+      "scale": "2.0",
+      "score": 3.3756964206695557,
+      "class": "small_split"
+    },
+    {
+      "episode_id": "96",
+      "chunk_start": 82,
+      "scale": "0.5",
+      "score": 0.27843132615089417,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "96",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "score": 0.4236818253993988,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "96",
+      "chunk_start": 82,
+      "scale": "2.0",
+      "score": 0.7440411448478699,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "98",
+      "chunk_start": 110,
+      "scale": "0.5",
+      "score": 1.6086686849594116,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "98",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "score": 1.8123600482940674,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "98",
+      "chunk_start": 110,
+      "scale": "2.0",
+      "score": 2.3415958881378174,
+      "class": "topple_fork"
+    },
+    {
+      "episode_id": "98",
+      "chunk_start": 146,
+      "scale": "0.5",
+      "score": 0.06158194690942764,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "98",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "score": 0.10361005365848541,
+      "class": "quiet"
+    },
+    {
+      "episode_id": "98",
+      "chunk_start": 146,
+      "scale": "2.0",
+      "score": 0.1818598508834839,
+      "class": "quiet"
+    }
+  ]
+}
