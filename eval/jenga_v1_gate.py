@@ -33,12 +33,13 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from jenga_runtime import (DEFAULT_CHECKPOINT, DEFAULT_LMDB, JengaReplay,  # noqa: E402
-                           NUM_HIST, load_world_model, normalise_proprio, preprocess_frames)
+                           NUM_HIST, load_world_model)
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_short_held_tails import DirectJengaSim, extract_sim  # noqa: E402
 from jenga_stage0_noise_oracle import SCALES  # noqa: E402
 from jenga_stage3_predicted_forks import action_windows  # noqa: E402
 from jenga_state_data import step_state  # noqa: E402
+from jenga_v1_encode import preprocess as v1_preprocess  # noqa: E402
 from jenga_v1_probe import GROUPS  # noqa: E402
 from jenga_w5_gate3 import gate3, real_scores  # noqa: E402
 from jenga_w5_eval import hold_index, load_model, predict  # noqa: E402
@@ -79,18 +80,16 @@ class Estimator:
         return out[0].cpu().numpy()
 
 
-def encode_frames(model, device, frames, proprio):
-    """Same call as jenga_bulk_data.encode, so the probe sees the latents it was fitted on."""
+def encode_frames(encoder, device, frames, pixels):
+    """Direct DINOv2 call at `pixels`, matching jenga_v1_encode -- no model-side 196 px resize."""
     with torch.inference_mode():
-        z = model.encode_obs({
-            "visual": preprocess_frames(np.stack(frames)[:, None], device),
-            "proprio": normalise_proprio(np.stack(proprio)[:, None], device),
-        })["visual"][:, 0]
+        z = encoder.forward(v1_preprocess(np.stack(frames), device, pixels))
     return z.float().flatten(1).cpu().numpy()
 
 
 def model_scores(rows, dynamics, scale, snippets, lmdb, sim_archive, device, reset_base,
-                 estimator=None, encoder=None, collect=None, true_groups=()):
+                 estimator=None, encoder=None, collect=None, true_groups=(), pixels=196,
+                 render=(240, 320)):
     """Predicted ending spread per state and error size; estimated state when a probe is given."""
     wanted = {}
     for r in rows:
@@ -99,12 +98,16 @@ def model_scores(rows, dynamics, scale, snippets, lmdb, sim_archive, device, res
     out = []
     with tempfile.TemporaryDirectory(prefix="jenga_v1_") as temp:
         sim = DirectJengaSim(str(extract_sim(sim_archive, temp)))
+        if tuple(render) != (240, 320):
+            import mujoco
+            sim.renderer.close()
+            sim.renderer = mujoco.Renderer(sim.model, height=render[0], width=render[1])
         try:
             for episode_id in sorted(wanted, key=int):
                 episode = replay.episode(episode_id)
                 sim.reset(int(episode_id) + reset_base if reset_base is not None
                           else int(episode_id))
-                history, proprio = [sim.render()], [sim.proprio()]
+                history = [sim.render()]
                 for step, action in enumerate(episode.actions):
                     if step in wanted[episode_id]:
                         row = wanted[episode_id][step]
@@ -112,9 +115,10 @@ def model_scores(rows, dynamics, scale, snippets, lmdb, sim_archive, device, res
                         if estimator is None:
                             start = truth
                         else:
-                            latents = encode_frames(encoder, device,
-                                                    history[-NUM_HIST:][-estimator.frames:],
-                                                    proprio[-NUM_HIST:][-estimator.frames:])
+                            window = history[-estimator.frames:]
+                            while len(window) < estimator.frames:
+                                window = [window[0]] + window
+                            latents = encode_frames(encoder, device, window, pixels)
                             start = estimator(latents)
                             # Ablation: hand back the TRUE value of some groups, to find which
                             # estimation error the monitor is actually sensitive to.
@@ -135,8 +139,8 @@ def model_scores(rows, dynamics, scale, snippets, lmdb, sim_archive, device, res
                                         "scale": str(s), "score": spread,
                                         "class": row["by_scale"][str(s)]["class"]})
                     sim.execute(action)
-                    history.append(sim.render()); proprio.append(sim.proprio())
-                    history, proprio = history[-NUM_HIST:], proprio[-NUM_HIST:]
+                    history.append(sim.render())
+                    history = history[-max(NUM_HIST, estimator.frames if estimator else 1):]
         finally:
             sim.close()
             replay.close()
@@ -167,14 +171,19 @@ def main():
     ap.add_argument("--test", default=str(ROOT / "results/jenga/holdout3_stage2_shared.json"))
     ap.add_argument("--test-reset-seed-base", type=int, default=1000)
     ap.add_argument("--stage0-cache", default=str(ROOT / "results/jenga/holdout_stage0_cache.npz"))
-    ap.add_argument("--true-groups", nargs="*", default=[], choices=list(GROUPS),
+    ap.add_argument("--pixels", type=int, default=196)
+    ap.add_argument("--render", type=int, nargs=2, default=(240, 320),
+                    metavar=("HEIGHT", "WIDTH"))
+    ap.add_argument("--true-groups", nargs="*", default=["gripper"], choices=list(GROUPS),
+                    help="default is gripper: end-effector pose is proprioception at deployment, "
+                         "not something vision should be asked to reconstruct",
                     help="state groups to take from the simulator instead of the probe")
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dynamics, scale = load_model(args.model, device)
-    encoder = load_world_model(args.checkpoint, device)
+    encoder = load_world_model(args.checkpoint, device).encoder
     estimator = Estimator(args.probe, args.probe_kind, device)
     snippets = np.load(args.stage0_cache, allow_pickle=False)["snippets"]
     dev_rows = json.loads(Path(args.dev).read_text())["rows"]
@@ -182,10 +191,11 @@ def main():
 
     accuracy = []
     dev = model_scores(dev_rows, dynamics, scale, snippets, args.lmdb, args.sim_archive, device,
-                       None, estimator, encoder, true_groups=args.true_groups)
+                       None, estimator, encoder, true_groups=args.true_groups,
+                       pixels=args.pixels, render=args.render)
     test = model_scores(test_rows, dynamics, scale, snippets, args.lmdb, args.sim_archive, device,
                         args.test_reset_seed_base, estimator, encoder, accuracy,
-                        true_groups=args.true_groups)
+                        true_groups=args.true_groups, pixels=args.pixels, render=args.render)
     result = {"protocol": {"pipeline": "DINO latents -> probe -> frozen dynamics",
                            "probe": args.probe, "probe_kind": args.probe_kind,
                            "dynamics": args.model,

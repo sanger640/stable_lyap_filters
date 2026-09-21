@@ -57,6 +57,49 @@ def load_pairs(bulk_dir, trace_dir, frames):
     return np.concatenate(latents), np.concatenate(states), np.asarray(ids)
 
 
+def load_encoded(directory, frames):
+    """Load `jenga_v1_encode` output: -> latents (N, frames, tokens*384), states (N, 61), ids."""
+    latents, states, ids = [], [], []
+    for path in sorted(glob.glob(str(Path(directory) / "ep*_seed*.npz"))):
+        d = np.load(path, allow_pickle=False)
+        z = d["latents"][:, -frames:]                      # (S, frames, tokens, 384)
+        latents.append(z.reshape(len(z), frames, -1).astype(np.float32))
+        states.append(d["state"])
+        ids.extend([f"{d['episode_id']}:{d['seed']}"] * len(z))
+    return np.concatenate(latents), np.concatenate(states), np.asarray(ids)
+
+
+def geometry_errors(predicted, truth):
+    """The quantities the monitor turned out to care about, in millimetres."""
+    p = 1000 * predicted[:, :9].reshape(-1, 3, 3).numpy()
+    t = 1000 * truth[:, :9].reshape(-1, 3, 3).numpy()
+    err = p - t
+    common = err.mean(1, keepdims=True)
+    out = {"absolute_position_mm": float(np.sqrt((err ** 2).sum(-1).mean())),
+           "common_mode_mm": float(np.sqrt((common ** 2).sum(-1).mean())),
+           "relative_position_mm": float(np.sqrt(((err - common) ** 2).sum(-1).mean())),
+           "gripper_xyz_mm": float(np.sqrt((1000 * (predicted[:, 57:60]
+                                                    - truth[:, 57:60])).pow(2).sum(-1).mean())),
+           "contact_accuracy": float(((predicted[:, 45:57] > 0.5)
+                                      == (truth[:, 45:57] > 0.5)).float().mean())}
+    for a, b, name in ((0, 1, "grasped_left"), (0, 2, "grasped_right"), (1, 2, "left_right")):
+        gap_p = np.linalg.norm(p[:, a] - p[:, b], axis=-1)
+        gap_t = np.linalg.norm(t[:, a] - t[:, b], axis=-1)
+        out[f"gap_{name}_mm"] = float(np.sqrt(((gap_p - gap_t) ** 2).mean()))
+    # Orientation: angle between the true and predicted body z-axis, from the stored 6D columns.
+
+    def axis(x):
+        block = x[:, 9:27].reshape(-1, 3, 3, 2).numpy()
+        c0, c1 = block[..., 0], block[..., 1]
+        c0 = c0 / np.linalg.norm(c0, axis=-1, keepdims=True).clip(1e-9)
+        c1 = c1 / np.linalg.norm(c1, axis=-1, keepdims=True).clip(1e-9)
+        z = np.cross(c0, c1)
+        return z / np.linalg.norm(z, axis=-1, keepdims=True).clip(1e-9)
+    cosine = (axis(predicted) * axis(truth)).sum(-1).clip(-1, 1)
+    out["orientation_deg"] = float(np.degrees(np.arccos(cosine)).mean())
+    return out
+
+
 def fit_basis(latents, components, device):
     """PCA basis over the flattened tokens of TRAINING rows, fitted once and reused everywhere."""
     flat = torch.as_tensor(latents.reshape(-1, latents.shape[-1]), device=device)
@@ -115,6 +158,8 @@ def errors(predicted, truth):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--encoded", default=None,
+                    help="jenga_v1_encode output directory (preferred); overrides --bulk/--trace")
     ap.add_argument("--bulk", default=str(ROOT / "results/jenga/bulk_data"))
     ap.add_argument("--trace", default=str(ROOT / "results/jenga/trace_data"))
     ap.add_argument("--frames", type=int, default=3, help="1 = single frame, >1 = short history")
@@ -126,7 +171,10 @@ def main():
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    latents, states, ids = load_pairs(args.bulk, args.trace, args.frames)
+    if args.encoded:
+        latents, states, ids = load_encoded(args.encoded, args.frames)
+    else:
+        latents, states, ids = load_pairs(args.bulk, args.trace, args.frames)
     unique = sorted(set(ids))
     val_ids = set(unique[:max(1, int(len(unique) * args.val_fraction))])
     is_val = np.array([i in val_ids for i in ids])
@@ -144,13 +192,17 @@ def main():
               "states": len(latents), "held_out_states": int(is_val.sum()), "probes": {}}
 
     weights = fit_linear(train, y_train, args.ridge)
+    linear_held = apply_linear(weights, held)
     result["probes"]["linear"] = {"train": errors(apply_linear(weights, train), y_train),
-                                  "held_out": errors(apply_linear(weights, held), y_held)}
+                                  "held_out": errors(linear_held, y_held),
+                                  "geometry": geometry_errors(linear_held, y_held)}
     mlp = fit_mlp(train, y_train, device)
     with torch.no_grad():
+        mlp_held = mlp(held.to(device)).cpu()
         result["probes"]["mlp"] = {
             "train": errors(mlp(train.to(device)).cpu(), y_train),
-            "held_out": errors(mlp(held.to(device)).cpu(), y_held)}
+            "held_out": errors(mlp_held, y_held),
+            "geometry": geometry_errors(mlp_held, y_held)}
 
     Path(args.output).write_text(json.dumps(result, indent=2) + "\n")
     if args.save_probe:
@@ -162,6 +214,13 @@ def main():
                         f"({result['probes'][probe]['held_out'][g]['relative']:.2f})"
                         for g in GROUPS)
         print(f"  {probe:6s} held-out rmse(relative): {line}", flush=True)
+        g = result["probes"][probe]["geometry"]
+        print(f"  {'':6s} geometry: absolute {g['absolute_position_mm']:.2f} mm "
+              f"(common-mode {g['common_mode_mm']:.2f}, relative {g['relative_position_mm']:.2f}) "
+              f"gaps {g['gap_grasped_left_mm']:.2f}/{g['gap_grasped_right_mm']:.2f}/"
+              f"{g['gap_left_right_mm']:.2f} mm  orientation {g['orientation_deg']:.2f} deg  "
+              f"gripper {g['gripper_xyz_mm']:.2f} mm  contacts {100 * g['contact_accuracy']:.1f}%",
+              flush=True)
 
 
 if __name__ == "__main__":
