@@ -1,0 +1,126 @@
+{
+  "benchmark": "Jenga execution-noise fork benchmark (PLAN_NEXT.md Phase 1)",
+  "created": "2026-09-21T15:01:34+00:00",
+  "bench_file": "results/jenga/bench/jenga_bench.npz",
+  "bench_sha256": "8bf358f2b6ab56f50b27c32a4d4c2e165f2e516f5cdf3a7f57e6e700bceb19b9",
+  "eval_config": {
+    "scales": [
+      0.5,
+      1.0,
+      2.0
+    ],
+    "probes": 64,
+    "hold_step": 30,
+    "score": "RMS spread of the 3 block positions (mm) over the probes after the hold",
+    "positive_class": "topple_fork",
+    "negative_class": "quiet",
+    "operating_point": "per scale, 95th percentile (numpy method='higher') of DEV quiet scores; alarm = score > threshold",
+    "budget": 0.05,
+    "matched_fpr": [
+      0.01,
+      0.03,
+      0.05,
+      0.1
+    ],
+    "matched_threshold": "quantile of TEST quiet scores at 1 - fpr, method='higher'",
+    "blind_margin": 0.5,
+    "blind": "a fork whose score is below blind_margin x the pre-declared threshold",
+    "own_hold": false,
+    "bootstrap_resamples_rate": 2000,
+    "bootstrap_resamples_auc": 1000,
+    "bootstrap_seed": 0,
+    "quantiles": [
+      0.05,
+      0.25,
+      0.5,
+      0.75,
+      0.95,
+      0.99
+    ]
+  },
+  "components_sha256": {
+    "test_fork_states_1x": "79c0cd1a7352293dee04a21983daf548ad0830ad34ee73e6530240614c64cd3b",
+    "test_quiet_states_1x": "aa73040221ef00ae7199fc41ef799213ea052c2c19192b54de5737b97141a5d8",
+    "dev_states": "b7401b38482b805116ba399af6f09e3e8dfa1a43bb7ab79e2cab4bc40bf44c3a",
+    "perturbation_set_snippets": "b0c6401672f68f8abb95e53b2e4a39f2b3278bafffa31b4e8b862b5f4fb9878b",
+    "perturbation_windows_test": "4456c539dcd51e417a850cfcb07314006e172b71d70ef5241756ef5e14f53233",
+    "perturbation_windows_dev": "f3780ba15f0304fb8e0b70fb73e1f72642a31c35e1bbb71977ee8965bf987a37",
+    "oracle_endings_test": "587393aea613ed3aabf4ed51a269691d20289d3656c7922005e287d9c0ce3ab3",
+    "oracle_endings_dev": "15ff2f790922f23e12f1e0b27a83bedf921eb0a574eb502fa0b1a0f5e6bfdfcb",
+    "frames_test": "cef105e6582f25c4a6191fb6a2d62e16c6f492465d54bc941e19c8dec551e32f",
+    "frames_dev": "89eaf7622bc9cc1d095b45418bb92484071ffa587a71965532138dc64758e844"
+  },
+  "sources_sha256": {
+    "results/jenga/holdout3_stage0.json": "4f7ce39e691fec537eb3aea6e660610bc84817e3529f1d2085d099e0714dc65a",
+    "results/jenga/holdout3_stage0_cache.npz": "39e493d06b460344547b5c451194710047cd66165cb2feeeb4ee93ce4a47fe4b",
+    "results/jenga/holdout3_stage2_shared.json": "6da8f6541d5630ff5d4ab81bdcbcc22fc68759c8f131357f43c911195cb5735a",
+    "results/jenga/holdout_stage0.json": "eed276c90203650c9f9dfd93b8ca5a0eaa3d985841b5d42433f395ae263929fc",
+    "results/jenga/holdout_stage0_cache.npz": "26b0de0b09fab7517a2d5185af0b343d04da86afdab7d3e5f34c76e6a6053bb7",
+    "results/jenga/holdout_stage2_shared.json": "2ddaee5503b2b7ae04a3ac2f7ca712d828164cedcbbc335bd659330f7f9e56cc",
+    "vendor/panda_express_sim.tar": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f"
+  },
+  "splits": {
+    "dev": {
+      "states": 140,
+      "episodes": 53,
+      "reset_seed_base": null,
+      "classes_by_scale": {
+        "0.5": {
+          "nudge_fork": 16,
+          "quiet": 101,
+          "small_split": 9,
+          "topple_fork": 11,
+          "weak": 3
+        },
+        "1.0": {
+          "nudge_fork": 17,
+          "quiet": 89,
+          "small_split": 8,
+          "topple_fork": 23,
+          "weak": 3
+        },
+        "2.0": {
+          "nudge_fork": 1,
+          "quiet": 64,
+          "small_split": 15,
+          "topple_fork": 60
+        }
+      }
+    },
+    "test": {
+      "states": 214,
+      "episodes": 53,
+      "reset_seed_base": 1000,
+      "classes_by_scale": {
+        "0.5": {
+          "nudge_fork": 9,
+          "quiet": 145,
+          "small_split": 9,
+          "topple_fork": 42,
+          "weak": 9
+        },
+        "1.0": {
+          "nudge_fork": 10,
+          "quiet": 113,
+          "small_split": 7,
+          "topple_fork": 84
+        },
+        "2.0": {
+          "nudge_fork": 1,
+          "quiet": 118,
+          "small_split": 12,
+          "topple_fork": 82,
+          "weak": 1
+        }
+      }
+    }
+  },
+  "environment": {
+    "git_commit": "7543329fd1b1790ad13bbb3cfcdcf3266f33453c",
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "torch": "2.9.0+cu128",
+    "mujoco": "3.13.0",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35"
+  }
+}

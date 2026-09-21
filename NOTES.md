@@ -3746,3 +3746,37 @@ The open gap is now at 2x: 83% vs 99%, 12 of 82 forks still missed where privile
 
 Results: `results/jenga/v1_probe_px*.json`, `v1_gate_px196_prop.json`. The latent caches
 `v1_enc_196` (1.3 GB) and `v1_enc_392` (5.0 GB) are gitignored and regenerable.
+
+## Phase 1: the Jenga benchmark is frozen (2026-09-21)
+
+`eval/jenga_bench.py` replaces three scorers (`jenga_w5_gate3.py`, `jenga_w6_report.py`,
+`jenga_w6_curves.py`) with one evaluator over one frozen cache.
+
+`freeze` simulates once to every benchmark state -- 140 dev (batch 1) and 214 test (batch 3, 84
+topple forks at 1x) -- and stores the exact start state, the 64 perturbed action windows per scale,
+every probe's real simulator ending, and the three camera frames ending at the chunk start. The
+manifest records the file's sha256, per-component hashes (fork states, quiet states, perturbation
+set, windows, oracle endings, frames), the sha256 of every source file and the simulator archive,
+the git commit and library versions, and every evaluation constant. `eval` refuses to run if the
+file OR any constant differs from the frozen values (tested: changed file, changed constant, and
+missing freeze all refuse).
+
+Checks before trusting it:
+
+* **Privileged path reproduces the earlier sim-based run bit-for-bit** on `w6_gnn_n5_s1`: all 642
+  test state-scale scores identical; thresholds, recall, FP and contrast identical at every scale;
+  24/84 blind forks at 1x.
+* **V1 path reproduces the headline exactly** (thresholds, 67% at 1x, 83% at 2x, 25/84 blind), but
+  2 of 214 test states differ from the old live-rendered run, one by 2.7 mm. That state (ep 57, step
+  98) is a RUNAWAY QUIET state scoring ~36 mm where a typical quiet state scores ~0.1 mm: a tiny
+  difference in the DINO-estimated start state was amplified by an unstable rollout. The old V1 run
+  re-rendered and re-encoded live; with frames frozen, both pipelines are bit-deterministic run to
+  run (max difference 0 across 1,062 state-scales). Numerical sensitivity of runaway quiet states is
+  itself worth remembering for the quiet-tail analysis.
+* Evaluation takes ~2.7 minutes per checkpoint with no simulator, down from ~25.
+
+Seed-1 reference line (the frozen evaluator's own output), 1x: pre-declared recall 67%, FP 4%, AUC
+0.945, matched-FPR recall 27/54/67/85% at 1/3/5/10%, blind 24/84, quiet p99 20.98 mm, contrast 107.0.
+V1 on the same seed: 67%, FP 4%, AUC 0.936, 6/63/69/75%, blind 25/84, quiet p99 26.10 mm, contrast
+70.7. Note the V1 recall at 1% FPR (6%) is far below the privileged 27%: the extra runaway quiet
+states set the strictest thresholds.

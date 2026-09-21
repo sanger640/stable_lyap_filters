@@ -168,6 +168,20 @@ baseline `results/jenga/w6_gnn_n5_s*.pt`; V1 baseline `eval/jenga_v1_gate.py` wi
 `results/jenga/v1_probe_px196_c4096.pt`. The canonical command consolidates these three scorers so
 every number comes from one pass over one set of per-state scores.
 
+**Status (2026-09-21): DONE.** `eval/jenga_bench.py` (`freeze` / `eval` / `verify`). Frozen cache
+`results/jenga/bench/jenga_bench.npz` (32 MB, gitignored), manifest
+`results/jenga/bench/manifest.json` (committed; bench sha256 `8bf358f2b6ab56f5...`). Evaluation
+needs no simulator (~2.7 min per checkpoint, was ~25), reproduces the earlier privileged results
+bit-for-bit (all 642 test state-scales), and is bit-deterministic run to run for both the
+privileged and the V1 path. Outputs go to `results/jenga/bench_eval/<checkpoint>.json`.
+
+```
+python eval/jenga_bench.py verify
+python eval/jenga_bench.py eval --model results/jenga/w6_gnn_n5_s1.pt
+python eval/jenga_bench.py eval --model results/jenga/w6_gnn_n5_s1.pt \
+    --probe results/jenga/v1_probe_px196_c4096.pt            # V1: DINO + proprioception
+```
+
 ## Phase 2 — Blind forks, defined across seeds
 
 **Do not analyse the 24/84 misses of one seed as if they were inherent dynamics failures.** Seed
