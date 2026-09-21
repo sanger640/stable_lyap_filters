@@ -225,6 +225,13 @@ a mechanism taxonomy.
 **Decision gate:** no new architecture until there is evidence for what the current dynamics cannot
 represent.
 
+**Status (2026-09-21): steps 2-4 DONE** (`eval/jenga_blind_freq.py`,
+`results/jenga/blind_freq_gnn_n5.json`). At 1x: 11 forks robust blind under both the pre-declared and
+a matched-5%-FPR operating point (15 / 13 under either alone); at 2x, none. Seed 1's 28 misses split
+12 robust / 13 seed-sensitive / 3 usually detected. The robust set shows near-zero predicted
+response (0.3-0.7 mm vs 8-28 mm real), mostly on narrow branches (1-8 of 64 probes topple), and
+clusters into 7 situations. Details in NOTES.md.
+
 **[repo note]** The existing per-probe anatomy (`eval/jenga_w6_diagnose.py`) already found that
 seed 1's false negatives sit at ~0.8 mm predicted spread against thresholds of 1.5-3.4 mm, i.e.
 near-zero response rather than near-misses. The cross-seed `q_i` will show whether that holds for the

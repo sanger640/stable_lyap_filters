@@ -3780,3 +3780,43 @@ Seed-1 reference line (the frozen evaluator's own output), 1x: pre-declared reca
 V1 on the same seed: 67%, FP 4%, AUC 0.936, 6/63/69/75%, blind 25/84, quiet p99 26.10 mm, contrast
 70.7. Note the V1 recall at 1% FPR (6%) is far below the privileged 27%: the extra runaway quiet
 states set the strictest thresholds.
+
+## Phase 2 steps 2-4: blind forks defined across 10 seeds (2026-09-21)
+
+All 10 `w6_gnn_n5` seeds scored by the frozen evaluator (`results/jenga/bench_eval/`), then
+`eval/jenga_blind_freq.py` -> `results/jenga/blind_freq_gnn_n5.json`. Per fork, q = fraction of seeds
+that MISS it. Two operating points, because each seed's dev-set threshold realises a different test
+FPR (2-8% against a 5% budget) and a conservatively-thresholded seed "misses" forks for reasons
+unrelated to its dynamics: the pre-declared point, and a matched 5% test FPR (an analysis equaliser).
+
+| scale | forks | robust blind (q>=0.8) pre-declared / matched | robust under BOTH | seed-sensitive | usually detected |
+|---|---|---|---|---|---|
+| 0.5x | 42 | 7 / 10 | 6 | 22 / 22 | 13 / 10 |
+| **1x** | 84 | 15 / 13 | **11** | 31 / 32 | 38 / 39 |
+| 2x | 82 | 0 / 1 | **0** | 2 / 15 | 80 / 66 |
+
+1x miss histogram (seeds missing -> forks), pre-declared: 0:14 1:14 2:10 3:11 4:8 5:3 6:5 7:4 8:5 9:7 10:3.
+
+1. **The systematic blind set is 11 forks at 1x, not ~24.** Seed 1 misses 28 forks at its
+   pre-declared point (its "24/84 blind" is the deeper score < 0.5 x threshold count): 12 are robust
+   blind, 13 seed-sensitive and 3 usually detected by other seeds. More than half of one seed's misses
+   are optimisation luck, as the plan anticipated.
+2. **At 2x there are no systematic blind forks** under both definitions. Every 2x fork is caught by
+   most seeds.
+3. **The robust set is near-zero response, not near-misses.** Median predicted spread 0.31-0.71 mm
+   against real spreads of 8-28 mm: the model barely responds to the perturbation at all.
+4. **Mostly narrow branches.** 11 of the 17 forks robust under either definition topple on only 1-8 of
+   64 probes; the model misses forks where only a sliver of the perturbation distribution crosses
+   the boundary. Not all: ep 17 steps 102 and 106 topple on 38 and 47 of 64 and are still missed.
+5. **Clustered in time.** The 11 come from 7 situations (ep 17 steps 98/102/106; ep 11 86/90; ep 77
+   102/106 are consecutive chunk starts 4 steps apart), so the effective sample is smaller than 11.
+6. **Two separable quantities govern performance, across the 10 seeds:** quiet p99 vs recall at 1%
+   FPR, Spearman -0.71; median fork spread vs recall at 5% FPR, +0.87; quiet p99 vs recall at 5%, only
+   +0.14. Strict thresholds are set by the quiet tail, moderate ones by fork response. Seed 5 has the
+   best 5%-FPR recall (80%) and ZERO at 1% (quiet p99 39.4 mm); seed 6 gets 69% at 1% with quiet p99
+   4.4 mm. Phase 3 must report both, since a model can win one and lose the other.
+
+Bug caught on the way: the default seed glob also matched the V1 evaluation `w6_gnn_n5_s1_v1.json`;
+the duplicate-seed guard refused to run. Seed files are now matched exactly.
+
+Next: re-simulate the robust forks with every-step logging (Phase 2 step 5).
