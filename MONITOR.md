@@ -1,3 +1,6 @@
+> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (2026-09-21).** The monitor construction below
+> (execution-noise probes, common-target hold, spread of endings) is still the one in use.
+
 > Plain-language version with figures: [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md). Current status and next steps: [`HANDOFF.md`](HANDOFF.md).
 
 > **Which variant is current (2026-09-17).** Everything below describes the ORIGINAL method:

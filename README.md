@@ -3,13 +3,16 @@
 > **Current research status (2026-09-21):** the goal is a task-agnostic runtime safety monitor:
 > perturb the intended action with realistic execution error, roll the counterfactuals forward in a
 > learned world model, and flag the action when the futures split. No task features and no failure
-> labels in the monitor; Jenga is only the first testbed. On Jenga the counterfactual monitor works
-> from privileged state (64% fork recall at 1x over 10 seeds, 88% ceiling) and from DINO images plus
-> proprioception (67% at 1x), and the finding that drives the plan is that ordinary world-model
-> quality does not predict fork preservation. **The plan being executed is
-> [PLAN_NEXT.md](PLAN_NEXT.md)**; results are in [NOTES.md](NOTES.md). Nothing here is validated
-> as a deployed safety filter, and universality has not yet been tested on a second task.
-> The calibrated divergence monitor described below is a legacy baseline.
+> labels in the monitor; Jenga is only the first testbed. On a frozen Jenga benchmark
+> (`eval/jenga_bench.py`, 84 forks at 1x) the monitor works from privileged state (64% fork recall
+> over 10 seeds; 88% ceiling) and from DINO images plus proprioception (67%). Ordinary world-model
+> quality does not predict fork preservation. The forks the dynamics systematically miss are upright
+> blocks pushed past their tipping angle ([blind_fork_analysis.md](blind_fork_analysis.md)); the
+> experiment now running tests whether more training coverage of that transition fixes it, or
+> whether a counterfactual training objective is needed. **The plan being executed is
+> [PLAN_NEXT.md](PLAN_NEXT.md)**; results are in [NOTES.md](NOTES.md). Nothing here is validated as
+> a deployed safety filter, and universality has not yet been tested on a second task. The
+> calibrated divergence monitor described below is a legacy baseline.
 
 > **New here?** [**TOY_EXPERIMENT.md**](TOY_EXPERIMENT.md) explains the whole thing in plain terms
 > with figures — the block, the physics, the monitor algorithm, and what we found.

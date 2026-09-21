@@ -1,12 +1,25 @@
 # HANDOFF — stability-based safety monitor
 
-> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (revised 2026-09-21).** Two tracks. Track A is
-> the privileged-state mechanism study (oracle, Jenga features allowed); Track B is the universal
-> deployable monitor (generic vision + proprioception + action, no Jenga state). Immediate work is
-> Track A: freeze the benchmark, analyse the ~24/84 forks blind under exact state, and test a
-> CoCo-inspired intervention-consistency loss. Then a direct DINO latent world model (V2-A), then a
-> second and third task. V1 (DINO + proprioception -> state -> GNN) already matches privileged
-> state at 1x. Everything below this banner is the historical record.
+> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (revised 2026-09-21).** Two tracks: Track A is the
+> privileged-state mechanism study (an oracle; Jenga features allowed for diagnosis), Track B the
+> universal deployable monitor (generic vision + proprioception + action, no Jenga state).
+>
+> **Where it stands.** Phase 1 done: the benchmark is frozen behind one evaluator that refuses to run
+> if the cache or any constant changes. Phase 2 done: 11 forks at 1x are missed by >= 8 of 10 seeds,
+> none at 2x; they are upright blocks pushed past their tipping angle, which the model under-rotates
+> and lets settle back ([`blind_fork_analysis.md`](blind_fork_analysis.md)). Step 7 in progress:
+> D0 vs D0 + contact-window data vs D1 vs D2, to separate a coverage problem from an objective
+> problem; new launches are paused for a numerically-checked speed audit (NOTES.md).
+>
+> **Commands.**
+> `python eval/jenga_bench.py verify` -- check the frozen benchmark is intact.
+> `python eval/jenga_bench.py eval --model results/jenga/<checkpoint>.pt` -- score a checkpoint
+> (add `--probe results/jenga/v1_probe_px196_c4096.pt` for the DINO + proprioception pipeline).
+> `python eval/jenga_blind_freq.py` -- cross-seed miss frequency per fork.
+> `python eval/jenga_step7_compare.py` -- the Step 7 arm comparison.
+> Training: `eval/jenga_w6_simple.py` (defaults = the D0 recipe; `--cw-data`, `--cw-loss`).
+>
+> Everything below this banner is the historical record.
 
 > **Current handoff (2026-09-17, end of day).** The live line of work is the Stage 0-2b
 > sequence at the END of this document, not the basin/dissent method described below. In one

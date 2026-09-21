@@ -494,9 +494,16 @@ sensitivity.
 
 **No new architecture before steps 1-6 are complete.**
 
-**Status (2026-09-21): steps 1-6 DONE.** Next is step 7 in its revised form (Phase 3 revision): first
-simulate same-state branches from true states inside the contact window, then compare D0, D0 +
-contact-window data, D1 and D2 at >= 10 seeds each on the frozen benchmark.
+**Status (2026-09-21): steps 1-6 DONE; step 7 IN PROGRESS.** Contact-window branches are generated
+(`eval/jenga_cw_data.py`: 24k contact + 7k no-contact points from training episodes only; adds 3.2x
+the original count of upright-block rotation transitions). Arms: D0 (the existing `w6_gnn_n5` seeds,
+reproduced bit-for-bit by the default trainer path), D0+CW, D1+CW, D2+CW, with D1 and D2 on the same
+short 6-step unrolls so they differ only in the objective. First two paired D0+CW seeds improve
+strongly (e.g. seed 2: 40 -> 7 blind forks); arm-level robust-blind counts are pending. New launches
+are paused for a speed audit: only a batched branch loss is bit-identical to the current code;
+torch.compile's cudagraphs backend gives wrong gradients and inductor diverges under Adam, so
+neither may be mixed into an arm. Unfinished D1/D2 seeds restart on optimised code only if a
+bit-identical configuration reaches >= 1.5x seeds/hour (`eval/jenga_w6_speed.py`).
 
 Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
 (Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA

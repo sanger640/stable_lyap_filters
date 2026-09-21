@@ -1,5 +1,9 @@
 # The execution-noise fork monitor on Jenga — what works, what does not
 
+> **Status note (2026-09-21).** This write-up covers the 2026-09-17 line of work. The current plan is
+> [`PLAN_NEXT.md`](PLAN_NEXT.md); the latest results are in [`NOTES.md`](NOTES.md) and
+> [`blind_fork_analysis.md`](blind_fork_analysis.md).
+
 Plain-language writeup of the 2026-09-17 line of work. Companion to
 [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md) (the toy result), [`MONITOR.md`](MONITOR.md) (the original
 method spec) and [`HANDOFF.md`](HANDOFF.md) (state and commands). Every number below comes from
