@@ -3692,3 +3692,57 @@ Where this leaves vision: the bottleneck is precise, jointly-correct block pose 
 not semantic richness and not temporal observability. An object-centric keypoint readout starts
 from the 3.6 mm common-mode-free residual and 1.7-2.7 mm gaps, so it needs to close ~2-3 mm, not
 ~9 mm. Results: `results/jenga/v1_probe_*.json`, `v1_gate_*.json`.
+
+## V1 resolution sweep, and vision matching privileged state at 1x (2026-09-21)
+
+`eval/jenga_v1_encode.py` renders and encodes chunk-start frames at a chosen resolution, calling
+frozen DINOv2 DIRECTLY. The bundled world model resizes every input to 196x196 (14x14 patches)
+before the encoder, so ALL earlier vision work read geometry off a fixed 14x14 grid whatever the
+camera did. Direct calls give 21x21 at 294 px and 28x28 at 392 px, and the camera resolution moves
+with the encoder input (upsampling a 240x320 render adds pixels but no information).
+
+### Resolution does not improve the geometry that matters
+
+Linear probe, held-out episodes, fitted on training configurations only:
+
+| condition | basis | absolute | common-mode | **relative** | gaps (mm) | orientation | contacts |
+|---|---|---|---|---|---|---|---|
+| 196 px, 1024 | 1024 | 14.90 | 14.36 | 3.96 | 3.14/3.08/2.49 | 2.17 deg | 98.3% |
+| 196 px, 2048 | 2048 | 8.80 | 7.99 | 3.67 | 2.53/2.58/1.79 | 1.97 deg | 98.1% |
+| 196 px, 4096 | 4096 | 6.14 | 4.94 | **3.64** | 2.41/2.59/1.60 | 1.92 deg | 98.1% |
+| 392 px, 1024 | 1024 | 55.55 | 55.36 | 4.58 | 4.77/5.21/6.87 | 2.26 deg | 98.8% |
+| 392 px, 2048 | 2048 | 32.69 | 32.47 | 3.84 | 3.93/4.17/4.11 | 2.06 deg | 98.7% |
+| 392 px, 4096 | 3320 | 25.46 | 25.20 | **3.65** | 3.66/3.86/3.28 | 1.95 deg | 98.4% |
+
+Relative position saturates at ~3.6 mm at BOTH resolutions; gaps are worse at 392 px; only contact
+accuracy improves. Extra components almost entirely fix the COMMON-MODE offset, not the relative
+geometry -- so the 3.6 mm floor is not a component-count artifact, which the 4x sweep rules out.
+Read this as a READOUT result, not a DINO result: this probe flattens every token into one vector
+and takes a global PCA, so at 4x the tokens it dilutes spatial detail rather than concentrating it.
+A resolution-blind readout failing to benefit from resolution is what you expect when the readout
+is the bottleneck. The object-centric spatial readout must therefore be tested at BOTH resolutions.
+
+### Vision + proprioception MATCHES privileged state at 1x
+
+Same batch-3 states, same 64 probes, same scales, same score, same threshold rule, same frozen
+`w6_gnn_n5_s1`. Only the initial condition changes; end-effector pose comes from proprioception.
+
+| initial condition | state RMSE | 1x recall | FP | blind forks | 2x recall |
+|---|---|---|---|---|---|
+| vision + proprioception (old encode, 2048 comp) | 4.44 mm | 36% | 2% | 38/84 (45%) | 54% |
+| **vision + proprioception (direct encode, 4096 comp)** | **2.65 mm** | **67% [57-75]** | 4% | **25/84 (30%)** | 83% |
+| privileged | 0 | 67% | 4% | 24/84 (29%) | 99% |
+
+Not leakage: the estimated state has 2.65 mm RMSE and the resulting scores genuinely differ from
+the privileged ones (correlation 0.536, median difference 0.26 mm).
+
+**Recall tracks geometric precision directly: 4.44 mm -> 36%, 2.65 mm -> 67%.** Halving the state
+estimation error closed the entire 1x gap and took blind forks from 45% to the privileged 29%.
+The earlier "large drop from routing vision through a 61-dim state" was substantially PROBE
+QUALITY, not a property of the pipeline. At 1x, task-agnostic DINO features already support this
+monitor as well as ground-truth state does.
+
+The open gap is now at 2x: 83% vs 99%, 12 of 82 forks still missed where privileged misses 1.
+
+Results: `results/jenga/v1_probe_px*.json`, `v1_gate_px196_prop.json`. The latent caches
+`v1_enc_196` (1.3 GB) and `v1_enc_392` (5.0 GB) are gitignored and regenerable.

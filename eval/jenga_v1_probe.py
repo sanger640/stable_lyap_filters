@@ -100,15 +100,34 @@ def geometry_errors(predicted, truth):
     return out
 
 
-def fit_basis(latents, components, device):
-    """PCA basis over the flattened tokens of TRAINING rows, fitted once and reused everywhere."""
-    flat = torch.as_tensor(latents.reshape(-1, latents.shape[-1]), device=device)
+def fit_basis(latents, components, device, max_rows=6000, seed=0):
+    """PCA basis over the flattened tokens of TRAINING rows, fitted once and reused everywhere.
+
+    At 28x28 patches one frame is 301k numbers, so the whole set does not fit on the GPU; the
+    basis is fitted on a random subsample of rows, which is statistically ample for the leading
+    components and keeps the memory bounded as resolution rises.
+    """
+    flat = latents.reshape(-1, latents.shape[-1])
+    width = flat.shape[1]
+    # Keep the resident subsample under ~4 GB: at 28x28 patches a row is 301k floats, so the cap
+    # has to fall as resolution rises or torch.pca_lowrank's QR runs the card out of memory.
+    budget = max(512, int(4e9 / (width * 4)))
+    rows = min(max_rows, budget)
+    if len(flat) > rows:
+        pick = np.random.default_rng(seed).choice(len(flat), rows, replace=False)
+        flat = flat[np.sort(pick)]
+    flat = torch.as_tensor(np.ascontiguousarray(flat), device=device)
     mean = flat.mean(0, keepdim=True)
-    _, _, v = torch.pca_lowrank(flat - mean, q=min(components, min(flat.shape) - 1), niter=4)
-    return mean, v
+    flat -= mean                                  # in place: a copy would double the footprint
+    q = min(components, len(flat) - 1, width)
+    _, _, v = torch.pca_lowrank(flat, q=q, niter=4)
+    del flat
+    if device == "cuda":
+        torch.cuda.empty_cache()
+    return mean, v, q
 
 
-def project(latents, mean, basis, device, batch=512):
+def project(latents, mean, basis, device, batch=128):
     out = []
     for first in range(0, len(latents), batch):
         x = torch.as_tensor(latents[first:first + batch], device=device)
@@ -182,13 +201,15 @@ def main():
           f"{int((~is_val).sum())} train / {int(is_val.sum())} held-out episodes", flush=True)
 
     # Basis and probes from TRAINING configurations only.
-    mean, basis = fit_basis(latents[~is_val], args.components, device)
+    mean, basis, q = fit_basis(latents[~is_val], args.components, device)
+    if q < args.components:
+        print(f"  note: basis capped at {q} components by the memory budget", flush=True)
     features = project(latents, mean, basis, device)
     target = torch.from_numpy(states)
     train, held = features[~is_val], features[is_val]
     y_train, y_held = target[~is_val], target[is_val]
 
-    result = {"frames": args.frames, "components": args.components,
+    result = {"frames": args.frames, "components": args.components, "basis_components": q,
               "states": len(latents), "held_out_states": int(is_val.sum()), "probes": {}}
 
     weights = fit_linear(train, y_train, args.ridge)
@@ -208,7 +229,7 @@ def main():
     if args.save_probe:
         torch.save({"mean": mean.cpu(), "basis": basis.cpu(), "linear": weights,
                     "mlp": mlp.state_dict(), "frames": args.frames,
-                    "components": args.components}, args.save_probe)
+                    "components": q, "pixels": None}, args.save_probe)
     for probe in ("linear", "mlp"):
         line = " ".join(f"{g} {result['probes'][probe]['held_out'][g]['rmse']:.3f}"
                         f"({result['probes'][probe]['held_out'][g]['relative']:.2f})"
