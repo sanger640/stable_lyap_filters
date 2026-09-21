@@ -3864,3 +3864,43 @@ the toppling set is identical under restored, zeroed or carried warm start for a
 branches are physical. Two blind forks topple on only 1/64 from the clean start (Stage 0: 2/64) and are
 weak by the benchmark's own rule. `jenga_blind_resim.py` now reaches every chunk start by an
 uninterrupted replay and never continues a replay after probing; any future oracle should do the same.
+
+## Step 7 (revised): contact-window data, D1/D2 objectives, and a speed audit (2026-09-21, in progress)
+
+**Contact-window data** (`eval/jenga_cw_data.py`, `results/jenga/cw_data/`, npz gitignored). From the 43
+TRAINING episodes only (disjoint from dev and test), 23,999 branch points where the gripper touches a
+neighbour block during control steps 3-10 (branch state just before contact) plus 7,018 no-contact
+window states; 5 branches each (nominal + 2 antithetic pairs of realistic execution-error residuals x
+{0.5, 1, 2}), 6 control steps, full 61-dim state. Warm-start-safe and deterministic across runs.
+Coverage: 31% of its transitions are an upright block rotating > 1 deg/step against 3.3% in the
+original pool -- it adds 3.2x the original count of the transition the model gets wrong.
+
+**Arms.** D0 = the existing `w6_gnn_n5` seeds: the default trainer path reproduces seed 1's first
+epoch bit-for-bit. D0+CW adds the branches as one-step data. D1+CW and D2+CW add, respectively, the
+existing branch-distance loss and the new intervention-consistency loss on SHORT 6-step unrolls of the
+same branch groups (not the 38-step rollout stage, so D1 vs D2 differ only in the objective). D2
+(`intervention_terms`) uses only generic continuous state and matches each branch's response, the
+intervention effect over time, and extra weight where the real effect is small. A unit test caught my
+first quiet term penalising `Delta_pred^2`, which would have pushed small real responses to zero --
+the under-response being fixed; it now penalises `(Delta_pred - Delta_real)^2`.
+
+**First two paired seeds (D0+CW vs D0, same seed):** s1 recall at matched 1/3/5/10% FPR 74/76/76/83
+vs 27/54/67/85, quiet p99 6.1 vs 21.0 mm; s2 62/88/89/94 vs 26/51/54/65, blind forks 7 vs 40,
+pre-declared recall 88% (the real-ending ceiling). Arm-level robust-blind counts pending.
+
+**Speed audit** (paused new launches; in-flight runs untouched). Under 5-way sharing D1 ran ~530 s
+and D2 ~410 s per epoch against ~97 s for D0+CW. The GPU reports 99% time-utilisation but only 6-19%
+memory-controller activity: launch-bound small kernels, i.e. implementation cost. Equivalence of each
+optimisation against the current code, same seed, 150 real training batches:
+
+| option | one-step loss | one-step gradients | weights after 150 batches | 150-batch time |
+|---|---|---|---|---|
+| batched `branch_terms` (D1) | identical | identical | **bit-identical** | 48 -> 38 s |
+| torch.compile, cudagraphs | identical | **WRONG** (errors 45-75% of the gradient) | diverge | 48 -> 24 s |
+| torch.compile, inductor | identical | ~1e-4 (D1) / 1e-7 (D2) relative | diverge (D1 max 1.2e-2) | 48 -> 51 s (D1), 34 -> 23 s (D2) |
+
+The cudagraphs backend computes a correct forward pass and incorrect gradients on this model, and is
+removed. Inductor is numerically equivalent per step but Adam amplifies the rounding: weights already
+differ after 150 batches, so it cannot reproduce the current code's final evaluation. Only the
+batched branch loss meets all three equivalence requirements, and it applies to D1 only. The
+concurrency benchmark (1/2/3/5 processes) needs a quiet GPU and waits for the in-flight runs.

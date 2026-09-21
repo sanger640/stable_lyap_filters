@@ -75,6 +75,81 @@ def branch_terms(predicted, truth, group_sizes, state_scale):
     return torch.stack(losses).mean(), predicted_total / max(sum(r[1] for r in ratios), 1e-9)
 
 
+def branch_terms_batched(predicted, truth, branches, state_scale):
+    """`branch_terms` for groups of equal size, in one batched pass instead of a Python loop.
+
+    predicted, truth: (G * branches, steps, 61), groups contiguous. Same loss, same ratio: the
+    per-group mean of ramp * (predicted gap - true gap)^2, then the mean over groups.
+    """
+    steps = predicted.shape[1]
+    groups = predicted.shape[0] // branches
+    ramp = torch.linspace(0.0, 1.0, steps, device=predicted.device)
+    p = (predicted[:, :, POSE] / state_scale[POSE]).reshape(groups, branches, steps, -1)
+    q = (truth[:, :, POSE] / state_scale[POSE]).reshape(groups, branches, steps, -1)
+    i, j = torch.triu_indices(branches, branches, offset=1, device=p.device)
+    predicted_gap = (p[:, i] - p[:, j]).norm(dim=-1)                   # (G, pairs, steps)
+    true_gap = (q[:, i] - q[:, j]).norm(dim=-1)
+    loss = (ramp * (predicted_gap - true_gap) ** 2).mean(dim=(1, 2)).mean()
+    separating = true_gap[:, :, -1] > SEPARATION
+    if not separating.any():
+        return loss, None
+    ratio = float(predicted_gap[:, :, -1][separating].sum().detach()) / max(
+        float(true_gap[:, :, -1][separating].sum().detach()), 1e-9)
+    return loss, ratio
+
+
+def intervention_terms(predicted, truth, cont_scale, diff_scale, quiet_tau):
+    """CoCo-inspired intervention consistency over a short unroll (PLAN_NEXT.md Phase 3, D2).
+
+    predicted, truth: (G, B, H, 61) -- G branch points, B branches from the SAME true state
+    (branch 0 the nominal action, the rest nearby actions), H control steps. Only the generic
+    continuous state enters (object pose, 6D orientation, linear and angular velocity, gripper
+    position); nothing in here knows about blocks standing, tipping or falling.
+
+      response    each branch's predicted state matches its real one at every step -- the absolute
+                  response to that action, so a bias shared by all branches is also penalised
+      difference  the INTERVENTION EFFECT  Delta(t) = x^{a+d}_t - x^a_t  matches in magnitude,
+                  direction and timing (onset and persistence), at every step
+      quiet       extra weight on the effect mismatch where the real intervention changes (almost)
+                  nothing by the end of the unroll, so benign interventions cannot create
+                  artificial divergence. It penalises (Delta_pred - Delta_real)^2, NOT Delta_pred^2:
+                  "small" is not zero, and pushing small real effects to zero would bias the model
+                  towards under-response -- the very failure this objective exists to fix.
+
+    All terms are normalised: states by the per-dimension state scale, effects by the per-dimension
+    scale of real intervention effects in the training data, so each is O(1).
+    """
+    x_hat = predicted[..., CONTINUOUS] / cont_scale
+    x = truth[..., CONTINUOUS] / cont_scale
+    response = ((x_hat - x) ** 2).mean()
+    d_hat = (predicted[:, 1:, :, CONTINUOUS] - predicted[:, :1, :, CONTINUOUS]) / diff_scale
+    d = (truth[:, 1:, :, CONTINUOUS] - truth[:, :1, :, CONTINUOUS]) / diff_scale
+    difference = ((d_hat - d) ** 2).mean()
+    quiet_pairs = d[:, :, -1].norm(dim=-1) < quiet_tau                       # (G, B-1)
+    mismatch = (d_hat - d) ** 2
+    quiet = mismatch[quiet_pairs].mean() if quiet_pairs.any() else mismatch.sum() * 0.0
+    return {"response": response, "difference": difference, "quiet": quiet}
+
+
+def load_cw(directory, exclude_ids):
+    """Contact-window branch groups (`jenga_cw_data.py`), minus any from held-out training files."""
+    starts, actions, traces, sources = [], [], [], []
+    for path in sorted(Path(directory).glob("ep*_seed*.npz")):
+        ident = path.stem.replace("ep", "").replace("_seed", ":")
+        if ident in exclude_ids:
+            continue
+        d = np.load(path, allow_pickle=False)
+        if not len(d["start"]):
+            continue
+        starts.append(d["start"]); actions.append(d["actions"]); traces.append(d["traces"])
+        sources.extend([ident] * len(d["start"]))
+    if not starts:
+        raise SystemExit(f"no contact-window groups left in {directory} after excluding the "
+                         f"validation episodes")
+    return (torch.from_numpy(np.concatenate(starts)), torch.from_numpy(np.concatenate(actions)),
+            torch.from_numpy(np.concatenate(traces)), sources)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default=str(ROOT / "results/jenga/trace_data"))
@@ -103,8 +178,33 @@ def main():
                     help="feed back rounded contact flags instead of the probability")
     ap.add_argument("--no-orthonormalise", action="store_true",
                     help="skip re-projecting the rotation after each step (the old behaviour)")
+    ap.add_argument("--cw-data", default=None,
+                    help="contact-window branch groups (jenga_cw_data.py); their transitions join "
+                         "the one-step pool. Off = the original D0 recipe, unchanged")
+    ap.add_argument("--cw-loss", choices=("none", "branch", "intervention"), default="none",
+                    help="extra objective on short unrolls of the contact-window branch groups: "
+                         "branch = the existing pairwise-distance branch loss (D1), intervention "
+                         "= CoCo-inspired intervention consistency (D2)")
+    ap.add_argument("--cw-groups", type=int, default=32,
+                    help="branch groups unrolled per one-step batch for the extra objective")
+    ap.add_argument("--cw-weight", type=float, default=1.0,
+                    help="weight on the extra objective; its terms are already normalised to O(1)")
+    ap.add_argument("--quiet-quantile", type=float, default=0.5,
+                    help="real intervention effects below this quantile count as 'no change'")
+    ap.add_argument("--fast-branch", action="store_true",
+                    help="batched branch_terms in the contact-window objective (speed only)")
+    ap.add_argument("--compile", choices=("none", "inductor"), default="none",
+                    help="torch.compile the short unroll of the contact-window objective. NOT "
+                         "bit-identical: per-step rounding (~1e-7 to 1e-4 relative in gradients) "
+                         "is amplified by Adam, so a compiled run does not reproduce an uncompiled "
+                         "one. Never mix it with uncompiled runs in one arm. (The cudagraphs "
+                         "backend was removed: it produced wrong gradients on this model.)")
+    ap.add_argument("--max-batches", type=int, default=None,
+                    help="stop each epoch after this many batches (benchmarking only)")
     ap.add_argument("--seed", type=int, default=None)
     args = ap.parse_args()
+    if args.cw_loss != "none" and not args.cw_data:
+        ap.error("--cw-loss needs --cw-data")
 
     if args.seed is not None:
         torch.manual_seed(args.seed)
@@ -136,6 +236,29 @@ def main():
     delta_scale = (block_scale.to(device), grip_scale.to(device))
     state_scale_d = state_scale.to(device)
     del s_now, s_next, block_delta, grip_delta
+
+    cw = None
+    if args.cw_data:
+        cw_start, cw_acts, cw_traj, cw_sources = load_cw(args.cw_data, val_ids)
+        g, b, h = cw_acts.shape[:3]
+        previous = torch.cat([cw_start[:, None, None].expand(g, b, 1, 61), cw_traj[:, :, :-1]], 2)
+        cw = {"now": previous.reshape(-1, 61), "act": cw_acts.reshape(-1, 4),
+              "next": cw_traj.reshape(-1, 61), "start": cw_start, "acts": cw_acts,
+              "traj": cw_traj, "groups": g, "branches": b, "horizon": h}
+        cont = torch.tensor(CONTINUOUS)
+        effect = (cw_traj[:, 1:, :, CONTINUOUS] - cw_traj[:, :1, :, CONTINUOUS])
+        # Scale of a real intervention effect per dimension, floored so dimensions that never
+        # respond cannot blow up the normalisation.
+        diff_scale = torch.maximum(effect.reshape(-1, len(CONTINUOUS)).std(0),
+                                   1e-3 * state_scale[cont])
+        end_effect = (effect[:, :, -1] / diff_scale).norm(dim=-1)
+        cw["diff_scale"] = diff_scale.to(device)
+        cw["cont_scale"] = state_scale[cont].to(device)
+        cw["quiet_tau"] = float(torch.quantile(end_effect.reshape(-1).float(),
+                                               args.quiet_quantile))
+        print(f"contact-window data: {g} branch points x {b} branches x {h} steps = "
+              f"{len(cw['now'])} extra transitions (loss: {args.cw_loss}, quiet tau "
+              f"{cw['quiet_tau']:.3f})", flush=True)
 
     moe = args.model == "moe"
     if moe:
@@ -219,22 +342,76 @@ def main():
                 "topple_false_rate": (float(predicted_flags[~true_flags].mean())
                                       if (~true_flags).any() else None)}
 
+    def plain_unroll(start_state, actions):
+        return rollout(model, start_state, actions, delta_scale)
+
+    unroll = plain_unroll
+    if args.compile != "none":
+        unroll = torch.compile(plain_unroll, backend=args.compile, fullgraph=False)
+
+    def cw_objective():
+        """The extra objective on a random batch of contact-window branch groups."""
+        pick = torch.from_numpy(rng.choice(cw["groups"], args.cw_groups, replace=False))
+        g, b, h = len(pick), cw["branches"], cw["horizon"]
+        start_state = cw["start"][pick].to(device).repeat_interleave(b, 0)
+        predicted = unroll(start_state, cw["acts"][pick].reshape(g * b, h, 4).to(device))
+        truth = cw["traj"][pick].to(device)
+        if args.cw_loss == "branch":
+            if args.fast_branch:
+                loss, _ = branch_terms_batched(predicted, truth.reshape(g * b, h, 61), b,
+                                               state_scale_d)
+            else:
+                loss, _ = branch_terms(predicted, truth.reshape(g * b, h, 61), [b] * g,
+                                       state_scale_d)
+            return loss, {"branch": float(loss.detach())}
+        terms = intervention_terms(predicted.reshape(g, b, h, 61), truth, cw["cont_scale"],
+                                   cw["diff_scale"], cw["quiet_tau"])
+        return sum(terms.values()), {k: float(v.detach()) for k, v in terms.items()}
+
     history = []
+    n_orig = len(train_transitions)
     for epoch in range(args.epochs):
-        rng.shuffle(train_transitions)
-        start, running = time.time(), []
-        for first in range(0, len(train_transitions), args.batch):
-            rows, steps = train_transitions[first:first + args.batch].T
-            state = corrupt(traj[rows, steps].to(device))
-            nxt = traj[rows, steps + 1].to(device)
-            loss, mse, bce = one_step_loss(state, acts[rows, steps].to(device), nxt)
+        if cw is None:
+            rng.shuffle(train_transitions)
+        else:
+            order = rng.permutation(n_orig + len(cw["now"]))
+        start, running, extra = time.time(), [], []
+        total = n_orig if cw is None else n_orig + len(cw["now"])
+        batches_done = 0
+        for first in range(0, total, args.batch):
+            if args.max_batches is not None and batches_done >= args.max_batches:
+                break
+            batches_done += 1
+            if cw is None:
+                rows, steps = train_transitions[first:first + args.batch].T
+                state = corrupt(traj[rows, steps].to(device))
+                nxt = traj[rows, steps + 1].to(device)
+                action = acts[rows, steps].to(device)
+            else:
+                chosen = order[first:first + args.batch]
+                orig = chosen[chosen < n_orig]
+                new = torch.from_numpy(chosen[chosen >= n_orig] - n_orig)
+                rows, steps = train_transitions[orig].T
+                state = corrupt(torch.cat([traj[rows, steps], cw["now"][new]]).to(device))
+                nxt = torch.cat([traj[rows, steps + 1], cw["next"][new]]).to(device)
+                action = torch.cat([acts[rows, steps], cw["act"][new]]).to(device)
+            loss, mse, bce = one_step_loss(state, action, nxt)
+            if cw is not None and args.cw_loss != "none":
+                objective, parts = cw_objective()
+                loss = loss + args.cw_weight * objective
+                extra.append(parts)
             optimiser.zero_grad(set_to_none=True); loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimiser.step()
             running.append((float(mse.detach()), float(bce.detach())))
+        batch_seconds = time.time() - start
         validation = evaluate()
+        if extra:
+            validation["cw_train_terms"] = {k: float(np.mean([e[k] for e in extra]))
+                                            for k in extra[0]}
         history.append({"epoch": epoch + 1, "train_mse": float(np.mean(running, axis=0)[0]),
                         "train_bce": float(np.mean(running, axis=0)[1]),
-                        "validation": validation, "seconds": time.time() - start})
+                        "validation": validation, "seconds": time.time() - start,
+                        "batch_seconds": batch_seconds, "batches": batches_done})
         print(f"epoch {epoch + 1}/{args.epochs}: train mse {history[-1]['train_mse']:.4f} "
               f"val {validation} ({time.time() - start:.0f}s)", flush=True)
 
@@ -290,6 +467,8 @@ def main():
                 "substeps": substeps, "seed": args.seed, "noise": args.noise,
                 "orthonormalise": model.orthonormalise, "hard_contacts": model.hard_contacts,
                 "branch_weight": args.branch_weight, "rollout_epochs": args.rollout_epochs,
+                "cw_data": args.cw_data, "cw_loss": args.cw_loss, "cw_groups": args.cw_groups,
+                "cw_weight": args.cw_weight,
                 "transition_weighting": False,
                 "block_scale": block_scale, "grip_scale": grip_scale,
                 "state_scale": state_scale}, args.output)
@@ -302,6 +481,8 @@ def main():
                       "input": "privileged simulator state (oracle variant)"},
          "seed": args.seed, "noise": args.noise, "parameters": parameters,
          "model": args.model, "branch_weight": args.branch_weight,
+         "cw_data": args.cw_data, "cw_loss": args.cw_loss, "cw_groups": args.cw_groups,
+         "cw_weight": args.cw_weight, "quiet_quantile": args.quiet_quantile,
          "orthonormalise": model.orthonormalise, "hard_contacts": model.hard_contacts,
          "states": len(groups), "history": history, "rollout_history": rollout_history,
          "output": args.output}, indent=2) + "\n")
