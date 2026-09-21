@@ -506,6 +506,10 @@ neither may be mixed into an arm. The bit-identical option gains only 1.15-1.20x
 concurrency (`eval/jenga_w6_speed.py`), below the 1.5x bar, so all arms stay on the current code; the
 remaining 24 seeds run at 5 concurrent processes (~2x throughput, numerically identical); D0+CW seeds
 first. Future D1-style runs use the batched branch loss (`--fast-branch`) from the start.
+**D0 vs D0+CW (10 paired seeds): coverage alone does not fix it.** Robust-blind 11 -> 9 (both
+definitions), 8 of D0's 15 unchanged and all upright/class-C; mean matched recall 35/60/67/79 ->
+56/71/75/82, but paired Wilcoxon p >= 0.13 and 3 of 10 seeds worse (NOTES.md). D1+CW / D2+CW decide
+whether a counterfactual objective closes the rest.
 
 Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
 (Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA
