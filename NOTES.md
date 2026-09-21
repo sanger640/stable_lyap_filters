@@ -3904,3 +3904,23 @@ removed. Inductor is numerically equivalent per step but Adam amplifies the roun
 differ after 150 batches, so it cannot reproduce the current code's final evaluation. Only the
 batched branch loss meets all three equivalence requirements, and it applies to D1 only. The
 concurrency benchmark (1/2/3/5 processes) needs a quiet GPU and waits for the in-flight runs.
+
+**Concurrency benchmark** (`eval/jenga_w6_speed.py`, `results/jenga/step7_speed.json`; idle GPU,
+150 batches, extrapolated to 20 epochs x 1573 batches + validation). Seeds/hour:
+
+| config | k=1 | k=2 | k=3 | k=5 |
+|---|---|---|---|---|
+| D1, current code | 1.03 | 1.57 | 1.83 | 2.02 |
+| D1, batched branch loss | 1.18 | 1.88 | 2.18 | 2.39 |
+| D2, current code | 1.14 | 1.85 | 2.12 | 2.34 |
+
+Decision under the pre-set rule. The only bit-identical optimisation (batched branch loss) gains
+1.15-1.20x at matched concurrency, below the 1.5x bar, so every D1/D2 seed stays on the current code
+(no mixed code versions). Concurrency changes no numbers; the throughput comes from it (2x from k=1
+to k=5), so the remaining 24 jobs (D0+CW s4-10, D1+CW s3-10, D2+CW s2-10) resumed at k=5, interleaved
+by seed. The batched branch loss is kept for future experiments.
+
+**Seeds so far** (recall at matched 1/3/5/10% FPR, AUC, quiet p99, blind forks at 1x): D0+CW s3
+21/36/55/68, 0.911, 16.9 mm, 30 (worse than D0 s3: seed variance is large); D1+CW s1 85/86/89/92,
+0.979, 5.0 mm, 12; D1+CW s2 56/86/90/93, 0.975, 15.7 mm, 9; D2+CW s1 63/74/74/85, 0.957, 3.7 mm, 15.
+No arm-level conclusion until 10 seeds each.
