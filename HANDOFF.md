@@ -1,5 +1,9 @@
 # HANDOFF — stability-based safety monitor
 
+> **Current plan: `PLAN_NEXT.md` (revised 2026-09-21).** V1 (DINO + proprioception ->
+> state -> GNN) matches privileged state at 1x; the live bottleneck is the ~24/84 forks
+> blind under exact state. `PLAN_WORLDMODEL.md` is now the W0-W6 historical record.
+
 > **Current handoff (2026-09-17, end of day).** The live line of work is the Stage 0-2b
 > sequence at the END of this document, not the basin/dissent method described below. In one
 > line: wobble the chunk 64 times with measured execution error, let the scene settle, and

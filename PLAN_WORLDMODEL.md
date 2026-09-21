@@ -1,5 +1,11 @@
 # PLAN — make the world model reproduce outcome discontinuities
 
+> **Historical record.** This file documents W0-W6 as they were run. The plan now being
+> executed is `PLAN_NEXT.md` (revised 2026-09-21): V1 vision-as-state-estimator now matches
+> privileged state at 1x, so the live bottleneck is the ~24/84 fork states that are blind even
+> with exact simulator state, and the next work is counterfactual-consistency training on the
+> privileged-state dynamics.
+
 **Mode:** phase by phase, same rule as the other plans. Do not start a phase until the previous
 one's gate is met and logged in `NOTES.md`. **If a phase fails twice, stop and report.**
 
