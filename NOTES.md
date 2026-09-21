@@ -3820,3 +3820,47 @@ Bug caught on the way: the default seed glob also matched the V1 evaluation `w6_
 the duplicate-seed guard refused to run. Seed files are now matched exactly.
 
 Next: re-simulate the robust forks with every-step logging (Phase 2 step 5).
+
+## Phase 2 steps 5-6: why the systematic blind forks are invisible (2026-09-21)
+
+Full write-up: `blind_fork_analysis.md`. Code: `eval/jenga_blind_resim.py` (dense re-simulation),
+`eval/jenga_blind_analyse.py` (response regimes, contacts), `eval/jenga_blind_mechanism.py` (tilt
+course, true-state handoff, classes, training coverage). Results: `results/jenga/blind_analysis.json`,
+`results/jenga/blind_mechanism.json`, `results/jenga/blind_resim/index.json` (traces gitignored).
+
+17 forks robust blind under either operating point plus 17 usually-detected controls matched on topple
+count, re-simulated from the exact frozen start states at 5 readings per control step.
+
+* **Mechanism: an upright neighbour pushed past its tipping angle.** 14/17 blind forks start upright
+  (< 8 deg) and none pre-leaning; 11/17 controls are pre-leaning. Across all 84 forks: upright mean miss
+  rate 0.52 (15/45 robust blind) vs pre-leaning 0.18 (0/39); Spearman(start tilt, misses) -0.45; the
+  upright penalty holds within narrow and wide branches separately.
+* **The model responds, then reconverges** (127/170 seed-fork runs; controls 10/170). It tilts the block
+  to ~11 deg where the real push reaches ~16 deg, short of the ~15-18 deg tipping angle, and lets it
+  settle back upright.
+* **Tipping physics are right; the push is under-transmitted.** Handed the TRUE state at step 8 (~16
+  deg) the model completes 79% of topples, 100% from step 10; from any state before the push (steps
+  0-4) it completes none, and only 20% from the true mid-push state at step 6. A systematic few-step
+  bias in contact-driven rotation, not compounding error.
+* **Rare in training:** only 400 of 2,417 toppling training rollouts (0.6% of all rollouts) topple an
+  upright block; median start tilt of a toppling block in training is 10.3 deg.
+* Not distinguishing: the triggering contact (gripper-neighbour in both groups), divergence onset
+  (~step 4 in both), gripper distance (~50 mm), perturbation-direction separability (0.82 vs 0.79).
+* 4 of 17 (A2) are pushed after the perturbed chunk, at steps 10-13 of the hold.
+
+**D2 consequences** (details in the write-up): supervise the contact window (~steps 4-13), where a 2-5
+step unroll from the chunk start does not reach; anchor short unrolls at true states INSIDE the window,
+which needs new same-state branches; compare orientation and angular velocity, not only position; match
+each branch's response as well as the difference, because the error is a level bias shared by both
+branches; add a D0 + contact-window-data arm to separate "data" from "objective".
+
+**Simulator reproducibility.** `snapshot()` excludes the solver warm start, and a restore leaves
+kinematics current where an uninterrupted replay reads them one substep late, so restore-then-continue
+is never bit-identical to an uninterrupted replay. Stage 0 restored and continued at every probed chunk
+start, so its start states drifted from clean replays in 182/214 test states (median 0.04 mm, max 52 mm;
+every >1 mm drift is a quiet state). Checked: no fork drifts > 1 mm and drift is the same for blind and
+detected forks; dropping drifted states leaves quiet p99 unchanged (8.08 -> 8.33 mm); from a fixed start
+the toppling set is identical under restored, zeroed or carried warm start for all 34 forks, so the
+branches are physical. Two blind forks topple on only 1/64 from the clean start (Stage 0: 2/64) and are
+weak by the benchmark's own rule. `jenga_blind_resim.py` now reaches every chunk start by an
+uninterrupted replay and never continues a replay after probing; any future oracle should do the same.

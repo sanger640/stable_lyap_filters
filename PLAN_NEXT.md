@@ -237,6 +237,12 @@ seed 1's false negatives sit at ~0.8 mm predicted spread against thresholds of 1
 near-zero response rather than near-misses. The cross-seed `q_i` will show whether that holds for the
 robust set.
 
+**Status (2026-09-21): steps 5-6 DONE -- see [`blind_fork_analysis.md`](blind_fork_analysis.md).**
+The systematic blind forks are upright neighbours pushed past their tipping angle (14/17; 0/39
+pre-leaning forks are robust blind). The model responds to the push but under-delivers rotation (~11
+vs ~16 deg), falls short of the tipping angle and reconverges; handed the true state after the push, it
+completes the topple. The failing transition is 0.6% of training rollouts. This revises Phase 3 below.
+
 ## Phase 3 — Counterfactual training without reviving long-rollout training
 
 Privileged state throughout, so perception cannot confound the result. **Do not add the old rollout
@@ -278,7 +284,25 @@ Do not merely match pairwise distance magnitude: D1 already tests that idea.
 **Primary success criterion:** fewer ROBUST blind forks (Phase 2), with quiet p99 and fixed-FPR
 performance at least as good as D0.
 
-Increase the unroll horizon only if the short-unroll experiment gives evidence that it helps. D1 and
+Increase the unroll horizon only if the short-unroll experiment gives evidence that it helps.
+
+**Revision from the Phase 2 taxonomy (2026-09-21).** The failure sits in the contact window (control
+steps ~4-13), which a 2-5 step unroll from the chunk start does not reach. So:
+
+* anchor the short unrolls at TRUE states inside the contact window, not only at the chunk start. That
+  needs new same-state / different-action branches simulated from those states (the only same-state
+  pairs in the current data are at the chunk start);
+* `Phi` includes each object's orientation and angular velocity: before the tipping angle the fork
+  signal is almost entirely rotation;
+* match each branch's response to its real counterpart as well as the difference between branches: the
+  error is a ~30% under-rotation shared by both branches, which difference-matching alone can leave in
+  place;
+* persistence past the tipping angle does not need supervising (the handoff shows it is modelled
+  correctly);
+* add an arm **D0 + contact-window data** (same one-step loss, new branches as ordinary data) to separate
+  a coverage problem from an objective problem. Arms: D0, D0 + data, D1, D2 (+ data).
+
+Primary target: the 45 upright-start forks (mean miss rate 0.52). D1 and
 D2 each need >= 10 seeds, scored with the frozen Phase-1 command.
 
 **[repo note]** The chunk start is the only point in the data where two probes share an exact state,
@@ -469,6 +493,10 @@ sensitivity.
 7. Only then implement the short-unroll D2 counterfactual objective.
 
 **No new architecture before steps 1-6 are complete.**
+
+**Status (2026-09-21): steps 1-6 DONE.** Next is step 7 in its revised form (Phase 3 revision): first
+simulate same-state branches from true states inside the contact window, then compare D0, D0 +
+contact-window data, D1 and D2 at >= 10 seeds each on the frozen benchmark.
 
 Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
 (Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA
