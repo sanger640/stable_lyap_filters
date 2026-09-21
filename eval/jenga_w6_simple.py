@@ -29,7 +29,7 @@ import torch.nn.functional as F
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-from state_dynamics import (StepGraphMoE, StepGraphNet, contact_targets,  # noqa: E402
+from state_dynamics import (StepGraphMoE, StepGraphNet, StepMLP, contact_targets,  # noqa: E402
                             delta_targets, load_balance, neighbour_tilt_deg, rollout)
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_w5_train import load  # noqa: E402
@@ -89,7 +89,7 @@ def main():
                     help="input-state noise, in units of the per-dimension standard deviation of "
                          "one true step; 0 disables it (GNS-style corruption)")
     ap.add_argument("--val-fraction", type=float, default=0.12)
-    ap.add_argument("--model", choices=("single", "moe"), default="single")
+    ap.add_argument("--model", choices=("single", "moe", "mlp"), default="single")
     ap.add_argument("--experts", type=int, default=3)
     ap.add_argument("--balance-weight", type=float, default=1.0)
     ap.add_argument("--rollout-epochs", type=int, default=0,
@@ -138,8 +138,13 @@ def main():
     del s_now, s_next, block_delta, grip_delta
 
     moe = args.model == "moe"
-    model = (StepGraphMoE(args.hidden, args.rounds, args.experts) if moe
-             else StepGraphNet(args.hidden, args.rounds)).to(device)
+    if moe:
+        model = StepGraphMoE(args.hidden, args.rounds, args.experts)
+    elif args.model == "mlp":
+        model = StepMLP()
+    else:
+        model = StepGraphNet(args.hidden, args.rounds)
+    model = model.to(device)
     model.orthonormalise = not args.no_orthonormalise
     model.hard_contacts = args.hard_contacts
     parameters = sum(p.numel() for p in model.parameters())

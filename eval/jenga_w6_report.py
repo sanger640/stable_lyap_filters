@@ -125,6 +125,15 @@ def main():
             entry[f"{name}_predicted_mm_median"] = float(
                 np.median([r["predicted_mm"] for r in group]))
             entry[f"{name}_real_mm_median"] = float(np.median([r["real_mm"] for r in group]))
+        # Contrast: how much more the endings spread at forks than at quiet states. The monitor
+        # thresholds a single score, so it can only work if this ratio is well above 1, and the
+        # honest target is the simulator's own value on the same states.
+        if forks and quiet:
+            entry["contrast_predicted"] = (entry["fork_predicted_mm_median"]
+                                           / max(entry["quiet_predicted_mm_median"], 1e-9))
+            entry["contrast_real"] = (entry["fork_real_mm_median"]
+                                      / max(entry["quiet_real_mm_median"], 1e-9))
+            entry["contrast_shortfall"] = entry["contrast_predicted"] / entry["contrast_real"]
         result[s] = entry
 
     if args.train_report and Path(args.train_report).exists():

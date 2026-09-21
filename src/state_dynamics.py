@@ -188,6 +188,53 @@ class StepGraphMoE(StepGraphNet):
                 **self.shared_heads(nodes, e, senders, receivers)}
 
 
+class StepMLP(nn.Module):
+    """Ablation of the graph: one flat MLP on the whole state and action.
+
+    Same inputs, same outputs and same integration as StepGraphNet, so every training and grading
+    path is identical -- only the inductive bias differs. There is no message passing, no shared
+    per-block weights and no equivariance to relabelling the blocks: block b's features sit at a
+    fixed slot, so the model must learn each block's role separately.
+
+    Physical normalisation matches the graph's (positions by block size, the action as an offset
+    from the gripper by the execution-error scale) so the comparison is about STRUCTURE, not about
+    one model receiving better-scaled numbers than the other.
+    """
+
+    def __init__(self, hidden=448, layers=4):
+        super().__init__()
+        out = N_BLOCKS * (2 * BLOCK_OUT + 3) + 2 * GRIPPER_OUT + N_BLOCKS
+        width = [STATE_DIM + 4] + [hidden] * layers + [out]
+        stack = []
+        for i in range(len(width) - 1):
+            stack.append(nn.Linear(width[i], width[i + 1]))
+            if i < len(width) - 2:
+                stack.append(nn.GELU())
+        self.stack = nn.Sequential(*stack)
+
+    def features(self, state, action):
+        batch = state.shape[0]
+        grip_pos = state[:, GRIPPER][:, :3]
+        positions = (state[:, POS].view(batch, N_BLOCKS, 3) - grip_pos[:, None]) / POSITION_SCALE_M
+        return torch.cat([positions.reshape(batch, -1), state[:, ROT], state[:, VEL],
+                          state[:, CONTACT], grip_pos / POSITION_SCALE_M, state[:, 60:61],
+                          (action[:, :3] - grip_pos) / ACTION_SCALE_M,
+                          torch.sign(action[:, 3:4]) * (action[:, 3:4].abs() > 0.9)], dim=1)
+
+    def forward(self, state, action):
+        batch = state.shape[0]
+        raw = self.stack(self.features(state, action))
+        cut = N_BLOCKS * (2 * BLOCK_OUT + 3)
+        blocks = raw[:, :cut].view(batch, N_BLOCKS, 2 * BLOCK_OUT + 3)
+        grip = raw[:, cut:cut + 2 * GRIPPER_OUT]
+        return {"block_mean": blocks[..., :BLOCK_OUT],
+                "block_logvar": blocks[..., BLOCK_OUT:2 * BLOCK_OUT].clamp(-10, 5),
+                "block_contact_logits": blocks[..., 2 * BLOCK_OUT:],
+                "gripper_mean": grip[:, :GRIPPER_OUT],
+                "gripper_logvar": grip[:, GRIPPER_OUT:].clamp(-10, 5),
+                "pair_contact_logits": raw[:, cut + 2 * GRIPPER_OUT:]}
+
+
 def load_balance(gate_probabilities):
     """Collapse regularisation: KL between the batch's mean expert usage and uniform usage."""
     usage = gate_probabilities.reshape(-1, gate_probabilities.shape[-1]).mean(0)

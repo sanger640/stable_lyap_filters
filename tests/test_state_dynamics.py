@@ -262,3 +262,35 @@ def test_hard_contacts_round_and_soft_contacts_do_not():
     assert set(hard.unique().tolist()) <= {0.0, 1.0}
     assert torch.equal(hard, (soft > 0.5).to(soft.dtype))
     assert not torch.equal(soft, hard)
+
+
+def test_mlp_matches_the_graph_net_contract():
+    """The flat ablation must be a drop-in: same output keys and shapes, same integration."""
+    from state_dynamics import StepGraphNet, StepMLP, apply_step
+    torch.manual_seed(0)
+    state, action = torch.randn(5, 61), torch.randn(5, 4)
+    graph, flat = StepGraphNet(32, 1), StepMLP(64, 2)
+    a, b = graph(state, action), flat(state, action)
+    assert set(a) <= set(b) | {"gate_probabilities", "regime"}
+    for key in ("block_mean", "block_logvar", "block_contact_logits", "gripper_mean",
+                "gripper_logvar", "pair_contact_logits"):
+        assert a[key].shape == b[key].shape, key
+    scale = (torch.ones(15), torch.ones(3))
+    assert apply_step(state, action, b, scale).shape == state.shape
+
+
+def test_load_model_restores_the_integration_flags(tmp_path):
+    """A checkpoint must roll out the way it was trained, not the way the defaults say."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "eval"))
+    from jenga_w5_eval import load_model
+    from state_dynamics import StepGraphNet
+    model = StepGraphNet(32, 1)
+    path = tmp_path / "check.pt"
+    torch.save({"model": model.state_dict(), "hidden": 32, "rounds": 1, "kind": "single",
+                "experts": 1, "substeps": 1, "orthonormalise": True, "hard_contacts": True,
+                "block_scale": torch.ones(15), "grip_scale": torch.ones(3)}, path)
+    loaded, _ = load_model(str(path), "cpu")
+    assert loaded.orthonormalise is True
+    assert loaded.hard_contacts is True
