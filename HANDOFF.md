@@ -1,8 +1,12 @@
 # HANDOFF — stability-based safety monitor
 
-> **Current plan: `PLAN_NEXT.md` (revised 2026-09-21).** V1 (DINO + proprioception ->
-> state -> GNN) matches privileged state at 1x; the live bottleneck is the ~24/84 forks
-> blind under exact state. `PLAN_WORLDMODEL.md` is now the W0-W6 historical record.
+> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (revised 2026-09-21).** Two tracks. Track A is
+> the privileged-state mechanism study (oracle, Jenga features allowed); Track B is the universal
+> deployable monitor (generic vision + proprioception + action, no Jenga state). Immediate work is
+> Track A: freeze the benchmark, analyse the ~24/84 forks blind under exact state, and test a
+> CoCo-inspired intervention-consistency loss. Then a direct DINO latent world model (V2-A), then a
+> second and third task. V1 (DINO + proprioception -> state -> GNN) already matches privileged
+> state at 1x. Everything below this banner is the historical record.
 
 > **Current handoff (2026-09-17, end of day).** The live line of work is the Stage 0-2b
 > sequence at the END of this document, not the basin/dissent method described below. In one

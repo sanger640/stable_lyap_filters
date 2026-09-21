@@ -1,5 +1,7 @@
 # PLAN — make the world model reproduce outcome discontinuities
 
+> **Superseded.** The plan being executed is [`PLAN_NEXT.md`](PLAN_NEXT.md) (revised 2026-09-21: task-agnostic counterfactual safety monitor, Track A mechanism study vs Track B universal monitor, cross-task validation). This file is kept as a historical record; its phase numbers are still referenced by older code and NOTES.md entries.
+
 > **Historical record.** This file documents W0-W6 as they were run. The plan now being
 > executed is `PLAN_NEXT.md` (revised 2026-09-21): V1 vision-as-state-estimator now matches
 > privileged state at 1x, so the live bottleneck is the ~24/84 fork states that are blind even

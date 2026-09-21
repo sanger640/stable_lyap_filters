@@ -1,21 +1,22 @@
 # stable_lyap_filters
 
-> **Current research status (2026-09-17):** the calibrated divergence monitor described below
-> is a legacy baseline, not the current research result. The active goal is a general,
-> failure-label-free, calibration-free *proximity to changed future regime* monitor. Jenga is
-> only a testbed. Physical nearest-topple margins are measurable, but the tested unlabeled
-> basin, local-jump, multiresolution, and controller-scaled predictive physical probes have not
-> passed specificity checks. The latter alarms on 9/20 moving non-topple controls and 3/10
-> contacting picks on the development panel; do not deploy it. See the
-> current [HANDOFF.md](HANDOFF.md) and [PLAN_JENGA.md](PLAN_JENGA.md) before using any score as
-> a safety filter.
+> **Current research status (2026-09-21):** the goal is a task-agnostic runtime safety monitor:
+> perturb the intended action with realistic execution error, roll the counterfactuals forward in a
+> learned world model, and flag the action when the futures split. No task features and no failure
+> labels in the monitor; Jenga is only the first testbed. On Jenga the counterfactual monitor works
+> from privileged state (64% fork recall at 1x over 10 seeds, 88% ceiling) and from DINO images plus
+> proprioception (67% at 1x), and the finding that drives the plan is that ordinary world-model
+> quality does not predict fork preservation. **The plan being executed is
+> [PLAN_NEXT.md](PLAN_NEXT.md)**; results are in [NOTES.md](NOTES.md). Nothing here is validated
+> as a deployed safety filter, and universality has not yet been tested on a second task.
+> The calibrated divergence monitor described below is a legacy baseline.
 
 > **New here?** [**TOY_EXPERIMENT.md**](TOY_EXPERIMENT.md) explains the whole thing in plain terms
 > with figures — the block, the physics, the monitor algorithm, and what we found.
 >
 > **Picking up the work?** [**HANDOFF.md**](HANDOFF.md) — method, current status, how to run
 > everything, next steps. Then [MONITOR.md](MONITOR.md) for the method spec,
-> [PLAN_DINOWM.md](PLAN_DINOWM.md) for per-phase results, and [NOTES.md](NOTES.md) for the
+> [PLAN_NEXT.md](PLAN_NEXT.md) for the active plan, and [NOTES.md](NOTES.md) for the
 > append-only decision log.
 
 A **zero-shot safety monitor** for robot manipulation, needing **no labelled failures and no tuned

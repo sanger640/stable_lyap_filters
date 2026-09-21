@@ -1,5 +1,7 @@
 # PLAN.md — piecewise-linear latent dynamics for a Jenga-toppling safety monitor
 
+> **Superseded.** The plan being executed is [`PLAN_NEXT.md`](PLAN_NEXT.md) (revised 2026-09-21: task-agnostic counterfactual safety monitor, Track A mechanism study vs Track B universal monitor, cross-task validation). This file is kept as a historical record; its phase numbers are still referenced by older code and NOTES.md entries.
+
 **Audience:** an autonomous coding agent (or a human picking this up cold).
 **Mode:** phase by phase. Do not start a phase until the previous phase's acceptance criteria
 are met and logged in `NOTES.md`. If a phase fails twice, **stop and report** — do not loosen

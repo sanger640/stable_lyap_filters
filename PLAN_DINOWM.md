@@ -1,5 +1,7 @@
 # PLAN — the monitor on DINO-WM, run on the tipping block
 
+> **Superseded.** The plan being executed is [`PLAN_NEXT.md`](PLAN_NEXT.md) (revised 2026-09-21: task-agnostic counterfactual safety monitor, Track A mechanism study vs Track B universal monitor, cross-task validation). This file is kept as a historical record; its phase numbers are still referenced by older code and NOTES.md entries.
+
 **Plain-language version of all of this, with figures: [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md).**
 
 **Mode:** phase by phase, same rule as PLAN.md. Do not start a phase until the previous one's
