@@ -176,8 +176,8 @@ def main():
                     metavar=("HEIGHT", "WIDTH"))
     ap.add_argument("--true-groups", nargs="*", default=["gripper"], choices=list(GROUPS),
                     help="default is gripper: end-effector pose is proprioception at deployment, "
-                         "not something vision should be asked to reconstruct",
-                    help="state groups to take from the simulator instead of the probe")
+                         "not something vision should be asked to reconstruct; pass an empty "
+                         "list to estimate it from images too")
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
 
