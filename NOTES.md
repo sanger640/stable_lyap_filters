@@ -3562,3 +3562,67 @@ and 89-99% at 2x against 99%, at comparable false-positive rates. The gap that r
 not blindness. Vision is now a legitimate next stage rather than a distraction.
 
 Results: `results/jenga/w6_m{1,1b,2,3}_s{1,2,3}_{train,gate3_b3,report}.json`.
+
+## W6 grid, matched-FPR curves and the noise ablation (2026-09-21)
+
+All on control-rate `trace_data`, one-step training, same architecture family, graded on batch 3.
+Recall is at MATCHED false-positive rates, swept on test quiet states (a selection tool, not the
+pre-declared Gate 3 point, which is also recorded). Only the quiet class sets any threshold.
+
+**Integration bug, found and fixed first.** `load_model` never restored `orthonormalise` /
+`hard_contacts` from the checkpoint, so every W6 model was graded with a different integrator than
+it was trained with. The effect was NOT uniform: near-neutral on one-step arms (m1 seeds 64/42/57
+-> 67/37/45) but heavily punitive on rollout-trained ones (m1b +11 to +25 points, m3_s1 13 -> 44).
+It therefore distorted comparisons BETWEEN arms, which is what the earlier tables reported.
+
+### 2x2: does the win come from the objective, the noise or the graph? (10 seeds each)
+
+| arm | AUC | recall @1% | @3% | @5% | @10% FPR | contrast | quiet median |
+|---|---|---|---|---|---|---|---|
+| gnn + noise | 0.942 [0.90-0.97] | **37%** | **62%** | **67%** | 79% | **124** | 0.078 mm |
+| mlp + noise | 0.952 [0.92-0.98] | 30% | 54% | 56% | **84%** | 28 | 0.230 mm |
+| gnn clean | 0.888 [0.83-0.93] | 0% | 14% | 37% | 65% | 9.9 | 1.035 mm |
+| mlp clean | 0.820 [0.77-0.86] | 0% | 1% | 6% | 35% | 7.5 | 1.264 mm |
+
+Both factors help and they are super-additive (Gate 3 recall 23% -> 64%). But at MATCHED FPR the
+graph's advantage is 8-11 points in the <=5% region, not the ~21 the unmatched Gate 3 numbers
+suggested, and the AUCs of the two noisy arms are statistically tied -- the MLP is better at 10%
+FPR. The graph wins specifically where we operate, which the earlier comparison overstated.
+
+### Failure attribution: the score distributions
+
+Identical signature in every arm: **weak forks 0%** (no fork scores below a typical quiet state),
+**overlap 2-4%**, and a long quiet tail. What costs recall is a handful of quiet states whose
+rollout runs away into the fork range. Dropping the worst 2% of quiet states recovers +19 points
+without noise and +6 with it.
+
+Per-probe anatomy (`jenga_w6_diagnose.py`), m2 vs the baseline, answers the m2 puzzle: m2's false
+positives ARE outlier-driven (outlier share 0.27, top probe 24x the median probe) while its true
+positives are not (0.08, 5.0x). Its detections are real; its false alarms are single runaway
+rollouts. Its problem is compressed dynamic range -- TP median 3.93 mm vs FP median 4.05 mm, where
+the baseline separates 18.3 vs 11.7 -- so it has no headroom at strict thresholds. False negatives
+at BOTH models sit near 0.8 mm against thresholds of 1.5-3.4: a factor of 2-4 below, not marginal
+misses, so ~28 fork states produce genuinely near-zero predicted spread and no threshold recovers
+them. 10 of the baseline's 56 true positives also rest on a single probe.
+
+### Noise-scale ablation (graph net; 10 seeds at 0 and 0.5, 5 at the rest)
+
+| noise | AUC | @1% | @3% | @5% | @10% | contrast | quiet p50 | quiet p99 | fork p50 |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.888 | 0% | 14% | 37% | 65% | 9.9 | 1.035 | 40.27 | 10.27 |
+| 0.25 | 0.913 | 1% | 50% | 60% | 69% | 41 | 0.172 | 26.27 | 7.08 |
+| **0.5** | **0.942** | 37% | **62%** | **67%** | **79%** | **124** | 0.078 | 14.82 | 9.66 |
+| 1.0 | 0.942 | **43%** | 50% | 56% | 74% | 25 | 0.079 | 4.55 | 2.00 |
+| 2.0 | 0.897 | 15% | 24% | 29% | 50% | 8.5 | 0.101 | 6.10 | 0.86 |
+
+An inverted U, as expected. 0.5 is best at 3/5/10% FPR; 1.0 is best at 1% and ties on AUC, because
+it keeps suppressing the quiet tail (p99 14.8 -> 4.6 mm) but halves the fork signal (9.66 -> 2.00).
+At 2.0 the forks are smoothed away (0.86 mm) and everything collapses. The operating point decides
+between 0.5 and 1.0; 0.5 for typical budgets.
+
+Caveat on the contrast column: it is a ratio of medians, and n=0.5's 124 is inflated by a very
+small denominator. Absolute p99 of the quiet distribution is the more honest tail measure, and by
+that measure noise keeps helping past 0.5 even as recall falls.
+
+Results: `results/jenga/w6_{gnn,mlp}_n{0,25,5,10,20}_s*_{train,gate3_b3,report}.json`,
+`w6_curves_{grid,arms,noise}.json`, `w6_*_diag.json`.
