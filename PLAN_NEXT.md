@@ -70,8 +70,9 @@ simulator state -> GNN dynamics -> perturbed-action rollouts -> counterfactual s
 Jenga-specific state features are allowed here because their purpose is causal diagnosis.
 
 Current best dynamics: GNN, one-step training, 0.5x input noise, no rollout curriculum, no MoE
-(`eval/jenga_w6_simple.py`). About 24 of 84 forks at 1x stay blind even with perfect state, and those
-blind forks are now the main dynamics research target.
+(`eval/jenga_w6_simple.py`). On seed 1, 24 of 84 forks at 1x stay blind even with perfect state. Forks
+that are blind across most seeds, not one seed's misses, are the main dynamics research target
+(Phase 2 establishes which they are).
 
 ### Track B — universal deployable monitor
 
@@ -134,100 +135,134 @@ states; the realistic execution-perturbation distribution; the 1x and 2x scales;
 procedure; the FPR operating points; the simulator oracle endings; the privileged-state GNN baseline;
 and the corrected DINO + proprioception state-estimation baseline.
 
-Primary metrics, in this order:
+**One canonical evaluation command.** For any checkpoint it emits:
 
-1. recall at fixed FPR: 1%, 3%, 5%, 10%
-2. AUC
-3. blind-fork count
-4. quiet spread p50 / p95 / p99
-5. fork spread p50 and its distribution
-6. fork/quiet contrast
-7. ordinary rollout error, as a secondary diagnostic only
+* AUC;
+* recall at 1%, 3%, 5% and 10% FPR;
+* 1x and 2x recall;
+* a blind-fork indicator for every individual fork;
+* the fork spread distribution;
+* quiet spread p50 / p95 / p99;
+* fork/quiet contrast;
+* rollout error;
+* the raw monitor score for every state;
+* the threshold used;
+* the seed;
+* a model / config hash.
 
-**Never choose a model primarily from one-step or rollout MSE.**
+**A manifest** with checksums of: the fork-state cache; the quiet-state cache; the perturbation set;
+the evaluation configuration; and simulator / version information where practical. The goal is that
+no later experiment can silently change the benchmark: the evaluator verifies the manifest before
+scoring and refuses to run on a mismatch.
 
-**[repo note] What "frozen" points to.** States `results/jenga/holdout3_stage2_shared.json`
-(dev: `holdout_stage2_shared.json`); snippets `holdout_stage0_cache.npz` (identical to batch 3's);
-oracle endings `holdout3_stage0_cache.npz`; scoring `eval/jenga_w5_gate3.py` (pre-declared
-operating point) + `eval/jenga_w6_report.py` (separation, contrast) + `eval/jenga_w6_curves.py`
-(matched FPR, AUC, distributions, attribution); privileged baseline `results/jenga/w6_gnn_n5_s*.pt`;
-V1 baseline `eval/jenga_v1_gate.py` with `results/jenga/v1_probe_px196_c4096.pt`. What is still
-missing is a single command that emits every Phase-1 metric for any model, plus a frozen manifest
-(file hashes) so a later change cannot slip in unnoticed. Build that first.
+Metric priority when comparing models: recall at fixed FPR, then AUC, blind forks, quiet spread,
+fork spread, contrast. Rollout error is a secondary diagnostic only. **Never choose a model primarily
+from one-step or rollout MSE.**
 
----
+**[repo note] What gets frozen.** States `results/jenga/holdout3_stage2_shared.json` (dev:
+`holdout_stage2_shared.json`); perturbations = the 64 snippets in `holdout_stage0_cache.npz`
+(byte-identical to batch 3's); oracle endings `holdout3_stage0_cache.npz`; the scoring logic now
+split across `eval/jenga_w5_gate3.py` (pre-declared operating point), `eval/jenga_w6_report.py`
+(separation, contrast) and `eval/jenga_w6_curves.py` (matched FPR, AUC, distributions); privileged
+baseline `results/jenga/w6_gnn_n5_s*.pt`; V1 baseline `eval/jenga_v1_gate.py` with
+`results/jenga/v1_probe_px196_c4096.pt`. The canonical command consolidates these three scorers so
+every number comes from one pass over one set of per-state scores.
 
-## Phase 2 — Understand the privileged blind forks
+## Phase 2 — Blind forks, defined across seeds
 
-Before changing architecture, analyse the ~24/84 1x forks missed even with perfect simulator state.
-For each blind fork record: state; nominal action; perturbation direction; real counterfactual
-trajectories; predicted counterfactual trajectories; when the real trajectories first diverge; real
-and predicted divergence magnitude over time; contact creation / breaking; stick / slip changes;
-support changes; tipping onset; time-to-fork; branch persistence.
+**Do not analyse the 24/84 misses of one seed as if they were inherent dynamics failures.** Seed
+spread is large (37-80% recall across the 10 `gnn_n5` seeds).
 
-Cluster missed forks by physical mechanism. Questions:
+Run the frozen Phase-1 evaluator on all 10 `gnn_n5` seeds. For every physical fork state compute
 
-1. Does the model ignore the action perturbation completely?
-2. Does it respond correctly at first and then reconverge?
-3. Does it miss specific contact transitions?
-4. Are blind forks systematically later-horizon events?
-5. Are they associated with small initial geometric margins?
-6. Are certain perturbation directions disproportionately missed?
+```
+q_i = (# seeds that miss fork i) / 10
+```
 
-**Deliverable:** `blind_fork_analysis.md` with representative examples and a taxonomy.
+and report the complete distribution of `q_i`. Provisional classes, for analysis:
+
+| class | rule | reading |
+|---|---|---|
+| robust blind | `q_i >= 0.8` | evidence of a systematic model limitation |
+| seed-sensitive | `0.3 <= q_i < 0.8` | depends on optimisation, not on what the model can represent |
+| usually detected | `q_i < 0.3` | |
+
+Keep the raw frequencies in every report, so the cutoffs can change later without re-running the
+evaluation. **Only the robust-blind group is initially interpreted as a systematic limitation.**
+
+For the robust-blind subset only, re-simulate from the exact fork states and log at EVERY simulation
+step: the full simulator state; contacts; the action; the real pairwise counterfactual spread; the
+predicted spread; contact changes; pose changes. The current oracle cache is insufficient, since it
+stores only hold steps 5/10/20/29/30 (`jenga_state_data.execute_recording` already records every
+step).
+
+Determine:
+
+* the first real divergence time and the first predicted divergence time;
+* whether the model never responds;
+* whether it responds at first and then reconverges;
+* whether divergence corresponds to contact creation / breaking, sliding, support loss, tipping,
+  or another event;
+* whether failures cluster by physical mechanism.
+
+**Deliverable:** `blind_fork_analysis.md`, with the `q_i` distribution, representative examples and
+a mechanism taxonomy.
 
 **Decision gate:** no new architecture until there is evidence for what the current dynamics cannot
 represent.
 
-**[repo note] Two things the analysis needs.**
-* *Separate systematic blind forks from seed luck.* 24/84 is seed 1 alone, and seed spread is large
-  (37-80% recall). Score all 10 `w6_gnn_n5` seeds and split forks into blind-in-most-seeds (a
-  property of the dynamics) and blind-in-few (optimisation noise). Only the first group is evidence
-  about what the model cannot represent.
-* *Full counterfactual trajectories.* The Stage-0 cache stores poses only at hold steps 5/10/20/29/30,
-  so "when do real trajectories first diverge" needs a re-simulation of the blind states with
-  every-step state and contact recording (`jenga_state_data.execute_recording` already does this).
-  The existing per-probe anatomy (`eval/jenga_w6_diagnose.py`) found false negatives sit at ~0.8 mm
-  predicted spread against thresholds of 1.5-3.4 mm -- genuinely near-zero response, not near-misses.
+**[repo note]** The existing per-probe anatomy (`eval/jenga_w6_diagnose.py`) already found that
+seed 1's false negatives sit at ~0.8 mm predicted spread against thresholds of 1.5-3.4 mm, i.e.
+near-zero response rather than near-misses. The cross-seed `q_i` will show whether that holds for the
+robust set.
 
----
+## Phase 3 — Counterfactual training without reviving long-rollout training
 
-## Phase 3 — Counterfactual dynamics training (privileged state)
+Privileged state throughout, so perception cannot confound the result. **Do not add the old rollout
+curriculum.** It has already been shown to damage fork sensitivity: a rollout stage halved recall
+and drove fork separation to ~0.05 (NOTES.md, W6).
 
-Privileged state throughout, so perception cannot confound the result. Keep the winning recipe
-(one-step + 0.5 input noise). **Do NOT reintroduce the long rollout curriculum.**
+Keep `L_base = L_one-step` with 0.5x input-noise training, and compare:
 
 | arm | objective |
 |---|---|
-| D0 | one-step + 0.5 noise (baseline) |
-| D1 | + the previous branch-distance loss, as an ablation. Matches branch MAGNITUDE: `D_pred(a, a+d) ~ D_real(a, a+d)` |
-| D2 | + CoCo-inspired intervention consistency [R1] |
+| D0 | the current one-step + noise baseline |
+| D1 | + the current branch-preservation loss. It already compares counterfactual separation THROUGHOUT the rollout (with a late-step ramp, `branch_terms` in `eval/jenga_w6_simple.py`); it is not endpoint-only |
+| D2 | + a CoCo-inspired intervention-consistency loss [R1] |
 
-**D2.** For the same physical state evaluate `u`, `u + d`, `u - d`, and where meaningful `u_noop`.
+**D2.** Use [R1] for the principle that a world model can predict plausible futures while being
+insufficiently responsive to interventions. Adapt it to simulator counterfactual supervision rather
+than copying its image-specific objective.
+
+Start with a SHORT unroll, about 2-5 steps, from the same ground-truth chunk-start state. For
+`u`, `u + d` and `u - d`, compare the real intervention effect with the predicted one over that
+horizon:
 
 ```
-real intervention response:       Delta_real(t) = Phi(tau_{u+d}(t))  - Phi(tau_u(t))
-predicted intervention response:  Delta_pred(t) = Phi(tau^_{u+d}(t)) - Phi(tau^_u(t))
+Delta_real(t) = Phi(tau_{u+d}(t))  - Phi(tau_u(t))
+Delta_pred(t) = Phi(tau^_{u+d}(t)) - Phi(tau^_u(t))
 ```
 
-Train so the predicted response has the correct magnitude, onset time, persistence, and
-direction/structure where appropriate. Explicitly penalise drift when the real intervention makes
-essentially no difference. The difference from D1: D2 asks *does the model respond appropriately to
-an action intervention?*, not only *are the final pairwise distances right?*
+The objective must explicitly distinguish:
 
-**Primary success criterion:** fewer privileged blind forks **without raising quiet p99.** Do not
-optimise for toppling specifically; the loss must work for arbitrary physical interventions.
+1. the intervention causes almost no real change -> the prediction should stay invariant;
+2. the intervention causes real divergence -> the prediction should respond;
+3. divergence onset;
+4. persistence over the short horizon.
 
-**[repo note] A design tension to resolve up front.** Onset and persistence are properties of a
-trajectory, so D1 and D2 need rollouts -- but a full 38-step rollout stage is exactly what halved
-recall. The only same-state action pairs in the data are at the chunk start; after that the two
-branches' states differ. So the first D2 variant should use a SHORT unroll (a few steps,
-pushforward-style: gradient only through the last steps) from the shared chunk-start state, with
-quiet p99 as the guardrail, and lengthen only if quiet p99 holds. Also note the existing D1 loss is
-already applied over the whole rollout with a late-step ramp (`branch_terms` in
-`eval/jenga_w6_simple.py`), not at the endpoint only. D1 and D2 each need >= 10 seeds.
+Do not merely match pairwise distance magnitude: D1 already tests that idea.
 
----
+**Guardrail:** quiet p99 must not deteriorate materially.
+
+**Primary success criterion:** fewer ROBUST blind forks (Phase 2), with quiet p99 and fixed-FPR
+performance at least as good as D0.
+
+Increase the unroll horizon only if the short-unroll experiment gives evidence that it helps. D1 and
+D2 each need >= 10 seeds, scored with the frozen Phase-1 command.
+
+**[repo note]** The chunk start is the only point in the data where two probes share an exact state,
+which is why D2 anchors there. D1 as currently implemented trains through a full 38-step rollout
+stage; for a like-for-like comparison with D2 it should also be run on the same short horizon.
 
 ## Phase 4 — The first universal visual world model
 
@@ -270,11 +305,12 @@ Compare a **generic GNN** (tokens as nodes, generic relational edges) against an
 Transformer** (same tokens, same data, comparable parameters; self-attention in place of message
 passing). Judge only on the counterfactual safety benchmark, not latent prediction error.
 
-**[repo note] This reverses the previous next step.** The last revision proposed a block-centric
-spatial readout (centres, corners, gaps) to close the V1 2x gap (83% vs 99%). That readout is
-Jenga-specific and is now deprioritised. The 2x visual gap is deferred under "what not to do";
-the cheap ground-truth-substitution diagnosis (`jenga_v1_gate.py --true-groups`) can still be run
-if it becomes relevant, but no Jenga detector gets built.
+**The Jenga-specific 2x object readout is dropped from the immediate roadmap.** Do not build the
+block-centric pose head proposed in the previous revision: the target is a universal monitor, and at
+1x vision + proprioception already matches privileged-state dynamics. The 2x visual gap (83% vs 99%)
+stays documented as an open diagnostic result, to revisit only if it becomes relevant to the generic
+visual-world-model stage. The cheap ground-truth-substitution diagnosis
+(`jenga_v1_gate.py --true-groups`) remains available if it does.
 
 ## Phase 7 — A task-independent safety score
 
@@ -332,26 +368,39 @@ bandwidth/filtering. Compare vision + proprioception against vision + propriocep
 Main question: **does F/T reduce blind forks specifically around contact transitions?** Not mandatory
 unless it gives clear cross-task benefit.
 
-## Phase 11 — Epistemic uncertainty baseline
+## Phase 11 — Counterfactual sensitivity vs model disagreement
 
-Distinguish counterfactual sensitivity from epistemic uncertainty. Build a simple ensemble WM and
-compute `U_epi = Var{ tau^(m) }_{m=1..M}`. Look especially for states with **low U_epi but high
-S_cf**: the model knows the state well, yet the planned action sits near a genuine physical
-bifurcation. That is a fundamentally different safety signal from OOD detection.
+Distinguish counterfactual sensitivity from epistemic uncertainty. **Exploit the existing models
+first:** the ten independently trained `gnn_n5` seeds already give a cheap first
+ensemble-disagreement baseline, so no new training is needed initially.
 
-**[repo note]** The 10-seed privileged grid is already a 10-member ensemble, so a first version of
-this comparison needs no new training.
+For every test state compute:
 
-## Phase 12 — Twin-Rollout-style evaluation
+* counterfactual action sensitivity (the monitor score);
+* across-model prediction disagreement for the nominal action.
 
-The simulator-fork evaluation is strongly aligned with Twin Rollouts [R4]: paired trajectories share
-the prefix and the exogenous randomness, and differ only in the intervened action. Wherever a WM is
-stochastic, paired counterfactual rollouts must use common random numbers, `WM(z, u+d; xi)` vs
-`WM(z, u-d; xi)` with the same `xi`, or stochasticity masquerades as action sensitivity.
+Ask whether robust forks can occur with LOW ensemble disagreement. If yes, that is strong evidence
+that counterfactual sensitivity is different from ordinary epistemic / model uncertainty: the model
+knows the state well, yet the planned action sits near a genuine physical bifurcation.
 
-**[repo note]** `state_dynamics.rollout` already supports common random numbers (`noise=`) but
-nothing uses it. Every current model is deterministic, so this becomes binding in Phase 4-5 if a
-stochastic WM is used.
+**Do not call the ensemble disagreement calibrated epistemic uncertainty** unless calibration is
+separately demonstrated. A trained ensemble (`U_epi = Var{tau^(m)}`) can follow later if this first
+pass is inconclusive.
+
+## Phase 12 — Shared-noise counterfactual evaluation
+
+The rollout infrastructure already supports common / shared random numbers
+(`state_dynamics.rollout(..., sample=True, noise=...)`), though every current model is
+deterministic and nothing uses it yet. When stochastic world models are introduced, paired
+counterfactual predictions must use
+
+```
+WM(z, u + d; xi)   and   WM(z, u - d; xi)   with the same xi
+```
+
+so that model stochasticity is never mistaken for action-induced branching. The simulator-fork
+evaluation is strongly aligned with this methodology [R4]; that manuscript provides the framework
+and states that its experiments are forthcoming.
 
 ## Phase 13 — Paper positioning
 
@@ -390,29 +439,21 @@ sensitivity.
 
 ## Immediate execution order
 
-**Now**
-1. Freeze the corrected Jenga baseline (Phase 1).
-2. Analyse the ~24 privileged blind forks (Phase 2).
-3. Implement CoCo-inspired intervention-consistency training on privileged state (Phase 3).
-4. Determine whether blind forks can be recovered without raising quiet p99.
+1. Finish the Phase 1 benchmark freeze and checksum manifest.
+2. Evaluate all 10 `gnn_n5` seeds with the frozen command.
+3. Produce the per-fork miss frequency `q_i` across seeds.
+4. Identify the robust-blind forks.
+5. Re-simulate only those forks with dense state / contact logging.
+6. Finish the physical-mechanism taxonomy (`blind_fork_analysis.md`).
+7. Only then implement the short-unroll D2 counterfactual objective.
 
-**Immediately after**
-5. Build a direct DINO latent action-conditioned WM baseline (V2-A).
-6. Compare the state-GNN oracle pipeline against the direct visual-latent WM on the same benchmark.
-7. Add a V-JEPA 2-AC-style visual-latent baseline (V2-B).
+**No new architecture before steps 1-6 are complete.**
 
-**Then stop optimising Jenga**
-8. Add pushing near a physical regime boundary.
-9. Add insertion / jamming or another distinct contact-rich task.
-10. Apply the same counterfactual monitor unchanged.
-11. Introduce the normalised task-independent fork score.
-12. Measure whether one calibration rule works across all tasks.
-
-**Then strengthen the system**
-13. Test generic object / spatial tokens if latent visual WMs need better physical structure.
-14. Add optional F/T history.
-15. Compare counterfactual sensitivity against epistemic uncertainty.
-16. Train a shared multi-task WM if per-task models validate the monitor principle.
+Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
+(Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA
+2-AC-style baseline (V2-B); then stop optimising Jenga -- pushing, insertion, the normalised
+task-independent score and a shared calibration rule; then generic spatial tokens, optional F/T and a
+shared multi-task world model.
 
 ## Decision gates
 
@@ -445,33 +486,25 @@ faithful counterfactual action sensitivity  can provide a generic runtime safety
 
 ---
 
-## References to read
+## References
 
-Supplied with this plan. **[repo note]** The 2026 entries postdate what I can verify; their titles,
-identifiers and claimed contents must be checked against the papers before they are cited or before
-a method is built on them. V-JEPA 2 [R2] is a known 2025 paper.
+Verified by the user on 2026-09-21.
 
-* **[R1] CoCo.** Yuhong Shi et al., *Overcoming Statistical Bias in Action-Controllable World
-  Models*, 2026, arXiv:2608.04653. Counterfactual training; action responsiveness; preventing
-  no-action drift; same-state / multiple-action evaluation.
-* **[R2] V-JEPA 2 / V-JEPA 2-AC.** Mido Assran et al., *V-JEPA 2: Self-Supervised Video Models
-  Enable Understanding, Prediction and Planning*, 2025, arXiv:2506.09985. Generic video
-  representation; action-conditioned latent prediction; direct use of proprioception; latent
-  planning.
-* **[R3] ContactWorld.** Zhiyuan Zhang et al., *ContactWorld: What Representations Matter in
-  Vision-Tactile World Models for Contact-Rich Manipulation*, 2026, arXiv:2606.13877. 12 contact-rich
-  tasks; spatially structured, temporally continuous, multimodal representations; candidate tasks.
-* **[R4] Twin Rollouts.** Yu Ma, Hongli Shi, Xinran Xu, *Twin Rollouts: Noise-Coupled
-  Counterfactual Branching in Interactive Video World Models*, 2026, arXiv:2608.08982.
-  Counterfactual branching methodology; shared-noise paired rollouts; simulator-fork ground truth.
-  Experiments are stated as forthcoming: methodological related work, not a performance baseline.
-* **[R5] Risk-informed world models.** Kailang Ma et al., *Rethinking World Models for
-  Safety-Critical Embodied Systems*, 2026, arXiv:2609.03774. Safety motivation; prediction vs
-  intervention; consequential futures. A perspective article, not a robotics baseline.
-
-Carried from the previous revision as an optional dense-feature baseline for Phase 6: Mur-Labadia
-et al., *V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning*, 2026,
-arXiv:2603.14482 (also unverified).
+* **[R1] CoCo.** Yuhong Shi, Zhenhao Chu, Jie Wei, Jun Hao, Jianyi Liu, Jingwen Fu. *Overcoming
+  Statistical Bias in Action-Controllable World Models.* arXiv:2608.04653, 2026. Use for: action
+  responsiveness, zero-action drift, counterfactual consistency.
+* **[R2] V-JEPA 2.** Mido Assran et al. *V-JEPA 2: Self-Supervised Video Models Enable
+  Understanding, Prediction and Planning.* arXiv:2506.09985, 2025. Use for: generic visual latent
+  world models, robot proprioception, action-conditioned latent planning.
+* **[R3] ContactWorld.** Zhiyuan Zhang et al. *ContactWorld: What Matters in Vision-Tactile World
+  Models for Contact-Rich Manipulation.* arXiv:2606.13877, 2026. Use for: cross-task contact-rich
+  evaluation, spatial representations, later tactile / F/T experiments.
+* **[R4] Twin Rollouts.** Yu Ma, Hongli Shi, Xinran Xu. *Twin Rollouts: Noise-Coupled
+  Counterfactual Branching in Interactive Video World Models.* arXiv:2608.08982, 2026. Use for:
+  same-prefix / shared-noise counterfactual evaluation. Experiments stated as forthcoming.
+* **[R5] Risk-informed world models.** Kailang Ma, Heye Huang, Inhi Kim, Kitae Jang. *Rethinking
+  World Models for Safety-Critical Embodied Systems.* arXiv:2609.03774, 2026. Use ONLY for research
+  motivation and positioning: a perspective paper, not an implemented robotics baseline.
 
 ## Standing rules
 
