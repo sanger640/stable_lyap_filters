@@ -504,7 +504,8 @@ are paused for a speed audit: only a batched branch loss is bit-identical to the
 torch.compile's cudagraphs backend gives wrong gradients and inductor diverges under Adam, so
 neither may be mixed into an arm. The bit-identical option gains only 1.15-1.20x seeds/hour at matched
 concurrency (`eval/jenga_w6_speed.py`), below the 1.5x bar, so all arms stay on the current code; the
-remaining 24 seeds run at 5 concurrent processes (~2x throughput, numerically identical).
+remaining 24 seeds run at 5 concurrent processes (~2x throughput, numerically identical); D0+CW seeds
+first. Future D1-style runs use the batched branch loss (`--fast-branch`) from the start.
 
 Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
 (Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA

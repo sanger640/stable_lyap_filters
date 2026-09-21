@@ -3918,7 +3918,15 @@ Decision under the pre-set rule. The only bit-identical optimisation (batched br
 1.15-1.20x at matched concurrency, below the 1.5x bar, so every D1/D2 seed stays on the current code
 (no mixed code versions). Concurrency changes no numbers; the throughput comes from it (2x from k=1
 to k=5), so the remaining 24 jobs (D0+CW s4-10, D1+CW s3-10, D2+CW s2-10) resumed at k=5, interleaved
-by seed. The batched branch loss is kept for future experiments.
+by seed. Not switching mid-grid is the right call, but the 1.5x cutoff was arbitrary: a repeatable
+15-20% speedup with bit-identical results is worth having, so `--fast-branch` is the default choice
+for all future D1-style runs (just not mixed into this grid).
+
+**Queue reprioritised (16:40):** the five running jobs (D2 s2, D1 s3, D2 s3, D0+CW s4, D1 s4) are
+untouched; remaining D0+CW seeds 5-10 run ahead of the other D1/D2 seeds, since D0+CW is the cheapest
+arm and alone answers whether coverage fixes the blind spot. The D0 vs D0+CW comparison
+(`eval/jenga_step7_compare.py --arms D0 D0+CW`, now with per-seed paired changes) runs as soon as
+all ten D0+CW seeds are in.
 
 **Seeds so far** (recall at matched 1/3/5/10% FPR, AUC, quiet p99, blind forks at 1x): D0+CW s3
 21/36/55/68, 0.911, 16.9 mm, 30 (worse than D0 s3: seed variance is large); D1+CW s1 85/86/89/92,

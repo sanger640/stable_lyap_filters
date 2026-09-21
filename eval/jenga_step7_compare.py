@@ -97,16 +97,40 @@ def summarise(runs, upright):
         "_misses": misses}
 
 
+def paired(base_runs, runs):
+    """Per-seed change from the same seed of the base arm (seeds present in both)."""
+    base = {run["model"]["seed"]: run["scales"][SCALE] for run in base_runs}
+    rows = []
+    for run in sorted(runs, key=lambda r: r["model"]["seed"]):
+        seed, s = run["model"]["seed"], run["scales"][SCALE]
+        if seed not in base:
+            continue
+        b = base[seed]
+        row = {"seed": seed}
+        for label, fn in (("blind", lambda x: x["blind_forks"]["count"]),
+                          ("auc", lambda x: x["auc"]),
+                          ("quiet_p99_mm", lambda x: x["quiet_spread_mm"]["p99"]),
+                          ("fork_p50_mm", lambda x: x["fork_spread_mm"]["p50"]),
+                          *((f"recall_{p}", lambda x, p=p: x["matched_fpr"][p]["recall"])
+                            for p in ("1pct", "3pct", "5pct", "10pct"))):
+            row[label] = {"base": fn(b), "arm": fn(s), "change": fn(s) - fn(b)}
+        rows.append(row)
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--output", default=str(ROOT / "results/jenga/step7_compare.json"))
+    ap.add_argument("--arms", nargs="+", default=list(ARMS), choices=list(ARMS))
     args = ap.parse_args()
     upright = upright_forks()
-    arms = {}
+    arms, runs_by_arm = {}, {}
     for name, prefix in ARMS.items():
+        if name not in args.arms:
+            continue
         runs = arm_runs(prefix)
         if runs:
-            arms[name] = summarise(runs, upright)
+            arms[name], runs_by_arm[name] = summarise(runs, upright), runs
     if "D0" in arms:
         baseline = {k for k, v in arms["D0"]["_misses"].items()
                     if v / len(arms["D0"]["seeds"]) >= 0.8}
@@ -117,6 +141,9 @@ def main():
             summary["d0_robust_blind_total"] = len(baseline)
     for summary in arms.values():
         summary.pop("_misses")
+    for name in arms:
+        if name != "D0" and "D0" in runs_by_arm:
+            arms[name]["paired_vs_d0"] = paired(runs_by_arm["D0"], runs_by_arm[name])
     result = {"scale": SCALE, "upright_forks": len(upright), "arms": arms}
     Path(args.output).write_text(json.dumps(result, indent=1) + "\n")
 
@@ -134,6 +161,18 @@ def main():
               + f" | {s['auc']['mean']:.3f} {s['quiet_p99_mm']['mean']:6.2f} "
               f"{s['fork_p50_mm']['mean']:6.2f} | {s['upright_miss_rate']:7.2f} "
               f"{s['other_miss_rate']:5.2f}")
+    for name, s in arms.items():
+        if "paired_vs_d0" not in s:
+            continue
+        print(f"\n{name} vs D0, same seed (arm - D0): blind, AUC, quiet p99, fork p50, "
+              f"recall @1/3/5/10%")
+        for row in s["paired_vs_d0"]:
+            c = {k: v["change"] for k, v in row.items() if k != "seed"}
+            print(f"  s{row['seed']:<2d} blind {row['blind']['base']:3d}->{row['blind']['arm']:3d}"
+                  f"  AUC {c['auc']:+.3f}  qp99 {c['quiet_p99_mm']:+7.2f}  "
+                  f"fp50 {c['fork_p50_mm']:+7.2f}  recall "
+                  + " ".join(f"{100 * c[f'recall_{p}']:+4.0f}"
+                             for p in ("1pct", "3pct", "5pct", "10pct")))
 
 
 if __name__ == "__main__":
