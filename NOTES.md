@@ -3932,3 +3932,34 @@ all ten D0+CW seeds are in.
 21/36/55/68, 0.911, 16.9 mm, 30 (worse than D0 s3: seed variance is large); D1+CW s1 85/86/89/92,
 0.979, 5.0 mm, 12; D1+CW s2 56/86/90/93, 0.975, 15.7 mm, 9; D2+CW s1 63/74/74/85, 0.957, 3.7 mm, 15.
 No arm-level conclusion until 10 seeds each.
+
+### D0 vs D0+CW, 10 paired seeds: coverage helps but does not remove the blind spot (2026-09-21)
+
+`eval/jenga_step7_compare.py --arms D0 D0+CW` -> `results/jenga/step7_compare_d0cw.json`. Frozen
+benchmark, 1x, 84 test forks; the same seeds 1-10 in both arms, identical training code apart from the
+added contact-window data.
+
+| arm | robust blind (pre-declared / matched 5% / both) | recall @ matched 1/3/5/10% FPR (mean) | AUC | quiet p99 | fork p50 | blind/seed | upright / other miss rate |
+|---|---|---|---|---|---|---|---|
+| D0 | 15 / 13 / 11 | 35 / 60 / 67 / 79 | 0.943 | 15.4 mm | 10.0 mm | 22.5 | 0.52 / 0.18 |
+| D0+CW | 12 / 9 / 9 | 56 / 71 / 75 / 82 | 0.953 | 9.0 mm | 10.7 mm | 18.5 | 0.43 / 0.11 |
+
+Paired per seed (D0+CW - D0): recall @1% better on 6, worse on 3 (median +14 pts); @3% 7/3 (+16);
+@5% 6/4 (+8); @10% 6/3 (+1); AUC 7/3 (+0.014); blind forks fewer on 4, more on 6 (median -2.5);
+quiet p99 lower on 7. Wilcoxon signed-rank p = 0.13-0.49 for every metric: no paired change is
+significant at n = 10. Seeds 3, 6 and 10 are worse on nearly everything; the large gains (s2, s5, s7
+at 1%) come mostly from removing D0's very noisy quiet states (quiet p99 39 -> 5 mm on s5).
+
+Fork level: forks that no seed misses 14 -> 30, i.e. the data mostly converts intermittently-missed
+forks into reliable detections. The systematic core does not move: 8 of D0's 15 robust-blind forks
+stay robust-blind (misses/10 seeds 10->10, 9->10, 9->9, 9->10, 8->10, 10->8, 10->8, 8->8), all of
+them class A1/A2 (upright neighbour pushed past tipping) or C; 3 forks newly become robust-blind (two
+of them upright). The upright miss rate falls by about the same factor as the rest (0.52 -> 0.43
+vs 0.18 -> 0.11), so the added coverage is not selectively curing the upright contact-to-tip class.
+
+**Answer to the primary question:** adequate coverage of the upright contact-to-tip transition does
+not solve the blind spot by itself. 3.2x more examples of that transition as one-step data leaves 9
+robust-blind forks (11 before), the same physical class, and an arm-level gain that is real on
+average but seed-dependent and not significant paired. Whether a counterfactual objective closes the
+rest is what D1+CW / D2+CW (running) decide; early seeds of both look stronger than D0+CW on some
+seeds and not others, so no claim until they have 10.
