@@ -1,0 +1,8414 @@
+{
+  "protocol": {
+    "calibration_free": true,
+    "probes": 64,
+    "execution_noise_scales": [
+      1.0
+    ],
+    "holds": [
+      10,
+      30
+    ],
+    "rule": "original frozen PC1 two-mode rule: best split on PC1 at hold steps 10 and 30; two hard Gaussians beat one by BIC; Ashman D>2; each side has at least two of 64 probes; the binary partition matches with at most one probe misplaced",
+    "uses_development_scores_to_set_alarm": false,
+    "uses_quiet_or_failure_labels_to_set_alarm": false,
+    "physical_classes": "evaluation only, read after the alarm"
+  },
+  "model": {
+    "path": "results/jenga/w6_cw_d2_s10.pt",
+    "sha256": "23c64390840178646337c344f383720817f088a5b0916f07db73ed746152b08f",
+    "config": {
+      "hidden": 128,
+      "rounds": 3,
+      "kind": "single",
+      "experts": 1,
+      "parameters": 653992,
+      "substeps": 1,
+      "seed": 10,
+      "noise": 0.5,
+      "orthonormalise": true,
+      "hard_contacts": false,
+      "branch_weight": 0.0,
+      "rollout_epochs": 0,
+      "cw_data": "results/jenga/cw_data",
+      "cw_loss": "intervention",
+      "cw_groups": 32,
+      "cw_weight": 1.0,
+      "transition_weighting": false
+    },
+    "config_sha256": "434c6f4ca812b56413bdea30fcf730286d04e7236710dfe050fa6615625541c6",
+    "seed": 10
+  },
+  "summary": {
+    "dev": {
+      "1.0": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 9,
+          "rate": 0.391304347826087,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 9,
+              "rate": 0.391304347826087
+            },
+            "multi_exact_alarm": {
+              "alarms": 8,
+              "rate": 0.34782608695652173
+            },
+            "multi_coarse_alarm": {
+              "alarms": 9,
+              "rate": 0.391304347826087
+            },
+            "multi_dominant_alarm": {
+              "alarms": 6,
+              "rate": 0.2608695652173913
+            }
+          }
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 8,
+          "rate": 0.0898876404494382,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 8,
+              "rate": 0.0898876404494382
+            },
+            "multi_exact_alarm": {
+              "alarms": 3,
+              "rate": 0.033707865168539325
+            },
+            "multi_coarse_alarm": {
+              "alarms": 4,
+              "rate": 0.0449438202247191
+            },
+            "multi_dominant_alarm": {
+              "alarms": 2,
+              "rate": 0.02247191011235955
+            }
+          }
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 5,
+          "rate": 0.29411764705882354,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 5,
+              "rate": 0.29411764705882354
+            },
+            "multi_exact_alarm": {
+              "alarms": 4,
+              "rate": 0.23529411764705882
+            },
+            "multi_coarse_alarm": {
+              "alarms": 4,
+              "rate": 0.23529411764705882
+            },
+            "multi_dominant_alarm": {
+              "alarms": 3,
+              "rate": 0.17647058823529413
+            }
+          }
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 2,
+          "rate": 0.25,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 2,
+              "rate": 0.25
+            },
+            "multi_exact_alarm": {
+              "alarms": 1,
+              "rate": 0.125
+            },
+            "multi_coarse_alarm": {
+              "alarms": 2,
+              "rate": 0.25
+            },
+            "multi_dominant_alarm": {
+              "alarms": 2,
+              "rate": 0.25
+            }
+          }
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 0,
+          "rate": 0.0,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 0,
+              "rate": 0.0
+            },
+            "multi_exact_alarm": {
+              "alarms": 0,
+              "rate": 0.0
+            },
+            "multi_coarse_alarm": {
+              "alarms": 0,
+              "rate": 0.0
+            },
+            "multi_dominant_alarm": {
+              "alarms": 1,
+              "rate": 0.3333333333333333
+            }
+          }
+        }
+      }
+    },
+    "test": {
+      "1.0": {
+        "topple_fork": {
+          "states": 84,
+          "alarms": 35,
+          "rate": 0.4166666666666667,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 35,
+              "rate": 0.4166666666666667
+            },
+            "multi_exact_alarm": {
+              "alarms": 21,
+              "rate": 0.25
+            },
+            "multi_coarse_alarm": {
+              "alarms": 28,
+              "rate": 0.3333333333333333
+            },
+            "multi_dominant_alarm": {
+              "alarms": 17,
+              "rate": 0.20238095238095238
+            }
+          }
+        },
+        "quiet": {
+          "states": 113,
+          "alarms": 3,
+          "rate": 0.02654867256637168,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 3,
+              "rate": 0.02654867256637168
+            },
+            "multi_exact_alarm": {
+              "alarms": 5,
+              "rate": 0.04424778761061947
+            },
+            "multi_coarse_alarm": {
+              "alarms": 5,
+              "rate": 0.04424778761061947
+            },
+            "multi_dominant_alarm": {
+              "alarms": 5,
+              "rate": 0.04424778761061947
+            }
+          }
+        },
+        "nudge_fork": {
+          "states": 10,
+          "alarms": 3,
+          "rate": 0.3,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 3,
+              "rate": 0.3
+            },
+            "multi_exact_alarm": {
+              "alarms": 1,
+              "rate": 0.1
+            },
+            "multi_coarse_alarm": {
+              "alarms": 1,
+              "rate": 0.1
+            },
+            "multi_dominant_alarm": {
+              "alarms": 1,
+              "rate": 0.1
+            }
+          }
+        },
+        "small_split": {
+          "states": 7,
+          "alarms": 1,
+          "rate": 0.14285714285714285,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 1,
+              "rate": 0.14285714285714285
+            },
+            "multi_exact_alarm": {
+              "alarms": 1,
+              "rate": 0.14285714285714285
+            },
+            "multi_coarse_alarm": {
+              "alarms": 1,
+              "rate": 0.14285714285714285
+            },
+            "multi_dominant_alarm": {
+              "alarms": 1,
+              "rate": 0.14285714285714285
+            }
+          }
+        },
+        "weak": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "diagnostics": {
+            "pc1_persistent_alarm": {
+              "alarms": 0,
+              "rate": null
+            },
+            "multi_exact_alarm": {
+              "alarms": 0,
+              "rate": null
+            },
+            "multi_coarse_alarm": {
+              "alarms": 0,
+              "rate": null
+            },
+            "multi_dominant_alarm": {
+              "alarms": 0,
+              "rate": null
+            }
+          }
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "split": "dev",
+      "episode_id": "2",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 45,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        40,
+        24
+      ],
+      "sizes_hold30": [
+        25,
+        21,
+        18
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        60,
+        4
+      ],
+      "sizes_hold30": [
+        60,
+        4
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 19,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        33,
+        16,
+        15
+      ],
+      "sizes_hold30": [
+        33,
+        16,
+        8,
+        7
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        40,
+        13,
+        11
+      ],
+      "sizes_hold30": [
+        40,
+        14,
+        10
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        56,
+        8
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        56,
+        8
+      ],
+      "sizes_hold30": [
+        57,
+        4,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        54,
+        10
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        59,
+        3,
+        2
+      ],
+      "sizes_hold30": [
+        56,
+        8
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        49,
+        15
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 46,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        48,
+        8,
+        8
+      ],
+      "sizes_hold30": [
+        53,
+        8,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "18",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        50,
+        14
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        47,
+        10,
+        7
+      ],
+      "sizes_hold30": [
+        48,
+        7,
+        7,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "22",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        56,
+        8
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "23",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "24",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        55,
+        5,
+        4
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        42,
+        22
+      ],
+      "sizes_hold30": [
+        35,
+        29
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        51,
+        13
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 8,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        34,
+        15,
+        15
+      ],
+      "sizes_hold30": [
+        34,
+        19,
+        11
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        61,
+        3
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        42,
+        16,
+        6
+      ],
+      "sizes_hold30": [
+        42,
+        12,
+        10
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 290,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "53",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        50,
+        7,
+        7
+      ],
+      "sizes_hold30": [
+        49,
+        8,
+        7
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "60",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        56,
+        8
+      ],
+      "sizes_hold30": [
+        55,
+        5,
+        4
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 29,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 48,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "64",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "66",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        55,
+        9
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 31,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        52,
+        8,
+        4
+      ],
+      "sizes_hold30": [
+        52,
+        5,
+        4,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 56,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        47,
+        11,
+        3,
+        3
+      ],
+      "sizes_hold30": [
+        48,
+        10,
+        3,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 13,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        54,
+        10
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        56,
+        8
+      ],
+      "sizes_hold30": [
+        47,
+        17
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        43,
+        10,
+        8,
+        3
+      ],
+      "sizes_hold30": [
+        40,
+        16,
+        5,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        39,
+        25
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 178,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        48,
+        16
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        50,
+        14
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        54,
+        10
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        50,
+        9,
+        5
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "83",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 43,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        37,
+        16,
+        11
+      ],
+      "sizes_hold30": [
+        37,
+        16,
+        11
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "85",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        23,
+        21,
+        20
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 22,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        34,
+        30
+      ],
+      "sizes_hold30": [
+        37,
+        27
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 63,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        26,
+        21,
+        17
+      ],
+      "sizes_hold30": [
+        25,
+        22,
+        17
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "90",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        58,
+        4,
+        2
+      ],
+      "sizes_hold30": [
+        56,
+        4,
+        2,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        58,
+        6
+      ],
+      "sizes_hold30": [
+        58,
+        4,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        58,
+        6
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 19,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        47,
+        9,
+        8
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 12,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 12,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 21,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        46,
+        18
+      ],
+      "sizes_hold30": [
+        47,
+        17
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 20,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        30,
+        20,
+        14
+      ],
+      "sizes_hold30": [
+        31,
+        17,
+        11,
+        5
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 142,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 31,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        41,
+        23
+      ],
+      "sizes_hold30": [
+        42,
+        16,
+        4,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 32,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 4,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        28,
+        15,
+        11,
+        10
+      ],
+      "sizes_hold30": [
+        33,
+        20,
+        11
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "8",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "8",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 10,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 10,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        53,
+        9,
+        2
+      ],
+      "sizes_hold30": [
+        55,
+        9
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 49,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        42,
+        12,
+        10
+      ],
+      "sizes_hold30": [
+        42,
+        22
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 226,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        61,
+        3
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        59,
+        5
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "14",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        50,
+        14
+      ],
+      "sizes_hold30": [
+        53,
+        11
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "14",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        36,
+        21,
+        7
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 38,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        50,
+        12,
+        2
+      ],
+      "sizes_hold30": [
+        51,
+        13
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 47,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        48,
+        16
+      ],
+      "sizes_hold30": [
+        40,
+        16,
+        8
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 198,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 202,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "18",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "18",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "18",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        36,
+        18,
+        10
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 28,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 4,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        52,
+        5,
+        5,
+        2
+      ],
+      "sizes_hold30": [
+        58,
+        4,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 33,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        45,
+        19
+      ],
+      "sizes_hold30": [
+        44,
+        20
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        48,
+        9,
+        7
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        39,
+        20,
+        5
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        49,
+        15
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "22",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "23",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        56,
+        8
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "24",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 24,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 16,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        51,
+        7,
+        4,
+        2
+      ],
+      "sizes_hold30": [
+        52,
+        6,
+        4,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 27,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        44,
+        14,
+        6
+      ],
+      "sizes_hold30": [
+        44,
+        16,
+        4
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        24,
+        21,
+        17,
+        2
+      ],
+      "sizes_hold30": [
+        43,
+        17,
+        2,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        60,
+        4
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 22,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 46,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        56,
+        5,
+        3
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 20,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 53,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        60,
+        4
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 60,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 8,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        61,
+        3
+      ],
+      "sizes_hold30": [
+        54,
+        8,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 50,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        55,
+        7,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        50,
+        14
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        56,
+        8
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 53,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        52,
+        9,
+        3
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        57,
+        7
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        53,
+        11
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 174,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        46,
+        18
+      ],
+      "sizes_hold30": [
+        52,
+        12
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 218,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 226,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "32",
+      "chunk_start": 6,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "32",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        49,
+        15
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "32",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        57,
+        7
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        52,
+        10,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        59,
+        5
+      ],
+      "sizes_hold30": [
+        59,
+        5
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 18,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        50,
+        12,
+        2
+      ],
+      "sizes_hold30": [
+        49,
+        13,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 11,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        59,
+        5
+      ],
+      "sizes_hold30": [
+        57,
+        3,
+        2,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 4,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        51,
+        7,
+        4,
+        2
+      ],
+      "sizes_hold30": [
+        47,
+        17
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "39",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "39",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 206,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 222,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        58,
+        6
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 174,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 314,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "53",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "53",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        51,
+        13
+      ],
+      "sizes_hold30": [
+        49,
+        13,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        60,
+        4
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 1,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "58",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "58",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "60",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "60",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 1,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        45,
+        19
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        57,
+        7
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        36,
+        28
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 62,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        43,
+        21
+      ],
+      "sizes_hold30": [
+        30,
+        21,
+        13
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 166,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 6,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 78,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 182,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        56,
+        8
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 218,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 62,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        41,
+        11,
+        9,
+        3
+      ],
+      "sizes_hold30": [
+        41,
+        11,
+        9,
+        3
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 24,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        61,
+        3
+      ],
+      "sizes_hold30": [
+        60,
+        4
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 202,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 234,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "71",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 1,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "73",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 14,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        57,
+        7
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 22,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "73",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        60,
+        2,
+        2
+      ],
+      "sizes_hold30": [
+        60,
+        2,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "75",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        61,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "75",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 9,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        58,
+        4,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 5,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 38,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        36,
+        23,
+        5
+      ],
+      "sizes_hold30": [
+        34,
+        20,
+        10
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 46,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        25,
+        22,
+        9,
+        8
+      ],
+      "sizes_hold30": [
+        26,
+        19,
+        12,
+        7
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 18,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "81",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        55,
+        9
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "81",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        33,
+        31
+      ],
+      "sizes_hold30": [
+        34,
+        30
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "81",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "83",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 45,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "83",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 48,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        62,
+        2
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "83",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 30,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        49,
+        15
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 4,
+      "groups_hold30": 4,
+      "sizes_hold10": [
+        49,
+        7,
+        4,
+        4
+      ],
+      "sizes_hold30": [
+        49,
+        7,
+        4,
+        4
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        49,
+        15
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "85",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 12,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        54,
+        6,
+        4
+      ],
+      "sizes_hold30": [
+        29,
+        26,
+        9
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "85",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 15,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        50,
+        11,
+        3
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "85",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        53,
+        11
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 10,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "90",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 5,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        62,
+        2
+      ],
+      "sizes_hold30": [
+        58,
+        6
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        59,
+        5
+      ],
+      "sizes_hold30": [
+        59,
+        5
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 20,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        35,
+        16,
+        13
+      ],
+      "sizes_hold30": [
+        35,
+        19,
+        10
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 78,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 15,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 3,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        24,
+        20,
+        20
+      ],
+      "sizes_hold30": [
+        25,
+        24,
+        15
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 22,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        57,
+        5,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 29,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        51,
+        13
+      ],
+      "sizes_hold30": [
+        58,
+        6
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        46,
+        18
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "92",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        40,
+        22,
+        2
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 21,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 4,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        18,
+        18,
+        14,
+        14
+      ],
+      "sizes_hold30": [
+        60,
+        4
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": true,
+      "multi_coarse_alarm": true,
+      "multi_dominant_alarm": true,
+      "groups_hold10": 2,
+      "groups_hold30": 2,
+      "sizes_hold10": [
+        54,
+        10
+      ],
+      "sizes_hold30": [
+        55,
+        9
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "96",
+      "chunk_start": 46,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 3,
+      "sizes_hold10": [
+        36,
+        28
+      ],
+      "sizes_hold30": [
+        25,
+        24,
+        15
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "96",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 2,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        61,
+        3
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    },
+    {
+      "split": "test",
+      "episode_id": "98",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": true,
+      "pc1_persistent_alarm": true,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": true
+    },
+    {
+      "split": "test",
+      "episode_id": "98",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "pc1_persistent_alarm": false,
+      "multi_exact_alarm": false,
+      "multi_coarse_alarm": false,
+      "multi_dominant_alarm": false,
+      "groups_hold10": 1,
+      "groups_hold30": 1,
+      "sizes_hold10": [
+        64
+      ],
+      "sizes_hold30": [
+        64
+      ],
+      "persistent": false
+    }
+  ]
+}

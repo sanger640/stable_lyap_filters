@@ -359,22 +359,29 @@ visual-world-model stage. The cheap ground-truth-substitution diagnosis
 
 ## Phase 7 — A task-independent safety score
 
-Raw latent distances will not be comparable across tasks. Standardise against the model's own
-nominal quiet behaviour, for example
+The runtime monitor must be calibration-free. Raw latent spread and any percentile of nominal quiet
+behaviour are diagnostics only; no quiet dataset, failure dataset or environment-specific distance
+threshold may decide an alarm. Use the within-probe geometry instead:
 
-```
-S_t = ( D_cf(t) - median(D_quiet) ) / ( MAD(D_quiet) + eps )
-or
-S_t = -log P_{D ~ p_quiet}( D >= D_cf )
-```
+1. generate 64 realistic execution-noise counterfactuals;
+2. at an early and late future time, fit one versus two groups along PC1;
+3. require two groups to win BIC, Ashman's D > 2, and at least two probes per side;
+4. require the same binary partition at both times (at most one probe changes side).
 
-The score must mean the same thing across tasks and scene types. Calibration data may contain normal
-interaction trajectories; it must not require failure examples. Test (1) per-environment quiet
-calibration and (2) one shared threshold across tasks. The second is the stronger result.
+BIC supplies its own complexity penalty, Ashman's D is dimensionless, and the minority/persistence
+rules follow from the fixed probe design. The implementation is `src/counterfactual_monitor.py`.
+It exposes no `fit` or `calibrate` method. The same rule and constants must transfer unchanged to
+every task and representation. A continuous spread/AUC curve may still diagnose a world model, but
+must never be reported as the monitor's deployed alarm.
 
-**[repo note]** The quiet distribution is heavy-tailed here (p99/median up to ~190 for the best
-privileged model), so a median/MAD score will be dominated by that tail. Report the score's
-behaviour on the quiet tail explicitly, not only its median.
+**Status (2026-09-22): implemented, performance gate FAILS on Jenga.** On the frozen 1x benchmark,
+the original persistent-PC1 rule over 10 D2 seeds has 50.4% mean fork recall (31.0-81.0%), 7.8%
+quiet alarms (2.7-14.2%), 16 robust blind forks and no quiet state that alarms in >=8 seeds. D0 gets
+53.0% recall, 11.9% quiet alarms and 18 robust blind forks. Thus D2 is retained because it suppresses
+spurious quiet branching, but its calibrated 84%-recall spread result does not transfer to discrete
+mode detection. A stricter pre-existing multi-mode/coarse-persistence diagnostic gets 37.1% recall
+and 5.1% quiet alarms. Do not tune these constants on Jenga. Results:
+`results/jenga/calibration_free_d2.json` and `calibration_free_d0.json`.
 
 ## Phase 8 — Cross-task validation
 
@@ -513,12 +520,12 @@ inductor: diverges under Adam). The batched branch loss is bit-identical and 1.1
 was not switched in mid-grid, and future D1-style runs use it (`--fast-branch`). 5 concurrent
 processes give ~2x throughput with identical numbers.
 
-Later, in order: calibrating the operating point for the quieter D2 models (without touching the
-frozen benchmark); the existing-ensemble disagreement analysis
-(Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA
-2-AC-style baseline (V2-B); then stop optimising Jenga -- pushing, insertion, the normalised
-task-independent score and a shared calibration rule; then generic spatial tokens, optional F/T and a
-shared multi-task world model.
+Later, in order: diagnose why D2 preserves spread magnitude but not persistent modes without changing
+the frozen alarm; run the existing-ensemble disagreement analysis (Phase 11); train a direct DINO
+latent world model (V2-A) with D2 and the same alarm; then stop optimising Jenga and test pushing and
+insertion with the rule unchanged. V-JEPA 2-AC-style dynamics, generic spatial tokens, optional F/T
+and a shared multi-task world model follow only if the cross-task calibration-free gate warrants
+them. Do not reintroduce quiet-score calibration or a shared learned threshold.
 
 ## Decision gates
 

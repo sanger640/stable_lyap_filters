@@ -4006,3 +4006,22 @@ robust-blind forks; the gains above appear at matched FPR. Pre-declared recall: 
 D0+CW 72% @ 2.9%, D1 64% @ 1.6%, D2 71% @ 1.3%. The dev split alone does not calibrate these models to
 the intended 5%; recalibrating is a threshold question, not a dynamics one, and was not done here
 (the benchmark and its pre-declared rule stay frozen).
+
+## Calibration-free D2 monitor restored (2026-09-22)
+
+The Step-7 headline was a continuous spread score evaluated at quiet-distribution thresholds. It
+proved that D2 improves counterfactual ranking, but it violated the project's calibration-free
+monitor requirement. Implemented `src/counterfactual_monitor.py`: among the same 64 execution-noise
+rollouts, the original frozen PC1 two-mode rule must pass one-vs-two BIC, Ashman's D > 2 and
+minority >=2 at hold steps 10 and 30, with the same partition up to one probe. There is no `fit` or
+`calibrate` method, absolute distance cutoff, quiet dataset, task label or failure label.
+
+`eval/jenga_calibration_free.py` applies it to the byte-frozen benchmark;
+`eval/jenga_calibration_free_compare.py` aggregates 10 seeds. D2: mean recall 50.4% (range
+31.0-81.0%), quiet alarm rate 7.8% (2.7-14.2%), 16 forks missed by >=8/10 seeds and no quiet state
+alarming in >=8/10. D0: 53.0% recall, 11.9% quiet alarms and 18 robust blind forks. The stricter
+pre-existing multi-mode/coarse-persistence diagnostic gives D2 37.1% recall at 5.1% quiet alarms.
+D2 therefore stays—it substantially quiets nominal predictions—but it does not improve persistent
+mode recall. The calibration-free performance gate fails. Next diagnose whether D2 predicts a
+smooth continuum where reality branches, then carry the unchanged rule into V2 and another task;
+do not tune a Jenga distance threshold.

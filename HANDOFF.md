@@ -10,9 +10,14 @@
 > and lets settle back ([`blind_fork_analysis.md`](blind_fork_analysis.md)). Step 7 done
 > (4 arms x 10 seeds): contact-window data alone does not remove the blind forks; adding a
 > counterfactual loss on the same branches does. The intervention-consistency loss (D2,
-> `--cw-loss intervention`) is the best-supported arm: matched recall 70/80/84/91 at 1/3/5/10% FPR,
-> AUC 0.974, quiet p99 3.2 mm, 3 robust-blind forks. Open: the dev-set threshold is too loose for
-> these quieter models (test FPR 1.3-1.6%). Details in NOTES.md and PLAN_NEXT.md.
+> `--cw-loss intervention`) is the best-supported training arm. The calibrated spread analysis gets
+> matched recall 70/80/84/91 at 1/3/5/10% FPR and AUC 0.974, but that is now a diagnostic, not the
+> monitor. The deployed-rule candidate is calibration-free again: `src/counterfactual_monitor.py`
+> requires a BIC-supported, Ashman-separated two-mode split to persist from hold 10 to hold 30.
+> Across 10 D2 seeds it gets 50.4% fork recall, 7.8% quiet alarms and 16 robust blind forks at 1x.
+> D2 lowers quiet alarms versus D0 (11.9% -> 7.8%) but does not improve this rule's recall
+> (53.0% -> 50.4%). This is an honest failed performance gate, not a validated safety filter.
+> Details in NOTES.md and PLAN_NEXT.md.
 >
 > **Commands.**
 > `python eval/jenga_bench.py verify` -- check the frozen benchmark is intact.
@@ -20,6 +25,8 @@
 > (add `--probe results/jenga/v1_probe_px196_c4096.pt` for the DINO + proprioception pipeline).
 > `python eval/jenga_blind_freq.py` -- cross-seed miss frequency per fork.
 > `python eval/jenga_step7_compare.py` -- the Step 7 arm comparison.
+> `python eval/jenga_calibration_free.py --model results/jenga/w6_cw_d2_s1.pt` -- runtime rule.
+> `python eval/jenga_calibration_free_compare.py` -- aggregate its 10 D2 seeds.
 > Training: `eval/jenga_w6_simple.py` (defaults = the D0 recipe; `--cw-data results/jenga/cw_data`
 > `--cw-loss intervention` = D2+CW; add `--fast-branch` for any `--cw-loss branch` run).
 > Contact-window data: `python eval/jenga_cw_data.py` (writes `results/jenga/cw_data/`; npz gitignored).

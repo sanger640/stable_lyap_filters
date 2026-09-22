@@ -9,8 +9,11 @@
 > quality does not predict fork preservation. The forks the dynamics systematically miss are upright
 > blocks pushed past their tipping angle ([blind_fork_analysis.md](blind_fork_analysis.md)). More
 > training coverage of that transition does not fix it; a counterfactual training objective on the
-> same data does (10 paired seeds: upright-fork miss rate 0.48 -> 0.25 at matched 5% FPR, matched
-> recall 67% -> 84%, AUC 0.943 -> 0.974 with the intervention-consistency loss). **The plan being executed is
+> same data improves the *continuous spread ranking* (10 paired seeds: matched recall 67% -> 84%,
+> AUC 0.943 -> 0.974). That result used a quiet-score threshold and is diagnostic only. The restored
+> calibration-free D2 monitor instead detects a persistent two-mode split using BIC, dimensionless
+> Ashman's D and probe counts; over 10 seeds it gets 50.4% recall with 7.8% quiet alarms. It has no
+> fit/calibrate step and sees no quiet or failure examples. **The plan being executed is
 > [PLAN_NEXT.md](PLAN_NEXT.md)**; results are in [NOTES.md](NOTES.md). Nothing here is validated as
 > a deployed safety filter, and universality has not yet been tested on a second task. The
 > calibrated divergence monitor described below is a legacy baseline.

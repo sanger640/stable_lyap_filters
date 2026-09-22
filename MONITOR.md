@@ -1,5 +1,10 @@
-> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (2026-09-21).** The monitor construction below
-> (execution-noise probes, common-target hold, spread of endings) is still the one in use.
+> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (status 2026-09-22).** D2 remains the dynamics
+> training objective, but raw spread plus a quiet percentile is diagnostic only. The runtime rule is
+> `src/counterfactual_monitor.py`: among 64 execution-noise rollouts, a BIC-supported PC1 split with
+> Ashman's D > 2 and at least two probes on each side must persist from hold 10 to hold 30. It has no
+> calibration data, learned threshold, task label or failure label. Current Jenga performance is
+> 50.4% fork recall and 7.8% quiet alarms over 10 D2 seeds, so the design requirement is restored but
+> the performance gate is not passed.
 
 > Plain-language version with figures: [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md). Current status and next steps: [`HANDOFF.md`](HANDOFF.md).
 
