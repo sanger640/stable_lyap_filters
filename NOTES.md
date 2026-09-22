@@ -3865,7 +3865,7 @@ branches are physical. Two blind forks topple on only 1/64 from the clean start 
 weak by the benchmark's own rule. `jenga_blind_resim.py` now reaches every chunk start by an
 uninterrupted replay and never continues a replay after probing; any future oracle should do the same.
 
-## Step 7 (revised): contact-window data, D1/D2 objectives, and a speed audit (2026-09-21, in progress)
+## Step 7 (revised): contact-window data, D1/D2 objectives, and a speed audit (2026-09-21/22, done)
 
 **Contact-window data** (`eval/jenga_cw_data.py`, `results/jenga/cw_data/`, npz gitignored). From the 43
 TRAINING episodes only (disjoint from dev and test), 23,999 branch points where the gripper touches a

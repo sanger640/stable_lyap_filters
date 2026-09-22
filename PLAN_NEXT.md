@@ -494,28 +494,27 @@ sensitivity.
 
 **No new architecture before steps 1-6 are complete.**
 
-**Status (2026-09-21): steps 1-6 DONE; step 7 IN PROGRESS.** Contact-window branches are generated
-(`eval/jenga_cw_data.py`: 24k contact + 7k no-contact points from training episodes only; adds 3.2x
-the original count of upright-block rotation transitions). Arms: D0 (the existing `w6_gnn_n5` seeds,
-reproduced bit-for-bit by the default trainer path), D0+CW, D1+CW, D2+CW, with D1 and D2 on the same
-short 6-step unrolls so they differ only in the objective. First two paired D0+CW seeds improve
-strongly (e.g. seed 2: 40 -> 7 blind forks); arm-level robust-blind counts are pending. New launches
-are paused for a speed audit: only a batched branch loss is bit-identical to the current code;
-torch.compile's cudagraphs backend gives wrong gradients and inductor diverges under Adam, so
-neither may be mixed into an arm. The bit-identical option gains only 1.15-1.20x seeds/hour at matched
-concurrency (`eval/jenga_w6_speed.py`), below the 1.5x bar, so all arms stay on the current code; the
-remaining 24 seeds run at 5 concurrent processes (~2x throughput, numerically identical); D0+CW seeds
-first. Future D1-style runs use the batched branch loss (`--fast-branch`) from the start.
-**D0 vs D0+CW (10 paired seeds): coverage alone does not fix it.** Robust-blind 11 -> 9 (both
-definitions), 8 of D0's 15 unchanged and all upright/class-C; mean matched recall 35/60/67/79 ->
-56/71/75/82, but paired Wilcoxon p >= 0.13 and 3 of 10 seeds worse (NOTES.md). D1+CW / D2+CW decide
-whether a counterfactual objective closes the rest.
-**Step 7 answer (4 arms x 10 seeds):** the objective, not coverage. At matched 5% FPR the upright
-miss rate is 0.48 (D0) -> 0.40 (D0+CW) -> 0.26 (D1+CW) / 0.25 (D2+CW); robust-blind 11 -> 9 -> 3 / 3.
-D2+CW beats D0+CW paired on AUC (9/10, p=0.004) and recall @3-10%; D2 vs D1 not significant. The
-dev-set threshold under-calibrates the quieter CW models (test FPR 1.3-1.6%). NOTES.md has the tables.
+**Status (2026-09-22): steps 1-7 DONE.** Contact-window branches (`eval/jenga_cw_data.py`: 24k contact
++ 7k no-contact points from training episodes only; 3.2x the original count of upright-block rotation
+transitions). Arms, 10 paired seeds each, one code version per arm: D0 (the existing `w6_gnn_n5`
+seeds), D0+CW, D1+CW, D2+CW, with D1 and D2 on the same short 6-step unrolls so they differ only in the
+objective (`eval/jenga_step7_compare.py` -> `results/jenga/step7_compare.json`).
 
-Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
+**Answer: the objective, not coverage.** At matched 5% FPR the upright miss rate is 0.48 (D0) -> 0.40
+(D0+CW) -> 0.26 (D1+CW) / 0.25 (D2+CW), and robust-blind forks 11 -> 9 -> 3 / 3; other forks barely
+move. D0+CW vs D0 is not significant on any metric paired. D2+CW beats D0+CW paired on AUC (9/10
+seeds, p = 0.004) and on recall at 3/5/10% FPR (p = 0.008-0.018), with quiet p99 3.2 mm; D1+CW only on
+AUC (p = 0.027); D2 vs D1 is not significant. Open issue: the pre-declared dev-set threshold realises
+only 1.3-1.6% test FPR for the quieter D1/D2 models, and at that stricter point the CW arms' upright
+miss rate is the same (0.43) -- the gains show at matched FPR. Full tables in NOTES.md.
+
+Speed audit (`eval/jenga_w6_speed.py`): torch.compile is unusable (cudagraphs: wrong gradients;
+inductor: diverges under Adam). The batched branch loss is bit-identical and 1.15-1.20x faster; it
+was not switched in mid-grid, and future D1-style runs use it (`--fast-branch`). 5 concurrent
+processes give ~2x throughput with identical numbers.
+
+Later, in order: calibrating the operating point for the quieter D2 models (without touching the
+frozen benchmark); the existing-ensemble disagreement analysis
 (Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA
 2-AC-style baseline (V2-B); then stop optimising Jenga -- pushing, insertion, the normalised
 task-independent score and a shared calibration rule; then generic spatial tokens, optional F/T and a

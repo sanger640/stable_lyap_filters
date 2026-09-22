@@ -1,15 +1,16 @@
 # stable_lyap_filters
 
-> **Current research status (2026-09-21):** the goal is a task-agnostic runtime safety monitor:
+> **Current research status (2026-09-22):** the goal is a task-agnostic runtime safety monitor:
 > perturb the intended action with realistic execution error, roll the counterfactuals forward in a
 > learned world model, and flag the action when the futures split. No task features and no failure
 > labels in the monitor; Jenga is only the first testbed. On a frozen Jenga benchmark
 > (`eval/jenga_bench.py`, 84 forks at 1x) the monitor works from privileged state (64% fork recall
 > over 10 seeds; 88% ceiling) and from DINO images plus proprioception (67%). Ordinary world-model
 > quality does not predict fork preservation. The forks the dynamics systematically miss are upright
-> blocks pushed past their tipping angle ([blind_fork_analysis.md](blind_fork_analysis.md)); the
-> experiment now running tests whether more training coverage of that transition fixes it, or
-> whether a counterfactual training objective is needed. **The plan being executed is
+> blocks pushed past their tipping angle ([blind_fork_analysis.md](blind_fork_analysis.md)). More
+> training coverage of that transition does not fix it; a counterfactual training objective on the
+> same data does (10 paired seeds: upright-fork miss rate 0.48 -> 0.25 at matched 5% FPR, matched
+> recall 67% -> 84%, AUC 0.943 -> 0.974 with the intervention-consistency loss). **The plan being executed is
 > [PLAN_NEXT.md](PLAN_NEXT.md)**; results are in [NOTES.md](NOTES.md). Nothing here is validated as
 > a deployed safety filter, and universality has not yet been tested on a second task. The
 > calibrated divergence monitor described below is a legacy baseline.

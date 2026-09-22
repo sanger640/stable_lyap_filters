@@ -207,3 +207,13 @@ uninterrupted replay and never continue a replay after probing (as `jenga_blind_
   population result (Spearman -0.45 over 84 forks) does not depend on either.
 * Everything here is Track A. It uses tilt, contact labels and a known tipping angle, none of which the
   universal monitor may use. It explains a failure; it is not a monitor feature.
+
+## 9. Outcome (Step 7, 2026-09-22)
+
+The D2 design in section 6 was tested against a coverage-only control, 10 paired seeds per arm
+(NOTES.md, `results/jenga/step7_compare.json`). Adding the contact-window branches as ordinary
+one-step data leaves the upright class mostly blind (miss rate at matched 5% FPR 0.48 -> 0.40; 8 of
+the 15 robust-blind forks unchanged). Training on the same branches with a counterfactual objective
+halves it (0.26 with the branch-distance loss, 0.25 with the intervention-consistency loss) and
+leaves 2 upright forks robust-blind, while the other forks barely change. The mechanism in section
+4 was an objective problem, not a data-coverage problem.
