@@ -86,6 +86,12 @@ def summarise(runs, upright):
         "mean_miss_rate": float(np.mean(list(misses.values())) / n),
         "upright_miss_rate": float(np.mean([misses[k] for k in upright if k in misses]) / n),
         "other_miss_rate": float(np.mean([v for k, v in misses.items() if k not in upright]) / n),
+        # the pre-declared (dev-set) threshold realises different test FPRs per arm; at matched 5%:
+        "upright_miss_rate_matched": float(
+            np.mean([misses_matched[k] for k in upright if k in misses_matched]) / n),
+        "other_miss_rate_matched": float(
+            np.mean([v for k, v in misses_matched.items() if k not in upright]) / n),
+        "robust_blind_matched_upright": sum(1 for k in robust_matched if k in upright),
         "recall_matched": {p: stat(lambda s, p=p: s["matched_fpr"][p]["recall"])
                            for p in ("1pct", "3pct", "5pct", "10pct")},
         "pre_declared_recall": stat(lambda s: s["pre_declared"]["recall"]["rate"]),
@@ -149,7 +155,8 @@ def main():
 
     head = (f"{'arm':6s} {'seeds':>5s} | {'robust':>6s} {'both':>4s} {'D0 kept':>7s} | "
             f"{'@1%':>4s} {'@3%':>4s} {'@5%':>4s} {'@10%':>4s} | {'AUC':>5s} "
-            f"{'qp99':>6s} {'fp50':>6s} | {'upright':>7s} {'other':>5s}")
+            f"{'qp99':>6s} {'fp50':>6s} | {'upright':>7s} {'other':>5s} | "
+            f"{'@5% upright':>11s} {'other':>5s}")
     print(head)
     for name, s in arms.items():
         m = s["recall_matched"]
@@ -160,7 +167,8 @@ def main():
               + " ".join(f"{100 * m[p]['mean']:4.0f}" for p in ("1pct", "3pct", "5pct", "10pct"))
               + f" | {s['auc']['mean']:.3f} {s['quiet_p99_mm']['mean']:6.2f} "
               f"{s['fork_p50_mm']['mean']:6.2f} | {s['upright_miss_rate']:7.2f} "
-              f"{s['other_miss_rate']:5.2f}")
+              f"{s['other_miss_rate']:5.2f} | {s['upright_miss_rate_matched']:11.2f} "
+              f"{s['other_miss_rate_matched']:5.2f}")
     for name, s in arms.items():
         if "paired_vs_d0" not in s:
             continue

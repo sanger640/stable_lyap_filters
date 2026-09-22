@@ -3963,3 +3963,46 @@ robust-blind forks (11 before), the same physical class, and an arm-level gain t
 average but seed-dependent and not significant paired. Whether a counterfactual objective closes the
 rest is what D1+CW / D2+CW (running) decide; early seeds of both look stronger than D0+CW on some
 seeds and not others, so no claim until they have 10.
+
+### Step 7 result, all four arms x 10 paired seeds: coverage is not enough, the counterfactual objective is (2026-09-22)
+
+`eval/jenga_step7_compare.py` -> `results/jenga/step7_compare.json`. Frozen benchmark, 1x, 84 test
+forks, seeds 1-10 in every arm, one code version per arm (current code; no optimisation mixed in).
+
+| arm | robust blind (pre-decl / matched 5% / both) | D0's 15 still robust | recall @ matched 1/3/5/10% | AUC | quiet p99 | fork p50 | upright / other miss @ matched 5% | robust-blind upright @ 5% |
+|---|---|---|---|---|---|---|---|---|
+| D0 | 15 / 13 / 11 | 15 | 35 / 60 / 67 / 79 | 0.943 | 15.4 mm | 10.0 mm | 0.48 / 0.15 | 12 |
+| D0+CW | 12 / 9 / 9 | 8 | 56 / 71 / 75 / 82 | 0.953 | 9.0 mm | 10.7 mm | 0.40 / 0.09 | 8 |
+| D1+CW | 10 / 3 / 3 | 3 | 57 / 76 / 82 / 88 | 0.965 | 8.5 mm | 10.8 mm | 0.26 / 0.10 | 2 |
+| D2+CW | 11 / 3 / 3 | 2 | 70 / 80 / 84 / 91 | 0.974 | 3.2 mm | 8.3 mm | 0.25 / 0.05 | 2 |
+
+Paired per seed, Wilcoxon signed-rank, n = 10 (8 metrics per contrast, uncorrected):
+
+| contrast | AUC | recall @1% | @3% | @5% | @10% | quiet p99 | blind/seed |
+|---|---|---|---|---|---|---|---|
+| D0+CW - D0 | 7/3 up, p=0.28 | 6/3, p=0.13 | 7/3, p=0.14 | 6/4, p=0.28 | 6/3, p=0.38 | 7 lower, p=0.19 | 6 more, p=0.49 |
+| D1+CW - D0+CW | 8/1, p=0.027 | 5/5, p=0.63 | 6/3, p=0.14 | 6/3, p=0.13 | 7/2, p=0.055 | 5/5, p=1.0 | 6 more, p=0.83 |
+| D2+CW - D0+CW | **9/1, p=0.004** | 7/3, p=0.23 | **8/2, p=0.018** | **8/2, p=0.010** | **9/1, p=0.008** | 8 lower, p=0.11 | 6 fewer, p=0.48 |
+| D2+CW - D1+CW | 6/4, p=0.28 | 7/3, p=0.32 | 5/5, p=0.31 | 5/4, p=0.57 | 6/4, p=0.54 | 7 lower, p=0.084 | 6 fewer, p=0.24 |
+
+D2's AUC gain over D0+CW survives Bonferroni over its 8 metrics (0.05/8 = 0.006); the recall gains
+at 5% and 10% are just above it.
+
+**Answer.** Coverage alone does not solve the blind spot: with 3.2x more upright contact-to-tip
+transitions as one-step data, the upright miss rate at matched 5% FPR goes 0.48 -> 0.40, 8 of D0's 15
+robust-blind forks stay robust-blind, and no paired change is significant. Adding a counterfactual
+objective on the SAME branches is what moves the upright class: miss rate 0.25-0.26 and 2 robust-blind
+upright forks under both D1 and D2 (vs 8), while the other forks barely change -- the objective
+acts on exactly the class the Phase 2 taxonomy identified. D2 (intervention consistency, generic
+state only) is the one with significant paired gains over D0+CW across the operating range and the
+quietest quiet states (3.2 mm p99); D1 improves AUC only. D2 vs D1 is NOT significantly different on
+any metric at n = 10, so "D2 beats D1" is not established; "D2 is the better-supported objective" is.
+Seed variance remains large in every arm (e.g. D2 s10: 31 blind forks).
+
+**Caveat -- pre-declared operating point.** The dev-set 95th-percentile threshold realises a test
+FPR of 4.4% for D0 but 1.3-1.6% for D1/D2, because the counterfactual models are much quieter on test
+than on dev. At that stricter point the CW arms all show the same upright miss rate (0.43) and 10-12
+robust-blind forks; the gains above appear at matched FPR. Pre-declared recall: D0 64% @ 4.4% FP,
+D0+CW 72% @ 2.9%, D1 64% @ 1.6%, D2 71% @ 1.3%. The dev split alone does not calibrate these models to
+the intended 5%; recalibrating is a threshold question, not a dynamics one, and was not done here
+(the benchmark and its pre-declared rule stay frozen).

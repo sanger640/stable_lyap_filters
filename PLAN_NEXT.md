@@ -510,6 +510,10 @@ first. Future D1-style runs use the batched branch loss (`--fast-branch`) from t
 definitions), 8 of D0's 15 unchanged and all upright/class-C; mean matched recall 35/60/67/79 ->
 56/71/75/82, but paired Wilcoxon p >= 0.13 and 3 of 10 seeds worse (NOTES.md). D1+CW / D2+CW decide
 whether a counterfactual objective closes the rest.
+**Step 7 answer (4 arms x 10 seeds):** the objective, not coverage. At matched 5% FPR the upright
+miss rate is 0.48 (D0) -> 0.40 (D0+CW) -> 0.26 (D1+CW) / 0.25 (D2+CW); robust-blind 11 -> 9 -> 3 / 3.
+D2+CW beats D0+CW paired on AUC (9/10, p=0.004) and recall @3-10%; D2 vs D1 not significant. The
+dev-set threshold under-calibrates the quieter CW models (test FPR 1.3-1.6%). NOTES.md has the tables.
 
 Later, in order: D0 / D1 / D2 comparison (Gate 1); the existing-ensemble disagreement analysis
 (Phase 11); a direct DINO latent world model (V2-A) against the state-GNN oracle pipeline; a V-JEPA
