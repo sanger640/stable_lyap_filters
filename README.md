@@ -141,6 +141,9 @@ are superseded by this section and the active decision in `PLAN_NEXT.md`.
 
 > **New here?** [**TOY_EXPERIMENT.md**](TOY_EXPERIMENT.md) explains the whole thing in plain terms
 > with figures — the block, the physics, the monitor algorithm, and what we found.
+> [**JENGA_3D_TASKS.md**](JENGA_3D_TASKS.md) is the concise, visual presentation page for the 3D
+> Jenga pick and upright-push experiments, including successes, failures, monitor evidence, current
+> world-model status, and next steps.
 >
 > **Picking up the work?** [**HANDOFF.md**](HANDOFF.md) — method, current status, how to run
 > everything, next steps. Then [MONITOR.md](MONITOR.md) for the method spec,

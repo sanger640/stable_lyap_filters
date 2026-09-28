@@ -2,7 +2,8 @@
 
 > **Status note (2026-09-21).** This write-up covers the 2026-09-17 line of work. The current plan is
 > [`PLAN_NEXT.md`](PLAN_NEXT.md); the latest results are in [`NOTES.md`](NOTES.md) and
-> [`blind_fork_analysis.md`](blind_fork_analysis.md).
+> [`blind_fork_analysis.md`](blind_fork_analysis.md). For a concise, current, presentation-oriented
+> overview of both 3D tasks, see [`JENGA_3D_TASKS.md`](JENGA_3D_TASKS.md).
 
 Plain-language writeup of the 2026-09-17 line of work. Companion to
 [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md) (the toy result), [`MONITOR.md`](MONITOR.md) (the original
