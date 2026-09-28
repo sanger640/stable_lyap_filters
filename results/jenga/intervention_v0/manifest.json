@@ -1,0 +1,41 @@
+{
+  "protocol": {
+    "id": "jenga-intervention-v0",
+    "detector": "frozen Regime Monitor v0, unchanged",
+    "episodes": 100,
+    "episode_source": "all 100 recorded absolute-action trajectories",
+    "fresh_configuration": "simulator reset seed = 2000 + episode id",
+    "decision_points": "non-overlapping H=8 chunks beginning at action 2",
+    "arms": [
+      "no_monitor",
+      "reobserve",
+      "wrapper",
+      "oracle"
+    ],
+    "reobserve": "one current-pose/current-gripper hold control step, then rerun v0 once",
+    "persistent_alarm_candidates": [
+      1.0,
+      0.75,
+      0.5,
+      0.25,
+      0.0
+    ],
+    "candidate_definition": "contract every intended xyz target toward current EE xyz; preserve intended gripper except scale 0 holds current gripper",
+    "wrapper_choice": "fewest v0 consequential pairs; ties closest to intended action",
+    "oracle_choice": "avoid local new neighbor topple over H=8+hold30; ties closest to intended",
+    "intervention_cap": "at most one reobservation and one modified chunk per decision point",
+    "grading_only": "neighbor tilt >=45 deg; pick proxy is middle lift >=2.5 cm and lateral motion >=2 cm after the first ten policy actions",
+    "labels_in_policy": false
+  },
+  "created": "2026-09-23T11:06:21+00:00",
+  "protocol_sha256": "4ea6cc2a413ff2f46661869f16dc9d496b0ae9094c35b99d1e16e490d10caf40",
+  "files_sha256": {
+    "src/intervention_policy.py": "d8bc96374375e2e1bec4fcecde17ffee0201a5c66c03e57e01da754a805a1a70",
+    "eval/jenga_intervention_v0.py": "e6d623f28c386b6ea0e1ad91dcbfcb5239698957578fc686e779ec5aafc514f9",
+    "results/jenga/regime_monitor_v0/manifest.json": "c2511b859d2a4ef75913902ea8563727b2747b1415544743fcda5ca58aca1d34",
+    "results/jenga/bench/manifest.json": "74384f60ecaa466c869a528a363176f754a088d914612c2d0a00f55095aadbd0",
+    "results/jenga/bench/jenga_bench.npz": "8bf358f2b6ab56f50b27c32a4d4c2e165f2e516f5cdf3a7f57e6e700bceb19b9",
+    "data/jenga/jenga_single_100.lmdb/data.mdb": "56392637e0b2948c84da54c9a334b0329da244c944c87500efaf7a0173f6ffd3",
+    "vendor/panda_express_sim.tar": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f"
+  }
+}

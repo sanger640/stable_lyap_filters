@@ -1,0 +1,44 @@
+{
+  "id": "train-only-causal-scale-router-v1",
+  "status": "prospectively fixed before causal-router training",
+  "scope": "D3 TRAIN corpus only; benchmark DEV and frozen TEST prohibited",
+  "shared_model": "results/jenga/w6_cw_d2_s1.pt",
+  "oracle_protocol": "results/jenga/oracle_routing_upper_bound_protocol.json",
+  "split": "same episode-level 12% held-out TRAIN split used by jenga_w6_simple.py",
+  "fit_groups_expected": 226,
+  "heldout_groups_expected": 30,
+  "modes": 3,
+  "causal_inputs": {
+    "state": "current 61-dimensional privileged simulator state",
+    "action": "original eight-step nominal action reconstructed algebraically from the initial endpoint pair and saved alphas",
+    "execution_uncertainty": "eight-step xyz residual direction reconstructed from the initial endpoint pair",
+    "prohibited": "physical trajectories, response curves, midpoint choices, deeper nested endpoints, task/failure/topple/success labels"
+  },
+  "features": "117 raw values: current state 61 + nominal action 8x4 + residual direction 8x3; standardized using fit groups only",
+  "target": "capacity-balanced three-mode oracle assignment plus standardized 15-dimensional physical-minus-D2 scale-curve residual",
+  "router": {
+    "architecture": "MLP 117-64-32 with GELU and 0.1 dropout; categorical mode head and auxiliary 15D residual head",
+    "loss": "cross entropy plus 0.5 times smooth-L1 residual loss",
+    "optimizer": "AdamW, learning rate 0.001, weight decay 0.001",
+    "epochs": 400,
+    "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "selection": "fixed final epoch; no held-out model or epoch selection",
+    "execution": "hard argmax mode"
+  },
+  "controls": [
+    "uncorrected frozen D2",
+    "fit-set majority hard router",
+    "future-informed nearest-prototype oracle upper bound"
+  ],
+  "primary_summary": "median across the ten fixed seeds",
+  "feasibility_gate": {
+    "oracle_assignment_accuracy_min": 0.50,
+    "global_oracle_gain_fraction_min": 0.25,
+    "local_oracle_gain_fraction_min": 0.25,
+    "persistent_recall_min": 0.50,
+    "smooth_false_positive_rate_max": 0.50,
+    "each_mode_occupancy_min": 0.05,
+    "interpretation": "all conditions must pass before any new DEV run"
+  },
+  "small_sample_warning": "held-out TRAIN has only four clearly smooth groups; smooth FPR is therefore descriptive but remains a conservative veto"
+}

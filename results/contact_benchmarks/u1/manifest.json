@@ -1,0 +1,30 @@
+{
+  "protocol": {
+    "id": "contact-regime-u1",
+    "purpose": "prospective ground-truth cross-task universality test",
+    "tasks": [
+      "pushing",
+      "insertion"
+    ],
+    "panel": "30 deterministic episodes x 8 non-overlapping H=8 states per task",
+    "split": "episodes 0-14 DEV, 15-29 untouched TEST",
+    "execution_error": "the exact frozen 64 x H=8 Jenga translation tracking snippets at 1x",
+    "pushing_map": "snippet xyz -> commanded planar xy (z discarded)",
+    "insertion_map": "snippet xyz -> xyz plus yaw=snippet_x/(20*sqrt(2) mm), so yaw has the same corner displacement",
+    "trajectory": "three anonymous rigid-body slots; position/rotation-6D/linear/angular velocity",
+    "candidate_samples": "hold steps 5,10,20,29,30; early evidence uses 5,10",
+    "monitor": "frozen Regime Monitor v0 unchanged: 64 probes, H8, hold30, 3 pairs, 5 bisections",
+    "grading": "task success/failure/mode labels are attached before monitor scoring and never enter it",
+    "primary_gate": ">=50% consequential task-outcome-fork recall in each task and >=25 percentage-point separation from unanimous quiet",
+    "primary_execution_error_scale": 1.0
+  },
+  "created": "2026-09-23T19:13:25+00:00",
+  "files_sha256": {
+    "src/systems/contact_benchmarks.py": "06df607bb63f5fd029d5af6f98de7317aa760f5dc0ec745d67cabce48a9c6b08",
+    "eval/contact_regime_u1.py": "437a469ecf6f217bda8bd824b3d8bcc3c0a1b1840b06d83a813e8cae545d0646",
+    "results/contact_benchmarks/u1/mechanism_panel.npz": "96201747cc028e90553ae68b4ab1b564f3aa98309ec84e597f7d790a8fc9ff2e",
+    "results/contact_benchmarks/u1/mechanism_panel.json": "e6722ca20c0c9c0c0401267186d0beae10e269699f48d47d0b312fdeaccac73b",
+    "results/jenga/regime_monitor_v0/manifest.json": "c2511b859d2a4ef75913902ea8563727b2747b1415544743fcda5ca58aca1d34"
+  },
+  "protocol_sha256": "3f2386af5537ceddfc70ea6ef9959ac3f049ddda16d8243651b6eb8758df641c"
+}

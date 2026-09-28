@@ -1,0 +1,6838 @@
+{
+  "protocol": {
+    "calibration_free": true,
+    "input": "H=8 xyz execution perturbations and D2 block-pose trajectories sampled at simulator hold steps 5,10,20,29,30; robot motion conditions prediction but is not scored",
+    "smooth": "one RBF-GP action-to-trajectory response surface",
+    "branch": "two RBF-GP surfaces on linearly separated action regions",
+    "decision": "branch evidence minus smooth evidence and split-search description length is positive at both hold 10 and hold 30",
+    "candidate": "best residual-PC1 or trajectory-PC1 split; candidates charged in MDL",
+    "labels": "physical classes are grading only",
+    "uses_reference_states": false,
+    "scales": [
+      1.0
+    ]
+  },
+  "model": {
+    "path": "results/jenga/w6_cw_d2_s1.pt",
+    "sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+    "config": {
+      "hidden": 128,
+      "rounds": 3,
+      "kind": "single",
+      "experts": 1,
+      "parameters": 653992,
+      "substeps": 1,
+      "seed": 1,
+      "noise": 0.5,
+      "orthonormalise": true,
+      "hard_contacts": false,
+      "branch_weight": 0.0,
+      "rollout_epochs": 0,
+      "cw_data": "results/jenga/cw_data",
+      "cw_loss": "intervention",
+      "cw_groups": 32,
+      "cw_weight": 1.0,
+      "transition_weighting": false
+    },
+    "config_sha256": "9411200aa231fe79cd201ddca6be48640d916d7e963c021e2574757ebd09072d",
+    "seed": 1
+  },
+  "summary": {
+    "dev": {
+      "1.0": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 20,
+          "rate": 0.8695652173913043,
+          "action_disconnected": 23
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 34,
+          "rate": 0.38202247191011235,
+          "action_disconnected": 88
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 9,
+          "rate": 0.5294117647058824,
+          "action_disconnected": 17
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 4,
+          "rate": 0.5,
+          "action_disconnected": 8
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 2,
+          "rate": 0.6666666666666666,
+          "action_disconnected": 3
+        }
+      }
+    },
+    "test": {
+      "1.0": {
+        "topple_fork": {
+          "states": 84,
+          "alarms": 67,
+          "rate": 0.7976190476190477,
+          "action_disconnected": 82
+        },
+        "quiet": {
+          "states": 113,
+          "alarms": 37,
+          "rate": 0.3274336283185841,
+          "action_disconnected": 113
+        },
+        "nudge_fork": {
+          "states": 10,
+          "alarms": 5,
+          "rate": 0.5,
+          "action_disconnected": 9
+        },
+        "small_split": {
+          "states": 7,
+          "alarms": 3,
+          "rate": 0.42857142857142855,
+          "action_disconnected": 6
+        },
+        "weak": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "split": "dev",
+      "episode_id": "2",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -19.34071572961244,
+      "full_delta_description_length": 17.63821218908032,
+      "region_sizes": [
+        11,
+        53
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 39,
+      "partition_description_length": 220.5657528064603
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 94.20410485677809,
+      "full_delta_description_length": 99.42690179126527,
+      "region_sizes": [
+        46,
+        18
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 192.99503370565276
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 50.680577345893965,
+      "full_delta_description_length": 64.9658263265579,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 78.11703745228803
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": true,
+      "early_delta_description_length": 51.39534818186652,
+      "full_delta_description_length": 62.52449870034521,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -33.86142927755802,
+      "full_delta_description_length": -42.03494519105058,
+      "region_sizes": [
+        34,
+        30
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -43.037249339011574,
+      "full_delta_description_length": -46.56717781913017,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 10.10392406179841,
+      "full_delta_description_length": 16.841930481538213,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 45,
+      "alarm": true,
+      "early_delta_description_length": 195.16083822277102,
+      "full_delta_description_length": 195.48852846408806,
+      "region_sizes": [
+        48,
+        16
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 19,
+      "partition_description_length": 110.28287640323015
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -35.25273774997626,
+      "full_delta_description_length": 33.01977859636938,
+      "region_sizes": [
+        12,
+        52
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 41,
+      "partition_description_length": 229.75599250672948
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 112.49536155567166,
+      "full_delta_description_length": 125.09667832083922,
+      "region_sizes": [
+        4,
+        60
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 16,
+      "partition_description_length": 87.3072771525572
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 19,
+      "alarm": true,
+      "early_delta_description_length": 921.884931168835,
+      "full_delta_description_length": 941.5000937812131,
+      "region_sizes": [
+        21,
+        43
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 80.9612824495407,
+      "full_delta_description_length": 690.127770672551,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.77343988976607,
+      "full_delta_description_length": -51.92597722549756,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -52.931573330448934,
+      "full_delta_description_length": -36.22939101729917,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 87.3072771525572
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -25.72043434965045,
+      "full_delta_description_length": -26.683613532384218,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 83.73658591179606,
+      "full_delta_description_length": 111.34359730013398,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 183.8047940053836
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 85.28634398764424,
+      "full_delta_description_length": 98.0803583363913,
+      "region_sizes": [
+        32,
+        32
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -37.27985221029465,
+      "full_delta_description_length": -25.641750369074234,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 9.867973784539117,
+      "full_delta_description_length": 49.57054119723614,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 0.8044494942237179,
+      "full_delta_description_length": 19.995121969902527,
+      "region_sizes": [
+        28,
+        36
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 142.4487153541723
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 70.24543001854005,
+      "full_delta_description_length": 165.9046563065845,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 32,
+      "partition_description_length": 192.99503370565276
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -45.67847702223851,
+      "full_delta_description_length": -24.183985342822155,
+      "region_sizes": [
+        26,
+        38
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 131.0223126623822,
+      "full_delta_description_length": 146.44452832291643,
+      "region_sizes": [
+        20,
+        44
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 41,
+      "partition_description_length": 252.73159175740244
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 90.58903926162068,
+      "full_delta_description_length": 90.06594520579651,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 29.15303864731368,
+      "full_delta_description_length": 50.71870318056432,
+      "region_sizes": [
+        10,
+        54
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 192.99503370565276
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -52.282384717035626,
+      "full_delta_description_length": -42.21682053375119,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": false,
+      "early_delta_description_length": -66.47435598141935,
+      "full_delta_description_length": 737.1639411657517,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 25.56994812257824,
+      "full_delta_description_length": 24.80157287199114,
+      "region_sizes": [
+        37,
+        27
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 44,
+      "partition_description_length": 266.5169513078062
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": false,
+      "early_delta_description_length": -45.76188809509223,
+      "full_delta_description_length": -24.240829263809935,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 46,
+      "alarm": true,
+      "early_delta_description_length": 835.0460077047418,
+      "full_delta_description_length": 830.6168853109817,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 59.73655805174967
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -28.34391363796412,
+      "full_delta_description_length": 49.26773451752777,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 23,
+      "partition_description_length": 133.2584756539031
+    },
+    {
+      "split": "dev",
+      "episode_id": "18",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -55.16217962832462,
+      "full_delta_description_length": -53.90003588829267,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "alarm": true,
+      "early_delta_description_length": 31.92359327604754,
+      "full_delta_description_length": 87.52613894298321,
+      "region_sizes": [
+        14,
+        50
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 40,
+      "partition_description_length": 238.94623220699867
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "alarm": true,
+      "early_delta_description_length": 328.6883772982603,
+      "full_delta_description_length": 394.3330893232509,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -10.644093127891267,
+      "full_delta_description_length": -30.112022233576923,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -22.242650192203175,
+      "full_delta_description_length": -5.733325144173566,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "22",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 48.55440211639134,
+      "full_delta_description_length": 79.11251069883761,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "23",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -37.24519620833713,
+      "full_delta_description_length": -36.32171353405875,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "24",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -6.895677114789805,
+      "full_delta_description_length": 13.034475219251988,
+      "region_sizes": [
+        44,
+        20
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 19,
+      "partition_description_length": 101.09263670296097
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 68.52755992860304,
+      "full_delta_description_length": 85.77300985468784,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 119.47311610349934
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -47.439862742986364,
+      "full_delta_description_length": -13.36163586096275,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": true,
+      "early_delta_description_length": 243.32709824472943,
+      "full_delta_description_length": 275.8130670881905,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 44.02331122597897,
+      "full_delta_description_length": 62.99771773337838,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 188.39991385551818
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 8,
+      "alarm": true,
+      "early_delta_description_length": 41.77898258067491,
+      "full_delta_description_length": 63.562827310487386,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": true,
+      "early_delta_description_length": 367.82110910970675,
+      "full_delta_description_length": 353.5163234034308,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 6,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -2.125697376292976,
+      "full_delta_description_length": 255.43429968828798,
+      "region_sizes": [
+        35,
+        29
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 165.42431460484522
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 283.6321840538412,
+      "full_delta_description_length": 307.63034743142674,
+      "region_sizes": [
+        42,
+        22
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 165.42431460484522
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -69.97035974084422,
+      "full_delta_description_length": -67.1656186033748,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.98770974149777,
+      "full_delta_description_length": -40.20702837376352,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 20,
+      "partition_description_length": 119.47311610349934
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 43.36827985074304,
+      "full_delta_description_length": 43.80692850998238,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -80.12559729458162,
+      "full_delta_description_length": -74.985590963098,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 48.071164913849486,
+      "full_delta_description_length": 31.88448614593544,
+      "region_sizes": [
+        4,
+        60
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 16,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -27.897843225369453,
+      "full_delta_description_length": 59.94052104023274,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 59.73655805174967
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.22977684485036,
+      "full_delta_description_length": -66.6457611503304,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 134.61488754171222,
+      "full_delta_description_length": 215.42387572033107,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -41.521586613894584,
+      "full_delta_description_length": -29.564635562808036,
+      "region_sizes": [
+        36,
+        28
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -68.74784034897186,
+      "full_delta_description_length": 34.894494421910224,
+      "region_sizes": [
+        15,
+        49
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 45,
+      "partition_description_length": 257.32671160753705
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 44.27177055325892,
+      "full_delta_description_length": 13.511892961881856,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -30.04301604951884,
+      "full_delta_description_length": 69.80755961427366,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 70.26774027773692,
+      "full_delta_description_length": 77.91559357995706,
+      "region_sizes": [
+        10,
+        54
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 32,
+      "partition_description_length": 188.39991385551818
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -44.31201463730602,
+      "full_delta_description_length": -38.45295422621925,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 177.7876455983967,
+      "full_delta_description_length": 210.02805489533995,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -8.70385942364156,
+      "full_delta_description_length": 132.94408671744648,
+      "region_sizes": [
+        49,
+        15
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 91.9023970026918
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 108.1188687514476,
+      "full_delta_description_length": 101.87934920227619,
+      "region_sizes": [
+        3,
+        61
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 290,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 120.8661840691843,
+      "full_delta_description_length": 126.1734422890581,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 41,
+      "partition_description_length": 243.54135205713325
+    },
+    {
+      "split": "dev",
+      "episode_id": "53",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -55.628873470732,
+      "full_delta_description_length": -56.32145059434919,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -48.8706172904927,
+      "full_delta_description_length": 6.651098998445661,
+      "region_sizes": [
+        15,
+        49
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 44,
+      "partition_description_length": 261.9218314576716
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -29.95898808046573,
+      "full_delta_description_length": -24.289806397726608,
+      "region_sizes": [
+        27,
+        37
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 188.39991385551818
+    },
+    {
+      "split": "dev",
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 0.18729204729370963,
+      "full_delta_description_length": 9.105407597191771,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 133.2584756539031
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -34.95154736764954,
+      "full_delta_description_length": 8.624328266400092,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -72.23310655515506,
+      "full_delta_description_length": -72.02693110796513,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "dev",
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": true,
+      "early_delta_description_length": 60.96893682666572,
+      "full_delta_description_length": 70.78498718812912,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "60",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 146.54801751019676,
+      "full_delta_description_length": 325.15732043555766,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 29,
+      "alarm": false,
+      "early_delta_description_length": -8.969695523611456,
+      "full_delta_description_length": -7.58284598382938,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 48,
+      "alarm": true,
+      "early_delta_description_length": 402.6569457814429,
+      "full_delta_description_length": 454.06577224911996,
+      "region_sizes": [
+        33,
+        31
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 188.39991385551818
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 162.55421450586385,
+      "full_delta_description_length": 175.79605728678172,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 179.209674155249
+    },
+    {
+      "split": "dev",
+      "episode_id": "64",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 224.55891313956678,
+      "full_delta_description_length": 303.10363863837756,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "dev",
+      "episode_id": "66",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -20.726329227743758,
+      "full_delta_description_length": -17.732848299055217,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 198.41395427552288,
+      "full_delta_description_length": 206.61267619021191,
+      "region_sizes": [
+        34,
+        30
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 41,
+      "partition_description_length": 238.94623220699867
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": true,
+      "early_delta_description_length": 642.8473247152081,
+      "full_delta_description_length": 594.9746094742272,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 31,
+      "alarm": true,
+      "early_delta_description_length": 159.390199502464,
+      "full_delta_description_length": 186.85132483101194,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 56,
+      "alarm": true,
+      "early_delta_description_length": 60.23049154524155,
+      "full_delta_description_length": 37.38028959634585,
+      "region_sizes": [
+        10,
+        54
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 87.3072771525572
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 9.693320269718242,
+      "full_delta_description_length": 3.543200144810953,
+      "region_sizes": [
+        22,
+        42
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 20,
+      "partition_description_length": 101.09263670296097
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 32.42032062665116,
+      "full_delta_description_length": 19.650512724129776,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -63.91904256845153,
+      "full_delta_description_length": -63.71529838485738,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 13,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 13,
+      "alarm": true,
+      "early_delta_description_length": 38.46818218632363,
+      "full_delta_description_length": 54.85240761542575,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -96.74503159510499,
+      "full_delta_description_length": -65.86948886322166,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 142.4487153541723
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -58.38666155591838,
+      "full_delta_description_length": -55.66174645185171,
+      "region_sizes": [
+        18,
+        46
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -15.380870103539962,
+      "full_delta_description_length": -40.513902472738835,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 37,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 313.22876509310606,
+      "full_delta_description_length": 382.4185453842583,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 147.04383520430687
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -50.273873937537374,
+      "full_delta_description_length": -45.88468394999399,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -87.83178261290436,
+      "full_delta_description_length": -86.27519227696774,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 13,
+      "partition_description_length": 73.52191760215344
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -26.673476948257807,
+      "full_delta_description_length": -33.57622564820224,
+      "region_sizes": [
+        3,
+        61
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 59.73655805174967
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "alarm": true,
+      "early_delta_description_length": 52.97454604424064,
+      "full_delta_description_length": 35.897984071154326,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 150.51996155378424,
+      "full_delta_description_length": 143.1037027194593,
+      "region_sizes": [
+        24,
+        40
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 38,
+      "partition_description_length": 225.1608726565949
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 1.216553007075845,
+      "full_delta_description_length": 5.468756700253493,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 44,
+      "partition_description_length": 266.5169513078062
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -114.86403153678926,
+      "full_delta_description_length": -96.57318581474334,
+      "region_sizes": [
+        19,
+        45
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -41.15184847995427,
+      "full_delta_description_length": -41.799399678631474,
+      "region_sizes": [
+        23,
+        41
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -32.68741308742676,
+      "full_delta_description_length": -56.88985497114989,
+      "region_sizes": [
+        38,
+        26
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 30,
+      "partition_description_length": 170.01943445497983
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 178,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -46.025804371262964,
+      "full_delta_description_length": 33.18823950704244,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 398.0180364084357,
+      "full_delta_description_length": 414.7106110973548,
+      "region_sizes": [
+        34,
+        30
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -52.895175615839314,
+      "full_delta_description_length": -50.861675624805684,
+      "region_sizes": [
+        31,
+        33
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 70.42168540727846,
+      "full_delta_description_length": 663.1248459966815,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 6,
+      "partition_description_length": 32.16583895094213
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -37.63891677136753,
+      "full_delta_description_length": -50.24781184459796,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 28,
+      "partition_description_length": 165.42431460484522
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 30.42451955878198,
+      "full_delta_description_length": 25.004875659044956,
+      "region_sizes": [
+        37,
+        27
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -55.208853518606716,
+      "full_delta_description_length": -51.295449987299335,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 321.348838402343,
+      "full_delta_description_length": 327.93650025621906,
+      "region_sizes": [
+        14,
+        50
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 32,
+      "partition_description_length": 197.59015355578737
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -35.75350289406171,
+      "full_delta_description_length": -28.62905398147356,
+      "region_sizes": [
+        13,
+        51
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -121.88061275083207,
+      "full_delta_description_length": -124.03586309297502,
+      "region_sizes": [
+        38,
+        26
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 133.2584756539031
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -20.763662044269104,
+      "full_delta_description_length": -20.480443161934268,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "dev",
+      "episode_id": "83",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -49.30735422791009,
+      "full_delta_description_length": -50.39377374600828,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 249.81285793751178,
+      "full_delta_description_length": 247.17230095380464,
+      "region_sizes": [
+        22,
+        42
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 174.6145543051144
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "alarm": false,
+      "early_delta_description_length": -12.67619129698376,
+      "full_delta_description_length": 6.906677006119594,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 43,
+      "alarm": true,
+      "early_delta_description_length": 433.32174021768776,
+      "full_delta_description_length": 479.82548417433065,
+      "region_sizes": [
+        35,
+        29
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "dev",
+      "episode_id": "85",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -43.41224947127725,
+      "full_delta_description_length": -38.854854329641825,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -20.569904227763516,
+      "full_delta_description_length": -52.55022214064593,
+      "region_sizes": [
+        46,
+        18
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 52,
+      "partition_description_length": 326.2535093595559
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 124.40131871045423,
+      "full_delta_description_length": 121.65127350882244,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 23,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 22,
+      "alarm": true,
+      "early_delta_description_length": 14.458148949114772,
+      "full_delta_description_length": 528.5991044093206,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 57.21859034113399,
+      "full_delta_description_length": 34.76838136038687,
+      "region_sizes": [
+        50,
+        14
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 78.11703745228803
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -6.59620869180711,
+      "full_delta_description_length": -3.917024039776976,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 239.00975343912913,
+      "full_delta_description_length": 240.15751176147208,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 28,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 63,
+      "alarm": true,
+      "early_delta_description_length": 388.3788550091871,
+      "full_delta_description_length": 455.14925165156353,
+      "region_sizes": [
+        43,
+        21
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 220.5657528064603
+    },
+    {
+      "split": "dev",
+      "episode_id": "90",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -47.848077226401536,
+      "full_delta_description_length": -49.609324540784385,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -5.592269046231991,
+      "full_delta_description_length": -20.249664231878796,
+      "region_sizes": [
+        33,
+        31
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 143.03925917829196,
+      "full_delta_description_length": 120.88063320939972,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.17416235778576,
+      "full_delta_description_length": -53.101375425493146,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -22.29275863613728,
+      "full_delta_description_length": -41.305227640921004,
+      "region_sizes": [
+        19,
+        45
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 32,
+      "partition_description_length": 174.6145543051144
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "alarm": true,
+      "early_delta_description_length": 418.5224788670757,
+      "full_delta_description_length": 517.048038511374,
+      "region_sizes": [
+        23,
+        41
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 32,
+      "partition_description_length": 197.59015355578737
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -12.121566086036296,
+      "full_delta_description_length": -2.062727391319015,
+      "region_sizes": [
+        9,
+        55
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 64.13445219487315,
+      "full_delta_description_length": 67.68153373046354,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -122.27302884506109,
+      "full_delta_description_length": -114.82994434664958,
+      "region_sizes": [
+        49,
+        15
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 119.47311610349934
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -51.14177030380252,
+      "full_delta_description_length": -51.40325787508142,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -48.02231675284656,
+      "full_delta_description_length": -46.89111760921656,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -15.103332999558244,
+      "full_delta_description_length": -15.319901492430073,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": true,
+      "action_cut_edges": 3,
+      "partition_description_length": 13.785359550403768
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -51.02432029214374,
+      "full_delta_description_length": -47.5052743231326,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 50.7505669219251,
+      "full_delta_description_length": 26.69481476518439,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 23,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 81.95652153730427,
+      "full_delta_description_length": 96.30739574880758,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -85.14789772763545,
+      "full_delta_description_length": -100.07247970780527,
+      "region_sizes": [
+        32,
+        32
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 358.3712876428587,
+      "full_delta_description_length": 364.6287850628729,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -142.73104268364537,
+      "full_delta_description_length": -141.113850183974,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 66.6183664309741,
+      "full_delta_description_length": 133.66048345906148,
+      "region_sizes": [
+        42,
+        22
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 19,
+      "alarm": true,
+      "early_delta_description_length": 367.37875234000074,
+      "full_delta_description_length": 729.0988766451278,
+      "region_sizes": [
+        42,
+        22
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 225.1608726565949
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 12,
+      "alarm": true,
+      "early_delta_description_length": 306.597973921563,
+      "full_delta_description_length": 314.9510505809744,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 12,
+      "alarm": true,
+      "early_delta_description_length": 333.7352878956693,
+      "full_delta_description_length": 365.83879699002165,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 73.52191760215344
+    },
+    {
+      "split": "test",
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -43.02544521182535,
+      "full_delta_description_length": -46.26357644180832,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 21,
+      "alarm": true,
+      "early_delta_description_length": 591.363071206125,
+      "full_delta_description_length": 600.9007658617915,
+      "region_sizes": [
+        4,
+        60
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 20,
+      "alarm": true,
+      "early_delta_description_length": 747.4675375753974,
+      "full_delta_description_length": 760.7132628198334,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 18,
+      "partition_description_length": 110.28287640323015
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 170.6579782382991,
+      "full_delta_description_length": 172.57939411556782,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -48.2500911775444,
+      "full_delta_description_length": -45.29092434916732,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 142,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -31.133900256815092,
+      "full_delta_description_length": -25.614589174175205,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 3.642856338335257,
+      "full_delta_description_length": 5.573743889387508,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "4",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -22.471741508726016,
+      "full_delta_description_length": -18.00392867213694,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 76.84890506651729,
+      "full_delta_description_length": 74.87153492861418,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 97.63378236047521,
+      "full_delta_description_length": 105.29171104495254,
+      "region_sizes": [
+        39,
+        25
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 192.99503370565276
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 31,
+      "alarm": true,
+      "early_delta_description_length": 954.6119321446115,
+      "full_delta_description_length": 974.5302566641005,
+      "region_sizes": [
+        31,
+        33
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 142.4487153541723
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 32,
+      "alarm": true,
+      "early_delta_description_length": 1105.4123343134909,
+      "full_delta_description_length": 1112.9813083279441,
+      "region_sizes": [
+        20,
+        44
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "6",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -51.42190099493218,
+      "full_delta_description_length": -46.660478725870306,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "8",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -73.42308482112395,
+      "full_delta_description_length": -75.60807986386214,
+      "region_sizes": [
+        45,
+        19
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "test",
+      "episode_id": "8",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -29.236011478572678,
+      "full_delta_description_length": -32.788539856623416,
+      "region_sizes": [
+        48,
+        16
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 20,
+      "partition_description_length": 110.28287640323015
+    },
+    {
+      "split": "test",
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.15120129380462,
+      "full_delta_description_length": -50.98560132979601,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 35.98679798196508,
+      "full_delta_description_length": 52.54524779772737,
+      "region_sizes": [
+        15,
+        49
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 183.8047940053836
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 10,
+      "alarm": true,
+      "early_delta_description_length": 0.6594267059507501,
+      "full_delta_description_length": 5.915592070354705,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 20,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 10,
+      "alarm": true,
+      "early_delta_description_length": 607.2683142021793,
+      "full_delta_description_length": 612.7833215369574,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 73.52191760215344
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 49,
+      "alarm": true,
+      "early_delta_description_length": 313.8202020458636,
+      "full_delta_description_length": 318.885294675471,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "9",
+      "chunk_start": 226,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.375273259460485,
+      "full_delta_description_length": -50.96883836612729,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 370.4999271035824,
+      "full_delta_description_length": 380.37917830457974,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "early_delta_description_length": -86.10846028457522,
+      "full_delta_description_length": -76.3210836680336,
+      "region_sizes": [
+        13,
+        51
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 38,
+      "partition_description_length": 215.97063295632572
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 70.00556551009964,
+      "full_delta_description_length": 109.68449804828913,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 197.59015355578737
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 183.5914622436541,
+      "full_delta_description_length": 212.8541263135469,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 0.5556790448456468,
+      "full_delta_description_length": 123.0487292522015,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 38,
+      "partition_description_length": 225.1608726565949
+    },
+    {
+      "split": "test",
+      "episode_id": "11",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -32.722443224116915,
+      "full_delta_description_length": -1.2139909694955975,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "test",
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 116.70408928310383,
+      "full_delta_description_length": 124.70941008974125,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "test",
+      "episode_id": "14",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -34.32726145437576,
+      "full_delta_description_length": -20.07473099139529,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "14",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": 6.836115388811486,
+      "full_delta_description_length": -1.1954321767476124,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": false,
+      "early_delta_description_length": -67.64450250447969,
+      "full_delta_description_length": -60.99954494423916,
+      "region_sizes": [
+        37,
+        27
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 28,
+      "partition_description_length": 147.04383520430687
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 38,
+      "alarm": true,
+      "early_delta_description_length": 981.812533869589,
+      "full_delta_description_length": 1136.9532510494369,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 13,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 47,
+      "alarm": true,
+      "early_delta_description_length": 1427.4178462929108,
+      "full_delta_description_length": 1408.5776072827787,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 105.68775655309557
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 198,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 309.05155263860047,
+      "full_delta_description_length": 363.75323681669,
+      "region_sizes": [
+        35,
+        29
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 192.99503370565276
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 202,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -52.210836974149586,
+      "full_delta_description_length": -53.1085411710808,
+      "region_sizes": [
+        44,
+        20
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "17",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 23.523054534466837,
+      "full_delta_description_length": 527.5638734734424,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 73.52191760215344
+    },
+    {
+      "split": "test",
+      "episode_id": "18",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "alarm": true,
+      "early_delta_description_length": 141.60493654675093,
+      "full_delta_description_length": 482.0952577052841,
+      "region_sizes": [
+        47,
+        17
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 53,
+      "partition_description_length": 330.84862920969044
+    },
+    {
+      "split": "test",
+      "episode_id": "18",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 89.24213228473056,
+      "full_delta_description_length": 97.96234373808377,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "18",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -48.48220138417452,
+      "full_delta_description_length": -47.94415411999626,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -11.096915372358424,
+      "full_delta_description_length": -11.180796170025658,
+      "region_sizes": [
+        34,
+        30
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 28,
+      "alarm": true,
+      "early_delta_description_length": 82.71150243658721,
+      "full_delta_description_length": 137.17227581419397,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 33,
+      "alarm": true,
+      "early_delta_description_length": 301.1167419749553,
+      "full_delta_description_length": 315.98583899502114,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 73.52191760215344
+    },
+    {
+      "split": "test",
+      "episode_id": "19",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -37.81399246544461,
+      "full_delta_description_length": -36.200678138596146,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -1.9776137735899795,
+      "full_delta_description_length": -1.0417840539751353,
+      "region_sizes": [
+        17,
+        47
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 215.97063295632572
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -18.747414906051585,
+      "full_delta_description_length": -18.771722078735547,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": true,
+      "action_cut_edges": 3,
+      "partition_description_length": 13.785359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 208.30439530924798,
+      "full_delta_description_length": 99.58790661494372,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "20",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.063171879007704,
+      "full_delta_description_length": -42.29994496600591,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 59.73655805174967
+    },
+    {
+      "split": "test",
+      "episode_id": "22",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -44.064604107441156,
+      "full_delta_description_length": -37.172563658903826,
+      "region_sizes": [
+        48,
+        16
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "test",
+      "episode_id": "23",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": true,
+      "early_delta_description_length": 306.822585896715,
+      "full_delta_description_length": 53.60010453839179,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "24",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -49.8086672622148,
+      "full_delta_description_length": -50.03426880965624,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "alarm": false,
+      "early_delta_description_length": -35.29187879946237,
+      "full_delta_description_length": -30.118656006816742,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 24,
+      "alarm": true,
+      "early_delta_description_length": 60.27450008347287,
+      "full_delta_description_length": 154.80329078278177,
+      "region_sizes": [
+        9,
+        55
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 78.11703745228803
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 16,
+      "alarm": true,
+      "early_delta_description_length": 312.22081364205553,
+      "full_delta_description_length": 302.7102865155469,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 27,
+      "alarm": true,
+      "early_delta_description_length": 376.2016077270334,
+      "full_delta_description_length": 228.78745589189722,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "alarm": true,
+      "early_delta_description_length": 908.5725684103813,
+      "full_delta_description_length": 978.0260792355136,
+      "region_sizes": [
+        48,
+        16
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 170.01943445497983
+    },
+    {
+      "split": "test",
+      "episode_id": "26",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.19294994574598,
+      "full_delta_description_length": -52.208457329373644,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 164.53270523896884,
+      "full_delta_description_length": 167.82532730317416,
+      "region_sizes": [
+        44,
+        20
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 37,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 22,
+      "alarm": true,
+      "early_delta_description_length": 43.54323040090799,
+      "full_delta_description_length": 62.12538574287568,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 13,
+      "partition_description_length": 73.52191760215344
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 46,
+      "alarm": false,
+      "early_delta_description_length": 1.6278962139413835,
+      "full_delta_description_length": -41.6942143743535,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 18,
+      "partition_description_length": 105.68775655309557
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 20,
+      "alarm": true,
+      "early_delta_description_length": 362.2178962037937,
+      "full_delta_description_length": 402.0554374519411,
+      "region_sizes": [
+        46,
+        18
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 53,
+      "alarm": true,
+      "early_delta_description_length": 345.10061560699506,
+      "full_delta_description_length": 523.7568715818127,
+      "region_sizes": [
+        50,
+        14
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 30,
+      "partition_description_length": 170.01943445497983
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 60,
+      "alarm": false,
+      "early_delta_description_length": -28.005414245106756,
+      "full_delta_description_length": -43.25891138956599,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -52.221538232576464,
+      "full_delta_description_length": -52.89376517965907,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "27",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -47.99970495232726,
+      "full_delta_description_length": -47.99716966572061,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -47.88547867758308,
+      "full_delta_description_length": -43.70851896073424,
+      "region_sizes": [
+        47,
+        17
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 183.8047940053836
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 8,
+      "alarm": false,
+      "early_delta_description_length": 31.811050761387833,
+      "full_delta_description_length": -16.68198526230492,
+      "region_sizes": [
+        30,
+        34
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 197.59015355578737
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 50,
+      "alarm": true,
+      "early_delta_description_length": 474.7509105327176,
+      "full_delta_description_length": 401.948765912168,
+      "region_sizes": [
+        47,
+        17
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 48,
+      "partition_description_length": 289.49255055847914
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 160.97035507600276,
+      "full_delta_description_length": 149.98467603719018,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "test",
+      "episode_id": "28",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 34.24477308281702,
+      "full_delta_description_length": 58.36817989535311,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 78.11703745228803
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 327.5904229920121,
+      "full_delta_description_length": 326.0918807999477,
+      "region_sizes": [
+        31,
+        33
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 44,
+      "partition_description_length": 271.1120711579408
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 53,
+      "alarm": true,
+      "early_delta_description_length": 406.06631647038904,
+      "full_delta_description_length": 559.6080428640857,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 18,
+      "partition_description_length": 101.09263670296097
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 206.5626699273966,
+      "full_delta_description_length": 175.55666740665578,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -0.05880712339627081,
+      "full_delta_description_length": 20.458714189957377,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 174,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 32.73722368742769,
+      "full_delta_description_length": 31.569698922030184,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 218,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -59.48631153567938,
+      "full_delta_description_length": -56.865085884305884,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "test",
+      "episode_id": "29",
+      "chunk_start": 226,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -49.70890927391909,
+      "full_delta_description_length": -50.106789728054906,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "32",
+      "chunk_start": 6,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 133.66517382002266,
+      "full_delta_description_length": 167.3494702538736,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "32",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": true,
+      "early_delta_description_length": 72.82422742175336,
+      "full_delta_description_length": 107.75241752445575,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 39,
+      "partition_description_length": 234.3511123568641
+    },
+    {
+      "split": "test",
+      "episode_id": "32",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -65.79794974984954,
+      "full_delta_description_length": -66.88777269772352,
+      "region_sizes": [
+        47,
+        17
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 23,
+      "partition_description_length": 137.85359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -30.786493195168788,
+      "full_delta_description_length": -24.812927438672347,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 174.6145543051144
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 22.982330814306998,
+      "full_delta_description_length": 29.440517015580745,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -120.65110875923303,
+      "full_delta_description_length": 283.36592751396245,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 95.94359998207088,
+      "full_delta_description_length": 143.45470521192235,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 18,
+      "alarm": true,
+      "early_delta_description_length": 314.67713078705003,
+      "full_delta_description_length": 297.69700486061845,
+      "region_sizes": [
+        16,
+        48
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 11,
+      "alarm": true,
+      "early_delta_description_length": 818.0749226249955,
+      "full_delta_description_length": 811.428407018348,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 16,
+      "partition_description_length": 101.09263670296097
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 577.069275152883,
+      "full_delta_description_length": 671.4772695589327,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -11.188294230580738,
+      "full_delta_description_length": -12.931173473580401,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 30,
+      "partition_description_length": 174.6145543051144
+    },
+    {
+      "split": "test",
+      "episode_id": "38",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 2.408252557061928,
+      "full_delta_description_length": 5.373025770323579,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "test",
+      "episode_id": "39",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -35.653747278366524,
+      "full_delta_description_length": -34.680819785828845,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "39",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -44.84814973226699,
+      "full_delta_description_length": -45.18027234355051,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 411.83946831886186,
+      "full_delta_description_length": 421.82956895064905,
+      "region_sizes": [
+        3,
+        61
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 136.00219306830434,
+      "full_delta_description_length": 139.47200463440527,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 6,
+      "partition_description_length": 32.16583895094213
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 206,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 73.73150102603142,
+      "full_delta_description_length": 57.11967340809281,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 39,
+      "partition_description_length": 225.1608726565949
+    },
+    {
+      "split": "test",
+      "episode_id": "44",
+      "chunk_start": 222,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 34.06314105592628,
+      "full_delta_description_length": 23.353424062325985,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 110.28287640323015
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -87.45075154983654,
+      "full_delta_description_length": -85.62701051393556,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 490.32816337936174,
+      "full_delta_description_length": 567.5982892543122,
+      "region_sizes": [
+        28,
+        36
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 174,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 45.12196558689948,
+      "full_delta_description_length": 183.81671001805648,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -13.166739869593357,
+      "full_delta_description_length": -14.95039683317168,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 37,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "test",
+      "episode_id": "52",
+      "chunk_start": 314,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -67.90291560651708,
+      "full_delta_description_length": -66.81426787021731,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "test",
+      "episode_id": "53",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 222.39904977793444,
+      "full_delta_description_length": 264.1177645624431,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 119.47311610349934
+    },
+    {
+      "split": "test",
+      "episode_id": "53",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 66.56135027841555,
+      "full_delta_description_length": 40.73227310107313,
+      "region_sizes": [
+        11,
+        53
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 37,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 134.89410973665514,
+      "full_delta_description_length": 137.8568369077487,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 30,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -40.49836003144438,
+      "full_delta_description_length": -43.61161961664018,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -12.787485688301189,
+      "full_delta_description_length": -40.73047757148143,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "early_delta_description_length": -20.339594008119956,
+      "full_delta_description_length": -20.24099617608773,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": true,
+      "action_cut_edges": 3,
+      "partition_description_length": 13.785359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "55",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -44.86093489690646,
+      "full_delta_description_length": -43.23323988353869,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 1,
+      "alarm": true,
+      "early_delta_description_length": 141.48873053679827,
+      "full_delta_description_length": 143.6165077342682,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -104.72756206552685,
+      "full_delta_description_length": -35.3521068767123,
+      "region_sizes": [
+        39,
+        25
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 43,
+      "partition_description_length": 271.1120711579408
+    },
+    {
+      "split": "test",
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "early_delta_description_length": -21.07300747690252,
+      "full_delta_description_length": -22.360786311760112,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "58",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -29.981043770284405,
+      "full_delta_description_length": -30.105841682257424,
+      "region_sizes": [
+        7,
+        57
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "58",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 33.42244076837363,
+      "full_delta_description_length": 70.07372135195857,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 38,
+      "partition_description_length": 220.5657528064603
+    },
+    {
+      "split": "test",
+      "episode_id": "60",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -56.71873205370697,
+      "full_delta_description_length": -61.81480002041543,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "test",
+      "episode_id": "60",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -66.63149209618712,
+      "full_delta_description_length": -47.79014783936783,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 128.66335580376852
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 1,
+      "alarm": false,
+      "early_delta_description_length": -5.185637504307849,
+      "full_delta_description_length": -18.218402775725664,
+      "region_sizes": [
+        50,
+        14
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 16,
+      "partition_description_length": 91.9023970026918
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -12.192362447050026,
+      "full_delta_description_length": 47.64372676263751,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -24.201618134537497,
+      "full_delta_description_length": -13.839298945802327,
+      "region_sizes": [
+        4,
+        60
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 91.9023970026918
+    },
+    {
+      "split": "test",
+      "episode_id": "61",
+      "chunk_start": 114,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -29.898808523400202,
+      "full_delta_description_length": -26.54764507737401,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 62,
+      "alarm": true,
+      "early_delta_description_length": 771.2859600198781,
+      "full_delta_description_length": 816.1319814510487,
+      "region_sizes": [
+        41,
+        23
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 183.8047940053836
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 118,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -94.7022498556303,
+      "full_delta_description_length": -100.5908015412929,
+      "region_sizes": [
+        44,
+        20
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 147.04383520430687
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 109.42456414964303,
+      "full_delta_description_length": 90.01828885038262,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 166,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 24.374922434941226,
+      "full_delta_description_length": 30.37097345000663,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "test",
+      "episode_id": "65",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -24.64824307249155,
+      "full_delta_description_length": -24.157214180724576,
+      "region_sizes": [
+        3,
+        61
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 6,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 101.32202950665135,
+      "full_delta_description_length": 113.63726009941854,
+      "region_sizes": [
+        28,
+        36
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 44,
+      "partition_description_length": 266.5169513078062
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -36.08749625471998,
+      "full_delta_description_length": -36.27850542826704,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 78,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -40.06584229455639,
+      "full_delta_description_length": -41.898791029159796,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 97.54558455290085,
+      "full_delta_description_length": 97.25274478564559,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -15.045916613545756,
+      "full_delta_description_length": -20.048562246854004,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -89.9235241790749,
+      "full_delta_description_length": -92.59086488731465,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 96.49751685282638
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 182,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 1.887480543581887,
+      "full_delta_description_length": 12.27609953098272,
+      "region_sizes": [
+        50,
+        14
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 42,
+      "partition_description_length": 252.73159175740244
+    },
+    {
+      "split": "test",
+      "episode_id": "66",
+      "chunk_start": 218,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 151.01770693553325,
+      "full_delta_description_length": 161.77764221275706,
+      "region_sizes": [
+        61,
+        3
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 62,
+      "alarm": true,
+      "early_delta_description_length": 63.76776895163198,
+      "full_delta_description_length": 142.34961103108964,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 96.49751685282638
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "alarm": true,
+      "early_delta_description_length": 249.69457763445743,
+      "full_delta_description_length": 243.25173918008912,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -59.08130868485637,
+      "full_delta_description_length": -56.591937268095194,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "test",
+      "episode_id": "69",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -49.878375599319284,
+      "full_delta_description_length": -46.313153444830114,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "alarm": false,
+      "early_delta_description_length": -62.6702323760857,
+      "full_delta_description_length": -65.80752292029119,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 12,
+      "partition_description_length": 64.33167790188426
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 24,
+      "alarm": true,
+      "early_delta_description_length": 400.30641307619493,
+      "full_delta_description_length": 425.30131231016986,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 87.3072771525572
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -59.15070444570111,
+      "full_delta_description_length": -55.676394039530834,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 202,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -57.70688200188381,
+      "full_delta_description_length": -70.43331040642205,
+      "region_sizes": [
+        46,
+        18
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 234,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.55545101269374,
+      "full_delta_description_length": -47.96973928612405,
+      "region_sizes": [
+        8,
+        56
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -128.49926420787978,
+      "full_delta_description_length": -96.05819207129343,
+      "region_sizes": [
+        42,
+        22
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 28,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "test",
+      "episode_id": "71",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 1,
+      "alarm": false,
+      "early_delta_description_length": -2.746395897001932,
+      "full_delta_description_length": -5.353305674128862,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 119.47311610349934
+    },
+    {
+      "split": "test",
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -72.40924270604984,
+      "full_delta_description_length": -69.78676274638354,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 59.73655805174967
+    },
+    {
+      "split": "test",
+      "episode_id": "73",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 14,
+      "alarm": true,
+      "early_delta_description_length": 361.1056896098731,
+      "full_delta_description_length": 514.4938464551841,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 22,
+      "alarm": true,
+      "early_delta_description_length": 50.79503302940043,
+      "full_delta_description_length": 39.118494372092755,
+      "region_sizes": [
+        10,
+        54
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 183.8047940053836
+    },
+    {
+      "split": "test",
+      "episode_id": "73",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 535.814707718393,
+      "full_delta_description_length": 736.4041013769536,
+      "region_sizes": [
+        52,
+        12
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 16,
+      "partition_description_length": 91.9023970026918
+    },
+    {
+      "split": "test",
+      "episode_id": "75",
+      "chunk_start": 30,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 59.164263168533935,
+      "full_delta_description_length": 59.250254284682924,
+      "region_sizes": [
+        6,
+        58
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "75",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": false,
+      "early_delta_description_length": -3.9854291030929403,
+      "full_delta_description_length": 225.65805624616013,
+      "region_sizes": [
+        32,
+        32
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 151.63895505444145
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 9,
+      "alarm": true,
+      "early_delta_description_length": 392.69474743047545,
+      "full_delta_description_length": 397.0194233615735,
+      "region_sizes": [
+        5,
+        59
+      ],
+      "action_graph_k": 2,
+      "action_connected": true,
+      "action_cut_edges": 6,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 134,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -51.43592991870425,
+      "full_delta_description_length": -52.170830992954464,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -140.4236363341259,
+      "full_delta_description_length": -91.13207904090446,
+      "region_sizes": [
+        37,
+        27
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 206.78039325605653
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -91.93856664197953,
+      "full_delta_description_length": -86.43694284457113,
+      "region_sizes": [
+        11,
+        53
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 78.11703745228803
+    },
+    {
+      "split": "test",
+      "episode_id": "76",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -3.7365368166407507,
+      "full_delta_description_length": 172.23648451355666,
+      "region_sizes": [
+        34,
+        30
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 37,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 55.007862290673216,
+      "full_delta_description_length": 56.95242695217749,
+      "region_sizes": [
+        43,
+        21
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 94.40688905765819,
+      "full_delta_description_length": 116.55978911841396,
+      "region_sizes": [
+        23,
+        41
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 142.4487153541723
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -114.23618656000103,
+      "full_delta_description_length": -117.72157055482289,
+      "region_sizes": [
+        16,
+        48
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 23,
+      "partition_description_length": 133.2584756539031
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": true,
+      "early_delta_description_length": 186.16675712011988,
+      "full_delta_description_length": 185.7823677109842,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 5,
+      "partition_description_length": 27.570719100807537
+    },
+    {
+      "split": "test",
+      "episode_id": "77",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": true,
+      "early_delta_description_length": 178.73956562172944,
+      "full_delta_description_length": 177.0810251252353,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 113.66856177707504,
+      "full_delta_description_length": 131.16381050836148,
+      "region_sizes": [
+        49,
+        15
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 147.04383520430687
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -37.00651503160941,
+      "full_delta_description_length": -36.51347636509547,
+      "region_sizes": [
+        16,
+        48
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 197.59015355578737
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "alarm": true,
+      "early_delta_description_length": 21.550205186094857,
+      "full_delta_description_length": 23.310663243049262,
+      "region_sizes": [
+        59,
+        5
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "alarm": false,
+      "early_delta_description_length": -24.991399434897435,
+      "full_delta_description_length": -24.76448679699732,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 361.4188416942221,
+      "full_delta_description_length": 365.8689944502104,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "79",
+      "chunk_start": 150,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -70.71565261820376,
+      "full_delta_description_length": -50.51315543750866,
+      "region_sizes": [
+        25,
+        39
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 33,
+      "partition_description_length": 211.37551310619114
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 38,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 5,
+      "alarm": true,
+      "early_delta_description_length": 50.13377207162813,
+      "full_delta_description_length": 39.79988713008498,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 19,
+      "partition_description_length": 110.28287640323015
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 38,
+      "alarm": true,
+      "early_delta_description_length": 275.7169170285591,
+      "full_delta_description_length": 395.2541651056225,
+      "region_sizes": [
+        17,
+        47
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 21,
+      "partition_description_length": 124.06823595363393
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 46,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "alarm": true,
+      "early_delta_description_length": 258.755250074988,
+      "full_delta_description_length": 241.36760053774572,
+      "region_sizes": [
+        29,
+        35
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 30,
+      "partition_description_length": 179.209674155249
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 18,
+      "alarm": true,
+      "early_delta_description_length": 198.7184185027976,
+      "full_delta_description_length": 201.29695359988398,
+      "region_sizes": [
+        60,
+        4
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 6,
+      "partition_description_length": 32.16583895094213
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -113.6943708256568,
+      "full_delta_description_length": -98.80519325553036,
+      "region_sizes": [
+        39,
+        25
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 142.4487153541723
+    },
+    {
+      "split": "test",
+      "episode_id": "80",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -10.435727817171458,
+      "full_delta_description_length": -6.859513876125423,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "81",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 106.63890917507047,
+      "full_delta_description_length": 278.90682271775324,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 14,
+      "partition_description_length": 82.71215730242261
+    },
+    {
+      "split": "test",
+      "episode_id": "81",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -5.148816731464773,
+      "full_delta_description_length": 75.56999739620566,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": true,
+      "action_cut_edges": 3,
+      "partition_description_length": 13.785359550403768
+    },
+    {
+      "split": "test",
+      "episode_id": "81",
+      "chunk_start": 158,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 128.42847705055541,
+      "full_delta_description_length": 123.95289635515437,
+      "region_sizes": [
+        4,
+        60
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 16,
+      "partition_description_length": 91.9023970026918
+    },
+    {
+      "split": "test",
+      "episode_id": "83",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 45,
+      "alarm": false,
+      "early_delta_description_length": -16.240297332615,
+      "full_delta_description_length": -14.684426505601266,
+      "region_sizes": [
+        43,
+        21
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 165.42431460484522
+    },
+    {
+      "split": "test",
+      "episode_id": "83",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 48,
+      "alarm": false,
+      "early_delta_description_length": -101.650090474019,
+      "full_delta_description_length": -78.27137763705939,
+      "region_sizes": [
+        12,
+        52
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 36,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "test",
+      "episode_id": "83",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -53.2536249720919,
+      "full_delta_description_length": -50.33005954544595,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 50.54631835148049
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 260.46156461286057,
+      "full_delta_description_length": 257.3448219303566,
+      "region_sizes": [
+        22,
+        42
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 31,
+      "partition_description_length": 174.6145543051144
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 30,
+      "alarm": false,
+      "early_delta_description_length": 1.5880417583222197,
+      "full_delta_description_length": -13.835021291446822,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 22,
+      "partition_description_length": 114.87799625336474
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "alarm": true,
+      "early_delta_description_length": 167.5167786839623,
+      "full_delta_description_length": 164.96755048176686,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 87.3072771525572
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -46.602324243816035,
+      "full_delta_description_length": -40.40211633903635,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "test",
+      "episode_id": "84",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -14.013031462331355,
+      "full_delta_description_length": 19.274719192605744,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "test",
+      "episode_id": "85",
+      "chunk_start": 70,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 12,
+      "alarm": true,
+      "early_delta_description_length": 56.64335025005248,
+      "full_delta_description_length": 68.78751861147333,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 11,
+      "partition_description_length": 68.92679775201884
+    },
+    {
+      "split": "test",
+      "episode_id": "85",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 15,
+      "alarm": true,
+      "early_delta_description_length": 919.8473040723852,
+      "full_delta_description_length": 1785.600836580195,
+      "region_sizes": [
+        53,
+        11
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 17,
+      "partition_description_length": 105.68775655309557
+    },
+    {
+      "split": "test",
+      "episode_id": "85",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 21.61955695381328,
+      "full_delta_description_length": 30.067581385002242,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 54,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 10,
+      "alarm": true,
+      "early_delta_description_length": 97.2153345107449,
+      "full_delta_description_length": 124.92023329739888,
+      "region_sizes": [
+        9,
+        55
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "alarm": true,
+      "early_delta_description_length": 159.7052817212733,
+      "full_delta_description_length": 827.051869555248,
+      "region_sizes": [
+        48,
+        16
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 25,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -59.253416345373964,
+      "full_delta_description_length": -60.831938704586875,
+      "region_sizes": [
+        37,
+        27
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 133.2584756539031
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -42.08336858157242,
+      "full_delta_description_length": -36.27987899922142,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -49.46939517535465,
+      "full_delta_description_length": -47.78657008799468,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -48.02701900943709,
+      "full_delta_description_length": -46.72505494509887,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "90",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": 0.37468214910854414,
+      "full_delta_description_length": -3.245972640124414,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 189.51085955280973,
+      "full_delta_description_length": 142.0704198310318,
+      "region_sizes": [
+        4,
+        60
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 15,
+      "partition_description_length": 87.3072771525572
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 5,
+      "alarm": false,
+      "early_delta_description_length": -55.93309965618568,
+      "full_delta_description_length": -53.76303228862344,
+      "region_sizes": [
+        54,
+        10
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 10,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 62,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": true,
+      "early_delta_description_length": 205.86917044441006,
+      "full_delta_description_length": 238.91148346841138,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 20,
+      "alarm": true,
+      "early_delta_description_length": 655.981969229959,
+      "full_delta_description_length": 694.0115056054683,
+      "region_sizes": [
+        34,
+        30
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 32,
+      "partition_description_length": 179.209674155249
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 78,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 15,
+      "alarm": true,
+      "early_delta_description_length": 610.578223702393,
+      "full_delta_description_length": 647.6247191932875,
+      "region_sizes": [
+        20,
+        44
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 30,
+      "partition_description_length": 170.01943445497983
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 22,
+      "alarm": true,
+      "early_delta_description_length": 303.40369193040607,
+      "full_delta_description_length": 319.0100584586017,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 86,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 29,
+      "alarm": true,
+      "early_delta_description_length": 607.405568764448,
+      "full_delta_description_length": 628.1497529467903,
+      "region_sizes": [
+        57,
+        7
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 24,
+      "partition_description_length": 147.04383520430687
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": true,
+      "early_delta_description_length": 163.44862040194553,
+      "full_delta_description_length": 190.0595488087529,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "91",
+      "chunk_start": 102,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -47.881194870247334,
+      "full_delta_description_length": -47.28810024079957,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    },
+    {
+      "split": "test",
+      "episode_id": "92",
+      "chunk_start": 22,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 78.67956831275993,
+      "full_delta_description_length": 80.64611559368339,
+      "region_sizes": [
+        40,
+        24
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 35,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "test",
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -66.95744429593405,
+      "full_delta_description_length": -88.44175195844473,
+      "region_sizes": [
+        56,
+        8
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 27,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -13.241142903594834,
+      "full_delta_description_length": -5.601509738959351,
+      "region_sizes": [
+        9,
+        55
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 26,
+      "partition_description_length": 156.23407490457606
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -14.942448122161835,
+      "full_delta_description_length": 3.8896542154332394,
+      "region_sizes": [
+        51,
+        13
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 40,
+      "partition_description_length": 243.54135205713325
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -7.908274146776904,
+      "full_delta_description_length": -18.01029268924006,
+      "region_sizes": [
+        24,
+        40
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 34,
+      "partition_description_length": 202.18527340592195
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 94,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 21,
+      "alarm": true,
+      "early_delta_description_length": 396.19860917022595,
+      "full_delta_description_length": 382.7901640956992,
+      "region_sizes": [
+        30,
+        34
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 29,
+      "partition_description_length": 160.82919475471064
+    },
+    {
+      "split": "test",
+      "episode_id": "95",
+      "chunk_start": 126,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -44.597725658654696,
+      "full_delta_description_length": 175.7701814116747,
+      "region_sizes": [
+        2,
+        62
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 7,
+      "partition_description_length": 36.76095880107672
+    },
+    {
+      "split": "test",
+      "episode_id": "96",
+      "chunk_start": 46,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 219.581131151468,
+      "full_delta_description_length": 193.630321572676,
+      "region_sizes": [
+        58,
+        6
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 55.141438201615074
+    },
+    {
+      "split": "test",
+      "episode_id": "96",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": true,
+      "early_delta_description_length": 30.83363013793462,
+      "full_delta_description_length": 38.416941810299534,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 9,
+      "partition_description_length": 45.9511985013459
+    },
+    {
+      "split": "test",
+      "episode_id": "98",
+      "chunk_start": 110,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 7,
+      "alarm": true,
+      "early_delta_description_length": 332.2429408354699,
+      "full_delta_description_length": 394.25972444910667,
+      "region_sizes": [
+        62,
+        2
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 4,
+      "partition_description_length": 22.97559925067295
+    },
+    {
+      "split": "test",
+      "episode_id": "98",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "alarm": false,
+      "early_delta_description_length": -47.806011695398134,
+      "full_delta_description_length": -46.65161714914991,
+      "region_sizes": [
+        55,
+        9
+      ],
+      "action_graph_k": 2,
+      "action_connected": false,
+      "action_cut_edges": 8,
+      "partition_description_length": 41.356078651211305
+    }
+  ]
+}

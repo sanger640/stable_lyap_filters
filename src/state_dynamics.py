@@ -188,6 +188,125 @@ class StepGraphMoE(StepGraphNet):
                 **self.shared_heads(nodes, e, senders, receivers)}
 
 
+class StepSwitchingEdgeGNN(StepGraphNet):
+    """Graph dynamics with a persistent, task-agnostic categorical mode on every edge.
+
+    Each ordered object-object or object-gripper interaction chooses one of ``modes`` message
+    experts. The choice is conditioned on the current state/action context and the previous edge
+    mode, then carried to the next rollout step. Nothing assigns semantic names or direct mode
+    labels to the gate; in particular it never sees failure, object-identity, or task labels. A
+    mode can therefore represent any reusable interaction regime (free, sticking, sliding, impact,
+    support loss, ...).
+
+    Training uses a straight-through Gumbel choice; evaluation uses deterministic argmax. The
+    ordinary state/contact heads remain shared, preventing a mode from becoming a task-specific
+    outcome classifier.
+    """
+
+    def __init__(self, hidden=128, rounds=3, modes=3):
+        super().__init__(hidden, rounds)
+        if modes < 2:
+            raise ValueError("switching edge dynamics needs at least two modes")
+        self.modes = modes
+        # Replace the baseline's shared edge updates with one message expert per latent mode.
+        del self.edge_updates
+        self.mode_edge_updates = nn.ModuleList([
+            nn.ModuleList([_mlp(3 * hidden, hidden, hidden) for _ in range(modes)])
+            for _ in range(rounds)
+        ])
+        # A shared context pass lets every edge see action information propagated from the gripper
+        # before choosing a mode, including block-block edges not directly incident to it.
+        self.context_edge = _mlp(3 * hidden, hidden, hidden)
+        self.context_node = _mlp(2 * hidden, hidden, hidden)
+        self.context_edge_norm = nn.LayerNorm(hidden)
+        self.context_node_norm = nn.LayerNorm(hidden)
+        self.mode_gate = _mlp(3 * hidden + modes + 1, modes, hidden)
+        self.temperature = 1.0
+
+    def _choose_mode(self, logits):
+        probabilities = (logits / self.temperature).softmax(-1)
+        if self.training:
+            uniform = torch.rand_like(logits).clamp(1e-9, 1 - 1e-9)
+            sample = ((logits - torch.log(-torch.log(uniform))) / self.temperature).softmax(-1)
+        else:
+            sample = probabilities
+        hard = nn.functional.one_hot(sample.argmax(-1), self.modes).to(sample.dtype)
+        straight_through = hard - sample.detach() + sample
+        return probabilities, hard, straight_through
+
+    def forward(self, state, action, mode_state=None):
+        blocks, grip, raw_edges, senders, receivers = node_and_edge_features(state, action)
+        nodes = torch.cat([self.block_encoder(blocks), self.gripper_encoder(grip)[:, None]], dim=1)
+        edges = self.edge_encoder(raw_edges)
+
+        # The preview informs only the gate. Keeping the actual dynamics stream untouched makes it
+        # possible to warm-start every mode expert from one continuous StepGraphNet exactly.
+        context = torch.cat([edges, nodes[:, senders], nodes[:, receivers]], dim=-1)
+        context_edges = self.context_edge_norm(self.context_edge(context))
+        incoming = torch.zeros_like(nodes).index_add_(1, receivers, context_edges)
+        context_nodes = self.context_node_norm(self.context_node(torch.cat([nodes, incoming], -1)))
+
+        batch, edge_count = edges.shape[:2]
+        if mode_state is None:
+            previous = torch.full((batch, edge_count, self.modes), 1.0 / self.modes,
+                                  dtype=edges.dtype, device=edges.device)
+            has_previous = torch.zeros((batch, edge_count, 1), dtype=edges.dtype,
+                                       device=edges.device)
+        else:
+            if mode_state.shape != (batch, edge_count, self.modes):
+                raise ValueError("mode_state must have shape (batch, directed_edges, modes)")
+            previous = mode_state
+            has_previous = torch.ones((batch, edge_count, 1), dtype=edges.dtype,
+                                      device=edges.device)
+        gate_input = torch.cat([
+            context_edges, context_nodes[:, senders], context_nodes[:, receivers],
+            previous, has_previous], dim=-1)
+        logits = self.mode_gate(gate_input)
+        probabilities, hard, regime = self._choose_mode(logits)
+
+        for experts, node_up, edge_norm, node_norm in zip(
+                self.mode_edge_updates, self.node_updates, self.edge_norms, self.node_norms):
+            inputs = torch.cat([edges, nodes[:, senders], nodes[:, receivers]], dim=-1)
+            candidates = torch.stack([expert(inputs) for expert in experts], dim=2)
+            update = (regime.unsqueeze(-1) * candidates).sum(2)
+            edges = edge_norm(edges + update)
+            incoming = torch.zeros_like(nodes).index_add_(1, receivers, edges)
+            nodes = node_norm(nodes + node_up(torch.cat([nodes, incoming], dim=-1)))
+
+        block_out = self.block_head(nodes[:, :N_BLOCKS])
+        return {"block_mean": block_out[..., :BLOCK_OUT],
+                "block_logvar": block_out[..., BLOCK_OUT:2 * BLOCK_OUT].clamp(-10, 5),
+                "block_contact_logits": block_out[..., 2 * BLOCK_OUT:],
+                "gate_probabilities": probabilities, "regime": hard,
+                "next_mode_state": regime,
+                **self.shared_heads(nodes, edges, senders, receivers)}
+
+
+def initialise_switching_from_single(switching, single_state_dict):
+    """Exactly embed a trained StepGraphNet into every switching-edge mode expert.
+
+    Shared encoders, node updates and heads are copied directly. Each continuous edge-update block
+    is copied into every mode expert. Because the action-context preview affects only the new gate,
+    all mode choices initially produce the original model's exact output; subsequent training can
+    specialize the experts without an architecture-change confound.
+    """
+    if not isinstance(switching, StepSwitchingEdgeGNN):
+        raise TypeError("target must be StepSwitchingEdgeGNN")
+    target = switching.state_dict()
+    copied = set()
+    for name, value in single_state_dict.items():
+        if name.startswith("edge_updates."):
+            parts = name.split(".")
+            round_index, suffix = int(parts[1]), ".".join(parts[2:])
+            for mode in range(switching.modes):
+                destination = f"mode_edge_updates.{round_index}.{mode}.{suffix}"
+                target[destination] = value.clone(); copied.add(destination)
+        elif name in target and target[name].shape == value.shape:
+            target[name] = value.clone(); copied.add(name)
+    switching.load_state_dict(target)
+    return copied
+
+
 class StepMLP(nn.Module):
     """Ablation of the graph: one flat MLP on the whole state and action.
 
@@ -239,6 +358,25 @@ def load_balance(gate_probabilities):
     """Collapse regularisation: KL between the batch's mean expert usage and uniform usage."""
     usage = gate_probabilities.reshape(-1, gate_probabilities.shape[-1]).mean(0)
     return (usage * (usage.clamp_min(1e-9) * usage.shape[0]).log()).sum()
+
+
+def switching_mode_regularizers(gate_probabilities):
+    """Universal anti-collapse, decisiveness and temporal-persistence terms for edge modes.
+
+    Input shape is ``(batch, time, directed_edges, modes)``. These terms contain no physical or
+    task labels. Balance prevents all interactions choosing one mode, entropy makes each local
+    choice interpretable, and persistence discourages unsupported frame-to-frame mode flicker.
+    """
+    if gate_probabilities.ndim != 4 or gate_probabilities.shape[1] < 2:
+        raise ValueError("gate probabilities need shape (batch, time>=2, edges, modes)")
+    probabilities = gate_probabilities.clamp_min(1e-9)
+    usage = probabilities.mean(dim=(0, 1, 2))
+    balance = (usage * (usage * usage.shape[0]).log()).sum()
+    entropy = -(probabilities * probabilities.log()).sum(-1).mean() / np.log(
+        probabilities.shape[-1])
+    persistence = (probabilities[:, 1:] - probabilities[:, :-1]).square().mean()
+    return {"mode_balance": balance, "mode_entropy": entropy,
+            "mode_persistence": persistence}
 
 
 def neighbour_tilt_deg(states):
@@ -348,8 +486,13 @@ def rollout(model, state, actions, delta_scale, sample=False, noise=None, collec
     """
     states = []
     current = state
+    mode_state = None
     for t in range(actions.shape[1]):
-        out = model(current, actions[:, t])
+        if isinstance(model, StepSwitchingEdgeGNN):
+            out = model(current, actions[:, t], mode_state)
+            mode_state = out["next_mode_state"]
+        else:
+            out = model(current, actions[:, t])
         if collect is not None and "gate_probabilities" in out:
             collect.append(out["gate_probabilities"])
         step_noise = None if noise is None else (noise[0][:, t], noise[1][:, t])

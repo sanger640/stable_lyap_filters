@@ -1,0 +1,125 @@
+{
+  "protocol": {
+    "plan": "W6 simple baseline: one-step training with input noise",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 rounds",
+    "training": "3 epochs, one-step MSE + contact BCE, input noise 0.5 x one-step sigma, no curriculum, no branch loss",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "seed": 1,
+  "noise": 0.5,
+  "parameters": 1363243,
+  "model": "edge_switch",
+  "experts": null,
+  "modes": 3,
+  "branch_weight": 0.0,
+  "cw_data": "results/jenga/cw_data",
+  "cw_loss": "intervention",
+  "cw_groups": 32,
+  "cw_weight": 1.0,
+  "quiet_quantile": 0.5,
+  "init": "results/jenga/w6_cw_d2_s1.pt",
+  "d3_data": "results/jenga/d3_data",
+  "d3_groups": 2,
+  "d3_weight": 1.0,
+  "d3_local_weight": 1.0,
+  "mode_balance_weight": 0.01,
+  "mode_entropy_weight": 0.01,
+  "mode_persistence_weight": 0.01,
+  "orthonormalise": true,
+  "hard_contacts": false,
+  "states": 8810,
+  "history": [
+    {
+      "epoch": 1,
+      "train_mse": 0.6570261168540548,
+      "train_bce": 0.04629273853665579,
+      "validation": {
+        "one_step_mse": 0.39510031861643635,
+        "rollout_state_error": 0.19128177891815862,
+        "branch_ratio": 0.5017559175259493,
+        "topple_recall": 0.6021505376344086,
+        "topple_false_rate": 0.004051757940138544,
+        "cw_train_terms": {
+          "response": 0.699145300712884,
+          "difference": 0.6198244183800892,
+          "quiet": 0.09046159833859124,
+          "mode_balance": 0.17188248303286655,
+          "mode_entropy": 0.7872139937543273,
+          "mode_persistence": 0.004786457705153181,
+          "d3_response": 0.7739361016226616,
+          "d3_effect": 1.1813368755932225,
+          "d3_global_scale": 0.509471905939352,
+          "d3_local_scale": 0.16710192391421536,
+          "d3_mode_balance": 0.18401744521713834,
+          "d3_mode_entropy": 0.7776920062736559,
+          "d3_mode_persistence": 0.000954891450420274
+        }
+      },
+      "seconds": 1242.2890594005585,
+      "batch_seconds": 1234.8669834136963,
+      "batches": 1573
+    },
+    {
+      "epoch": 2,
+      "train_mse": 0.6600013319959477,
+      "train_bce": 0.04838813627488054,
+      "validation": {
+        "one_step_mse": 0.39147728537359544,
+        "rollout_state_error": 0.1919883645830616,
+        "branch_ratio": 0.6435822513521213,
+        "topple_recall": 0.6236559139784946,
+        "topple_false_rate": 0.0031368448568814536,
+        "cw_train_terms": {
+          "response": 0.7434755136499872,
+          "difference": 0.6422440673675192,
+          "quiet": 0.06467678789605931,
+          "mode_balance": 1.0986106185797893,
+          "mode_entropy": 1.4739667011142086e-06,
+          "mode_persistence": 2.8395739533404777e-12,
+          "d3_response": 0.8295182440088302,
+          "d3_effect": 1.3161486681105437,
+          "d3_global_scale": 0.7252611321578002,
+          "d3_local_scale": 0.15687763630287443,
+          "d3_mode_balance": 1.0986109355870737,
+          "d3_mode_entropy": 1.2220443694547328e-06,
+          "d3_mode_persistence": 5.39808474523122e-13
+        }
+      },
+      "seconds": 1223.8101012706757,
+      "batch_seconds": 1216.4540684223175,
+      "batches": 1573
+    },
+    {
+      "epoch": 3,
+      "train_mse": 0.6488732636088561,
+      "train_bce": 0.046532691020023574,
+      "validation": {
+        "one_step_mse": 0.37985125760878286,
+        "rollout_state_error": 0.18884924673024686,
+        "branch_ratio": 0.4688911438374843,
+        "topple_recall": 0.5161290322580645,
+        "topple_false_rate": 0.002221931773624363,
+        "cw_train_terms": {
+          "response": 0.6984051633661746,
+          "difference": 0.5784487355706499,
+          "quiet": 0.06179134839481407,
+          "mode_balance": 1.0986112314504344,
+          "mode_entropy": 3.438413696993688e-07,
+          "mode_persistence": 3.058692604743169e-08,
+          "d3_response": 0.7791693785970288,
+          "d3_effect": 1.2604149763143087,
+          "d3_global_scale": 0.6772566625957352,
+          "d3_local_scale": 0.14723559921456658,
+          "d3_mode_balance": 1.098612225745335,
+          "d3_mode_entropy": 7.474375004069159e-08,
+          "d3_mode_persistence": 2.986088892373595e-17
+        }
+      },
+      "seconds": 1211.2220504283905,
+      "batch_seconds": 1203.7484698295593,
+      "batches": 1573
+    }
+  ],
+  "rollout_history": [],
+  "output": "results/jenga/w6_four_arm_switch_d3_s1.pt"
+}

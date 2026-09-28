@@ -1,0 +1,104 @@
+{
+  "protocol": {
+    "plan": "W6 simple baseline: one-step training with input noise",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 rounds",
+    "training": "3 epochs, one-step MSE + contact BCE, input noise 0.5 x one-step sigma, no curriculum, no branch loss",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "seed": 1,
+  "noise": 0.5,
+  "parameters": 1363243,
+  "model": "edge_switch",
+  "experts": null,
+  "modes": 3,
+  "branch_weight": 0.0,
+  "cw_data": "results/jenga/cw_data",
+  "cw_loss": "intervention",
+  "cw_groups": 32,
+  "cw_weight": 1.0,
+  "quiet_quantile": 0.5,
+  "init": "results/jenga/w6_cw_d2_s1.pt",
+  "d3_data": null,
+  "d3_groups": 2,
+  "d3_weight": 1.0,
+  "d3_local_weight": 1.0,
+  "mode_balance_weight": 0.01,
+  "mode_entropy_weight": 0.01,
+  "mode_persistence_weight": 0.01,
+  "orthonormalise": true,
+  "hard_contacts": false,
+  "states": 8810,
+  "history": [
+    {
+      "epoch": 1,
+      "train_mse": 0.6102774387056177,
+      "train_bce": 0.039886757074242475,
+      "validation": {
+        "one_step_mse": 0.3649436648814909,
+        "rollout_state_error": 0.19497573682137073,
+        "branch_ratio": 0.708563064142303,
+        "topple_recall": 0.7741935483870968,
+        "topple_false_rate": 0.008364919618350543,
+        "cw_train_terms": {
+          "response": 0.6616640903164608,
+          "difference": 0.6037789749127244,
+          "quiet": 0.08606896796000284,
+          "mode_balance": 0.011417826339511486,
+          "mode_entropy": 0.9884659483867774,
+          "mode_persistence": 5.897491456909639e-05
+        }
+      },
+      "seconds": 225.20796585083008,
+      "batch_seconds": 217.76457142829895,
+      "batches": 1573
+    },
+    {
+      "epoch": 2,
+      "train_mse": 0.6051501866290316,
+      "train_bce": 0.03967916652872846,
+      "validation": {
+        "one_step_mse": 0.3630224574477442,
+        "rollout_state_error": 0.18323508998559368,
+        "branch_ratio": 0.6068959163846913,
+        "topple_recall": 0.5913978494623656,
+        "topple_false_rate": 0.0014377205594039994,
+        "cw_train_terms": {
+          "response": 0.6577612163862527,
+          "difference": 0.6028078151020136,
+          "quiet": 0.08104111212296844,
+          "mode_balance": 0.004309711913859148,
+          "mode_entropy": 0.9956138570143475,
+          "mode_persistence": 4.846096819246628e-05
+        }
+      },
+      "seconds": 219.1259250640869,
+      "batch_seconds": 211.80238962173462,
+      "batches": 1573
+    },
+    {
+      "epoch": 3,
+      "train_mse": 0.600431477633238,
+      "train_bce": 0.03959947723826632,
+      "validation": {
+        "one_step_mse": 0.3462802469730377,
+        "rollout_state_error": 0.19793130289162358,
+        "branch_ratio": 0.6606243075198389,
+        "topple_recall": 0.3870967741935484,
+        "topple_false_rate": 0.0018298261665141812,
+        "cw_train_terms": {
+          "response": 0.6704769754913759,
+          "difference": 0.6123659101948947,
+          "quiet": 0.08883231609363466,
+          "mode_balance": 0.003458160057570149,
+          "mode_entropy": 0.9963806941110619,
+          "mode_persistence": 2.398272752450365e-05
+        }
+      },
+      "seconds": 217.62947154045105,
+      "batch_seconds": 210.2275083065033,
+      "batches": 1573
+    }
+  ],
+  "rollout_history": [],
+  "output": "results/jenga/w6_four_arm_switch_d2_s1.pt"
+}

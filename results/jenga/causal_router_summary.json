@@ -1,0 +1,1149 @@
+{
+  "protocol": {
+    "id": "train-only-causal-scale-router-v1",
+    "status": "prospectively fixed before causal-router training",
+    "scope": "D3 TRAIN corpus only; benchmark DEV and frozen TEST prohibited",
+    "shared_model": "results/jenga/w6_cw_d2_s1.pt",
+    "oracle_protocol": "results/jenga/oracle_routing_upper_bound_protocol.json",
+    "split": "same episode-level 12% held-out TRAIN split used by jenga_w6_simple.py",
+    "fit_groups_expected": 226,
+    "heldout_groups_expected": 30,
+    "modes": 3,
+    "causal_inputs": {
+      "state": "current 61-dimensional privileged simulator state",
+      "action": "original eight-step nominal action reconstructed algebraically from the initial endpoint pair and saved alphas",
+      "execution_uncertainty": "eight-step xyz residual direction reconstructed from the initial endpoint pair",
+      "prohibited": "physical trajectories, response curves, midpoint choices, deeper nested endpoints, task/failure/topple/success labels"
+    },
+    "features": "117 raw values: current state 61 + nominal action 8x4 + residual direction 8x3; standardized using fit groups only",
+    "target": "capacity-balanced three-mode oracle assignment plus standardized 15-dimensional physical-minus-D2 scale-curve residual",
+    "router": {
+      "architecture": "MLP 117-64-32 with GELU and 0.1 dropout; categorical mode head and auxiliary 15D residual head",
+      "loss": "cross entropy plus 0.5 times smooth-L1 residual loss",
+      "optimizer": "AdamW, learning rate 0.001, weight decay 0.001",
+      "epochs": 400,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "selection": "fixed final epoch; no held-out model or epoch selection",
+      "execution": "hard argmax mode"
+    },
+    "controls": [
+      "uncorrected frozen D2",
+      "fit-set majority hard router",
+      "future-informed nearest-prototype oracle upper bound"
+    ],
+    "primary_summary": "median across the ten fixed seeds",
+    "feasibility_gate": {
+      "oracle_assignment_accuracy_min": 0.5,
+      "global_oracle_gain_fraction_min": 0.25,
+      "local_oracle_gain_fraction_min": 0.25,
+      "persistent_recall_min": 0.5,
+      "smooth_false_positive_rate_max": 0.5,
+      "each_mode_occupancy_min": 0.05,
+      "interpretation": "all conditions must pass before any new DEV run"
+    },
+    "small_sample_warning": "held-out TRAIN has only four clearly smooth groups; smooth FPR is therefore descriptive but remains a conservative veto"
+  },
+  "protocol_sha256": "0228e9d15cc316781e36236054dfaad28af7d13cb7f0621984890eff438c695f",
+  "checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+  "split_audit": {
+    "fit_groups": 226,
+    "heldout_groups": 30,
+    "fit_episode_ids": [
+      "21:102",
+      "21:105",
+      "21:107",
+      "21:109",
+      "25:101",
+      "25:102",
+      "25:103",
+      "25:104",
+      "25:105",
+      "30:104",
+      "30:109",
+      "31:105",
+      "31:106",
+      "33:101",
+      "33:104",
+      "33:107",
+      "33:108",
+      "33:109",
+      "34:102",
+      "34:104",
+      "35:101",
+      "35:102",
+      "35:103",
+      "35:105",
+      "35:106",
+      "35:107",
+      "35:109",
+      "36:101",
+      "36:104",
+      "37:101",
+      "37:104",
+      "37:105",
+      "37:107",
+      "37:109",
+      "40:102",
+      "40:106",
+      "40:109",
+      "41:101",
+      "41:103",
+      "41:105",
+      "41:106",
+      "41:107",
+      "42:100",
+      "42:101",
+      "42:102",
+      "42:104",
+      "42:106",
+      "42:107",
+      "42:108",
+      "43:101",
+      "43:102",
+      "43:103",
+      "43:104",
+      "43:105",
+      "43:106",
+      "43:107",
+      "43:109",
+      "45:100",
+      "45:103",
+      "45:108",
+      "46:104",
+      "46:106",
+      "46:107",
+      "46:108",
+      "47:104",
+      "47:105",
+      "47:106",
+      "47:107",
+      "47:109",
+      "48:102",
+      "48:103",
+      "48:106",
+      "48:107",
+      "48:109",
+      "49:100",
+      "49:106",
+      "49:107",
+      "50:102",
+      "50:103",
+      "50:105",
+      "50:106",
+      "50:107",
+      "50:108",
+      "50:109",
+      "51:104",
+      "51:108",
+      "54:102",
+      "54:103",
+      "54:106",
+      "54:107",
+      "54:108",
+      "54:109",
+      "59:100",
+      "59:103",
+      "59:105",
+      "5:102",
+      "5:103",
+      "5:105",
+      "5:109",
+      "62:101",
+      "62:104",
+      "62:105",
+      "62:108",
+      "62:109",
+      "63:103",
+      "63:109",
+      "67:100",
+      "67:103",
+      "67:105",
+      "67:106",
+      "67:107",
+      "67:109",
+      "68:100",
+      "68:101",
+      "68:102",
+      "68:108",
+      "72:101",
+      "72:102",
+      "72:103",
+      "72:104",
+      "74:103",
+      "74:104",
+      "74:106",
+      "74:108",
+      "78:102",
+      "78:105",
+      "78:107",
+      "78:109",
+      "7:102",
+      "7:103",
+      "7:104",
+      "7:106",
+      "7:107",
+      "7:108",
+      "7:109",
+      "82:103",
+      "82:106",
+      "82:109",
+      "88:102",
+      "88:103",
+      "88:107",
+      "88:108",
+      "88:109",
+      "89:101",
+      "89:102",
+      "89:103",
+      "89:106",
+      "93:104",
+      "93:105",
+      "93:106",
+      "93:107",
+      "94:101",
+      "94:102",
+      "94:103",
+      "94:104",
+      "94:106",
+      "94:107",
+      "97:102",
+      "97:105",
+      "97:107",
+      "97:108",
+      "97:109",
+      "99:101",
+      "99:102",
+      "99:106",
+      "99:107"
+    ],
+    "heldout_episode_ids": [
+      "0:102",
+      "0:105",
+      "0:107",
+      "12:102",
+      "12:103",
+      "12:106",
+      "12:109",
+      "13:101",
+      "13:105",
+      "13:108",
+      "13:109",
+      "16:100",
+      "16:103",
+      "16:106",
+      "16:107",
+      "16:109",
+      "1:100",
+      "1:101",
+      "1:102",
+      "1:103",
+      "1:106"
+    ],
+    "episode_overlap": []
+  },
+  "feature_audit": {
+    "dimensions": 117,
+    "fit_standardization_only": true,
+    "deeper_nested_actions_read": false,
+    "feature_mean_sha256": "35f802cb4c50890641646ad9195df6258dfaa7d48402f4ce60f56e8f2556cf32",
+    "feature_scale_sha256": "40b8a2337a99c41af5a58e9f9547ac90c36d9afee9794ab40230da00ff76f677"
+  },
+  "prototype_fit_iterations": 4,
+  "prototype_centroids": [
+    [
+      [
+        0.3003808856010437,
+        0.09822134673595428,
+        0.061335138976573944
+      ],
+      [
+        0.44881734251976013,
+        0.1517496109008789,
+        -0.08807893097400665
+      ],
+      [
+        0.6789287328720093,
+        0.21322566270828247,
+        -0.1962592750787735
+      ],
+      [
+        1.0056877136230469,
+        0.3612528145313263,
+        -0.3619295358657837
+      ],
+      [
+        1.3732178211212158,
+        0.6015428304672241,
+        -0.18159131705760956
+      ]
+    ],
+    [
+      [
+        0.5459698438644409,
+        0.40186119079589844,
+        0.29302406311035156
+      ],
+      [
+        0.9955312013626099,
+        0.7910872101783752,
+        0.6092944741249084
+      ],
+      [
+        1.5509049892425537,
+        1.1725554466247559,
+        0.8316150307655334
+      ],
+      [
+        2.0619029998779297,
+        1.5159997940063477,
+        1.0844439268112183
+      ],
+      [
+        2.547750949859619,
+        1.9328895807266235,
+        1.3337087631225586
+      ]
+    ],
+    [
+      [
+        0.4958776533603668,
+        0.6612167954444885,
+        0.753488302230835
+      ],
+      [
+        0.9294071197509766,
+        1.429904580116272,
+        1.5199542045593262
+      ],
+      [
+        1.480170726776123,
+        2.0585906505584717,
+        2.2495923042297363
+      ],
+      [
+        2.160219192504883,
+        2.7170512676239014,
+        2.7891499996185303
+      ],
+      [
+        2.733804941177368,
+        3.4013290405273438,
+        3.3602874279022217
+      ]
+    ]
+  ],
+  "fit_mode_occupancy": [
+    0.33185840707964603,
+    0.33185840707964603,
+    0.336283185840708
+  ],
+  "baseline": {
+    "loss": {
+      "global_scale_huber": 0.8810083866119385,
+      "local_scale_huber": 0.14764824509620667
+    },
+    "classification": {
+      "persistent_groups": 24,
+      "persistent_recall": 0.20833333333333334,
+      "smooth_groups": 4,
+      "smooth_recall": 0.75,
+      "median_final_ratio": {
+        "action": 0.03269144892692566,
+        "early_hold": 0.036439500749111176,
+        "late_hold": 0.05594547837972641
+      },
+      "smooth_false_positive_rate": 0.0
+    }
+  },
+  "majority_router": {
+    "oracle_assignment_accuracy": 0.3,
+    "mode_occupancy": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "loss": {
+      "global_scale_huber": 0.5718444585800171,
+      "local_scale_huber": 0.11472813040018082
+    },
+    "oracle_gain_fraction": {
+      "global_scale_huber": 0.42288684223705153,
+      "local_scale_huber": 0.34082402969532805
+    },
+    "classification": {
+      "persistent_groups": 24,
+      "persistent_recall": 1.0,
+      "smooth_groups": 4,
+      "smooth_recall": 0.0,
+      "median_final_ratio": {
+        "action": 0.5031651854515076,
+        "early_hold": 1.0933289527893066,
+        "late_hold": 1.6110879182815552
+      },
+      "smooth_false_positive_rate": 1.0
+    },
+    "assignment": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ]
+  },
+  "future_informed_oracle": {
+    "oracle_assignment_accuracy": 1.0,
+    "mode_occupancy": [
+      0.26666666666666666,
+      0.43333333333333335,
+      0.3
+    ],
+    "loss": {
+      "global_scale_huber": 0.14992882311344147,
+      "local_scale_huber": 0.05105847492814064
+    },
+    "oracle_gain_fraction": {
+      "global_scale_huber": 1.0,
+      "local_scale_huber": 1.0
+    },
+    "classification": {
+      "persistent_groups": 24,
+      "persistent_recall": 0.9166666666666666,
+      "smooth_groups": 4,
+      "smooth_recall": 0.0,
+      "median_final_ratio": {
+        "action": 0.47415199875831604,
+        "early_hold": 0.4401717782020569,
+        "late_hold": 0.7110828161239624
+      },
+      "smooth_false_positive_rate": 0.0
+    },
+    "assignment": [
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      2,
+      0,
+      1,
+      0,
+      1,
+      0,
+      2,
+      2,
+      2,
+      1,
+      2,
+      1,
+      1,
+      1,
+      2,
+      2,
+      1,
+      0,
+      1,
+      2,
+      2
+    ]
+  },
+  "causal_router_seeds": [
+    {
+      "oracle_assignment_accuracy": 0.5,
+      "mode_occupancy": [
+        0.26666666666666666,
+        0.4666666666666667,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.3793966770172119,
+        "local_scale_huber": 0.07878449559211731
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.6861246499550904,
+        "local_scale_huber": 0.7129507543528322
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.42277756333351135,
+          "early_hold": 0.2847239673137665,
+          "late_hold": 0.22763791680335999
+        },
+        "smooth_false_positive_rate": 0.75
+      },
+      "assignment": [
+        0,
+        2,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        0,
+        1,
+        1,
+        2,
+        0,
+        2,
+        2,
+        1,
+        0,
+        2,
+        2
+      ],
+      "seed": 1
+    },
+    {
+      "oracle_assignment_accuracy": 0.5666666666666667,
+      "mode_occupancy": [
+        0.26666666666666666,
+        0.4,
+        0.3333333333333333
+      ],
+      "loss": {
+        "global_scale_huber": 0.36895817518234253,
+        "local_scale_huber": 0.07879941910505295
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7004028521591257,
+        "local_scale_huber": 0.7127962502794746
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.4231800436973572,
+          "early_hold": 0.38284915685653687,
+          "late_hold": 0.6064567565917969
+        },
+        "smooth_false_positive_rate": 0.75
+      },
+      "assignment": [
+        0,
+        2,
+        0,
+        0,
+        2,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        1,
+        0,
+        2,
+        2,
+        1,
+        0,
+        2,
+        2
+      ],
+      "seed": 2
+    },
+    {
+      "oracle_assignment_accuracy": 0.5666666666666667,
+      "mode_occupancy": [
+        0.3,
+        0.5,
+        0.2
+      ],
+      "loss": {
+        "global_scale_huber": 0.3433564305305481,
+        "local_scale_huber": 0.07450062781572342
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7354219471113635,
+        "local_scale_huber": 0.7573019084029967
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.75,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.4147403836250305,
+          "early_hold": 0.3128376007080078,
+          "late_hold": 0.27177825570106506
+        },
+        "smooth_false_positive_rate": 0.75
+      },
+      "assignment": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        0,
+        1,
+        2,
+        2,
+        0,
+        0,
+        2,
+        0
+      ],
+      "seed": 3
+    },
+    {
+      "oracle_assignment_accuracy": 0.6666666666666666,
+      "mode_occupancy": [
+        0.3,
+        0.4666666666666667,
+        0.23333333333333334
+      ],
+      "loss": {
+        "global_scale_huber": 0.30324089527130127,
+        "local_scale_huber": 0.06877218186855316
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7902935879862343,
+        "local_scale_huber": 0.8166088716269776
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.75,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.41774219274520874,
+          "early_hold": 0.3128376007080078,
+          "late_hold": 0.3372742533683777
+        },
+        "smooth_false_positive_rate": 0.75
+      },
+      "assignment": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        2,
+        2
+      ],
+      "seed": 4
+    },
+    {
+      "oracle_assignment_accuracy": 0.5333333333333333,
+      "mode_occupancy": [
+        0.23333333333333334,
+        0.5333333333333333,
+        0.23333333333333334
+      ],
+      "loss": {
+        "global_scale_huber": 0.38550761342048645,
+        "local_scale_huber": 0.07748713344335556
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.6777658656197284,
+        "local_scale_huber": 0.7263824267390936
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.41774219274520874,
+          "early_hold": 0.3128376007080078,
+          "late_hold": 0.3372742533683777
+        },
+        "smooth_false_positive_rate": 1.0
+      },
+      "assignment": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        2,
+        1,
+        1,
+        2,
+        2,
+        0,
+        0,
+        1,
+        0
+      ],
+      "seed": 5
+    },
+    {
+      "oracle_assignment_accuracy": 0.5333333333333333,
+      "mode_occupancy": [
+        0.23333333333333334,
+        0.5333333333333333,
+        0.23333333333333334
+      ],
+      "loss": {
+        "global_scale_huber": 0.4026755392551422,
+        "local_scale_huber": 0.08292949944734573
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.6542828868964543,
+        "local_scale_huber": 0.670037267261848
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7916666666666666,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.42518964409828186,
+          "early_hold": 0.3809739351272583,
+          "late_hold": 0.3700287640094757
+        },
+        "smooth_false_positive_rate": 1.0
+      },
+      "assignment": [
+        0,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        1,
+        0,
+        2,
+        2,
+        1,
+        0,
+        2,
+        0
+      ],
+      "seed": 6
+    },
+    {
+      "oracle_assignment_accuracy": 0.5666666666666667,
+      "mode_occupancy": [
+        0.36666666666666664,
+        0.43333333333333335,
+        0.2
+      ],
+      "loss": {
+        "global_scale_huber": 0.3819299340248108,
+        "local_scale_huber": 0.08013083785772324
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.6826595592398251,
+        "local_scale_huber": 0.699011987718816
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7083333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.4147403836250305,
+          "early_hold": 0.26509276032447815,
+          "late_hold": 0.19754081964492798
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        1,
+        0,
+        2,
+        2,
+        0,
+        0,
+        2,
+        0
+      ],
+      "seed": 7
+    },
+    {
+      "oracle_assignment_accuracy": 0.5,
+      "mode_occupancy": [
+        0.3333333333333333,
+        0.4,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.38308683037757874,
+        "local_scale_huber": 0.07969439774751663
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.6810771099271514,
+        "local_scale_huber": 0.7035304797852864
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.75,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.4147403836250305,
+          "early_hold": 0.3128376007080078,
+          "late_hold": 0.28490492701530457
+        },
+        "smooth_false_positive_rate": 0.75
+      },
+      "assignment": [
+        0,
+        2,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        2,
+        0,
+        2,
+        2,
+        0,
+        0,
+        2,
+        0
+      ],
+      "seed": 8
+    },
+    {
+      "oracle_assignment_accuracy": 0.6,
+      "mode_occupancy": [
+        0.36666666666666664,
+        0.4,
+        0.23333333333333334
+      ],
+      "loss": {
+        "global_scale_huber": 0.3686099648475647,
+        "local_scale_huber": 0.08030688762664795
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7008791482453021,
+        "local_scale_huber": 0.6971893333257225
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7083333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.4147403836250305,
+          "early_hold": 0.3128376007080078,
+          "late_hold": 0.27177825570106506
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        0,
+        1,
+        0,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        0,
+        0,
+        2,
+        2,
+        0,
+        0,
+        2,
+        0
+      ],
+      "seed": 9
+    },
+    {
+      "oracle_assignment_accuracy": 0.5666666666666667,
+      "mode_occupancy": [
+        0.26666666666666666,
+        0.4666666666666667,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.37624919414520264,
+        "local_scale_huber": 0.08026345074176788
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.690429903485838,
+        "local_scale_huber": 0.697639038142335
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.75,
+        "smooth_groups": 4,
+        "smooth_recall": 0.0,
+        "median_final_ratio": {
+          "action": 0.44758516550064087,
+          "early_hold": 0.4293925166130066,
+          "late_hold": 0.47465482354164124
+        },
+        "smooth_false_positive_rate": 1.0
+      },
+      "assignment": [
+        0,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        1,
+        0,
+        0,
+        0,
+        2,
+        2,
+        0,
+        0,
+        1,
+        2
+      ],
+      "seed": 10
+    }
+  ],
+  "causal_router_summary": {
+    "oracle_assignment_accuracy": {
+      "median": 0.5666666666666667,
+      "mean": 0.5599999999999999,
+      "minimum": 0.5,
+      "maximum": 0.6666666666666666
+    },
+    "global_oracle_gain_fraction": {
+      "median": 0.6882772767204641,
+      "mean": 0.6999337510626112,
+      "minimum": 0.6542828868964543,
+      "maximum": 0.7902935879862343
+    },
+    "local_oracle_gain_fraction": {
+      "median": 0.7081633650323804,
+      "mean": 0.7193448317635383,
+      "minimum": 0.670037267261848,
+      "maximum": 0.8166088716269776
+    },
+    "persistent_recall": {
+      "median": 0.75,
+      "mean": 0.7708333333333333,
+      "minimum": 0.7083333333333334,
+      "maximum": 0.8333333333333334
+    },
+    "smooth_false_positive_rate": {
+      "median": 0.75,
+      "mean": 0.775,
+      "minimum": 0.5,
+      "maximum": 1.0
+    },
+    "mode_occupancy_median": [
+      0.2833333333333333,
+      0.4666666666666667,
+      0.23333333333333334
+    ],
+    "minimum_mode_occupancy_across_seeds": 0.2
+  },
+  "feasibility_gate": {
+    "oracle_assignment_accuracy": true,
+    "global_oracle_gain_fraction": true,
+    "local_oracle_gain_fraction": true,
+    "persistent_recall": true,
+    "smooth_false_positive_rate": false,
+    "each_mode_occupancy": true
+  },
+  "passes": false,
+  "decision": "causal router fails TRAIN-only gate; do not run DEV or TEST"
+}

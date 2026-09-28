@@ -1,0 +1,34 @@
+{
+  "id": "physical-vs-d2-pair-selection-trajectory-crossover-v1",
+  "status": "prospectively frozen before D2 evaluation on physical-selected paths",
+  "scope": "Jenga DEV diagnostic only; frozen TEST prohibited",
+  "dynamics": "results/jenga/w6_cw_d2_s1.pt",
+  "physical_selection": "results/jenga/action_boundary_refine_dev.json",
+  "physical_selection_physical_trajectory_reference": "results/jenga/whole_trajectory_consequence_dev.json",
+  "d2_selection_crossover_reference": "results/jenga/trajectory_level_ablation_summary.json",
+  "matrix": [
+    "D2-selected paths + D2 trajectories",
+    "D2-selected paths + physical trajectories",
+    "physical-selected paths + D2 trajectories",
+    "physical-selected paths + physical trajectories"
+  ],
+  "new_arm": {
+    "candidate_and_pair_source": "frozen physical action-response partition, three nearest cross-branch pairs and five midpoint-side choices",
+    "trajectory_source": "unchanged frozen D2 seed 1",
+    "boundary": "fit each candidate's projector on all 64 original D2 probe trajectories, then apply unchanged boundary BIC to D2 predictions on the exact physical-selected nested paths",
+    "consequence": "unchanged whole-trajectory commitment and persistence on D2 final-level endpoint trajectories",
+    "decision": "same >=2/3 pair conjunction"
+  },
+  "task_information": "none in candidate reuse or new-arm decisions; classes are joined after decisions for grading",
+  "reporting": "all class/stage counts and pair-level D2 versus physical boundary, commitment and persistence overlap on physical-selected paths",
+  "diagnostic_interpretation": {
+    "d2_on_physical_paths_near_physical_reference": "pair selection/topology is the dominant learned-model defect",
+    "d2_on_physical_paths_remains_weak": "both response topology/pair selection and trajectory dynamics are defective",
+    "physical_selection_physical_reference_remains_imperfect": "monitor consequence specificity is a separate limitation and must not be attributed to the world model"
+  },
+  "near_reference_rule": {
+    "topple_alarm_fraction_of_physical_min": 0.75,
+    "quiet_alarms_no_more_than_physical": true,
+    "interpretation": "diagnostic only; not a deployment or TEST gate"
+  }
+}

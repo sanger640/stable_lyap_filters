@@ -1,0 +1,83 @@
+{
+  "purpose": "visual design validation before freezing cross-task monitor benchmarks",
+  "pushing": {
+    "task": "push a free object into a goal region while retaining table support",
+    "mechanisms": [
+      "stick/slide",
+      "glancing deflection",
+      "support/edge-fall"
+    ],
+    "success_example": {
+      "success": true,
+      "failure": false,
+      "mode": "goal_slide",
+      "values": {
+        "object_position_m": [
+          0.309119186178937,
+          -6.84486338909164e-08,
+          0.0839817502938288
+        ]
+      }
+    },
+    "failure_example": {
+      "success": false,
+      "failure": true,
+      "mode": "edge_fall",
+      "values": {
+        "object_position_m": [
+          0.5243727143913429,
+          -6.849775509782478e-08,
+          -0.12600800494756412
+        ]
+      }
+    },
+    "video": "pushing_goal_vs_edge_fall.mp4"
+  },
+  "insertion": {
+    "task": "insert a tight rectangular peg into a square socket",
+    "mechanisms": [
+      "free motion",
+      "rim contact",
+      "aligned insertion",
+      "wedging/jam"
+    ],
+    "success_example": {
+      "success": true,
+      "failure": false,
+      "mode": "inserted",
+      "values": {
+        "peg_position_m": [
+          0.0,
+          0.0,
+          0.08398232607590973
+        ],
+        "command": [
+          0.0,
+          0.0,
+          -0.145,
+          0.0
+        ]
+      }
+    },
+    "failure_example": {
+      "success": false,
+      "failure": true,
+      "mode": "rim_jam",
+      "values": {
+        "peg_position_m": [
+          0.012000000000311086,
+          -3.714034162913308e-18,
+          0.15793869217085676
+        ],
+        "command": [
+          0.012,
+          0.0,
+          -0.145,
+          0.0
+        ]
+      }
+    },
+    "video": "insertion_success_vs_rim_jam.mp4"
+  },
+  "design_scope": "controlled tool pose rather than full arm; isolates contact regime sensitivity from robot-controller and perception confounds"
+}

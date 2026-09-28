@@ -1,0 +1,309 @@
+{
+  "protocol": {
+    "id": "panda-anonymous-slot-dynamics-v0",
+    "status": "label-free representation TRAIN/validation; monitor DEV unopened during training",
+    "seed": 642,
+    "epochs": 12,
+    "batch_pairs": 4,
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0003,
+      "weight_decay": 1e-05,
+      "gradient_clip": 1.0
+    },
+    "model": {
+      "input_dim": 64,
+      "slot_dim": 48,
+      "slots": 8,
+      "iterations": 3,
+      "action_dim": 4
+    },
+    "loss_weights": {
+      "reconstruction": 1.0,
+      "dynamics": 1.0,
+      "geometry": 0.5,
+      "pair_separation": 1.0,
+      "mask_sharpness": 0.01,
+      "slot_balance": 0.05
+    },
+    "losses": {
+      "reconstruction": "reconstruct fixed projected DINO patch descriptors",
+      "dynamics": "predict next anonymous slot from current slot and executed action",
+      "geometry": "predicted slots reproduce next mask centroid/covariance/mass",
+      "pair_separation": "predicted neighboring-action slot separation matches observed separation",
+      "mask_sharpness": "low per-pixel slot assignment entropy",
+      "slot_balance": "discourage globally dead slots"
+    },
+    "checkpoint_selection": "minimum complete validation objective; no task or physical labels",
+    "monitor_interface": "slot x/y, finite-difference vx/vy, covariance and mass; PCA45 per state",
+    "excluded": [
+      "physical state",
+      "contact",
+      "success",
+      "topple",
+      "object identity",
+      "physical monitor decision",
+      "alarm"
+    ],
+    "resource_policy": "CPU-compatible; Torch <=8 threads; no simulator during training"
+  },
+  "protocol_sha256": "c3f71103142020074578826856e7058aefcb96397514d4e59178901c8790d187",
+  "created": "2026-09-25T19:24:50+00:00",
+  "parameters": 53953,
+  "best_epoch": 12,
+  "best_validation_total": 0.7767807245254517,
+  "history": [
+    {
+      "epoch": 1,
+      "train": {
+        "total": 1.0356299504637718,
+        "reconstruction": 0.9986285157501698,
+        "dynamics": 0.009136602893704548,
+        "geometry": 2.8740894775225456e-08,
+        "pair_separation": 0.00707074734964408,
+        "mask_sharpness": 2.0794087946414948,
+        "slot_balance": 6.381399071386795e-07
+      },
+      "validation": {
+        "total": 1.0122412592172623,
+        "reconstruction": 0.9816062450408936,
+        "dynamics": 0.00581206614151597,
+        "geometry": 2.2152948808695783e-08,
+        "pair_separation": 0.004028899886179715,
+        "mask_sharpness": 2.079410672187805,
+        "slot_balance": 5.91975478414497e-07
+      }
+    },
+    {
+      "epoch": 2,
+      "train": {
+        "total": 1.0131495334208012,
+        "reconstruction": 0.9840629920363426,
+        "dynamics": 0.004786232835613191,
+        "geometry": 1.5990319401915087e-08,
+        "pair_separation": 0.0035061840462731197,
+        "mask_sharpness": 2.0794122219085693,
+        "slot_balance": 6.894421993308697e-07
+      },
+      "validation": {
+        "total": 0.9938962161540985,
+        "reconstruction": 0.9663237631320953,
+        "dynamics": 0.0038823619834147394,
+        "geometry": 1.3049422653566012e-08,
+        "pair_separation": 0.00289600359974429,
+        "mask_sharpness": 2.0794079303741455,
+        "slot_balance": 7.951533262939847e-07
+      }
+    },
+    {
+      "epoch": 3,
+      "train": {
+        "total": 0.994469627737999,
+        "reconstruction": 0.9668895713984966,
+        "dynamics": 0.003853663889458403,
+        "geometry": 1.3332201953542011e-08,
+        "pair_separation": 0.0029323640919756144,
+        "mask_sharpness": 2.0793981850147247,
+        "slot_balance": 1.1090727127793798e-06
+      },
+      "validation": {
+        "total": 0.9753987789154053,
+        "reconstruction": 0.9473126828670502,
+        "dynamics": 0.004002503526862711,
+        "geometry": 1.4403740200563675e-08,
+        "pair_separation": 0.003289717831648886,
+        "mask_sharpness": 2.0793809294700623,
+        "slot_balance": 1.4851676439775474e-06
+      }
+    },
+    {
+      "epoch": 4,
+      "train": {
+        "total": 0.9748609252274036,
+        "reconstruction": 0.945119321346283,
+        "dynamics": 0.005275514384265989,
+        "geometry": 1.4812108151129877e-08,
+        "pair_separation": 0.0036720588395837694,
+        "mask_sharpness": 2.0793962627649307,
+        "slot_balance": 1.0384887225711736e-06
+      },
+      "validation": {
+        "total": 0.9547664821147919,
+        "reconstruction": 0.9230127334594727,
+        "dynamics": 0.005800964194349945,
+        "geometry": 1.6295794269538533e-08,
+        "pair_separation": 0.00515880505554378,
+        "mask_sharpness": 2.079390227794647,
+        "slot_balance": 1.0109617392117798e-06
+      }
+    },
+    {
+      "epoch": 5,
+      "train": {
+        "total": 0.9512122571468353,
+        "reconstruction": 0.9197315089404583,
+        "dynamics": 0.006386671011568978,
+        "geometry": 1.6023736171266734e-08,
+        "pair_separation": 0.004299994179746136,
+        "mask_sharpness": 2.0794047862291336,
+        "slot_balance": 7.109919142322951e-07
+      },
+      "validation": {
+        "total": 0.9258135855197906,
+        "reconstruction": 0.8947410881519318,
+        "dynamics": 0.0053826525108888745,
+        "geometry": 1.7652360240205667e-08,
+        "pair_separation": 0.004895841586403549,
+        "mask_sharpness": 2.0793919563293457,
+        "slot_balance": 8.868434377973244e-07
+      }
+    },
+    {
+      "epoch": 6,
+      "train": {
+        "total": 0.9194415621459484,
+        "reconstruction": 0.8893152251839638,
+        "dynamics": 0.005450822340208106,
+        "geometry": 1.7318530165510992e-08,
+        "pair_separation": 0.0038814833969809115,
+        "mask_sharpness": 2.0793982446193695,
+        "slot_balance": 8.627058996069081e-07
+      },
+      "validation": {
+        "total": 0.888817697763443,
+        "reconstruction": 0.8600188493728638,
+        "dynamics": 0.004174752219114453,
+        "geometry": 1.960350282104173e-08,
+        "pair_separation": 0.0038303330074995756,
+        "mask_sharpness": 2.0793724060058594,
+        "slot_balance": 1.411534810813464e-06
+      }
+    },
+    {
+      "epoch": 7,
+      "train": {
+        "total": 0.8828039728105068,
+        "reconstruction": 0.8546610996127129,
+        "dynamics": 0.004166003622231074,
+        "geometry": 1.9883110990992492e-08,
+        "pair_separation": 0.003183063308824785,
+        "mask_sharpness": 2.079374670982361,
+        "slot_balance": 1.576051559482039e-06
+      },
+      "validation": {
+        "total": 0.8551272600889206,
+        "reconstruction": 0.8279725909233093,
+        "dynamics": 0.0033318467321805656,
+        "geometry": 2.151639710845643e-08,
+        "pair_separation": 0.0030292635201476514,
+        "mask_sharpness": 2.079343259334564,
+        "slot_balance": 2.244559027531068e-06
+      }
+    },
+    {
+      "epoch": 8,
+      "train": {
+        "total": 0.853209625929594,
+        "reconstruction": 0.8259681947529316,
+        "dynamics": 0.0035864589881384745,
+        "geometry": 2.4593351466428715e-08,
+        "pair_separation": 0.002861421919078566,
+        "mask_sharpness": 2.0793401449918747,
+        "slot_balance": 2.4307514934207575e-06
+      },
+      "validation": {
+        "total": 0.8295937925577164,
+        "reconstruction": 0.8024636209011078,
+        "dynamics": 0.0033007144229486585,
+        "geometry": 3.102336920690618e-08,
+        "pair_separation": 0.0030363700352609158,
+        "mask_sharpness": 2.0792863965034485,
+        "slot_balance": 3.5913411124965933e-06
+      }
+    },
+    {
+      "epoch": 9,
+      "train": {
+        "total": 0.8320780880749226,
+        "reconstruction": 0.8048549517989159,
+        "dynamics": 0.0035503340186551213,
+        "geometry": 4.079343907115174e-08,
+        "pair_separation": 0.0028802884480683133,
+        "mask_sharpness": 2.079223722219467,
+        "slot_balance": 5.543524110862563e-06
+      },
+      "validation": {
+        "total": 0.811153456568718,
+        "reconstruction": 0.7842665165662766,
+        "dynamics": 0.003197327139787376,
+        "geometry": 6.009092867742538e-08,
+        "pair_separation": 0.0028991392464376986,
+        "mask_sharpness": 2.0789849162101746,
+        "slot_balance": 1.1713889534803457e-05
+      }
+    },
+    {
+      "epoch": 10,
+      "train": {
+        "total": 0.8159408569335938,
+        "reconstruction": 0.788758646696806,
+        "dynamics": 0.0034946625237353146,
+        "geometry": 1.0226736724128216e-07,
+        "pair_separation": 0.0028997407061979175,
+        "mask_sharpness": 2.078672304749489,
+        "slot_balance": 2.109049580667488e-05
+      },
+      "validation": {
+        "total": 0.7965951859951019,
+        "reconstruction": 0.7700055837631226,
+        "dynamics": 0.0030179067398421466,
+        "geometry": 1.5508546269416001e-07,
+        "pair_separation": 0.0027919438434764743,
+        "mask_sharpness": 2.0777300000190735,
+        "slot_balance": 4.702956448454643e-05
+      }
+    },
+    {
+      "epoch": 11,
+      "train": {
+        "total": 0.8026702031493187,
+        "reconstruction": 0.7760479152202606,
+        "dynamics": 0.003153658239170909,
+        "geometry": 2.739169917553852e-07,
+        "pair_separation": 0.0026987639430444688,
+        "mask_sharpness": 2.076559007167816,
+        "slot_balance": 8.282585361030215e-05
+      },
+      "validation": {
+        "total": 0.7854229211807251,
+        "reconstruction": 0.7591587454080582,
+        "dynamics": 0.002883592387661338,
+        "geometry": 4.5721967012468667e-07,
+        "pair_separation": 0.0026378417387604713,
+        "mask_sharpness": 2.073391914367676,
+        "slot_balance": 0.00017193343592225574
+      }
+    },
+    {
+      "epoch": 12,
+      "train": {
+        "total": 0.793718758970499,
+        "reconstruction": 0.7667768150568008,
+        "dynamics": 0.0033816334907896817,
+        "geometry": 9.533355900259721e-07,
+        "pair_separation": 0.0028615951887331903,
+        "mask_sharpness": 2.068173661828041,
+        "slot_balance": 0.0003299335994597641
+      },
+      "validation": {
+        "total": 0.7767807245254517,
+        "reconstruction": 0.7504163086414337,
+        "dynamics": 0.0030806909198872745,
+        "geometry": 1.6550613111121493e-06,
+        "pair_separation": 0.002715757698751986,
+        "mask_sharpness": 2.052716374397278,
+        "slot_balance": 0.0008001092355698347
+      }
+    }
+  ]
+}

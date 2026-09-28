@@ -1,0 +1,95 @@
+{
+  "protocol": {
+    "plan": "W6 simple baseline: one-step training with input noise",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 rounds",
+    "training": "3 epochs, one-step MSE + contact BCE, input noise 0.5 x one-step sigma, no curriculum, no branch loss",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "seed": 1,
+  "noise": 0.5,
+  "parameters": 653992,
+  "model": "single",
+  "experts": null,
+  "modes": null,
+  "branch_weight": 0.0,
+  "cw_data": "results/jenga/cw_data",
+  "cw_loss": "intervention",
+  "cw_groups": 32,
+  "cw_weight": 1.0,
+  "quiet_quantile": 0.5,
+  "init": "results/jenga/w6_cw_d2_s1.pt",
+  "d3_data": null,
+  "d3_groups": 2,
+  "d3_weight": 1.0,
+  "d3_local_weight": 1.0,
+  "mode_balance_weight": 0.01,
+  "mode_entropy_weight": 0.01,
+  "mode_persistence_weight": 0.01,
+  "orthonormalise": true,
+  "hard_contacts": true,
+  "states": 8810,
+  "history": [
+    {
+      "epoch": 1,
+      "train_mse": 0.6175681663900898,
+      "train_bce": 0.03859332292438387,
+      "validation": {
+        "one_step_mse": 0.38116121989104057,
+        "rollout_state_error": 0.18296535595530464,
+        "branch_ratio": 0.6296809014426695,
+        "topple_recall": 0.7419354838709677,
+        "topple_false_rate": 0.0036596523330283625,
+        "cw_train_terms": {
+          "response": 0.6976202758951545,
+          "difference": 0.5948722242825893,
+          "quiet": 0.062783993344259
+        }
+      },
+      "seconds": 137.46600461006165,
+      "batch_seconds": 131.85007286071777,
+      "batches": 1573
+    },
+    {
+      "epoch": 2,
+      "train_mse": 0.6020928421978426,
+      "train_bce": 0.03752285216029708,
+      "validation": {
+        "one_step_mse": 0.36830425118246385,
+        "rollout_state_error": 0.18648334400307748,
+        "branch_ratio": 0.799733321594708,
+        "topple_recall": 0.8172043010752689,
+        "topple_false_rate": 0.00470526728532218,
+        "cw_train_terms": {
+          "response": 0.6916651211522676,
+          "difference": 0.5882665901116255,
+          "quiet": 0.06255069672611399
+        }
+      },
+      "seconds": 139.5549280643463,
+      "batch_seconds": 134.19774508476257,
+      "batches": 1573
+    },
+    {
+      "epoch": 3,
+      "train_mse": 0.6056916549640784,
+      "train_bce": 0.037418358068195635,
+      "validation": {
+        "one_step_mse": 0.34343695640563965,
+        "rollout_state_error": 0.1858365219687262,
+        "branch_ratio": 0.7169681665504934,
+        "topple_recall": 0.7526881720430108,
+        "topple_false_rate": 0.004443863547248726,
+        "cw_train_terms": {
+          "response": 0.7092194646047469,
+          "difference": 0.5949542871039912,
+          "quiet": 0.06042525975610315
+        }
+      },
+      "seconds": 136.90536546707153,
+      "batch_seconds": 131.6163067817688,
+      "batches": 1573
+    }
+  ],
+  "rollout_history": [],
+  "output": "results/jenga/w6_four_arm_hard_d2_s1.pt"
+}

@@ -1,0 +1,2547 @@
+{
+  "protocol": {
+    "calibration_free": true,
+    "split": "DEV only; TEST untouched",
+    "trajectory_source": "dense MuJoCo ground-truth state",
+    "candidate_stage": "frozen action-branch plus five-level boundary refinement",
+    "signals": "anonymous block pose and velocity only; contacts excluded",
+    "static_offset_handling": "subtract each endpoint's pose at H=8",
+    "null": "one nonlinear GP transition law shared by both bracket endpoints",
+    "alternative": "the same GP prior with cross-branch covariance removed",
+    "decision": "at least two of three brackets favour separate laws during both hold 1-10 and disjoint hold 11-30",
+    "gate": ">=21/23 topple forks and <=4/89 quiet alarms",
+    "task_information": "none in alarm; Jenga classes are grading only"
+  },
+  "gate_passed": false,
+  "summary": {
+    "dev": {
+      "1.0": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 4,
+          "rate": 0.17391304347826086
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 1,
+          "rate": 0.011235955056179775
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 1,
+          "rate": 0.058823529411764705
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 0,
+          "rate": 0.0
+        }
+      }
+    },
+    "test": {
+      "1.0": {
+        "topple_fork": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "quiet": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "nudge_fork": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "small_split": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "weak": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "split": "dev",
+      "episode_id": "2",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -5.89419950665442,
+        -11.556669903706027,
+        -9.891764100825615
+      ],
+      "late_delta_evidence": [
+        -3.7913008497222362,
+        -14.81316025043154,
+        -9.271136456459661
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 45,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -5.851968296053858,
+        12.342158452107054,
+        -3.264159419527264
+      ],
+      "late_delta_evidence": [
+        44.59740002114131,
+        -19.37160624808212,
+        6.723550286498832
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -7.926412123664239,
+        -13.637761654556389,
+        -16.7213514685665
+      ],
+      "late_delta_evidence": [
+        -11.741999065596648,
+        -15.57939667690346,
+        -5.349628465051185
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 19,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -13.215977460072128,
+        -12.863053298259533,
+        -4.213014115108738
+      ],
+      "late_delta_evidence": [
+        -10.70972514520702,
+        -2.854006775167025,
+        -10.60377129498568
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -5.948749045379731,
+        -3.5266723094000447,
+        -36.54345733407073
+      ],
+      "late_delta_evidence": [
+        -1.0468249664319302,
+        -7.124033093800224,
+        2.1752727180891016
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 3,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        36.53817421367483,
+        8.501135396702875,
+        135.05237456546936
+      ],
+      "late_delta_evidence": [
+        -6.518867489504518,
+        -5.126208248083574,
+        8.391010584420538
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -88.83734832210735,
+        -71.15775645090821,
+        -102.74412632440392
+      ],
+      "late_delta_evidence": [
+        54.258256079904044,
+        138.01777639368547,
+        220.87973385073082
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        12.014548597887295,
+        -12.097199509517285,
+        -5.618832318570572
+      ],
+      "late_delta_evidence": [
+        4.071735017993999,
+        54.96856552468614,
+        11.812791761858872
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -87.89684144019243,
+        2.558181761706205,
+        -4.931763985767763
+      ],
+      "late_delta_evidence": [
+        133.5441405161059,
+        36.35298556959788,
+        58.78522960865109
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -37.81424830013588,
+        -100.06184328722374,
+        -51.7487191514136
+      ],
+      "late_delta_evidence": [
+        -367.3284016189183,
+        -244.16331427489425,
+        -328.88406907689784
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -154.55054816514874,
+        -164.48105977297936,
+        -115.91532172994891
+      ],
+      "late_delta_evidence": [
+        -384.1126752196368,
+        -223.24130783651276,
+        -148.10259888145993
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -4.228365143774415,
+        -3.4551424818185446,
+        -0.18884278428621237
+      ],
+      "late_delta_evidence": [
+        -5.654216054751717,
+        -2.8118833101527825,
+        10.711771176744033
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        14.670086954883228,
+        -39.47504365112511,
+        -8.369023478253613
+      ],
+      "late_delta_evidence": [
+        -8.048533826892854,
+        -2.5428079386450717,
+        50.48477429329958
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": true,
+      "persistent_branch_pairs": 2,
+      "pairs": 3,
+      "early_branch_pairs": 3,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        6.037962176457821,
+        17.11588865944844,
+        39.104564486369064
+      ],
+      "late_delta_evidence": [
+        4.313909640092672,
+        15.563611820646653,
+        -9.869075554695886
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        8.76707056518077,
+        -30.333208598046912,
+        -46.27804481902127
+      ],
+      "late_delta_evidence": [
+        -1.7179766578440223,
+        -17.120110002123287,
+        -13.813262220513256
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 46,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -3.4270074156734616,
+        -5.833600502967133,
+        -2.24777792608997
+      ],
+      "late_delta_evidence": [
+        8.459163593841591,
+        -0.4720445534388802,
+        0.5867111378188354
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -49.12785371481814,
+        -2.9931483644126224,
+        20.798775483349043
+      ],
+      "late_delta_evidence": [
+        -309.9962991027704,
+        -6.1014863331570295,
+        -3.3725005794677854
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "18",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -116.32133348389497,
+        35.07721967180181,
+        -109.28256615531458
+      ],
+      "late_delta_evidence": [
+        115.09804061888957,
+        -16.975235074950266,
+        149.13577296416662
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": true,
+      "persistent_branch_pairs": 3,
+      "pairs": 3,
+      "early_branch_pairs": 3,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        2.2160746179820556,
+        27.253808945490317,
+        3.443963556164757
+      ],
+      "late_delta_evidence": [
+        158.60898068327737,
+        5.483927368598299,
+        45.13647928198537
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "22",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "23",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "24",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": true,
+      "persistent_branch_pairs": 2,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        0.5038160106518423,
+        30.7540493183354,
+        -3.5363219267009534
+      ],
+      "late_delta_evidence": [
+        22.907331752697697,
+        16.620101901510903,
+        1.297970259991527
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -24.152547426186135,
+        -37.28305164359629,
+        -51.82895632355018
+      ],
+      "late_delta_evidence": [
+        -11.077593218439464,
+        -7.309043582295547,
+        66.16889631122618
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -102.7234010619889,
+        -43.47517751828476,
+        -75.06231209524093
+      ],
+      "late_delta_evidence": [
+        -318.11085062092945,
+        6.928332741328174,
+        -120.21315815233555
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -25.76999226950962,
+        36.90279019182193,
+        -10.613670045707554
+      ],
+      "late_delta_evidence": [
+        -32.48670488446078,
+        36.193667237147224,
+        0.897295987319805
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 8,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        7.8856839547788375,
+        -2.0803227564095756,
+        -44.884928393011386
+      ],
+      "late_delta_evidence": [
+        56.068617716579894,
+        1275.4605429749947,
+        7.503409260950545
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -0.25280623993845475,
+        28.899841867942737,
+        13.671924716946616
+      ],
+      "late_delta_evidence": [
+        -1.7704370023731741,
+        34.94974213522016,
+        -1.3268063813723103
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -63.858118313462604,
+        -36.04850984433015,
+        40.4715424322706
+      ],
+      "late_delta_evidence": [
+        -325.34523806029983,
+        -44.95592934421923,
+        -371.20365665438544
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": true,
+      "persistent_branch_pairs": 2,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        10.635840790591299,
+        -9.36140469962925,
+        4.753854586149483
+      ],
+      "late_delta_evidence": [
+        9.65371843864676,
+        12.529133115614794,
+        4.918649955193129
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -17.189199550224348,
+        -19.45223632376619,
+        -16.64293941103276
+      ],
+      "late_delta_evidence": [
+        20.86155760033574,
+        640.6287944387026,
+        33.96988588964791
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -1.5626171464739438,
+        -5.663692384871556,
+        -3.337272416858955
+      ],
+      "late_delta_evidence": [
+        3.6648559865769785,
+        -0.2553395437605588,
+        33.595772646475325
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -159.9420973135034,
+        -94.50779627143234,
+        -142.11175752178747
+      ],
+      "late_delta_evidence": [
+        -161.15704107832207,
+        -287.8217235402366,
+        -155.1447697829721
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -85.44950058059838,
+        2.6389694411427875,
+        0.0755975234512467
+      ],
+      "late_delta_evidence": [
+        -425.19567130922076,
+        -0.8796629861261664,
+        -0.8930015927162487
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -7.624243618833791,
+        -6.493336383231142,
+        -4.292248384438
+      ],
+      "late_delta_evidence": [
+        -62.052953905192794,
+        -9.986205102636976,
+        -27.890178181283662
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -34.83577014639594,
+        -100.11750968364436,
+        -146.97979619749614
+      ],
+      "late_delta_evidence": [
+        -169.38844943026314,
+        -36.86989587578171,
+        -160.5745699525059
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -52.714136122478955,
+        -107.55545398477459,
+        -43.35245360282067
+      ],
+      "late_delta_evidence": [
+        -51.69364186341022,
+        -270.1309939601507,
+        -66.21633426372404
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 290,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "53",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -48.447518073476694,
+        -63.88356625952046,
+        -60.041279725907465
+      ],
+      "late_delta_evidence": [
+        73.39174997699695,
+        53.94316353146871,
+        4406.449792815953
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -47.951920598363465,
+        -65.40154915655751,
+        -41.98530823314092
+      ],
+      "late_delta_evidence": [
+        -40.87752870871077,
+        -156.45081645999903,
+        113.62060285253057
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": true,
+      "persistent_branch_pairs": 2,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        2.031754750778912,
+        -103.98815438530997,
+        2.815282663712278
+      ],
+      "late_delta_evidence": [
+        28.625669411549776,
+        -206.26217983342374,
+        3.0618397968708537
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "60",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        2.0615318933173192,
+        3.8346252035162784,
+        -9.666557646365508
+      ],
+      "late_delta_evidence": [
+        -2.410250379268521,
+        26.83710654590777,
+        -3.912748806841594
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 29,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -66.24371657746265,
+        -15.385504945687874,
+        0.6617958785942297
+      ],
+      "late_delta_evidence": [
+        -8.206252402790884,
+        -7.788864594145369,
+        -44.28313802297623
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 48,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -27.23549782540457,
+        -2.941095122169859,
+        -31.612456377039724
+      ],
+      "late_delta_evidence": [
+        1060.9969890858126,
+        202.1231591871442,
+        86.85603726430611
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -25.078832127212937,
+        -112.60838842488214,
+        -114.67799422850437
+      ],
+      "late_delta_evidence": [
+        605.4123354355875,
+        47.044638377556254,
+        -32.35252819912506
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "64",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 3,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        245.27310855278563,
+        373.56873850809416,
+        306.6963196211831
+      ],
+      "late_delta_evidence": [
+        -1.4155764458554387,
+        -19.064850262481063,
+        -27.969279742131963
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "66",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -17.880494622210495,
+        9.849174864838684,
+        -32.0098352089749
+      ],
+      "late_delta_evidence": [
+        -10.096981464040827,
+        -18.731908268846897,
+        -25.04344698553621
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 31,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        14.07941319292473,
+        -8.79491113265772,
+        -0.2720014806838018
+      ],
+      "late_delta_evidence": [
+        -3.678962006434463,
+        0.5584455860358701,
+        -4.038571202228812
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 56,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -26.531456055736275,
+        -28.646676693893102,
+        0.1292270968397522
+      ],
+      "late_delta_evidence": [
+        -4.385248629603384,
+        7.272952687005724,
+        -21.94624292256066
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -130.2426933742747,
+        -107.3605085304447,
+        -138.8565276646958
+      ],
+      "late_delta_evidence": [
+        -222.3738834438043,
+        214.77324632811874,
+        -177.86190635857426
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 13,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        10.11641165991767,
+        -84.7240418894192,
+        -112.61322547828723
+      ],
+      "late_delta_evidence": [
+        -25.530024028962348,
+        -202.8876789640293,
+        -270.04187083094223
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -48.76966956748499,
+        -162.80555033839178,
+        -165.35055735536875
+      ],
+      "late_delta_evidence": [
+        -256.56958502864364,
+        -234.35048427466828,
+        -240.09746140319865
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -10.190679127113416,
+        -6.216965107507438,
+        -9.001027893620464
+      ],
+      "late_delta_evidence": [
+        -4.190306844745353,
+        0.3563401357703213,
+        -10.828574604621569
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -26.027989515294824,
+        -7.165483336889782,
+        -27.096777177481474
+      ],
+      "late_delta_evidence": [
+        -14.056399061032696,
+        25.457096730341387,
+        -30.736642006274113
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -236.7170290615359,
+        -3.362539680974141,
+        -196.69239615043338
+      ],
+      "late_delta_evidence": [
+        -65.30044159937188,
+        -188.33754781747905,
+        -268.4865823965015
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -160.36966296014495,
+        -96.04627918271574,
+        -118.24195924232556
+      ],
+      "late_delta_evidence": [
+        15.623039943267994,
+        49.751664540915215,
+        64.09073007662403
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 178,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 3,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        420.67530891758975,
+        81.47001197911294,
+        358.7501591219118
+      ],
+      "late_delta_evidence": [
+        -10.060094647205236,
+        -7.469243717189076,
+        -3.8560338681210196
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -73.33536906599376,
+        -78.5765699280653,
+        -157.7710293990753
+      ],
+      "late_delta_evidence": [
+        191.44254677456817,
+        -205.1134481962348,
+        270.4115490006535
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -92.38060687962536,
+        -61.16635958917187,
+        -81.94950298919478
+      ],
+      "late_delta_evidence": [
+        -110.12794766604281,
+        -361.5677131574695,
+        -192.64157832464684
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        398.90917330990345,
+        -160.63625336314018,
+        -99.38683340008565
+      ],
+      "late_delta_evidence": [
+        9.124939545679464,
+        -312.63156648203324,
+        132.1681569743215
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "83",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -3.8412726374165125,
+        -3.2338647583454936,
+        -4.910721347764483
+      ],
+      "late_delta_evidence": [
+        65.50090050413814,
+        399.6956752827816,
+        39.12114619947246
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 43,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 1,
+      "early_delta_evidence": [
+        -5.382289355802644,
+        13.876573683769177,
+        -6.526450619167324
+      ],
+      "late_delta_evidence": [
+        81.08199926870518,
+        -13.544966474204333,
+        -11.625217284317618
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "85",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        -55.41157511818832,
+        -2.224153775232569,
+        27.202404734077387
+      ],
+      "late_delta_evidence": [
+        7.874649787970381,
+        2.039557136649589,
+        -227.27667794704564
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 22,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 2,
+      "early_delta_evidence": [
+        148.2225275413347,
+        -45.04487241452967,
+        -94.6904984655409
+      ],
+      "late_delta_evidence": [
+        75.97208093613978,
+        -6.362777994302607,
+        192.99115045585404
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -102.46302411788676,
+        -213.60275619527675,
+        -150.42302633697855
+      ],
+      "late_delta_evidence": [
+        -71.02062260625831,
+        -182.6050835803664,
+        -177.57938375244495
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 63,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        6.987869766961264,
+        -70.42563560049955,
+        -25.91592794227275
+      ],
+      "late_delta_evidence": [
+        -149.91409118135564,
+        -132.50687701917673,
+        -222.17318568910187
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "90",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -32.783685666146205,
+        -13.19570357647115,
+        -37.09821224425236
+      ],
+      "late_delta_evidence": [
+        -3.2482600297152286,
+        -6.225320694034852,
+        -8.131131972379539
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": true,
+      "persistent_branch_pairs": 2,
+      "pairs": 3,
+      "early_branch_pairs": 2,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -1.511511539902177,
+        46.4027024736993,
+        29.727391176879546
+      ],
+      "late_delta_evidence": [
+        0.9875802598112358,
+        2.6418237966147418,
+        0.5100670899192863
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 0,
+      "pairs": 3,
+      "early_branch_pairs": 0,
+      "late_branch_pairs": 0,
+      "early_delta_evidence": [
+        -79.57265405512135,
+        -52.916393799551194,
+        -22.536056941246574
+      ],
+      "late_delta_evidence": [
+        -142.06622303869668,
+        -121.26553199244373,
+        -165.42030849173514
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "initial_alarm": true,
+      "refined_alarm": true,
+      "alarm": false,
+      "persistent_branch_pairs": 1,
+      "pairs": 3,
+      "early_branch_pairs": 1,
+      "late_branch_pairs": 3,
+      "early_delta_evidence": [
+        -3.5036896999474187,
+        13.868455250907669,
+        -3.6177677062378315
+      ],
+      "late_delta_evidence": [
+        152.08337811536597,
+        0.4192112858980266,
+        102.57895181654402
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "refined_alarm": false,
+      "alarm": false
+    }
+  ]
+}

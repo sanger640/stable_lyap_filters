@@ -1,0 +1,699 @@
+{
+  "protocol": {
+    "id": "switching-edge-one-seed-four-arm-dev-v1",
+    "status": "prospectively fixed before hard/switching arm training",
+    "split": "DEV only; frozen TEST prohibited",
+    "seed": 1,
+    "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+    "continuation": {
+      "epochs": 3,
+      "batch": 2048,
+      "learning_rate": 0.0003,
+      "noise": 0.5,
+      "cw_data": "results/jenga/cw_data",
+      "cw_loss": "intervention",
+      "cw_groups": 32,
+      "cw_weight": 1.0,
+      "optimizer": "fresh AdamW in every arm"
+    },
+    "switching": {
+      "modes": 3,
+      "warm_start": "shared D2 weights copied; every mode expert exactly copies each D2 edge update",
+      "mode_balance_weight": 0.01,
+      "mode_entropy_weight": 0.01,
+      "mode_persistence_weight": 0.01
+    },
+    "d3": {
+      "data": "results/jenga/d3_data",
+      "groups_per_batch": 2,
+      "weight": 1.0,
+      "local_weight": 1.0
+    },
+    "arms": {
+      "soft_d2": "continuous GNN, soft contact feedback, D2 only",
+      "hard_d2": "continuous GNN, rounded contact feedback, D2 only",
+      "switch_d2": "persistent switching-edge GNN, soft contact feedback, D2 only",
+      "switch_d3": "persistent switching-edge GNN, soft contact feedback, D2 plus D3"
+    },
+    "primary_metrics": [
+      "frozen-v0 DEV topple-fork recall",
+      "frozen-v0 DEV quiet alarm rate",
+      "initial and refined boundary counts",
+      "topple and quiet final/initial gap ratios"
+    ],
+    "mode_diagnostics": [
+      "mode occupancy",
+      "mean normalized entropy",
+      "argmax switch rate",
+      "probability persistence loss"
+    ],
+    "feasibility_gate": {
+      "topple_fork_alarms_min": 10,
+      "quiet_alarms_max": 3,
+      "interpretation": "a learned switching arm must meet both on 23 DEV topples and 89 DEV quiet states before multi-seed expansion"
+    },
+    "selection": "fixed epoch-3 endpoint; no best-epoch or post-result weight selection"
+  },
+  "protocol_sha256": "f3bbc20700f459368c761c00bb525393ac789336a05f11acffdd5e676743dc3c",
+  "arms": {
+    "soft_d2": {
+      "checkpoint": {
+        "path": "results/jenga/w6_cw_d2_continue_pilot_s1.pt",
+        "sha256": "6cad916aeb46d6dbac59119a4a03da2b03974244a244681f7e7e1a84d2a34dae",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 1,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "init": "results/jenga/w6_cw_d2_s1.pt",
+          "d3_data": null,
+          "d3_groups": 2,
+          "d3_weight": 1.0,
+          "d3_local_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "12a95e52e7269b8902ba290a3be92561db389a6afb25480a5467562599d4a952",
+        "seed": 1
+      },
+      "class_rates": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 10,
+          "rate": 0.43478260869565216
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 1,
+          "rate": 0.011235955056179775
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 0,
+          "rate": 0.0
+        }
+      },
+      "stage_counts": {
+        "topple_fork": {
+          "states": 23,
+          "initial_candidates": 19,
+          "boundary_candidates": 11,
+          "commitment_majority": 17,
+          "persistence_majority": 19,
+          "v0_alarms": 10
+        },
+        "quiet": {
+          "states": 89,
+          "initial_candidates": 29,
+          "boundary_candidates": 6,
+          "commitment_majority": 6,
+          "persistence_majority": 28,
+          "v0_alarms": 1
+        },
+        "nudge_fork": {
+          "states": 17,
+          "initial_candidates": 6,
+          "boundary_candidates": 1,
+          "commitment_majority": 4,
+          "persistence_majority": 6,
+          "v0_alarms": 0
+        },
+        "small_split": {
+          "states": 8,
+          "initial_candidates": 2,
+          "boundary_candidates": 1,
+          "commitment_majority": 1,
+          "persistence_majority": 2,
+          "v0_alarms": 0
+        },
+        "weak": {
+          "states": 3,
+          "initial_candidates": 1,
+          "boundary_candidates": 1,
+          "commitment_majority": 0,
+          "persistence_majority": 1,
+          "v0_alarms": 0
+        }
+      },
+      "topple_pair_ratios": {
+        "pairs": 57,
+        "early_median": 0.08247802000538595,
+        "full_median": 0.08467002467336901
+      },
+      "quiet_pair_ratios": {
+        "pairs": 87,
+        "early_median": 0.031962598774148296,
+        "full_median": 0.03197445424182932
+      },
+      "mode_diagnostics": null
+    },
+    "hard_d2": {
+      "checkpoint": {
+        "path": "results/jenga/w6_four_arm_hard_d2_s1.pt",
+        "sha256": "7aca140230cfcedbc11d20101270a23a17bf82bc3d73f000e1aec57e470c18a2",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "modes": null,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 1,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": true,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "init": "results/jenga/w6_cw_d2_s1.pt",
+          "d3_data": null,
+          "d3_groups": 2,
+          "d3_weight": 1.0,
+          "d3_local_weight": 1.0,
+          "mode_balance_weight": 0.01,
+          "mode_entropy_weight": 0.01,
+          "mode_persistence_weight": 0.01,
+          "transition_weighting": false
+        },
+        "config_sha256": "1cb18bf4498148dd8f05c6f1184ba82060571d625318e28c729421bd534754c2",
+        "seed": 1
+      },
+      "class_rates": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 11,
+          "rate": 0.4782608695652174
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 9,
+          "rate": 0.10112359550561797
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 4,
+          "rate": 0.23529411764705882
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 1,
+          "rate": 0.3333333333333333
+        }
+      },
+      "stage_counts": {
+        "topple_fork": {
+          "states": 23,
+          "initial_candidates": 21,
+          "boundary_candidates": 14,
+          "commitment_majority": 16,
+          "persistence_majority": 21,
+          "v0_alarms": 11
+        },
+        "quiet": {
+          "states": 89,
+          "initial_candidates": 45,
+          "boundary_candidates": 16,
+          "commitment_majority": 17,
+          "persistence_majority": 44,
+          "v0_alarms": 9
+        },
+        "nudge_fork": {
+          "states": 17,
+          "initial_candidates": 9,
+          "boundary_candidates": 5,
+          "commitment_majority": 6,
+          "persistence_majority": 9,
+          "v0_alarms": 4
+        },
+        "small_split": {
+          "states": 8,
+          "initial_candidates": 4,
+          "boundary_candidates": 0,
+          "commitment_majority": 0,
+          "persistence_majority": 4,
+          "v0_alarms": 0
+        },
+        "weak": {
+          "states": 3,
+          "initial_candidates": 3,
+          "boundary_candidates": 2,
+          "commitment_majority": 2,
+          "persistence_majority": 3,
+          "v0_alarms": 1
+        }
+      },
+      "topple_pair_ratios": {
+        "pairs": 63,
+        "early_median": 0.10248079279751762,
+        "full_median": 0.11732678371049253
+      },
+      "quiet_pair_ratios": {
+        "pairs": 135,
+        "early_median": 0.034966652116127796,
+        "full_median": 0.035177402881203974
+      },
+      "mode_diagnostics": null
+    },
+    "switch_d2": {
+      "checkpoint": {
+        "path": "results/jenga/w6_four_arm_switch_d2_s1.pt",
+        "sha256": "9ae49a6f47a37c75159d646c5ba995de4949563c5d5c86f44f1f4ab685e7919d",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "edge_switch",
+          "experts": 1,
+          "modes": 3,
+          "parameters": 1363243,
+          "substeps": 1,
+          "seed": 1,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "init": "results/jenga/w6_cw_d2_s1.pt",
+          "d3_data": null,
+          "d3_groups": 2,
+          "d3_weight": 1.0,
+          "d3_local_weight": 1.0,
+          "mode_balance_weight": 0.01,
+          "mode_entropy_weight": 0.01,
+          "mode_persistence_weight": 0.01,
+          "transition_weighting": false
+        },
+        "config_sha256": "ff7822a4a1b2592735be7053858875e99cdf0f6a928cc0ba0ddf8e5d2d6fece8",
+        "seed": 1
+      },
+      "class_rates": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 4,
+          "rate": 0.17391304347826086
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 1,
+          "rate": 0.011235955056179775
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 1,
+          "rate": 0.3333333333333333
+        }
+      },
+      "stage_counts": {
+        "topple_fork": {
+          "states": 23,
+          "initial_candidates": 17,
+          "boundary_candidates": 6,
+          "commitment_majority": 16,
+          "persistence_majority": 17,
+          "v0_alarms": 4
+        },
+        "quiet": {
+          "states": 89,
+          "initial_candidates": 40,
+          "boundary_candidates": 4,
+          "commitment_majority": 10,
+          "persistence_majority": 40,
+          "v0_alarms": 1
+        },
+        "nudge_fork": {
+          "states": 17,
+          "initial_candidates": 6,
+          "boundary_candidates": 0,
+          "commitment_majority": 3,
+          "persistence_majority": 6,
+          "v0_alarms": 0
+        },
+        "small_split": {
+          "states": 8,
+          "initial_candidates": 2,
+          "boundary_candidates": 0,
+          "commitment_majority": 2,
+          "persistence_majority": 2,
+          "v0_alarms": 0
+        },
+        "weak": {
+          "states": 3,
+          "initial_candidates": 2,
+          "boundary_candidates": 1,
+          "commitment_majority": 1,
+          "persistence_majority": 2,
+          "v0_alarms": 1
+        }
+      },
+      "topple_pair_ratios": {
+        "pairs": 51,
+        "early_median": 0.04308704085837831,
+        "full_median": 0.045789110483173134
+      },
+      "quiet_pair_ratios": {
+        "pairs": 120,
+        "early_median": 0.03272592343675293,
+        "full_median": 0.033272016730310695
+      },
+      "mode_diagnostics": {
+        "all": {
+          "soft_occupancy": [
+            0.3679720163345337,
+            0.25272586941719055,
+            0.3759447932243347
+          ],
+          "hard_occupancy": [
+            5.800634398496241e-05,
+            0.0,
+            0.999941993656015
+          ],
+          "normalized_entropy_mean": 0.9877607822418213,
+          "argmax_switch_rate": 0.0001118585102960103
+        },
+        "by_class": {
+          "quiet": {
+            "soft_occupancy": [
+              0.36394476890563965,
+              0.254287451505661,
+              0.3764861822128296
+            ],
+            "hard_occupancy": [
+              6.27556426177804e-05,
+              0.0,
+              0.9999372443573822
+            ],
+            "normalized_entropy_mean": 0.987866997718811,
+            "argmax_switch_rate": 0.00012336774977224414
+          },
+          "topple_fork": {
+            "soft_occupancy": [
+              0.36054182052612305,
+              0.25895360112190247,
+              0.38067036867141724
+            ],
+            "hard_occupancy": [
+              0.00010577564836003051,
+              0.0,
+              0.99989422435164
+            ],
+            "normalized_entropy_mean": 0.9875659346580505,
+            "argmax_switch_rate": 0.00019584802193497845
+          },
+          "nudge_fork": {
+            "soft_occupancy": [
+              0.36038732528686523,
+              0.2582094669342041,
+              0.38131359219551086
+            ],
+            "hard_occupancy": [
+              2.015608875128999e-06,
+              0.0,
+              0.9999979843911249
+            ],
+            "normalized_entropy_mean": 0.9875599145889282,
+            "argmax_switch_rate": 2.070084790673026e-06
+          },
+          "weak": {
+            "soft_occupancy": [
+              0.3594668507575989,
+              0.2588338851928711,
+              0.3817634880542755
+            ],
+            "hard_occupancy": [
+              2.2843567251461987e-05,
+              0.0,
+              0.9999771564327485
+            ],
+            "normalized_entropy_mean": 0.9877501130104065,
+            "argmax_switch_rate": 4.692192192192192e-05
+          },
+          "small_split": {
+            "soft_occupancy": [
+              0.35980671644210815,
+              0.25819337368011475,
+              0.3822484016418457
+            ],
+            "hard_occupancy": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "normalized_entropy_mean": 0.9875691533088684,
+            "argmax_switch_rate": 0.0
+          }
+        }
+      }
+    },
+    "switch_d3": {
+      "checkpoint": {
+        "path": "results/jenga/w6_four_arm_switch_d3_s1.pt",
+        "sha256": "273aa7d1e7c94f84e1a46edcb410303932b80cdcec8c4e4f7c4c8841588527c1",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "edge_switch",
+          "experts": 1,
+          "modes": 3,
+          "parameters": 1363243,
+          "substeps": 1,
+          "seed": 1,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "init": "results/jenga/w6_cw_d2_s1.pt",
+          "d3_data": "results/jenga/d3_data",
+          "d3_groups": 2,
+          "d3_weight": 1.0,
+          "d3_local_weight": 1.0,
+          "mode_balance_weight": 0.01,
+          "mode_entropy_weight": 0.01,
+          "mode_persistence_weight": 0.01,
+          "transition_weighting": false
+        },
+        "config_sha256": "57f54ab1e0d61bd8872b58cc7cf633cb3f78ba5d298bbda7d685565ba2c525c1",
+        "seed": 1
+      },
+      "class_rates": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 4,
+          "rate": 0.17391304347826086
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 2,
+          "rate": 0.02247191011235955
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 2,
+          "rate": 0.25
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 0,
+          "rate": 0.0
+        }
+      },
+      "stage_counts": {
+        "topple_fork": {
+          "states": 23,
+          "initial_candidates": 18,
+          "boundary_candidates": 5,
+          "commitment_majority": 16,
+          "persistence_majority": 17,
+          "v0_alarms": 4
+        },
+        "quiet": {
+          "states": 89,
+          "initial_candidates": 46,
+          "boundary_candidates": 8,
+          "commitment_majority": 17,
+          "persistence_majority": 46,
+          "v0_alarms": 2
+        },
+        "nudge_fork": {
+          "states": 17,
+          "initial_candidates": 7,
+          "boundary_candidates": 2,
+          "commitment_majority": 5,
+          "persistence_majority": 7,
+          "v0_alarms": 0
+        },
+        "small_split": {
+          "states": 8,
+          "initial_candidates": 3,
+          "boundary_candidates": 2,
+          "commitment_majority": 3,
+          "persistence_majority": 3,
+          "v0_alarms": 2
+        },
+        "weak": {
+          "states": 3,
+          "initial_candidates": 1,
+          "boundary_candidates": 0,
+          "commitment_majority": 1,
+          "persistence_majority": 1,
+          "v0_alarms": 0
+        }
+      },
+      "topple_pair_ratios": {
+        "pairs": 54,
+        "early_median": 0.04739085521867988,
+        "full_median": 0.04947298394150819
+      },
+      "quiet_pair_ratios": {
+        "pairs": 138,
+        "early_median": 0.033507653956909134,
+        "full_median": 0.033552828942574914
+      },
+      "mode_diagnostics": {
+        "all": {
+          "soft_occupancy": [
+            3.6263378966339133e-09,
+            1.0,
+            7.016985881236337e-10
+          ],
+          "hard_occupancy": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "normalized_entropy_mean": 7.610752561504341e-08,
+          "argmax_switch_rate": 0.0
+        },
+        "by_class": {
+          "quiet": {
+            "soft_occupancy": [
+              3.331713127607827e-09,
+              1.0,
+              6.597223878301861e-10
+            ],
+            "hard_occupancy": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "normalized_entropy_mean": 7.042753935593282e-08,
+            "argmax_switch_rate": 0.0
+          },
+          "topple_fork": {
+            "soft_occupancy": [
+              3.956451610775957e-09,
+              1.0,
+              7.412477853740995e-10
+            ],
+            "hard_occupancy": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "normalized_entropy_mean": 8.218446367891374e-08,
+            "argmax_switch_rate": 0.0
+          },
+          "nudge_fork": {
+            "soft_occupancy": [
+              4.650339668899051e-09,
+              1.0,
+              8.497784143024489e-10
+            ],
+            "hard_occupancy": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "normalized_entropy_mean": 9.535401090943196e-08,
+            "argmax_switch_rate": 0.0
+          },
+          "weak": {
+            "soft_occupancy": [
+              4.644947537713051e-09,
+              1.0,
+              8.543243334990791e-10
+            ],
+            "hard_occupancy": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "normalized_entropy_mean": 9.544697121555146e-08,
+            "argmax_switch_rate": 0.0
+          },
+          "small_split": {
+            "soft_occupancy": [
+              3.531610781593031e-09,
+              1.0,
+              6.743346436799413e-10
+            ],
+            "hard_occupancy": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "normalized_entropy_mean": 7.36756717856224e-08,
+            "argmax_switch_rate": 0.0
+          }
+        }
+      }
+    }
+  },
+  "feasibility_gate_pass": {
+    "switch_d2": false,
+    "switch_d3": false
+  },
+  "decision": "switching arms fail one-seed DEV feasibility gate; do not expand or run TEST"
+}

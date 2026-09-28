@@ -1,0 +1,172 @@
+{
+  "protocol": {
+    "name": "D4 one-seed full-neighbourhood architecture gate",
+    "seed": 4,
+    "epochs": 3,
+    "lr": 1e-05,
+    "train_states": 220,
+    "validation_states": 36,
+    "validation_episodes": [
+      "0",
+      "1",
+      "5",
+      "7",
+      "12",
+      "13"
+    ],
+    "test_opened": false,
+    "states_per_batch": 4,
+    "arms": [
+      "frozen_d2",
+      "matched_continuation",
+      "full_d4"
+    ],
+    "full_d4": "response + complete topology + local commitment + D3 boundary",
+    "selection": "unlabeled episode split and final validation objective"
+  },
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+  "initial_checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+  "arms": {
+    "frozen_d2": {
+      "validation": {
+        "states": 36,
+        "response": 0.058702234308131866,
+        "topology": 0.04653865675855842,
+        "commitment": 0.04141638253349811,
+        "physical_candidates": 24,
+        "predicted_candidates": 17,
+        "alarm_agreement": 0.6944444444444444,
+        "candidate_recall": 0.625,
+        "quiet_false_rate": 0.16666666666666666,
+        "partition_agreement": 0.7248263888888888
+      },
+      "history": []
+    },
+    "matched_continuation": {
+      "weights": {
+        "response": 1.0
+      },
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 27.29686975479126,
+          "train": {
+            "response": 0.28323634922165764
+          },
+          "validation": null
+        },
+        {
+          "epoch": 2,
+          "seconds": 27.804710865020752,
+          "train": {
+            "response": 0.25996378764552486
+          },
+          "validation": null
+        },
+        {
+          "epoch": 3,
+          "seconds": 38.72447943687439,
+          "train": {
+            "response": 0.24691912623291665
+          },
+          "validation": {
+            "states": 36,
+            "response": 0.02951584867130603,
+            "topology": 0.04370039776484999,
+            "commitment": 0.04038612964278501,
+            "physical_candidates": 24,
+            "predicted_candidates": 16,
+            "alarm_agreement": 0.6666666666666666,
+            "candidate_recall": 0.5833333333333334,
+            "quiet_false_rate": 0.16666666666666666,
+            "partition_agreement": 0.7374131944444444
+          }
+        }
+      ],
+      "validation": {
+        "states": 36,
+        "response": 0.02951584867130603,
+        "topology": 0.04370039776484999,
+        "commitment": 0.04038612964278501,
+        "physical_candidates": 24,
+        "predicted_candidates": 16,
+        "alarm_agreement": 0.6666666666666666,
+        "candidate_recall": 0.5833333333333334,
+        "quiet_false_rate": 0.16666666666666666,
+        "partition_agreement": 0.7374131944444444
+      },
+      "checkpoint": "results/jenga/d4_replication/matched_continuation_s4.pt",
+      "checkpoint_sha256": "4469c9f49d9a9363cc34935d59e33b5876e997d5ed191ee6edd11a44574cda10"
+    },
+    "full_d4": {
+      "weights": {
+        "response": 1.0,
+        "topology": 12.573560692871672,
+        "commitment": 16.932893701043565,
+        "boundary": 0.5451321841157777
+      },
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 54.67527651786804,
+          "train": {
+            "response": 0.29691576735031877,
+            "topology": 0.07315898855978792,
+            "commitment": 0.05419949503954161,
+            "boundary": 3.4610197240656073
+          },
+          "validation": null
+        },
+        {
+          "epoch": 2,
+          "seconds": 54.67167115211487,
+          "train": {
+            "response": 0.2785875619643114,
+            "topology": 0.06367441488175907,
+            "commitment": 0.04864545472982255,
+            "boundary": 2.328016716783697
+          },
+          "validation": null
+        },
+        {
+          "epoch": 3,
+          "seconds": 65.64639663696289,
+          "train": {
+            "response": 0.26772279802032495,
+            "topology": 0.05738909839737144,
+            "commitment": 0.04490123951638287,
+            "boundary": 2.7656652147119694
+          },
+          "validation": {
+            "states": 36,
+            "response": 0.03437190864739629,
+            "topology": 0.04034070843934185,
+            "commitment": 0.04031362916834445,
+            "physical_candidates": 24,
+            "predicted_candidates": 18,
+            "alarm_agreement": 0.7222222222222222,
+            "candidate_recall": 0.6666666666666666,
+            "quiet_false_rate": 0.16666666666666666,
+            "partition_agreement": 0.7608506944444444
+          }
+        }
+      ],
+      "validation": {
+        "states": 36,
+        "response": 0.03437190864739629,
+        "topology": 0.04034070843934185,
+        "commitment": 0.04031362916834445,
+        "physical_candidates": 24,
+        "predicted_candidates": 18,
+        "alarm_agreement": 0.7222222222222222,
+        "candidate_recall": 0.6666666666666666,
+        "quiet_false_rate": 0.16666666666666666,
+        "partition_agreement": 0.7608506944444444
+      },
+      "checkpoint": "results/jenga/d4_replication/full_d4_s4.pt",
+      "checkpoint_sha256": "4193363b2cb4f3ad84cdeca01213b96d0f3bc1ab656bacdce575497402019207"
+    }
+  },
+  "decision": "pending"
+}

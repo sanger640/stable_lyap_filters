@@ -1,0 +1,59 @@
+{
+  "protocol": {
+    "id": "panda-anonymous-slot-dynamics-v0",
+    "status": "label-free representation TRAIN/validation; monitor DEV unopened during training",
+    "seed": 642,
+    "epochs": 12,
+    "batch_pairs": 4,
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0003,
+      "weight_decay": 1e-05,
+      "gradient_clip": 1.0
+    },
+    "model": {
+      "input_dim": 64,
+      "slot_dim": 48,
+      "slots": 8,
+      "iterations": 3,
+      "action_dim": 4
+    },
+    "loss_weights": {
+      "reconstruction": 1.0,
+      "dynamics": 1.0,
+      "geometry": 0.5,
+      "pair_separation": 1.0,
+      "mask_sharpness": 0.01,
+      "slot_balance": 0.05
+    },
+    "losses": {
+      "reconstruction": "reconstruct fixed projected DINO patch descriptors",
+      "dynamics": "predict next anonymous slot from current slot and executed action",
+      "geometry": "predicted slots reproduce next mask centroid/covariance/mass",
+      "pair_separation": "predicted neighboring-action slot separation matches observed separation",
+      "mask_sharpness": "low per-pixel slot assignment entropy",
+      "slot_balance": "discourage globally dead slots"
+    },
+    "checkpoint_selection": "minimum complete validation objective; no task or physical labels",
+    "monitor_interface": "slot x/y, finite-difference vx/vy, covariance and mass; PCA45 per state",
+    "excluded": [
+      "physical state",
+      "contact",
+      "success",
+      "topple",
+      "object identity",
+      "physical monitor decision",
+      "alarm"
+    ],
+    "resource_policy": "CPU-compatible; Torch <=8 threads; no simulator during training"
+  },
+  "created": "2026-09-25T19:22:00+00:00",
+  "files_sha256": {
+    "src/models/slot_dynamics.py": "988148c82fe8a9a365a25b3694885aaed15a32d5f81b5605dd3d689617aeca08",
+    "eval/panda_push_slot_data.py": "3f261f7ccc346e068379993dbe704c72b3a4bf984933938b30b55d29512f6f0b",
+    "eval/panda_push_slot_train.py": "7bef69e0bfd8b03f15954ef1f7126bbdfca1a7da7e2c588655449798a895bb6e",
+    "results/panda_block_push/slot_dynamics/data_manifest.json": "a2ad7ec20985a01f60de08cf1d5c8fe0d25d2cbe0a8a7fb5d27d457b56fc29f0",
+    "results/panda_block_push/slot_dynamics/unlabeled_tokens.npz": "3d042758cad92eab52945f92264ca2820b992415475fc2871dc374ad09bd9746"
+  },
+  "protocol_sha256": "c3f71103142020074578826856e7058aefcb96397514d4e59178901c8790d187"
+}

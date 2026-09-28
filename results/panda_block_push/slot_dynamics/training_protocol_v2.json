@@ -1,0 +1,56 @@
+{
+  "protocol": {
+    "id": "panda-balanced-motion-slot-dynamics-v2",
+    "motivation": "v1 rejected pre-monitor because one slot monopolized all patches",
+    "seed": 644,
+    "epochs": 12,
+    "batch_pairs": 4,
+    "model": {
+      "descriptor_dim": 64,
+      "slot_dim": 48,
+      "slots": 8,
+      "iterations": 3,
+      "action_dim": 4
+    },
+    "loss_weights": {
+      "motion_reconstruction": 1.0,
+      "dynamics": 1.0,
+      "geometry": 0.5,
+      "pair_separation": 1.0,
+      "motion_assignment": 0.5,
+      "mask_sharpness": 0.05,
+      "slot_balance": 0.2
+    },
+    "assignment": "six-iteration differentiable balanced slot/patch normalization",
+    "checkpoint_selection": "minimum complete label-free validation objective",
+    "pre_monitor_quality_gates": {
+      "minimum_effective_slots": 6.0,
+      "maximum_slot_mass": 0.25,
+      "minimum_geometry_motion_rms": 0.002,
+      "minimum_motion_map_correlation": 0.2
+    },
+    "quality_information": "validation descriptors and actions only; no task/physical labels",
+    "excluded": [
+      "physical state",
+      "contact",
+      "success",
+      "topple",
+      "object identity",
+      "physical monitor decision",
+      "alarm"
+    ],
+    "resource_policy": "CPU-compatible; Torch <=8 threads; no simulator during training"
+  },
+  "created": "2026-09-25T19:32:25+00:00",
+  "files_sha256": {
+    "src/models/slot_dynamics.py": "988148c82fe8a9a365a25b3694885aaed15a32d5f81b5605dd3d689617aeca08",
+    "src/models/motion_slot_dynamics.py": "0c017d79c6e654eb0b70810a90e18b568cf8d5985304dedcab92b84878af8045",
+    "src/models/balanced_motion_slots.py": "8ba7b1269c3a673d3aa8f43009a79a411892eb1771d5f684b6d37cddb6fbf756",
+    "eval/panda_push_slot_data.py": "3f261f7ccc346e068379993dbe704c72b3a4bf984933938b30b55d29512f6f0b",
+    "eval/panda_push_slot_train_v1.py": "e1567d002ab612449507d2b1f681a4ada48867b88a01a5d755916c7ceacb292c",
+    "eval/panda_push_slot_train_v2.py": "417f73c1e6f4cf476e9d274d581fd7d54edabcfb43cf5f4ddcdecac5230f5a7b",
+    "results/panda_block_push/slot_dynamics/data_manifest.json": "a2ad7ec20985a01f60de08cf1d5c8fe0d25d2cbe0a8a7fb5d27d457b56fc29f0",
+    "results/panda_block_push/slot_dynamics/unlabeled_tokens.npz": "3d042758cad92eab52945f92264ca2820b992415475fc2871dc374ad09bd9746"
+  },
+  "protocol_sha256": "512ef487d342c909cae4676fb1b3b98791977776d8f29722b22dfa8181a0628f"
+}

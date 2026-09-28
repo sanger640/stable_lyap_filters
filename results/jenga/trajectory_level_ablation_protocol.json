@@ -1,0 +1,39 @@
+{
+  "id": "d2-fixed-path-trajectory-level-oracle-ablation-v1",
+  "status": "prospectively frozen before dense physical replay",
+  "scope": "Jenga DEV diagnostic only; frozen TEST prohibited",
+  "dynamics": "results/jenga/w6_cw_d2_s1.pt",
+  "base_rows": "results/jenga/regime_monitor_v0/selective_router_dev_base/w6_cw_d2_s1.json",
+  "fixed": "D2 initial candidate discovery, three pair identities, five midpoint-side choices, action endpoints, v0 formulas and all constants",
+  "factors": {
+    "boundary_scale_source": [
+      "D2 early/full nested gap curves",
+      "MuJoCo early/full nested gap curves projected through the candidate's frozen D2 projector"
+    ],
+    "consequence_source": [
+      "D2 dense final-endpoint trajectories",
+      "MuJoCo dense final-endpoint trajectories"
+    ]
+  },
+  "arms": [
+    "D2 boundary + D2 consequence",
+    "physical boundary + D2 consequence",
+    "D2 boundary + physical consequence",
+    "physical boundary + physical consequence"
+  ],
+  "physical_replay": "all six nested levels and both endpoints are replayed from the exact frozen D2 path for H=8 plus the common 30-step nominal hold; 61D state is recorded every control step",
+  "decision": "unchanged boundary_refinement_alarm and whole_trajectory_consequence_alarm; majority of three pairs",
+  "task_information": "none in any decision; DEV classes are joined only after all four alarms for grading",
+  "reporting": "all class and stage counts, pair-level boundary/commitment/persistence overlap, and exact identity reproduction",
+  "diagnostic_interpretation": {
+    "physical_boundary_only_improves": "next model must repair local action-scale topology",
+    "physical_consequence_only_improves": "next model must repair post-action commitment/persistence dynamics",
+    "only_both_improve": "both errors interact and must be learned jointly",
+    "physical_both_fails": "D2 candidate discovery/pair paths or monitor formulation is the limiting factor"
+  },
+  "reference_gate": {
+    "topple_alarms_min": 10,
+    "quiet_alarms_max": 3,
+    "purpose": "same DEV operating requirement as the rejected router; diagnostic arms are not model-selection candidates"
+  }
+}

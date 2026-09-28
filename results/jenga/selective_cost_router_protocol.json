@@ -1,0 +1,47 @@
+{
+  "id": "train-only-selective-cost-router-v1",
+  "status": "prospectively fixed before selective-router training",
+  "scope": "D3 TRAIN corpus only; benchmark DEV and frozen TEST prohibited",
+  "shared_model": "results/jenga/w6_cw_d2_s1.pt",
+  "parent_protocol": "results/jenga/causal_router_protocol.json",
+  "split": "same episode-level 12% held-out TRAIN split used by jenga_w6_simple.py",
+  "fit_groups_expected": 226,
+  "heldout_groups_expected": 30,
+  "options": [
+    "identity/no correction",
+    "balanced residual prototype 0",
+    "balanced residual prototype 1",
+    "balanced residual prototype 2"
+  ],
+  "causal_inputs": "unchanged 117 fit-standardized values: current state 61 + reconstructed nominal action 8x4 + execution-error direction 8x3",
+  "prohibited_inputs": "physical/predicted futures, response curves, midpoint choices, deeper nested endpoints, task/failure/topple/success labels",
+  "target_cost": {
+    "definition": "per-group global Huber curve error divided by mean fit identity global error plus adjacent-level local Huber error divided by mean fit identity local error",
+    "training_target": "log of each option cost with a numerical floor of 1e-6",
+    "selection": "hard argmin predicted cost; identity is a genuine abstention option"
+  },
+  "router": {
+    "architecture": "MLP 117-64-32 with GELU and 0.1 dropout; four predicted log-costs",
+    "loss": "smooth-L1 regression to all four fit-only physical reconstruction costs",
+    "optimizer": "AdamW, learning rate 0.001, weight decay 0.001",
+    "epochs": 400,
+    "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "selection": "fixed final epoch; no held-out model or epoch selection"
+  },
+  "controls": [
+    "identity/uncorrected frozen D2",
+    "fit-set constant minimum-mean-cost option",
+    "future-informed minimum-cost option upper bound"
+  ],
+  "primary_summary": "median across ten fixed seeds",
+  "feasibility_gate": {
+    "cost_oracle_option_accuracy_min": 0.50,
+    "global_oracle_gain_fraction_min": 0.25,
+    "local_oracle_gain_fraction_min": 0.25,
+    "persistent_recall_min": 0.50,
+    "smooth_false_positive_rate_max": 0.50,
+    "identity_or_weak_mode_on_smooth_min": 0.50,
+    "interpretation": "all conditions must pass before any new DEV run"
+  },
+  "small_sample_warning": "held-out TRAIN has only four clearly smooth groups; smooth metrics remain a conservative veto"
+}

@@ -1,0 +1,38 @@
+{
+  "protocol": {
+    "id": "contact-intervention-u1",
+    "tasks": [
+      "pushing",
+      "insertion"
+    ],
+    "episodes_per_task": 100,
+    "matched_arms": [
+      "no_monitor",
+      "reobserve",
+      "wrapper",
+      "oracle"
+    ],
+    "detector": "frozen contact-regime U1 application of frozen Regime Monitor v0",
+    "decision_points": "non-overlapping H=8 chunks over a 96-step task trajectory",
+    "reobserve": "one 0.1-second hold step followed by one v0 rerun",
+    "candidates": [
+      1.0,
+      0.75,
+      0.5,
+      0.25,
+      0.0
+    ],
+    "candidate_definition": "contract the intended task-space control chunk toward current control",
+    "wrapper_choice": "fewest v0 consequential pairs, ties closest to intended action",
+    "oracle_choice": "avoid local task failure over H8+hold30, ties closest to intended action",
+    "episode_grading": "pushing goal/support and insertion depth/jam; labels never enter wrapper"
+  },
+  "created": "2026-09-23T19:22:42+00:00",
+  "files_sha256": {
+    "eval/contact_intervention_u1.py": "4261d25b137333aaf60136f85dd2779c92fc7ae9dc24e2157ad7060d9d3401d2",
+    "src/intervention_policy.py": "d8bc96374375e2e1bec4fcecde17ffee0201a5c66c03e57e01da754a805a1a70",
+    "results/contact_benchmarks/u1/manifest.json": "d065483f83c9cfd9876d5c0b0c83b8662b2c2da00704b83d9dbd5c2ceda60dec",
+    "results/jenga/regime_monitor_v0/manifest.json": "c2511b859d2a4ef75913902ea8563727b2747b1415544743fcda5ca58aca1d34"
+  },
+  "protocol_sha256": "44e5e035823fc106647ecc4b872fec063e4c30623177f9432e3f8395a985e3e1"
+}

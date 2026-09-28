@@ -1,0 +1,202 @@
+{
+  "protocol": {
+    "name": "D4 matched Regime Monitor v0 DEV comparison",
+    "status": "frozen after the TRAIN replication passed and before any D4 DEV rollout",
+    "monitor": {
+      "name": "Regime Monitor v0",
+      "sha256": "4e1a20ca3c64bf18733315fe31df5850529027f8f48cda2c5f547ce43ecdc317",
+      "split": "DEV",
+      "scale": 1.0,
+      "changes": "none"
+    },
+    "arms": {
+      "original_d2": [
+        [
+          "results/jenga/w6_cw_d2_s1.pt",
+          "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965"
+        ]
+      ],
+      "matched_continuation": [
+        [
+          "results/jenga/d4_replication/matched_continuation_s1.pt",
+          "1c12e412e61af045e6fe0bb7eff6a7f97e6ed8069bcc6e1826ab91234a62b255"
+        ],
+        [
+          "results/jenga/d4_replication/matched_continuation_s2.pt",
+          "b0cdac65ca3f95730620b9fc66e47963c3f8a33dbcf420cc35e0a6f8d4606f9c"
+        ],
+        [
+          "results/jenga/d4_replication/matched_continuation_s3.pt",
+          "4c7e52602a8030c884c5a98bc4a28f567f6404f0a47ab5fb0ae9e8a344500ca1"
+        ],
+        [
+          "results/jenga/d4_replication/matched_continuation_s4.pt",
+          "4469c9f49d9a9363cc34935d59e33b5876e997d5ed191ee6edd11a44574cda10"
+        ],
+        [
+          "results/jenga/d4_replication/matched_continuation_s5.pt",
+          "7e001a9ab54d969597f1ae988c5ff949e31f472894dbd0f50a1c0d632ce9fd18"
+        ]
+      ],
+      "full_d4": [
+        [
+          "results/jenga/d4_replication/full_d4_s1.pt",
+          "6fb4f48c816b228242f85b02ac188670979c81b975a6b2613abfe3132d00bc56"
+        ],
+        [
+          "results/jenga/d4_replication/full_d4_s2.pt",
+          "6ecae43b4e8b5a58b34e028950f85bed0808d5fcad29acf5126c7852ff1c49fc"
+        ],
+        [
+          "results/jenga/d4_replication/full_d4_s3.pt",
+          "f6704a1a57054a01ffab0468d92cfa66729fe583932016ebf74f57e44612a362"
+        ],
+        [
+          "results/jenga/d4_replication/full_d4_s4.pt",
+          "4193363b2cb4f3ad84cdeca01213b96d0f3bc1ab656bacdce575497402019207"
+        ],
+        [
+          "results/jenga/d4_replication/full_d4_s5.pt",
+          "b38a9ed663df7cd721b607e94b25ce078aa4ea57a4209382e94e1b183c4dde3f"
+        ]
+      ]
+    },
+    "grading": "task labels are joined only after every monitor decision",
+    "gates": {
+      "recall": "full-D4 median topple-fork recall is greater than matched-continuation median",
+      "specificity": "full-D4 median quiet alarms are at most matched median plus 2 of 89 states",
+      "physical_agreement": "full-D4 median agreement with physical Monitor v0 is at least matched median"
+    },
+    "reporting": "all five fixed seeds and medians; original D2 is a fixed reference; no seed selection",
+    "test_opened": false
+  },
+  "protocol_sha256": "bcc851feb628af4759d62271c0d7ef4edbfc6cdbd9846a2b88db000d2a53e6ab",
+  "physical_reference_sha256": "9a2cec2da11d9130bd48c73961e7bff61e9b4d0d4e05c03d7b4628d8bb6f978c",
+  "original_d2": {
+    "per_seed": [
+      {
+        "checkpoint_result": "results/jenga/d4_dev/original_d2/w6_cw_d2_s1.json",
+        "result_sha256": "31a82b4af9229f97f63d16f527812a9d364d2c66c6c4b225623b3f20a7b10b2d",
+        "topple_alarms": 8,
+        "topple_states": 23,
+        "quiet_alarms": 2,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7928571428571428
+      }
+    ],
+    "median_topple_alarms": 8.0,
+    "median_quiet_alarms": 2.0,
+    "median_physical_v0_agreement": 0.7928571428571428
+  },
+  "matched_continuation": {
+    "per_seed": [
+      {
+        "checkpoint_result": "results/jenga/d4_dev/matched/matched_continuation_s1.json",
+        "result_sha256": "b1cd255290d43e9c2867d7ae268d2a975cb20d3361c831fe2eb3c7efceff1379",
+        "topple_alarms": 8,
+        "topple_states": 23,
+        "quiet_alarms": 2,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.75
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/matched/matched_continuation_s2.json",
+        "result_sha256": "f01db93e478446c4f7277b4c3beebd2295b28101d44334294f782d5d133ee6d0",
+        "topple_alarms": 9,
+        "topple_states": 23,
+        "quiet_alarms": 2,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7785714285714286
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/matched/matched_continuation_s3.json",
+        "result_sha256": "0e898f7c8f05bcac9a19a6da5f6cc2463224f6fbe5aa823eb186f15bed49b099",
+        "topple_alarms": 6,
+        "topple_states": 23,
+        "quiet_alarms": 1,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.75
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/matched/matched_continuation_s4.json",
+        "result_sha256": "0ba6993ae932ab4550cfba763c069226be869d27b73eb3fac4e4cdddab3e6609",
+        "topple_alarms": 8,
+        "topple_states": 23,
+        "quiet_alarms": 0,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7714285714285715
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/matched/matched_continuation_s5.json",
+        "result_sha256": "e0280977efa6dde31e9d036a1c6df817a0581d7211d73990fbd4db389c7ced87",
+        "topple_alarms": 10,
+        "topple_states": 23,
+        "quiet_alarms": 2,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7714285714285715
+      }
+    ],
+    "median_topple_alarms": 8.0,
+    "median_quiet_alarms": 2.0,
+    "median_physical_v0_agreement": 0.7714285714285715
+  },
+  "full_d4": {
+    "per_seed": [
+      {
+        "checkpoint_result": "results/jenga/d4_dev/full_d4/full_d4_s1.json",
+        "result_sha256": "a283e8bac023fa66c4c173fcb53c6e1c82b7ee96007247e4e7ed0fb1e2c8bc30",
+        "topple_alarms": 6,
+        "topple_states": 23,
+        "quiet_alarms": 3,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7357142857142858
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/full_d4/full_d4_s2.json",
+        "result_sha256": "a955886dd9917dfa0025ba81e0254408a6a0bc839f1de970575215a86a2f4dc9",
+        "topple_alarms": 9,
+        "topple_states": 23,
+        "quiet_alarms": 1,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7571428571428571
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/full_d4/full_d4_s3.json",
+        "result_sha256": "3bde24e5bf47ead15cdf5f8e3fcd6397ce68b9cf636925358c26338ea402de9e",
+        "topple_alarms": 8,
+        "topple_states": 23,
+        "quiet_alarms": 3,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7714285714285715
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/full_d4/full_d4_s4.json",
+        "result_sha256": "26887663e5765fadec833f63c7d37ee3fe23aa00fd58288d45db4408deaf3a02",
+        "topple_alarms": 7,
+        "topple_states": 23,
+        "quiet_alarms": 3,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7357142857142858
+      },
+      {
+        "checkpoint_result": "results/jenga/d4_dev/full_d4/full_d4_s5.json",
+        "result_sha256": "e980edea179e564f8054e3c3b992a65bb086941737b97fe21ba8cfdab33af4d7",
+        "topple_alarms": 11,
+        "topple_states": 23,
+        "quiet_alarms": 1,
+        "quiet_states": 89,
+        "physical_v0_agreement": 0.7785714285714286
+      }
+    ],
+    "median_topple_alarms": 8.0,
+    "median_quiet_alarms": 3.0,
+    "median_physical_v0_agreement": 0.7571428571428571
+  },
+  "gates": {
+    "recall": false,
+    "specificity": true,
+    "physical_agreement": false
+  },
+  "passed": false,
+  "conclusion": "D4 fails matched DEV. Keep TEST closed and test one multimodal trajectory architecture under the same universal supervision."
+}

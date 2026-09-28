@@ -1,0 +1,38 @@
+{
+  "name": "D4 fixed-seed TRAIN replication",
+  "status": "frozen before expanded data generation and training",
+  "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+  "data": {
+    "split": "TRAIN only",
+    "states": 256,
+    "selection": "unchanged deterministic episode-balanced selection without outcome labels",
+    "selection_seed": 404,
+    "probes_per_state": 64,
+    "trajectory_steps": 38,
+    "validation_fraction_by_episode": 0.12,
+    "target_validation_states": "at least 30",
+    "maximum_simulator_workers": 4
+  },
+  "training": {
+    "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+    "seeds": [1, 2, 3, 4, 5],
+    "epochs": 3,
+    "learning_rate": 1e-05,
+    "states_per_batch": 4,
+    "evaluation": "fixed final epoch only",
+    "arms": {
+      "matched_continuation": "response loss only",
+      "full_d4": "response + complete topology + local commitment + nested D3 boundary"
+    }
+  },
+  "gate": {
+    "primary": "full D4 has lower median topology and commitment error than matched continuation",
+    "retention": "full D4 has no lower median physical-candidate recall than frozen D2",
+    "response_guardrail": "full D4 median response error is no more than 25% above matched continuation",
+    "reporting": "all five seeds and medians; no best-seed selection",
+    "if_pass": "freeze a matched DEV comparison",
+    "if_fail": "test one multimodal trajectory architecture under the same universal supervision"
+  },
+  "dev_opened": false,
+  "test_opened": false
+}

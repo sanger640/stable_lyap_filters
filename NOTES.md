@@ -4025,3 +4025,1041 @@ D2 therefore stays—it substantially quiets nominal predictions—but it does n
 mode recall. The calibration-free performance gate fails. Next diagnose whether D2 predicts a
 smooth continuum where reality branches, then carry the unchanged rule into V2 and another task;
 do not tune a Jenga distance threshold.
+
+## Action-conditioned smooth-versus-branch monitor: simulator control passes, D2 degrades it (2026-09-22)
+
+Implemented `src/action_branch_monitor.py`. Each state's 64 H=8 xyz execution perturbations are the
+inputs. The outputs are the complete block-pose response at hold 5, 10, 20, 29 and 30. The null is
+one smooth RBF-GP action-to-trajectory surface. The alternative is two independent smooth surfaces
+on a candidate action partition. Log marginal likelihood automatically trades fit against GP
+complexity; the decision additionally pays for searching candidate split locations and for a
+fragmented boundary on the minimal connected action-neighbour graph. The selected partition must
+give positive penalised evidence both by hold 10 and at hold 30. Alarm is simply that evidence sign:
+no reference states, quiet percentile, task label, failure label, or fitted decision threshold.
+
+The comparison was deliberately run **ground truth first**. `eval/jenga_action_branch_ground_truth.py`
+uses cached MuJoCo trajectories. `eval/jenga_action_branch.py` samples D2 at the exact same five
+times and keeps the exact same 27 block-pose coordinates; robot motion conditions D2 but is not part
+of the scored future. Therefore the only changed variable is simulator versus learned trajectory.
+
+Held-out 1x result (84 topple forks, 113 quiet):
+
+| trajectory source | fork recall | quiet alarms | robust blind | robust quiet alarm |
+|---|---:|---:|---:|---:|
+| simulator ground truth | 95.2% (80/84) | 15.9% (18/113) | n/a, one run | n/a, one run |
+| D2, 10 seeds | 75.4% mean (61.9-89.3%) | 33.0% mean (27.4-42.5%) | 3 | 12 |
+
+The ground-truth result establishes that the statistic responds to the physical branch phenomenon;
+it is not merely a failed monitor tested on a failed model. The D2 substitution loses 19.9 recall
+points and adds 17.1 quiet-alarm points. D2 therefore does both kinds of structural damage: it
+smooths some real action-conditioned branches and creates non-smooth predicted response on physically
+quiet states. Almost all selected candidate partitions are fragmented in the sparse 5-D action
+graph, including many real branches; the graph code charges this but cannot be interpreted as a
+literal connectedness test at 64 probes.
+
+This is a better sensitivity result than persistent PC1 (50.4% D2 recall), but a worse deployable
+operating point (33.0% quiet alarms). Do not tune a Jenga threshold to repair it. Next: inspect the
+three robust missed forks and twelve robust false alarms at trajectory/contact level, then test a
+pre-declared locally generated action-boundary candidate on ground truth before D2. The current
+exhaustive GP implementation also takes minutes per benchmark run; cache common action kernels or
+use a local approximation only after the statistic is frozen. Results are
+`results/jenga/action_branch_ground_truth.json` and `results/jenga/action_branch_d2.json`.
+
+## Held-out-probe predictive branch experiment — negative on DEV (2026-09-22)
+
+Implemented `cross_validated_smooth_vs_branch_alarm` in `src/action_branch_monitor.py` and
+`eval/jenga_action_branch_cv_ground_truth.py`. Eight deterministic action-balanced folds each hide
+eight of 64 probe trajectories. The remaining 56 alone determine trajectory PCA, candidate split,
+GP hyperparameters and branch surfaces. A hidden probe is assigned by the labels of its five nearest
+visible actions; its trajectory is revealed only to score the already-made prediction. Alarm iff
+the branch model has lower total hidden-trajectory squared error than one smooth model at both hold
+10 and hold 30. No labelled examples or fitted cutoff enter. Synthetic continuous, persistent-branch
+and transient-branch tests behave correctly.
+
+The rule fails its ground-truth development gate:
+
+| DEV rule | topple-fork recall | quiet alarms |
+|---|---:|---:|
+| in-sample penalised evidence | 23/23 = 100% | 27/89 = 30.3% |
+| eight-fold hidden prediction | 14/23 = 60.9% | 26/89 = 29.2% |
+
+Alarm transitions among quiet states are 19 retained, 8 removed, 7 newly introduced and 55 quiet
+under both rules. Among topple forks, 14 remain detected and 9 are lost. This is not the desired
+selective removal of false splits. The likely reason is that physically real branches may occupy
+only a few of 64 probes; hiding eight makes their action-side membership and separate response
+surface difficult to infer. Meanwhile most quiet alarms are action-predictable enough to survive
+withholding, so they are not merely arbitrary partitions of seen outcomes.
+
+Decision: reject the predictive rule on DEV and leave TEST untouched; do not tune fold count, kNN
+count or an improvement threshold against Jenga labels. Preserve it as a falsified diagnostic.
+Next inspect what physically differs across the retained quiet branches—pose, contact creation/loss,
+and settling—before choosing a new task-general definition of a consequential regime change.
+Result: `results/jenga/action_branch_cv_ground_truth_dev.json`.
+
+## Adaptive boundary refinement — selective improvement, insufficient specificity (2026-09-22)
+
+Implemented `eval/jenga_action_boundary_refine.py`. This tests the defining local property directly
+instead of withholding scarce probes. For each alarm, choose three nearest non-overlapping pairs of
+actions assigned to opposite response groups. Simulate their midpoint, assign its generic trajectory
+to the nearer original response group, retain the smaller opposite-group bracket, and repeat five
+times. Action separation is therefore divided by 32. The trajectory representation is the same
+anonymous block-pose vector used by the ground-truth control; the algorithm has no block roles,
+topple angle, contact name or task outcome.
+
+For each bracket and each early/late horizon, compare:
+
+* continuous local response: `gap(width) = a*width + b*width^2`, which must approach zero;
+* persistent branch: the same curve plus a nonnegative intercept.
+
+BIC pays for the intercept. At least two of three independently refined brackets must favour it at
+both hold 10 and hold 30. This is a fixed majority from the probe design, not a fitted threshold.
+Synthetic decaying-gap, plateau and transient controls pass.
+
+Ground-truth DEV result:
+
+| rule | topple-fork recall | quiet alarms |
+|---|---:|---:|
+| initial penalised branch evidence | 23/23 = 100% | 27/89 = 30.3% |
+| + adaptive boundary refinement | **23/23 = 100%** | **21/89 = 23.6%** |
+
+All 12 initially detected nudge forks, all 7 small splits and all 3 weak states survive. Among
+topple forks, 22/23 support a plateau on all three early brackets and 23/23 on all three full
+brackets. The refinement cleanly removes six quiet alarms without losing a topple fork, so some
+false alarms were smooth curvature. But 21 quiet cases also preserve a finite local trajectory gap;
+they are not removed by finer action resolution. The <=5% quiet gate fails, hence TEST remains
+untouched and no constants are tuned.
+
+Implementation correction made before accepting the result: the first scoring code fit
+`gap=amplitude*ratio^level` with ratio allowed to reach one. That null could imitate a constant
+plateau and made the hypotheses unidentifiable. Physics rollouts were correct and cached. The frozen
+rescore uses the explicitly local linear+quadratic null above; synthetic tests catch this distinction.
+
+Interpretation: geometric branch evidence alone cannot tell whether a reproducible regime change is
+task-consequential. The next diagnosis should classify retained quiet cases using generic physical
+descriptors—contact creation/loss, support changes, persistent object rearrangement and settling—only
+to understand what the monitor sees. Do not turn those Jenga diagnostics into task-specific alarm
+clauses. Result: `results/jenga/action_boundary_refine_dev.json`.
+
+## Generic physical-regime audit — branch existence is not consequence (2026-09-22)
+
+Implemented `eval/jenga_generic_regime_audit.py`. The experiment keeps the original immediate
+timescale (H=8 plus shared hold 30) and does not wait for a mostly finished scene. For each final
+32x-narrow bracket it records the complete 38-step generic simulator state: anonymous object pose,
+velocity and twelve binary contact edges. Three brackets per state are audited in four DEV cohorts:
+
+* 23 detected topple forks;
+* 21 quiet alarms retained by adaptive refinement;
+* 6 quiet alarms rejected by adaptive refinement;
+* 21 never-alarmed quiet controls greedily matched to retained states by initial state and intended
+  action geometry.
+
+Jenga classes organize the report only. No target/neighbour identity, tilt, success or failure enters
+the refinement or trace metrics.
+
+| generic measure (state-level median unless a rate) | fork | retained quiet | rejected quiet | matched quiet control |
+|---|---:|---:|---:|---:|
+| persistent contact difference on >=2/3 brackets | 91.3% | 28.6% | 33.3% | 4.8% |
+| late contact difference on >=2/3 brackets | 87.0% | 4.8% | 0% | 0% |
+| fraction of contact-edge/time entries that differ | 0.0724 | 0.0088 | 0.0088 | 0 |
+| final dimensionless pose gap | 1.667 | 0.0105 | 0.0029 | ~0 |
+| final gap / maximum gap | 0.970 | 0.720 | 0.781 | 0.019 |
+| peak velocity gap | 8.49 | 0.279 | 0.160 | ~0 |
+
+Retained quiet alarms differ from matched controls in contact fraction (p=0.00064), final pose gap
+(p=3.3e-6), and peak velocity gap (p=8.5e-6): they are not arbitrary representation noise. Forks
+are nevertheless much stronger than retained quiet on persistent contact (21/23 vs 6/21,
+Fisher p=2.8e-5), contact fraction (p=5.2e-6), final pose (p=2.1e-6), and velocity (p=1.8e-7).
+Retained versus rejected quiet is not separated by contact or final pose; peak velocity differs at
+p=0.042 uncorrected, weak evidence with n=6 rejected.
+
+The diagnostic temptation is a persistent-contact gate: on this DEV set it would leave 21/23 forks
+and 6/89 quiet alarms. Do **not** adopt it. It was observed after looking at Jenga labels, and a
+universal consequential branch may be a slip, free-flight transition or other event without a new
+contact edge. The result instead identifies the missing concept: statistical support for a branch
+answers whether a difference is real, not whether its effect is consequential. A universal next
+rule must demand persistent corroboration across generic dynamics channels relative to the applied
+intervention, with its form frozen before cross-task evaluation. Result:
+`results/jenga/generic_regime_audit_dev.json`; TEST remains untouched.
+
+## Shared versus branch-specific dynamics — rejected on DEV (2026-09-22)
+
+Implemented `shared_vs_branch_dynamics_alarm` in `src/action_branch_monitor.py` and the DEV-only
+ground-truth evaluator `eval/jenga_shared_dynamics_ground_truth.py`. The input is the three final
+32x action brackets from the accepted boundary-refinement cache. Each endpoint is replayed densely
+for H=8 + hold 30. The primary state contains anonymous block pose and velocity only; contacts are
+excluded from fitting. Each branch's H=8 pose is subtracted before transitions are built, preventing
+a harmless static endpoint offset from defining a second regime. Pooled PCA coordinates preserve
+dominant physical variation without per-channel whitening.
+
+At hold 1-10 and separately hold 11-30, a shared RBF-GP transition law competes with the same prior
+whose cross-branch covariance is removed. The alternative pays a BIC-style `0.5 log(n)` charge for
+the binary regime variable. A state alarms only when at least two of three brackets independently
+prefer separate laws in both intervals. Synthetic shared nonlinear/static-offset, persistent
+different-law, and early-converging controls pass. No quiet reference, magnitude threshold, contact
+identity, Jenga role or outcome label enters the decision.
+
+| class | states | alarms | rate |
+|---|---:|---:|---:|
+| topple fork | 23 | **4** | **17.4%** |
+| quiet | 89 | **1** | **1.1%** |
+| nudge fork | 17 | 1 | 5.9% |
+| small split | 8 | 0 | 0% |
+| weak | 3 | 0 | 0% |
+
+The >=21/23 fork and <=4/89 quiet gate fails. Alternative untuned structural votes are also far
+below target: any bracket positive in both intervals is 8/23 forks and 6/89 quiet; any early positive
+is 17/23 and 8/89; any late positive is 16/23 and 11/89. This means the miss is not caused only by
+the 2/3 persistence vote.
+
+Interpretation: the formulation asks the wrong universal question. Given a sufficient Markov state,
+the simulator has one transition law on both sides of a safety boundary. One rollout can fall while
+another settles because nearby states are propagated through nonlinear/hybrid physics, not because
+the governing law has changed. Local contact modes occasionally look like separate laws, producing
+excellent specificity, but that is neither necessary nor universal evidence of consequence.
+Reject the method, leave TEST untouched, and do not run it on D2. The next candidate should score
+persistent amplification/irreversibility of counterfactual trajectory separation relative to action
+separation, with synthetic mechanism controls frozen before looking at DEV. Result:
+`results/jenga/shared_dynamics_ground_truth_dev.json`.
+
+## Boundary + amplification + persistence — post-action amplification rejected (2026-09-22)
+
+Implemented `src/consequence_monitor.py` and `eval/jenga_consequence_ground_truth.py`. Before
+reading Jenga outcomes, synthetic controls fixed the semantics: reject smooth responses without a
+local boundary, static offsets and large recoverable wobble; accept sustained divergence,
+stick/slip and supported/free-flight. All seven monitor/evaluator tests pass.
+
+For every original action-branch candidate, the evaluator reconstructs all three final 32x brackets
+from the saved midpoint decisions and replays each endpoint densely over H=8 + hold 30. It combines
+four anonymous channel families (position, rotation, linear velocity and angular velocity) using
+within-probe RMS units. Pose at H=8 is removed separately from each endpoint, so an existing static
+offset contributes no effect. Velocity remains absolute so ordinary damping to rest is not converted
+into a permanent difference. The alarm requires the same >=2/3 pairs to have: positive early and
+late boundary-scaling BIC; positive BIC for an added sustained quadratic growth component after
+H=8; and positive BIC for a nonzero late asymptote rather than decay to zero.
+
+| class | total states | final alarms | rate |
+|---|---:|---:|---:|
+| topple fork | 23 | **3** | **13.0%** |
+| quiet | 89 | **2** | **2.2%** |
+| nudge fork | 17 | 9 | 52.9% |
+| small split | 8 | 1 | 12.5% |
+| weak | 3 | 0 | 0% |
+
+Among the 23 topple candidates, boundary majority is 23/23 and persistence majority 23/23, but
+amplification majority only 3/23. Among 27 initial-alarm quiet candidates those counts are 21/27,
+26/27 and 2/27. The final conjunction therefore exactly tracks the post-action amplification
+stage. The fixed >=21/23 and <=4/89 gate fails on recall; TEST and D2 were not run.
+
+Interpretation: irreversibility was decomposed correctly, but “continued growth after the action”
+was too narrow. Many Jenga topples cross the consequential boundary during the eight perturbed
+commands. Their separation can subsequently remain finite while motion dissipates, so they are
+irreversible without further amplification. Nudge forks, by contrast, commonly keep separating in
+the held tail and are preferentially detected. This is not repaired by lowering a score threshold.
+The next predeclared experiment should measure action-to-future amplification over the complete
+H=8 + hold interval and treat late non-reconvergence as a separate commitment test. Preserve local
+action-width scaling; do not choose the action/hold split from Jenga labels. Result:
+`results/jenga/consequence_ground_truth_dev.json`.
+
+## Whole-trajectory action-to-consequence commitment — improved, gate fails (2026-09-22)
+
+Implemented `whole_trajectory_consequence_alarm` in `src/consequence_monitor.py` and
+`eval/jenga_whole_trajectory_consequence.py`. The common pre-action state supplies exact zero
+separation. Over H=8 + hold 30, a passive nonnegative model uses cumulative action-error exposure,
+its square, a static component and fixed-grid relaxation times. The alternative adds one persistent
+event beginning during H=8 or hold 1-5. Step and two fixed saturating-rise families are searched;
+the search pays `2 log(number of candidates)` in BIC units. The same final 32x bracket must also
+support the existing early+late boundary plateau and a late nonzero asymptote. At least two of three
+brackets must pass all clauses. Internal RMS units are computed from the current probe set; there is
+no quiet calibration, physical magnitude cutoff, named contact or outcome feature.
+
+The frozen synthetic suite rejects smooth passive static displacement and a recoverable forced
+response, and accepts during-action commitment, stick/slip and supported/free-flight. DEV was then
+run once:
+
+| class | states | alarms | rate |
+|---|---:|---:|---:|
+| topple fork | 23 | **18** | **78.3%** |
+| quiet | 89 | **7** | **7.9%** |
+| nudge fork | 17 | 6 | 35.3% |
+| small split | 8 | 2 | 25.0% |
+| weak | 3 | 1 | 33.3% |
+
+The predeclared >=21/23 and <=4/89 gate fails. Relative to post-H amplification, allowing the event
+during the action recovers 15 topple forks but adds five quiet alarms. Stage counts explain the
+remaining error: all 23 topples pass boundary majority and persistence majority, while only 18 pass
+commitment. Of 27 original quiet candidates, 21 pass boundary, 26 persistence, 8 commitment and 7
+the same-pair conjunction. The five topple misses have zero or one commitment-positive bracket; the
+seven quiet alarms have two or three. Positive onset estimates span steps 2-13 for forks and 1-13
+for quiet alarms, so onset timing alone is not an obvious universal discriminator.
+
+Do not choose a positive BIC margin or alter the majority using these labels. The scientifically
+clean next test is multi-resolution dense replay: reconstruct every saved bisection bracket, record
+the complete curve at every width, and require commitment onset and normalized response shape to
+converge toward a stable limit. This can reject one-resolution model-fit artifacts without imposing
+a Jenga severity threshold. If it retains the benign branches, that is evidence that universal
+branch structure cannot by itself identify safety consequence. Result:
+`results/jenga/whole_trajectory_consequence_dev.json`; TEST/D2 untouched.
+
+## Dense multi-resolution convergence — specificity by destroying recall (2026-09-22)
+
+Implemented `multiresolution_consequence_alarm` and
+`eval/jenga_multiresolution_consequence.py`. `reconstruct_levels` recovers the original endpoints
+and every bracket produced by the five saved midpoint-side decisions. Each candidate therefore uses
+3 pairs x 6 widths x 2 endpoints = 36 dense H=8 + hold-30 rollouts. The synthetic contract was
+frozen first: a stable commitment plus a width-proportional smooth component must pass; alternating
+commitment mechanisms must fail.
+
+For each pair, commitment BIC must be positive at 8x, 16x and 32x; their fitted onset range may be
+at most one control step. Successive full separation curves are normalized by their own RMS, and a
+zero-intercept linear+quadratic width model competes with the same model plus a nonnegative shape-
+change plateau. Positive BIC for the zero-intercept model means curve shape converges. The final
+endpoint must remain persistent, and the original boundary evidence must be positive. At least two
+of three pairs must satisfy every clause.
+
+| class | states | alarms | rate |
+|---|---:|---:|---:|
+| topple fork | 23 | **2** | **8.7%** |
+| quiet | 89 | **1** | **1.1%** |
+| nudge fork | 17 | 1 | 5.9% |
+| small split | 8 | 0 | 0% |
+| weak | 3 | 0 | 0% |
+
+The frozen gate fails. Among topple states, boundary and persistence majority remain 23/23, stable
+commitment is 13/23, shape convergence only 6/23 and the complete same-pair rule 2/23. Among 27
+initial quiet candidates the corresponding counts are 21, 27, 1, 1 and 1. At pair level, 46/69
+topple brackets keep positive commitment over all final three widths and 51/69 keep onset within one
+step. Shape convergence is the largest bottleneck: its pairwise delta-BIC median is -3.88 for forks
+and -8.56 for quiet, with positive evidence on a minority of both.
+
+Interpretation: requiring an asymptotically stable normalized response shape is not justified at
+five bisections around hybrid dynamics. It removes nearly all benign commitments, but also nearly
+all independently verified topple boundaries. Do not relax it on DEV; preserve this as a negative
+result. The one-resolution whole-trajectory monitor remains the strongest frozen candidate at
+18/23 forks and 7/89 quiet alarms.
+
+Further geometric refinements are unlikely to answer which real branches matter. The next step must
+choose a claim: either introduce a prospective, cross-task generic severity/recoverability signal,
+or count all committed physical regime changes as valid interventions and evaluate intervention
+cost rather than relabeling benign branches as detector errors. TEST and D2 remain untouched.
+Result: `results/jenga/multiresolution_consequence_dev.json`.
+
+## Local corrective recoverability — rejected as a severity surrogate (2026-09-22)
+
+Implemented `src/recoverability_monitor.py` and
+`eval/jenga_recoverability_ground_truth.py`. The correction library is derived without outcomes from
+the frozen execution-error snippets: zero plus/minus three PCA axes at one standard deviation
+(2.455, 0.677 and 0.393 mm). Starting at each final 32x endpoint after H=8, each correction target
+is held for five control steps and followed by ten shared-nominal settle steps. Seven final anonymous
+pose/velocity states form each branch's locally reachable set.
+
+The geometric overlap ratio is minimum cross-set distance divided by the geometric mean of the two
+sets' median within-set nearest-neighbour distances. Ratio <=1 is overlap at sampled resolution;
+ratio >1 is unrecoverable. A majority of the same three pairs must have both positive early+late
+boundary evidence and non-overlap. Synthetic overlapping, separated and immobile-identical sets
+pass before Jenga scoring.
+
+| class | states | alarms | rate |
+|---|---:|---:|---:|
+| topple fork | 23 | **15** | **65.2%** |
+| quiet | 89 | **12** | **13.5%** |
+| nudge fork | 17 | 9 | 52.9% |
+| small split | 8 | 5 | 62.5% |
+| weak | 3 | 1 | 33.3% |
+
+The gate fails on both recall and quiet alarms. Topple pair overlap ratios have median 15.6, but the
+distribution is broad and seven states have zero unrecoverable pairs. Quiet pair ratios have median
+0.80, yet twelve states have a majority above one; several ratios are extremely large because the
+corrections barely move either reachable set while their static branch offset remains. These are
+locally irreversible benign changes, not random noise.
+
+The whole-trajectory commitment AND recoverability gives 12/23 forks and 5/89 quiet; OR gives 21/23
+and 14/89. Neither fixed composition passes. Do not tune the correction scale or overlap ratio on
+DEV. This experiment falsifies the simple idea that bounded local recoverability itself supplies the
+missing universal severity semantics. A stronger direction-1 claim requires a prospective
+dimensionless consequence cost validated unchanged across tasks; direction 2 instead treats these
+real branches as valid conservative interventions. Result:
+`results/jenga/recoverability_ground_truth_dev.json`; TEST/D2 untouched.
+
+## Frozen Regime Monitor v0 — one-time ground-truth TEST (2026-09-23)
+
+Implemented `eval/jenga_regime_monitor_v0_test.py` as the sole TEST evaluator for the frozen v0
+protocol. It verifies `results/jenga/regime_monitor_v0/manifest.json`, the benchmark, TEST cache and
+state-source hashes, simulator archive identity and each LMDB action chunk before simulation. It has
+no partial-run or force-overwrite path. Candidate discovery and monitor evaluation are label-blind;
+benchmark classes are attached afterward for grading. The canonical output is immutable:
+`results/jenga/regime_monitor_v0/test_ground_truth.json`, SHA-256
+`9a7b4004647f09a165bd52d2ea959dc0ef81e93cadd760eb256327917cadf0f5`.
+
+| class | states | initial candidates | refined boundaries | v0 alarms |
+|---|---:|---:|---:|---:|
+| topple fork | 84 | 80 (95.2%) | 78 (92.9%) | **55 (65.5%)** |
+| quiet | 113 | 18 (15.9%) | 16 (14.2%) | **4 (3.5%)** |
+| nudge fork | 10 | 10 (100%) | 7 (70.0%) | 3 (30.0%) |
+| small split | 7 | 6 (85.7%) | 6 (85.7%) | 4 (57.1%) |
+
+`eval/jenga_regime_monitor_v0_test_analysis.py` performs only descriptive analysis and writes
+`results/jenga/regime_monitor_v0/test_ground_truth_analysis.json`. Topple recall has Wilson 95%
+interval 54.8-74.8% and episode-clustered bootstrap interval 54.2-76.9%. The quiet committed-branch
+rate intervals are 1.4-8.7% and 0.8-7.3%. Compared with DEV, topple recall drops from 78.3% to
+65.5% (-12.8 percentage points), while quiet branch rate drops from 7.9% to 3.5% (-4.3 points).
+
+Attrition localizes the limitation. Four topples are missed before candidate creation and two more
+at boundary refinement, but 23 are removed by commitment/persistence. For quiet states, 95/113
+never become candidates, two more are removed by refinement and 12 by commitment/persistence. Thus
+the local branch geometry generalizes better than the final temporal commitment rule. The result
+does not authorize adjusting that rule: TEST has been consumed, and any v1 needs a new benchmark
+cycle.
+
+Across every TEST class, 66/214 states alarm (30.8%) and 37/53 episodes contain at least one alarm
+(69.8%). Since Layer 1 deliberately reports committed regime sensitivity rather than failure, an
+unconditional stop policy would be operationally excessive even though only 4/113 quiet states
+alarm. Decision: retain v0 unchanged as a moderate-recall structural signal and proceed to the
+predeclared Layer-2 experiment: reobserve on first alarm, then replan or select a branch-robust
+action only if the alarm persists. Evaluate completion, physical failures, intervention count and
+delay against no-monitor and grading-oracle policies.
+
+## Frozen v0 intervention utility — positive with conservative breadth (2026-09-23)
+
+Implemented `src/intervention_policy.py` and `eval/jenga_intervention_v0.py`. Before evaluation,
+the code, frozen Regime Monitor v0, benchmark, LMDB, simulator archive, reset scheme, action library
+and metrics were bound in `results/jenga/intervention_v0/manifest.json` (protocol SHA-256
+`4ea6cc2a413ff2f46661869f16dc9d496b0ae9094c35b99d1e16e490d10caf40`). The canonical result
+`results/jenga/intervention_v0/ground_truth_100.json` has SHA-256
+`b0695221f4e0d56133fb64cd6e04da796c8c7466e2188d4b1f42504c6ec06b42`.
+
+All 100 recorded absolute-action trajectories were replayed under fresh simulator configurations
+with reset seed `2000 + episode_id`. Four arms share each seed: no monitor; one-step hold and
+reobserve; the deployable wrapper; and a privileged local grading oracle. On a persistent alarm,
+the wrapper contracts the proposed xyz path toward the current EE position by fixed scales
+100/75/50/25/0%, keeps intended gripper commands except for a true zero-motion hold, and chooses
+the candidate with the fewest v0 consequential pairs. Ties preserve the most task progress. This
+selection sees neither block state nor outcome labels.
+
+| arm | neighbor failures | picks | safe completions | reobservations | modified chunks |
+|---|---:|---:|---:|---:|---:|
+| no monitor | 34 | 80 | 51 | 0 | 0 |
+| reobserve only | 31 | 79 | 53 | 270 | 0 |
+| **v0 wrapper** | **25** | **79** | **59** | **275** | **173** |
+| local grading oracle | 20 | 79 | 63 | 275 | 17 |
+
+The wrapper prevents ten failures present under baseline and creates one, a net -9 percentage
+points. Episode-paired bootstrap 95% CI is -15 to -3 points; exact McNemar p=0.0117. Safe
+completion rises +8 points (CI +1 to +15; p=0.0386), while pick success is -1 point (CI -6 to +4;
+p=1). Relative to reobservation only, action selection removes six additional failures and creates
+none (-6 points, CI -11 to -2; p=0.0313); its +6 safe-completion difference has CI -1 to +13 and is
+not independently conclusive. The wrapper realizes 64% of the oracle net failure reduction and 67%
+of its safe-completion gain.
+
+Burden is broad. There are 2,049 decision points. The wrapper reobserves 275 (13.4%), and 94 clear
+after that single step, but the alarms touch 97/100 episodes. Of 181 persistent alarms, the wrapper
+changes 173 chunks: scale choices are 100%=8, 75%=64, 50%=57, 25%=28 and hold=24. A candidate lowers
+the consequential-pair count in all 173 modifications and reaches zero pairs in 156. By contrast,
+the physical oracle keeps the original action on 157/174 persistent alarms and modifies only 17.
+This shows that anonymous branch robustness remains conservative relative to Jenga consequence,
+even though the fixed policy improves end-to-end safety and completion.
+
+Decision: ground-truth Jenga Gate 3 passes with a conservative-burden qualification. Do not use
+these outcomes to tune action scales, pair evidence or a Jenga-specific consequence gate. The next
+scientifically clean test is cross-task universality: construct the prospective pushing benchmark,
+then run the unchanged v0 detector and intervention wrapper on pushing and insertion. Descriptive
+paired statistics are frozen separately in `results/jenga/intervention_v0/analysis.json`.
+
+## Intervention time-to-success and replay-isolation audit (2026-09-23)
+
+`eval/jenga_intervention_time.py` replays the immutable decisions in
+`results/jenga/intervention_v0/ground_truth_100.json`; it does not rerun v0 or choose new actions.
+Time to pick is the first 0.1 s control boundary after the standard baseline where the middle block
+has both >=2.5 cm lift and >=2 cm lateral displacement.
+
+| arm | successful picks | mean time to pick | median | paired mean delay vs baseline |
+|---|---:|---:|---:|---:|
+| no monitor | 80 | 11.654 s | 11.4 s | -- |
+| reobserve | 79 | 11.904 s | 11.6 s | +0.249 s (79 common successes) |
+| v0 wrapper | 79 | 12.278 s | 11.7 s | +0.230 s (76 common successes) |
+| physical oracle | 79 | 11.906 s | 11.5 s | +0.252 s (79 common successes) |
+
+The wrapper's unpaired mean is higher because the set of successful/safe episodes changes; the
+paired common-success difference is the relevant delay estimate. Paired mean bootstrap intervals
+are +0.157 to +0.284 s for the wrapper, +0.222 to +0.277 s for reobserve and +0.223 to +0.282 s for
+the oracle. Mean full-episode times are 16.974, 17.244, 17.249 and 17.249 s respectively.
+These values count executed 0.1 s control periods only. They exclude monitor computation. The
+exhaustive ground-truth implementation takes about 18 s for an isolated quiet decision and adds
+substantial refinement/candidate work on alarms, so it is a scientific reference, not a live
+real-time controller yet.
+
+Action-only replay exactly reproduces pick success, but one episode per monitored arm differs on
+whether neighbor tilt crosses 45 degrees (reobserve ep25, wrapper ep35, oracle ep36). Diagnosis:
+the old `DirectJengaSim` snapshot uses `mjSTATE_FULLPHYSICS`, while MuJoCo solver warm-start is not
+included. Counterfactual monitor rollouts can therefore leave a tiny hidden solver-state effect
+after restoring the visible physics state. The original immutable labels remain the intervention
+grade and the replay reports mismatches explicitly. A 1/100 mismatch does not explain the 9-point
+wrapper effect, but cross-task protocols must use full integration-state snapshots before freeze.
+Timing result SHA-256: `3f85f26a62df7d8c6c4e3def67440a4d67880de2c1a1de9d3ad72b44315a8503`.
+
+## Pushing and insertion mechanism environments — design previews (2026-09-23)
+
+Added `src/systems/contact_benchmarks.py`, `eval/contact_benchmark_previews.py` and
+`CONTACT_BENCHMARKS.md`. Pushing commands a planar pusher around a free cube; the task is to reach a
+goal while remaining supported, and regimes include stick/slide, glancing deflection and edge fall.
+Insertion commands `(x,y,z,yaw)` for a 40 mm-wide rectangular peg in a 50 mm-wide square opening;
+the 5 mm per-side clearance creates free, rim-contact, aligned-insertion and jam regimes. The shown
+12 mm lateral error remains jammed above the rim under continued downward command.
+
+The scenes command the tool directly instead of adding a full arm. This intentionally isolates
+physical regime sensitivity from IK/controller/perception errors for the first cross-task
+ground-truth test. Counterfactual snapshots use `mjSTATE_INTEGRATION`, including solver warm-start.
+Rendered design validation confirms goal-slide versus edge-fall and aligned insertion versus
+rim-jam. Outputs are under `results/contact_benchmarks/previews/`.
+
+These are not yet frozen monitor benchmarks. Before scoring v0, prospectively define realistic
+execution-error distributions, sample and audit mechanism coverage, freeze DEV/TEST seeds and
+actions, and only then run the unchanged detector and 100/75/50/25/0% wrapper.
+
+## 2026-09-23 — U1 ground-truth universality experiment
+
+The label-only coverage pilot preceded all monitor scores: 480 states total, with independent
+episode-level DEV/TEST splits and consequential forks in both tasks. The panel, snippets, simulator
+source, v0 manifest and evaluator were checksummed before scoring.
+
+U1 fails strongly. TEST pushing: 12 forks -> 12 candidates -> 8 refined boundaries -> 0 alarms;
+quiet 3/108 alarms. TEST insertion: 11 -> 11 -> 3 -> 0; quiet 0/109. Pushing fork pairs have
+persistence but uniformly negative commitment evidence. Insertion occasionally has positive
+commitment evidence, but not on the same majority of refined boundary pairs. The frozen Jenga
+commitment semantics—not missing initial sensitivity—is the cross-task bottleneck.
+
+The separately frozen intervention run completes 100 episodes per task and four matched arms, but
+the no-monitor population contains zero terminal failures. Pushing baseline has 48/100 goal
+successes; insertion has 100/100 successes. Reobserve/wrapper/oracle outcomes are identical.
+Wrapper burden is 29 reobservations and two modified chunks in pushing, nine reobservations and no
+modifications in insertion. Preserve this as evidence that benchmark failure coverage must itself
+be a prospective gate. Do not cite it as successful intervention utility.
+
+## Frozen Regime Monitor v0 on the existing D2 GNN (2026-09-25)
+
+`eval/jenga_regime_monitor_v0_d2.py` closes the previously open world-model substitution test. It
+uses the frozen Jenga TEST benchmark and v0 SHA
+`4e1a20ca3c64bf18733315fe31df5850529027f8f48cda2c5f547ce43ecdc317`. For each of the ten already
+trained D2 checkpoints, the GNN predicts the original 64 probes, every one of the five adaptive
+midpoint levels, and the final three refined endpoint pairs through H=8 + hold30. No MuJoCo future
+trajectory enters the detector. Physical labels join only after decisions.
+
+| source | topple-fork recall | quiet alarm rate |
+|---|---:|---:|
+| physical v0 | 55/84 = 65.5% | 4/113 = 3.5% |
+| D2 GNN + v0, 10-seed mean | 26.1/84 = 31.1% (8.3-48.8%) | 2.2/113 = 1.95% (0-5.3%) |
+
+Mean D2 stage counts for 84 topple forks are 63.3 initial candidates, 32.5 boundary candidates,
+52.4 commitment majorities, 60.7 persistence majorities and 26.1 final same-pair conjunctions.
+Physical counts are 80, 78, 56, 79 and 55. The decisive degradation is therefore local boundary
+scaling: D2 frequently predicts a coarse branch but its separation collapses or changes under
+midpoint bisection. Commitment is not absent in isolation; it usually fails to coincide with a
+model-consistent refined boundary. Across seeds, only three topples alarm robustly (>=8/10) and 35
+are robustly blind. Mean final-decision agreement with physical v0 is 71.0%, physical-alarm recall
+25.0%, and added-alarm rate among physical non-alarms 8.45%.
+
+This reconciles the earlier D2 results. The counterfactual objective improved calibrated ordering
+(AUC 0.974; 84% recall at matched 5% FPR), but good ranking does not imply faithful calibration-free
+local topology. The older smooth-versus-branch detector exposed high false branching; frozen v0
+suppresses most of it but also rejects many real branches. Do not retrain an already-existing state
+GNN or tune v0 from TEST. Next use TRAIN/DEV to measure predicted gap versus action-bracket width at
+each bisection, localize which state channels cause the scaling error, and prospectively add a
+boundary-consistency objective before rerunning this unchanged TEST evaluator.
+
+Result SHA-256: `fa9ba7e24dda73f0fd140ead5868a5db61fd8f6d1b38889e00d7ec8759865d94`.
+
+### Frozen v0 D1 control (2026-09-25)
+
+The identical evaluator was run on all ten existing D1 pair-distance checkpoints. D1 obtains 44.6%
+mean topple-fork recall (29.8-60.7%) and 4.78% mean quiet alarms (1.8-8.8%). Its mean topple stages
+are 66.6 initial candidates, 46.1 boundary candidates, 55.9 commitment majorities, 63.6 persistence
+majorities and 37.5 final alarms. It produces 13 robust alarms and 26 robust blind topples. For
+comparison, D2 produces 31.1% / 1.95%, stage counts 63.3/32.5/52.4/60.7/26.1, three robust alarms
+and 35 robust blind topples.
+
+D1's gain is consistent with better preservation of local branch scale. Across saved endpoint pairs,
+its topple-fork median final/initial gaps are 0.263 early and 0.727 full; alarmed topple rows are
+0.612/0.828 while missed rows are 0.048/0.094. D2's all-topple values are only 0.074/0.097 and the
+physical values are 0.997/0.997. This is not merely global expansion: D1 quiet states remain close
+to smooth scaling at 0.0341/0.0341, with clear quiet rows at 0.0333/0.0334. However, D1's quiet
+alarms show large false plateaus (0.471/0.787), and its added-alarm rate among physical non-alarms is
+13.45% versus D2's 8.45%. D1 therefore supplies a useful positive control for the topology needed by
+v0, but not a satisfactory deployment model. The desired objective must match the *physical scale
+curve per state*, preserving plateaus only where physics has them and preserving 1/32 collapse on
+smooth cases; that is exactly the distinction D3 is designed to supervise.
+
+Result: `results/jenga/regime_monitor_v0/d1/aggregate.json`; SHA-256
+`7011941ed32424210d97e9a1c03ec42580e45dac7f2358b8197993034fc9589a`.
+
+### D2 failure diagnosis: finite counterfactual matching learned slope, not branch topology
+
+Five bisections make the final action bracket 1/32 of its initial width. A smooth local predictor
+should therefore leave a final/initial gap ratio near 0.03125, while a physical hybrid boundary can
+retain a nonzero plateau. Saved pair evidence is decisive: physical topple forks retain median
+early/full ratios 0.997/0.997; D2 topple candidates retain only 0.074/0.097; D2 quiet candidates
+retain 0.0326/0.0329. D2 learned a somewhat steep continuous response at topples, not the nearly
+width-invariant physical branch.
+
+Across the 78 physical refined topple boundaries and ten seeds (780 seed-state cases), D2 loses 177
+before initial discovery, 294 more during refinement, and 62 after boundary evidence; 247 alarm.
+The 294 refinement losses are the largest category. Of 35 robustly blind topples, 31 are physical
+refined boundaries and 26 are physical-v0 alarms, so ambiguity in the ground-truth detector does not
+explain the result.
+
+Both D1 and D2 were trained on finite perturbations, not nested widths. D1 matches pairwise distance;
+D2 matches the full intervention vector, but neither distinguishes a steep continuous function from
+a persistent branch when its sampled endpoints fit. Their extra unroll is six steps, versus v0's
+H=8 plus hold30, and the deterministic model feeds soft contact probabilities back into rollout.
+This motivates nested-width supervision before another architecture change.
+
+### D3 boundary-scale implementation (2026-09-25)
+
+Added `src/boundary_scale_loss.py`, `eval/jenga_d3_data.py`, D3 integration in
+`eval/jenga_w6_simple.py`, and focused tests. For nested endpoint trajectories with shape
+`(groups, levels, 2, 38, 61)`, D3 adds four normalized terms: absolute response, endpoint-pair
+intervention effect, every level's log gap relative to level zero, and adjacent-level log shrinkage.
+Action, early hold and late hold are RMS-aggregated separately and equally weighted. Matching the
+physical curve means smooth cases remain smooth and plateau cases retain a plateau; the loss never
+uses v0/BIC/topple/safety/task labels.
+
+The generator uses only training configurations. At each selected contact-window state it sweeps
+realistic execution-error directions, selects the largest adjacent generic pose/velocity trajectory
+response, and performs five physical midpoint bisections. It records widths 1 through 1/32 for H=8
+plus a common 30-step hold. Default workers=1 to avoid the prior desktop resource failure.
+
+Validation began with six synthetic loss tests, three generator tests, a two-state physical pilot
+and a one-batch GPU trainer smoke test. The subsequent scientific pilot is recorded below.
+
+### D3 matched pilot: negative DEV result (2026-09-25)
+
+The prospectively fixed generator ran with 256 TRAIN states, two realistic directions, six widths
+from 1 through 1/32, H=8 plus hold30, seed 0 and one MuJoCo worker. It took 15m47s and peaked at
+1.12 GB RAM. The output has 182 contact and 74 quiet groups. Using the D2 training-state scales,
+60 groups are smooth below 0.1 in all phases, 167 exceed 0.25 in at least one phase and 100 exceed
+0.25 in the late hold. Thus the data contains both required regimes; lack of coverage does not
+explain the result. Metadata SHA is `a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22`.
+
+For the matched pilot, both arms start from `w6_cw_d2_s1.pt`, reset AdamW, retain the original D2
+objective and run exactly three additional epochs with seed 1. The treatment adds D3 at weight 1
+with two groups per batch; the control does not. The fixed endpoint is used rather than selecting a
+best epoch. Frozen v0 is then applied to DEV only:
+
+| arm | topple forks | quiet alarms | initial topple candidates | refined topple boundaries |
+|---|---:|---:|---:|---:|
+| matched D2 continuation | 10/23 (43.5%) | 1/89 (1.1%) | 19 | 11 |
+| D2 + D3 | 3/23 (13.0%) | 3/89 (3.4%) | 21 | 3 |
+
+The D3 objective is active: all-group TRAIN global/local scale loss becomes 0.680/0.146, versus
+0.807/0.166 for the matched control and 0.825/0.168 initially. But the improvement is strongly
+easier on quiet groups (global 0.495 -> 0.211) than contact groups (0.959 -> 0.871). On DEV topple
+candidate pairs, median final/initial early/full gaps move from the control's 0.082/0.085 down to
+0.040/0.042, almost the smooth 1/32 law. D3 therefore teaches the continuous GNN to contract more
+reliably, not to generalize physical plateaus. The first D3 formulation fails its DEV gate. Do not
+expand it to more seeds and do not run frozen TEST.
+
+An architecture diagnostic flips the unchanged original D2 checkpoint to hard contact feedback,
+with no training. It recovers 11/23 DEV topple forks but alarms on 13/89 quiet states (and 4/17
+nudge forks). A discrete mode can restore branch persistence, but naïve rounding creates modes
+indiscriminately. The next justified experiment is a learned selective hybrid/contact-mode model,
+trained with these same task-agnostic smooth and persistent scale curves and compared against
+matched soft and hard controls. Merely increasing D3's loss weight on the same continuous
+deterministic architecture is not supported by this result.
+
+Canonical result: `results/jenga/d3_pilot_summary.json`; SHA-256
+`e9dc68cc352bad837791f7de34bfe68843e2ec0bf0c31203d9d3075f223dd612`.
+
+## Persistent switching-edge GNN implementation (2026-09-26)
+
+`src/state_dynamics.py` now contains `StepSwitchingEdgeGNN`, a separate architecture from the old
+per-block `StepGraphMoE`. For every one of the 12 directed edges, a gate chooses among K anonymous
+message experts. The gate sees action-conditioned sender/receiver/edge context, the previous mode
+and whether a previous mode exists. Its straight-through Gumbel one-hot is used by message passing
+and carried to the next rollout step; evaluation uses deterministic argmax. State and contact heads
+remain shared, so modes cannot become explicit task-outcome heads.
+
+Three generic regularizers are available during trajectory training: KL of global mode usage to
+uniform prevents collapse, normalized local entropy encourages decisive choices, and adjacent-step
+probability change discourages flicker. Defaults are 0.01 each and are checkpointed. There are no
+direct mode/contact annotations and no failure, object-identity or task labels. The trainer exposes
+`--model edge_switch --modes K`; CW, D3, optional rollout training, checkpoint loading and frozen-v0
+learned evaluation all support the new kind. Compilation is intentionally rejected because the
+persistent mode state has not been validated under the compiled path.
+
+Five focused tests cover output/state shape, temporal carry, gate/expert gradients, determinism and
+block permutation equivariance, regularizer extrema, and checkpoint loading. A one-batch real-data
+D2+D3 smoke test with H=8+hold30 completed with finite gradients and all loss terms. Its deliberately
+small hidden=32 model has 68,971 parameters; the intended hidden=128, rounds=3, modes=3 model has
+1,363,243. The smoke metrics are not scientific results. Next run matched DEV arms: soft D2, hard-
+contact D2, switching edge without D3, and switching edge+D3, recording latent occupancy/switching
+as well as frozen-v0 stages. TEST remains untouched.
+
+### One-seed four-arm switching-edge DEV screen (2026-09-26)
+
+The protocol was written before new-arm training to
+`results/jenga/switching_edge_four_arm_protocol.json` (SHA-256
+`f3bbc20700f459368c761c00bb525393ac789336a05f11acffdd5e676743dc3c`). Every arm starts from
+`w6_cw_d2_s1.pt`, resets AdamW and receives three epochs with identical seed, batches, D2 data and
+D2 objective. Switching experts are exact copies of the source D2 edge updates at initialization,
+so architecture conversion is initially bit-identical. The only arm differences are soft versus
+hard contact feedback, switching edges, and D3. The prospective switching gate was >=10/23 DEV
+topple alarms and <=3/89 quiet alarms.
+
+| arm | topple | quiet | initial topple | refined boundary | early/full gap ratio |
+|---|---:|---:|---:|---:|---:|
+| soft D2 | 10/23 | 1/89 | 19 | 11 | 0.082/0.085 |
+| hard D2 | 11/23 | 9/89 | 21 | 14 | 0.102/0.117 |
+| switching D2 | 4/23 | 1/89 | 17 | 6 | 0.043/0.046 |
+| switching D2+D3 | 4/23 | 2/89 | 18 | 5 | 0.047/0.049 |
+
+Both learned switching arms fail. Hard contact again demonstrates the desired sensitivity direction
+but unacceptable false branching. Switching D2 reports soft occupancy 0.368/0.253/0.376 and mean
+normalized entropy 0.988, yet hard argmax occupancy is 0.000058/0/0.999942 with switch rate
+0.000112. Its probability vectors are almost uniform, so balance of probabilities is misleading:
+minute systematic logit differences send essentially every edge to one deterministic mode.
+Switching+D3 collapses more directly: soft and hard occupancy are 0/1/0, entropy is approximately
+zero and switch rate is zero. D3 makes the gate decisive but not diverse.
+
+The current balance loss constrains average *probabilities*, while execution uses hard argmax; it
+does not make hard assignments identifiable or balanced. Entropy minimization can then amplify an
+arbitrary initial preference, and persistence rewards never switching. The result does not justify
+post-hoc weight tuning on DEV. The next prospective architecture should balance actual assignments
+through an identifiable router—such as Sinkhorn/optimal-transport token-to-expert assignment or
+expert-choice routing—while separately enforcing temporal consistency. Only after that mechanism
+passes a new TRAIN-only occupancy audit should another matched DEV run be launched. TEST was not
+touched.
+
+Canonical result: `results/jenga/switching_edge_four_arm_summary.json`; SHA-256
+`1190e67b3df3b6df85ca46ee7969b06784e918138bad802e065ba130c027bc5f`.
+
+## TRAIN-only oracle-routing upper bound (2026-09-26)
+
+The failed switching-edge screen left two possibilities: either the gate failed to discover useful
+discrete regimes, or D2's physical scale-curve errors do not admit a reusable low-cardinality mode
+description. A necessary-condition oracle test was therefore preregistered before fitting at
+`results/jenga/oracle_routing_upper_bound_protocol.json` (SHA-256
+`2418bca3cf0d8ddef64e0213d4a5087cafd1965b50b3c5600a6fb75d879520cc`). It uses only the nested-
+width D3 TRAIN corpus and frozen D2 seed 1; benchmark DEV and TEST are prohibited.
+
+Each group is represented by the physical-minus-D2 residual of a 5-level x 3-phase log-gap curve.
+The phases are the eight action steps, ten early-hold steps and twenty late-hold steps. Three
+correction prototypes are fit to 226 groups with capacity-balanced hard k-means implemented by a
+linear-sum assignment. The 30 held-out groups come from 21 episode IDs disjoint from the 166 fit
+episode IDs. At evaluation only, the non-deployable oracle sees the true residual and selects its
+nearest training prototype. No task, topple, failure, object identity, success, DEV or TEST labels
+enter fitting or routing.
+
+The frozen gate passes:
+
+| held-out metric | D2 | oracle correction | reduction | required |
+|---|---:|---:|---:|---:|
+| global scale Huber | 0.8810 | 0.1499 | **83.0%** | >=25% |
+| adjacent-level local Huber | 0.1476 | 0.0511 | **65.4%** | >=15% |
+
+Held-out mode occupancy is 26.7/43.3/30.0%, so every mode exceeds the 5% floor. This answers the
+necessary-condition question positively: a three-valued reusable code can represent much of D2's
+missing branch geometry on unseen TRAIN episodes. The previous switcher failed mode inference and
+identifiability; it was not disproving the existence of regimes.
+
+There is an important warning outside the primary gate. Using the fixed descriptive final-ratio
+readout, persistent recall improves from 5/24 (20.8%) to 22/24 (91.7%), but smooth recall degrades
+from 3/4 (75%) to 0/4. The oracle prototypes are optimized for average curve residual and generally
+add missing response, so passing loss reduction does not establish monitor selectivity. This is not
+a deployable monitor score and does not authorize a DEV run.
+
+Next train a causal pre-future router on TRAIN only, using balanced hard or optimal-transport
+allocation. Evaluate episode-disjoint assignment skill/prototype regret and both persistent and
+smooth curve fidelity against majority-router and continuous-D2 controls. Proceed to a new
+prospective DEV experiment only if meaningful oracle gain survives without erasing smooth cases.
+Canonical result: `results/jenga/oracle_routing_upper_bound_summary.json`; SHA-256
+`1533473b307cb219e0a8670a3d4a8072a0d76d864d4befa6ca6c4aa69eac6981`.
+
+## TRAIN-only causal router: signal recovered, specificity gate failed (2026-09-26)
+
+The fixed follow-up protocol is `results/jenga/causal_router_protocol.json` (SHA-256
+`0228e9d15cc316781e36236054dfaad28af7d13cb7f0621984890eff438c695f`). The router receives 117
+causal values: current privileged state (61), original nominal action (8x4) and sampled xyz
+execution-error direction (8x3). Nominal action and direction are reconstructed algebraically from
+the level-zero pair and alphas. Deeper nested endpoints are explicitly unread because their
+bisection locations encode physical outcomes. Physical futures and all task, topple, failure and
+success labels are prohibited.
+
+Ten fixed 117-64-32 MLP seeds use a hard three-mode head plus auxiliary continuous-residual head,
+400 fixed epochs and no held-out selection. On 30 episode-disjoint held-out TRAIN groups:
+
+| metric | median | seed range | frozen gate |
+|---|---:|---:|---:|
+| oracle-mode accuracy | 56.7% | 50.0-66.7% | >=50% pass |
+| global oracle-gain fraction | 68.8% | 65.4-79.0% | >=25% pass |
+| local oracle-gain fraction | 70.8% | 67.0-81.7% | >=25% pass |
+| persistent recall | 75.0% | 70.8-83.3% | >=50% pass |
+| smooth alarm FPR | **75.0%** | 50-100% | <=50% **fail** |
+| minimum mode occupancy | 20.0% | -- | >=5% pass |
+
+Median global/local losses are 0.3778/0.07925, between D2's 0.8810/0.1476 and the oracle's
+0.1499/0.05106. The majority router is not a useful control: it gets 30% mode accuracy, 100%
+persistent recall and 100% smooth FPR by always choosing the strongest mode.
+
+A readout bug was caught before interpretation: `1 - strict smooth recall` had initially been
+reported as alarm FPR. That incorrectly counted the unlabelled ratio interval 0.1-0.25 as an alarm.
+The corrected FPR counts only predictions above the frozen persistent threshold 0.25. Under this
+correct definition, uncorrected D2 and the future-informed oracle both have 0/4 smooth alarm FPs;
+the oracle's previously reported 0/4 strict smooth recall means all four moved into the middle band,
+not that they alarmed. The causal router still fails: its median is 3/4 actual smooth alarms.
+
+The oracle assigns all smooth groups to weak mode 0. Causal routers usually assign them to modes
+1/2, while retaining balanced aggregate occupancy. Therefore aggregate mode balance is not enough;
+the unresolved problem is selective smooth abstention. The next TRAIN-only formulation should add
+an explicit identity/no-correction option and optimize expected physical curve-reconstruction cost,
+not nearest-prototype classification alone. It must pass the same recall/FPR veto before DEV. TEST
+remains untouched. Canonical result: `results/jenga/causal_router_summary.json`; SHA-256
+`ff68e2a62458926c6620e84550df460ed4c7a3760019b8f492f675f976eb6332`.
+
+## Selective identity/correction cost router passes TRAIN gate (2026-09-27)
+
+The prospective protocol is `results/jenga/selective_cost_router_protocol.json` (SHA-256
+`d05dfc5073420e456f02b836dd303f6d2ec46cf9370c17810b3958667fd10cb6`). The action set contains
+identity/no correction plus the three balanced residual prototypes from the oracle study. For each
+fit group, every option receives a task-label-free cost: global curve Huber error normalized by the
+fit identity mean plus adjacent-scale local Huber error normalized the same way. A causal MLP sees
+the unchanged 117 pre-future inputs and regresses the log cost of all four options. Runtime routing
+is hard argmin. Physical futures supervise fit costs only; deeper bisection endpoints and all task,
+topple, failure and success labels remain unavailable as inputs.
+
+Ten fixed seeds, 400 epochs and no held-out selection give:
+
+| metric | median | range |
+|---|---:|---:|
+| cost-oracle option accuracy | 60.0% | 56.7-66.7% |
+| global oracle gain recovered | 74.9% | 72.4-81.0% |
+| local oracle gain recovered | 73.8% | 70.7-81.6% |
+| persistent recall | 81.3% | 75.0-83.3% |
+| smooth alarm FPR | 37.5% | 25-50% |
+| identity or weak mode on smooth | 62.5% | 50-75% |
+
+Every predeclared gate passes. Median corrected global/local loss is 0.3210/0.07386. D2 is
+0.8810/0.14765; the future-informed four-option cost oracle is 0.1330/0.04764. The fit-best constant
+router chooses correction option 2: it reaches 95.8% persistent recall but alarms on all four smooth
+groups. Thus the learned router's useful contribution is conditional abstention. Its median option
+occupancy is identity 11.7%, weak correction 16.7%, medium correction 45.0%, strong correction
+26.7%, so the no-correction path is genuinely used rather than decorative.
+
+The result improves the prior forced router from 75% recall / 75% smooth FPR to 81.3% / 37.5%.
+However, four smooth groups make specificity coarse, and this is still privileged-state TRAIN
+validation. It justifies a prospectively frozen matched DEV experiment; it does not establish DEV
+or deployable performance. Compare D2, forced router, selective router, constant option and future
+cost oracle without model/seed selection. TEST remains closed. Canonical result:
+`results/jenga/selective_cost_router_summary.json`; SHA-256
+`a9772b73bf2255d37fbbfc4cb0c497bdbab487403db49d6efa0d51c5bd66f0b9`.
+
+## Selective cost router fails prospective DEV gate (2026-09-27)
+
+The protocol was frozen before original-D2 routed evaluation at
+`results/jenga/selective_router_dev_protocol.json` (SHA-256
+`aa1472e51f76f1bd7fd4bd5a45e3b072a0db3419e56bfc35dc6234fbea712a17`). The unchanged dynamics is
+`w6_cw_d2_s1.pt`. For every frozen-v0 initial candidate, each of its three D2-selected pairs gets a
+causal router decision. Identity leaves six gaps unchanged; a correction multiplies levels 1-5 by
+the exponential TRAIN prototype at early/full hold. Boundary BIC is recomputed, then combined with
+the unchanged cached D2 commitment and persistence evidence. Physical classes enter only afterward.
+
+The identity rescore exactly reproduces D2: 8/23 topple alarms and 2/89 quiet alarms, with 9 and 5
+boundary candidates. Constant option 2 restores 19/23 topple boundaries but all 34/34 initial quiet
+candidates; the final conjunction leaves 15 topple and eight quiet alarms. Forced routing gives
+median 15/23 and 4/89. Selective routing gives median 15.5/23 and 5/89, with seed ranges 14-16 and
+3-5. Its frozen gate required >=10, <=3, no worse topple count and no worse quiet count than forced;
+the two quiet conditions fail. Selective seeds restore 16-20 topple boundaries but also 23-29 quiet
+boundaries. Identity is chosen for only 6-18 of 207 pairs per seed.
+
+The preregistered future-informed arm replays the exact 207 D2-selected nested paths in MuJoCo.
+Physical early/full trajectories are projected through the frozen D2 candidate projector, and each
+pair receives the option with minimum equally normalized global/local log-ratio Huber cost. This
+task-label-free grading oracle chooses identity/weak/medium/strong 75/39/31/62 times. It produces
+14 topple and 23 quiet boundary candidates, then 9/23 topple and 4/89 quiet final alarms. Even true
+future scale-curve cost cannot select among this correction basis to satisfy the monitor gate.
+
+This rejects post-hoc three-prototype curve routing, not the general research hypothesis. The
+learned routers recover recall by over-restoring persistence, while faithful physical-cost routing
+does not recover enough end-to-end alarms and still adds quiet alarms. Do not tune on this DEV
+result and do not run TEST. The next justified diagnostic replaces boundary-scale and dense
+consequence trajectories with physical futures in a 2x2 oracle ablation while keeping D2 candidate
+paths fixed. That will localize which trajectory property the next world-model architecture must
+represent. Canonical result: `results/jenga/selective_router_dev_summary.json`; SHA-256
+`1b00df73098d6a55a5ad45227d4e6fe7add8c2b35fd10115ec81768c022f096f`.
+
+## Dense trajectory-level oracle ablation: wrong D2 pairs dominate (2026-09-27)
+
+The preregistered protocol is `results/jenga/trajectory_level_ablation_protocol.json` (SHA-256
+`450869610a5cf14bd257a8152bad8e7826aa38f6e1037e981f9662ddef66ff8b`). It freezes original D2
+candidate discovery, all three pair identities, five midpoint choices and endpoint actions. The 207
+selected pairs are replayed in MuJoCo at six levels, both endpoints and all 38 H=8+hold30 control
+steps. Boundary gap source and dense consequence source are crossed independently.
+
+The four final DEV outcomes are D2/D2 8/23 topples and 2/89 quiet; physical-boundary/D2-consequence
+9/23 and 1/89; D2-boundary/physical-consequence 0/23 and 1/89; physical/physical 0/23 and 0/89.
+The D2/D2 arm exactly reproduces every cached baseline decision. None passes the common 10/23,
+<=3/89 reference gate.
+
+The zero physical-consequence recall is informative, not evidence that physical dynamics lack
+topple forks. These are D2-selected endpoint pairs. Among the 60 pairs belonging to D2 initial
+candidates in topple states, D2 calls 49 committed, while exact physics calls only eight. Six agree
+positive, 43 are D2-only, two physical-only and nine both negative: only 25% agreement. No topple
+state has two physically committed selected pairs, so the majority conjunction cannot alarm.
+Persistence is not the bottleneck: physics marks 54/60 persistent and agrees with D2 on 90%.
+
+Boundary topology is also misaligned. Both D2 and physics mark 31/60 topple-state pairs as physical-
+scale plateaus, but only 15 are the same pairs; agreement is 46.7%. Across all classes, boundary
+agreement is 48.3% (70 D2-positive, 93 physical-positive, only 28 shared), commitment agreement is
+52.7% (105 versus 27, 17 shared), and persistence agreement is 72.5% (205 versus 152, 150 shared).
+D2 particularly overstates commitment: 88/207 pairs are D2-only.
+
+This rejects the idea that the main remaining defect is merely gap magnitude or insufficient
+settling. D2's global response partition and nearest opposite-response pairs are usually not the
+physical committed branch. Post-hoc corrections act after that irreversible selection error. The
+next diagnostic must cross pair-selection source: run unchanged D2 and physical trajectories on
+the physically selected nested paths already available from ground-truth refinement, then compare
+with these D2-selected arms. That result will determine whether set-level response-topology
+supervision is sufficient or must be paired with a new multimodal trajectory architecture. TEST
+remains untouched. Canonical result: `results/jenga/trajectory_level_ablation_summary.json`;
+SHA-256 `a796be647234cd1a94f94412cc28105ffaea0caca9f38bfaebf44a96495c39fd`.
+
+## Physical-selection crossover: D2 topology and dynamics both fail (2026-09-27)
+
+The fixed protocol is `results/jenga/pair_selection_crossover_protocol.json` (SHA-256
+`2ac21243b944e15af458eef01d4d335286e38fdec7826c2d715263f4391e33fc`). It supplies frozen D2 seed
+1 with the candidate states, response pairs and full nested midpoint paths selected from physical
+trajectories. D2 still fits its own 64-probe projector and supplies every nested and dense future;
+no physical future enters the new arm.
+
+The complete crossover matrix is: D2-selected/D2-trajectory 8/23 topples and 2/89 quiet;
+D2-selected/physical-trajectory 0/23 and 0/89; physical-selected/D2-trajectory 4/23 and 5/89;
+physical-selected/physical-trajectory 18/23 and 7/89. The new arm fails the prospectively fixed
+near-reference rule of >=14 topple alarms and <=7 quiet alarms. Providing correct pair selection
+actually lowers D2's alarm recall because D2 does not preserve the physical geometry on those paths.
+
+For 69 physical-selected pairs in topple states, physical boundary evidence is positive on 68,
+while D2 is positive on 29; 28 overlap, one is D2-only and 40 are physical-only, giving 40.6%
+agreement. Physical commitment is positive on 51 and D2 on 43; 33 overlap, ten are D2-only, 18
+physical-only and eight both negative, giving 59.4%. Persistence agrees on 66 positive pairs and
+reaches 95.7% agreement. For all 216 physical-selected pairs, agreement is 40.3% boundary, 55.6%
+commitment and 92.1% persistence.
+
+This closes the localization chain. Wrong D2 selection is real: physics on D2-selected paths cannot
+recover topples. But selection is not the only defect: D2 on physical-selected paths remains far
+below the physical reference. Both full-neighbourhood response topology and trajectory dynamics
+must be learned, especially local scale plateaus and action-to-autonomous commitment. Late tails are
+already comparatively faithful.
+
+The next architecture/objective should consume complete probe sets during TRAIN and match physical
+pairwise trajectory geometry and response partitions before pair extraction, while also matching
+dense task-independent consequence curves on the resulting physical pairs. Grade learned-model
+agreement against the physical structural monitor first; topple/quiet labels remain evaluation
+only. The physical reference's 18/23 and 7/89 also makes clear that its quiet structural alarms are
+part of the monitor ceiling, not all world-model false positives. TEST remains untouched. Canonical
+result: `results/jenga/pair_selection_crossover_summary.json`; SHA-256
+`f3d8fa7c38d027700d4c64a2aaf09a1727b8ba9770aa48d4a598f352ba3eb630`.
+
+## D4 full-neighbourhood relational pilot (2026-09-27)
+
+The crossover diagnosis was implemented as a new world-model training gate rather than another
+post-hoc correction. `jenga_d4_neighborhood_data.py` deterministically selects episode-balanced
+TRAIN states without labels and records every state under 64 nearby execution-noise actions for all
+38 H=8 + hold-30 steps. The pilot contains 48 states; its compressed reproducible cache is 14 MB.
+Generation is capped at four processes to avoid exhausting the workstation.
+
+`neighborhood_topology_loss.py` introduces two universal relational terms. Topology matches every
+probe pair's normalized RMS trajectory distance during the action, early hold and late hold.
+Commitment selects k-nearest actions using action coordinates only, then matches their entire
+separation curve with increasing temporal weight. Neither term knows blocks, toppling, success or
+failure. The full arm adds the existing nested-width D3 boundary loss. All arms start from unchanged
+`w6_cw_d2_s1.pt`, reset AdamW, use seed 1, lr 1e-5 and three epochs. The four-arm protocol was saved
+before generation/training at `results/jenga/d4_protocol.json`; DEV and TEST were not read.
+
+On seven episode-held-out TRAIN validation states, frozen D2 has response/topology/commitment errors
+0.06635/0.04487/0.04343, candidate recall 0.80 and candidate agreement 0.714. Matched response-only
+continuation reaches 0.03823/0.04899/0.05041 but recall falls to 0.40 and agreement to 0.429: better
+independent trajectories damage their relational geometry. Topology-only reaches
+0.04690/0.04317/0.04159 but still only 0.40 recall. Full D4 reaches
+0.04376/0.04283/0.04051 and restores 0.80 recall / 0.714 agreement. Thus full D4 improves all three
+continuous losses over frozen D2 by 34.1%/4.5%/6.7%. Versus matched continuation it trades 14.4%
+more response error for 12.6% less topology error, 19.6% less commitment error and twice the
+candidate recall.
+
+This is a promising mechanism result, not monitor performance: only five physical candidates and
+two quiet states appear in validation, so quiet false rate is uninformative. The next gate is a
+larger TRAIN-held-out panel and fixed seeds 1-5. Only stable structural gains justify a prospectively
+matched DEV run. TEST stays closed. Canonical result:
+`results/jenga/d4_one_seed_summary.json`.
+
+## D4 five-seed TRAIN replication passes (2026-09-27)
+
+Before generating more data, the replication protocol was frozen at
+`results/jenga/d4_replication_protocol.json`. The corpus was expanded to 256 label-free TRAIN
+states over all 43 source episodes. The unchanged episode split holds out 36 states from six whole
+episodes and trains on 220. Each state still contains all 64 probes and all 38 trajectory steps.
+Training used fixed seeds 1-5, three epochs, lr 1e-5 and four state groups per batch. Only matched
+response continuation and full D4 were compared; no best seed was selected.
+
+Full D4 passes all frozen TRAIN gates. Relative to matched continuation, median response error is
+0.03110 versus 0.02968 (+4.8%, below the +25% guardrail), topology error is 0.04066 versus 0.04424
+(-8.1%), and commitment error is 0.03931 versus 0.04093 (-3.9%). Median candidate recall is 62.5%
+for full D4, 58.3% for matched continuation and 62.5% for frozen D2. Median quiet candidate false
+rate is 16.7% for all three. Full-D4 recall by seed is 66.7, 58.3, 62.5, 66.7 and 62.5%; this is a
+distributional result, not a selected checkpoint. Canonical result:
+`results/jenga/d4_replication_summary.json` (SHA-256
+`43515e484d3136aa51076faae644a27ccb02b42382a9a57b49e94f130b22ee73`).
+
+## D4 fails prospectively frozen matched DEV (2026-09-27)
+
+The passed TRAIN gate authorized one DEV comparison. The protocol was frozen first at
+`results/jenga/d4_dev_protocol.json` (SHA-256
+`bcc851feb628af4759d62271c0d7ef4edbfc6cdbd9846a2b88db000d2a53e6ab`), including exact checkpoint
+hashes, unchanged Monitor v0 hash, all five seeds and three gates. TEST was not read. Every original
+probe, adaptive midpoint and dense consequence trajectory was rerun through each checkpoint on all
+140 DEV states. Physical classes were joined only after decisions.
+
+Original D2 reproduces 8/23 topple and 2/89 quiet alarms. Matched continuation gives per-seed
+topple counts 8, 9, 6, 8, 10 (median 8) and quiet counts 2, 2, 1, 0, 2 (median 2). Full D4 gives
+topple counts 6, 9, 8, 7, 11 (median 8) and quiet counts 3, 1, 3, 3, 1 (median 3). Median agreement
+with physical Monitor v0 is 77.14% matched versus 75.71% D4. Therefore the allowed +2 quiet-state
+specificity gate passes, but strict recall improvement and nondecreasing physical agreement fail.
+Seed 5's 11/23 and 1/89 cannot be selected after seeing DEV.
+
+This separates average structural fitting from reliable branch realization. D4 improves smooth
+pairwise losses on TRAIN, but the single-future deterministic transition architecture does not turn
+that gain into stable discrete monitor decisions out of sample. Do not tune D4 on DEV and do not
+open TEST. The one remaining justified architecture test is an explicitly multimodal conditional
+trajectory model trained with the same universal supervision and data. Canonical result:
+`results/jenga/d4_dev_summary.json` (SHA-256
+`b756eef998fc7fd8dd380d220d874842b0d68a9c58b2eb049c934c0e51045fb4`).
+
+## D5 complete-trajectory mixture fails frozen TRAIN pilot (2026-09-27)
+
+The final justified privileged-state architecture was implemented in `src/trajectory_mixture.py`.
+Unlike earlier one-step MoE and switching-edge models, D5 represents three coherent alternatives
+over the complete 38-step trajectory. A shared D2-warm-started GNN supplies a baseline rollout; an
+action GRU, three learned mode embeddings and a residual trajectory decoder produce alternatives.
+The deployable gate sees only initial state and the action sequence. Training uses finite-mixture
+likelihood, the unchanged response/topology/commitment/D3-boundary terms, and task-free balance,
+routing and entropy regularization. Physical futures determine likelihood during TRAIN but never
+enter deployment; no task/failure labels are used.
+
+The protocol was frozen before substantive training at
+`results/jenga/d5_multimodal_protocol.json` (SHA-256
+`fa2a0dee4d7eb5b1b4134cc7df8ee06428192c04c4e105e6fe78258416aad7f2`). The first and only pilot
+uses seed 1, three epochs, lr 1e-5 and the unchanged 220/36 episode split. Deployed validation mode
+occupancy is 41.49/20.05/38.45%, so the architecture genuinely uses all modes. It returns 18
+predicted candidates from 24 physical candidates: 66.7% recall, 16.7% quiet false rate and 72.2%
+overall candidate agreement, identical to deterministic full D4 seed 1. Partition agreement rises
+75.17% -> 76.78%.
+
+Continuous differences are small and mixed. Response error worsens 0.03101 -> 0.03213 (+3.63%),
+topology improves 0.04066 -> 0.04028 (-0.95%), and commitment worsens 0.03853 -> 0.03955 (+2.67%).
+The frozen pilot required noncollapse, lower topology, lower commitment, no lower candidate recall
+and no higher quiet rate. Only lower commitment fails, which is sufficient to reject replication.
+No extra seeds were trained and neither DEV nor TEST was opened for D5.
+
+This is not evidence that physical futures are unimodal; it says that a three-mode residual decoder
+under the current open-loop interface does not solve the measured commitment problem. Together
+with deterministic D4's DEV failure, it closes further loss/architecture tuning on privileged
+Jenga. Next analyze re-observation horizon and decision-stage disagreement using existing caches,
+then decide whether the deployable system should use short-horizon repeated monitoring or a direct
+task-independent local-response model. Canonical result:
+`results/jenga/d5_multimodal_pilot_summary.json`.

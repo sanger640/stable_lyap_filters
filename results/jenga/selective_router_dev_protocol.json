@@ -1,0 +1,38 @@
+{
+  "id": "prospective-selective-cost-router-dev-v1",
+  "status": "frozen before original-D2 routed DEV evaluation",
+  "scope": "Jenga DEV only; frozen TEST prohibited",
+  "dynamics": "results/jenga/w6_cw_d2_s1.pt unchanged",
+  "training_protocols": {
+    "forced_router": "results/jenga/causal_router_protocol.json",
+    "selective_router": "results/jenga/selective_cost_router_protocol.json"
+  },
+  "router_seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "evaluation_unit": "each of the three D2-selected opposite-response pairs for every frozen-v0 initial DEV candidate",
+  "causal_pair_input": "current state 61 + original nominal action 8x4 + twice the initial endpoint action difference 8x3; the factor two matches the D3 initial alpha width of 0.5",
+  "routing_application": {
+    "identity": "leave all six D2 early/full refinement gaps unchanged",
+    "correction": "leave level zero unchanged and multiply levels 1..5 by exp of the selected TRAIN residual prototype for early-hold/full-hold",
+    "boundary": "recompute the unchanged calibration-free boundary BIC from corrected gaps",
+    "consequence": "combine corrected per-pair boundary signs with the unchanged D2 commitment and persistence evidence; majority of three pairs alarms",
+    "unchanged": "initial candidate discovery, pair selection, midpoint path, predicted endpoint trajectories, commitment, persistence and all v0 constants"
+  },
+  "arms": [
+    "uncorrected D2 identity",
+    "fit-best constant correction option",
+    "ten forced three-mode causal-router seeds",
+    "ten selective four-option cost-router seeds",
+    "future-informed physical-gap cost oracle for descriptive upper bound"
+  ],
+  "physical_cost_oracle": "grading-only: replay the exact D2-selected nested endpoint paths in MuJoCo and choose per pair the option minimizing equally normalized physical-vs-corrected early/full log-ratio global and local Huber cost",
+  "task_information": "topple/fork/quiet classes are joined after decisions for grading only and never enter routers, corrections or option costs",
+  "primary_summary": "median across ten fixed router seeds; fixed final TRAIN epoch; no seed or epoch selection on DEV",
+  "feasibility_gate": {
+    "selective_topple_alarms_min": 10,
+    "selective_quiet_alarms_max": 3,
+    "selective_topple_not_below_forced_median": true,
+    "selective_quiet_not_above_forced_median": true,
+    "interpretation": "all conditions must pass before expanding the routed monitor or considering TEST"
+  },
+  "reporting": "report all v0 class counts and candidate/boundary/commitment/persistence/final stages; do not tune after seeing DEV"
+}

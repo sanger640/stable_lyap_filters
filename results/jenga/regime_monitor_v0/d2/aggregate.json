@@ -1,0 +1,781 @@
+{
+  "protocol": {
+    "id": "regime-monitor-v0-on-d2",
+    "split": "frozen Jenga TEST",
+    "calibration_free": true,
+    "trajectory_source": "learned D2 GNN; no MuJoCo future rollouts",
+    "changed_from_ground_truth_v0": "trajectory source only",
+    "task_information": "physical classes joined for grading only"
+  },
+  "created": "2026-09-25T21:54:17+00:00",
+  "regime_monitor_v0_sha256": "4e1a20ca3c64bf18733315fe31df5850529027f8f48cda2c5f547ce43ecdc317",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "class_alarm_rates": {
+    "topple_fork": {
+      "mean": 0.31071428571428567,
+      "min": 0.08333333333333333,
+      "max": 0.4880952380952381
+    },
+    "quiet": {
+      "mean": 0.01946902654867257,
+      "min": 0.0,
+      "max": 0.05309734513274336
+    },
+    "nudge_fork": {
+      "mean": 0.04,
+      "min": 0.0,
+      "max": 0.3
+    },
+    "small_split": {
+      "mean": 0.04285714285714286,
+      "min": 0.0,
+      "max": 0.14285714285714285
+    },
+    "weak": {
+      "mean": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "stage_counts": {
+    "topple_fork": {
+      "initial_candidates": {
+        "mean": 63.3,
+        "min": 52.0,
+        "max": 75.0
+      },
+      "boundary_candidates": {
+        "mean": 32.5,
+        "min": 13.0,
+        "max": 45.0
+      },
+      "commitment_majority": {
+        "mean": 52.4,
+        "min": 41.0,
+        "max": 66.0
+      },
+      "persistence_majority": {
+        "mean": 60.7,
+        "min": 50.0,
+        "max": 73.0
+      },
+      "v0_alarms": {
+        "mean": 26.1,
+        "min": 7.0,
+        "max": 41.0
+      },
+      "states": 84
+    },
+    "quiet": {
+      "initial_candidates": {
+        "mean": 37.3,
+        "min": 31.0,
+        "max": 48.0
+      },
+      "boundary_candidates": {
+        "mean": 9.3,
+        "min": 7.0,
+        "max": 16.0
+      },
+      "commitment_majority": {
+        "mean": 9.6,
+        "min": 6.0,
+        "max": 16.0
+      },
+      "persistence_majority": {
+        "mean": 37.2,
+        "min": 31.0,
+        "max": 48.0
+      },
+      "v0_alarms": {
+        "mean": 2.2,
+        "min": 0.0,
+        "max": 6.0
+      },
+      "states": 113
+    },
+    "nudge_fork": {
+      "initial_candidates": {
+        "mean": 4.5,
+        "min": 3.0,
+        "max": 6.0
+      },
+      "boundary_candidates": {
+        "mean": 0.8,
+        "min": 0.0,
+        "max": 4.0
+      },
+      "commitment_majority": {
+        "mean": 2.7,
+        "min": 2.0,
+        "max": 4.0
+      },
+      "persistence_majority": {
+        "mean": 4.3,
+        "min": 3.0,
+        "max": 5.0
+      },
+      "v0_alarms": {
+        "mean": 0.4,
+        "min": 0.0,
+        "max": 3.0
+      },
+      "states": 10
+    },
+    "small_split": {
+      "initial_candidates": {
+        "mean": 4.1,
+        "min": 3.0,
+        "max": 5.0
+      },
+      "boundary_candidates": {
+        "mean": 0.7,
+        "min": 0.0,
+        "max": 2.0
+      },
+      "commitment_majority": {
+        "mean": 2.6,
+        "min": 1.0,
+        "max": 5.0
+      },
+      "persistence_majority": {
+        "mean": 3.7,
+        "min": 2.0,
+        "max": 5.0
+      },
+      "v0_alarms": {
+        "mean": 0.3,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "states": 7
+    },
+    "weak": {
+      "initial_candidates": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_candidates": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "commitment_majority": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "persistence_majority": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "v0_alarms": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "states": 0
+    }
+  },
+  "physical_v0_agreement": {
+    "agreement": {
+      "mean": 0.7102803738317758,
+      "min": 0.6728971962616822,
+      "max": 0.7570093457943925
+    },
+    "physical_alarm_recall": {
+      "mean": 0.24999999999999994,
+      "min": 0.09090909090909091,
+      "max": 0.3939393939393939
+    },
+    "added_alarm_rate": {
+      "mean": 0.08445945945945946,
+      "min": 0.033783783783783786,
+      "max": 0.13513513513513514
+    }
+  },
+  "robust_alarm_count": 3,
+  "robust_alarms": [
+    {
+      "episode_id": "11",
+      "chunk_start": 94,
+      "class": "topple_fork",
+      "alarm_seeds": 8
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 66,
+      "class": "topple_fork",
+      "alarm_seeds": 8
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 70,
+      "class": "topple_fork",
+      "alarm_seeds": 10
+    }
+  ],
+  "robust_blind_topple_count": 35,
+  "robust_blind_topples": [
+    {
+      "episode_id": "3",
+      "chunk_start": 94,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "6",
+      "chunk_start": 58,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "9",
+      "chunk_start": 134,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "11",
+      "chunk_start": 86,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "17",
+      "chunk_start": 98,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "20",
+      "chunk_start": 54,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 50,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 54,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "26",
+      "chunk_start": 62,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 50,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 58,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 66,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "27",
+      "chunk_start": 70,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 54,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "28",
+      "chunk_start": 58,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "38",
+      "chunk_start": 58,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "55",
+      "chunk_start": 94,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "58",
+      "chunk_start": 50,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "61",
+      "chunk_start": 74,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "70",
+      "chunk_start": 158,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "71",
+      "chunk_start": 106,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "75",
+      "chunk_start": 54,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "77",
+      "chunk_start": 106,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 38,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "80",
+      "chunk_start": 42,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 50,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "83",
+      "chunk_start": 54,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 50,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "84",
+      "chunk_start": 54,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 70,
+      "alarm_seeds": 1
+    },
+    {
+      "episode_id": "85",
+      "chunk_start": 94,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "86",
+      "chunk_start": 54,
+      "alarm_seeds": 0
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 58,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "91",
+      "chunk_start": 90,
+      "alarm_seeds": 2
+    },
+    {
+      "episode_id": "95",
+      "chunk_start": 94,
+      "alarm_seeds": 0
+    }
+  ],
+  "per_seed": [
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s1.pt",
+        "sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 1,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "9411200aa231fe79cd201ddca6be48640d916d7e963c021e2574757ebd09072d",
+        "seed": 1
+      },
+      "topple_recall": 0.42857142857142855,
+      "quiet_alarm_rate": 0.0,
+      "states": 214,
+      "agreement": 0.7570093457943925,
+      "physical_alarm_recall": 0.3787878787878788,
+      "added_alarm_rate": 0.07432432432432433,
+      "tp": 25,
+      "fn": 41,
+      "fp": 11,
+      "tn": 137
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s2.pt",
+        "sha256": "46bdb8a6ffc290137eacbe47aacb784b87e53c1cf8c3c05a9988c9c909e611f2",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 2,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "20dd3ee58e9654c42caf963a5e5571f96731cd2074b914281fa2fd71bc2ec938",
+        "seed": 2
+      },
+      "topple_recall": 0.2976190476190476,
+      "quiet_alarm_rate": 0.017699115044247787,
+      "states": 214,
+      "agreement": 0.7289719626168224,
+      "physical_alarm_recall": 0.2878787878787879,
+      "added_alarm_rate": 0.07432432432432433,
+      "tp": 19,
+      "fn": 47,
+      "fp": 11,
+      "tn": 137
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s3.pt",
+        "sha256": "c432ecb0142ae1daa70fbb547475118218271d28dfd6147859c9f9e69fd7d522",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 3,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "d83c3a3de5b44cca3d2e57c94fcabef438741bb0e959a2b5ce0304349c77d1c3",
+        "seed": 3
+      },
+      "topple_recall": 0.2857142857142857,
+      "quiet_alarm_rate": 0.008849557522123894,
+      "states": 214,
+      "agreement": 0.7242990654205608,
+      "physical_alarm_recall": 0.24242424242424243,
+      "added_alarm_rate": 0.060810810810810814,
+      "tp": 16,
+      "fn": 50,
+      "fp": 9,
+      "tn": 139
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s4.pt",
+        "sha256": "18afbd669d16e808cb5da7eafaaf4a96c91b2e16bbf9bbc23a2c671015efcdcf",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 4,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "a8e26da940686495e9ae1e407148b5cb4779766cea9c94a48db391f002f2eda6",
+        "seed": 4
+      },
+      "topple_recall": 0.4166666666666667,
+      "quiet_alarm_rate": 0.035398230088495575,
+      "states": 214,
+      "agreement": 0.6869158878504673,
+      "physical_alarm_recall": 0.2878787878787879,
+      "added_alarm_rate": 0.13513513513513514,
+      "tp": 19,
+      "fn": 47,
+      "fp": 20,
+      "tn": 128
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s5.pt",
+        "sha256": "b75cf2a288b81863c394ae3cbbdbcf1ddcf5987f76127efd7fac423d9ea99d38",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 5,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "6a5f5c60faf350a08b2e4ef2702732894f45ecdacdff5393ff65999ae62f3224",
+        "seed": 5
+      },
+      "topple_recall": 0.30952380952380953,
+      "quiet_alarm_rate": 0.05309734513274336,
+      "states": 214,
+      "agreement": 0.6915887850467289,
+      "physical_alarm_recall": 0.24242424242424243,
+      "added_alarm_rate": 0.10810810810810811,
+      "tp": 16,
+      "fn": 50,
+      "fp": 16,
+      "tn": 132
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s6.pt",
+        "sha256": "c1c1aa2ab75fc054727f28a7c74230265530124935f636a65492cd3b2b9e932e",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 6,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "a5748e98bae6915c6481aaef1218ee84c1ea69b50ed4a22bbe181bbddccbb08b",
+        "seed": 6
+      },
+      "topple_recall": 0.08333333333333333,
+      "quiet_alarm_rate": 0.02654867256637168,
+      "states": 214,
+      "agreement": 0.6962616822429907,
+      "physical_alarm_recall": 0.09090909090909091,
+      "added_alarm_rate": 0.033783783783783786,
+      "tp": 6,
+      "fn": 60,
+      "fp": 5,
+      "tn": 143
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s7.pt",
+        "sha256": "b119707aa1e0c6cd775ed122241a2a2589b9cdf182f0bc8145dc70fbadce6ca4",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 7,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "d67ee4a676ed02571f682d4c9066ef0d55e59edc74086131ae8509f302784b54",
+        "seed": 7
+      },
+      "topple_recall": 0.44047619047619047,
+      "quiet_alarm_rate": 0.017699115044247787,
+      "states": 214,
+      "agreement": 0.7476635514018691,
+      "physical_alarm_recall": 0.3939393939393939,
+      "added_alarm_rate": 0.0945945945945946,
+      "tp": 26,
+      "fn": 40,
+      "fp": 14,
+      "tn": 134
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s8.pt",
+        "sha256": "ac902f92d110d279bc13873b38490a78c8815989c78250d93fc5c9840aa82206",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 8,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "6f0f00c1e7e5f3ea2c125524690a76f75a4934a5dd339d915f7f7e30bed1ae8e",
+        "seed": 8
+      },
+      "topple_recall": 0.4880952380952381,
+      "quiet_alarm_rate": 0.0,
+      "states": 214,
+      "agreement": 0.705607476635514,
+      "physical_alarm_recall": 0.3484848484848485,
+      "added_alarm_rate": 0.13513513513513514,
+      "tp": 23,
+      "fn": 43,
+      "fp": 20,
+      "tn": 128
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s9.pt",
+        "sha256": "a48c3d61b10b3febc4c356087c8ae3371c75dea727da0314c462800197390c68",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 9,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "eefbbd2da28ebc5f2fe1e89b2c87bf592e961bf07f81ad08eb7fc0bb5fd894d7",
+        "seed": 9
+      },
+      "topple_recall": 0.17857142857142858,
+      "quiet_alarm_rate": 0.02654867256637168,
+      "states": 214,
+      "agreement": 0.6915887850467289,
+      "physical_alarm_recall": 0.13636363636363635,
+      "added_alarm_rate": 0.060810810810810814,
+      "tp": 9,
+      "fn": 57,
+      "fp": 9,
+      "tn": 139
+    },
+    {
+      "model": {
+        "path": "results/jenga/w6_cw_d2_s10.pt",
+        "sha256": "23c64390840178646337c344f383720817f088a5b0916f07db73ed746152b08f",
+        "config": {
+          "hidden": 128,
+          "rounds": 3,
+          "kind": "single",
+          "experts": 1,
+          "parameters": 653992,
+          "substeps": 1,
+          "seed": 10,
+          "noise": 0.5,
+          "orthonormalise": true,
+          "hard_contacts": false,
+          "branch_weight": 0.0,
+          "rollout_epochs": 0,
+          "cw_data": "results/jenga/cw_data",
+          "cw_loss": "intervention",
+          "cw_groups": 32,
+          "cw_weight": 1.0,
+          "transition_weighting": false
+        },
+        "config_sha256": "434c6f4ca812b56413bdea30fcf730286d04e7236710dfe050fa6615625541c6",
+        "seed": 10
+      },
+      "topple_recall": 0.17857142857142858,
+      "quiet_alarm_rate": 0.008849557522123894,
+      "states": 214,
+      "agreement": 0.6728971962616822,
+      "physical_alarm_recall": 0.09090909090909091,
+      "added_alarm_rate": 0.06756756756756757,
+      "tp": 6,
+      "fn": 60,
+      "fp": 10,
+      "tn": 138
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "switching-edge-one-seed-four-arm-dev-v1",
+  "status": "prospectively fixed before hard/switching arm training",
+  "split": "DEV only; frozen TEST prohibited",
+  "seed": 1,
+  "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+  "continuation": {
+    "epochs": 3,
+    "batch": 2048,
+    "learning_rate": 0.0003,
+    "noise": 0.5,
+    "cw_data": "results/jenga/cw_data",
+    "cw_loss": "intervention",
+    "cw_groups": 32,
+    "cw_weight": 1.0,
+    "optimizer": "fresh AdamW in every arm"
+  },
+  "switching": {
+    "modes": 3,
+    "warm_start": "shared D2 weights copied; every mode expert exactly copies each D2 edge update",
+    "mode_balance_weight": 0.01,
+    "mode_entropy_weight": 0.01,
+    "mode_persistence_weight": 0.01
+  },
+  "d3": {
+    "data": "results/jenga/d3_data",
+    "groups_per_batch": 2,
+    "weight": 1.0,
+    "local_weight": 1.0
+  },
+  "arms": {
+    "soft_d2": "continuous GNN, soft contact feedback, D2 only",
+    "hard_d2": "continuous GNN, rounded contact feedback, D2 only",
+    "switch_d2": "persistent switching-edge GNN, soft contact feedback, D2 only",
+    "switch_d3": "persistent switching-edge GNN, soft contact feedback, D2 plus D3"
+  },
+  "primary_metrics": [
+    "frozen-v0 DEV topple-fork recall",
+    "frozen-v0 DEV quiet alarm rate",
+    "initial and refined boundary counts",
+    "topple and quiet final/initial gap ratios"
+  ],
+  "mode_diagnostics": [
+    "mode occupancy",
+    "mean normalized entropy",
+    "argmax switch rate",
+    "probability persistence loss"
+  ],
+  "feasibility_gate": {
+    "topple_fork_alarms_min": 10,
+    "quiet_alarms_max": 3,
+    "interpretation": "a learned switching arm must meet both on 23 DEV topples and 89 DEV quiet states before multi-seed expansion"
+  },
+  "selection": "fixed epoch-3 endpoint; no best-epoch or post-result weight selection"
+}

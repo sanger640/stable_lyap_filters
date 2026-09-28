@@ -1,0 +1,102 @@
+{
+  "protocol": {
+    "plan": "W6 simple baseline: one-step training with input noise",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 rounds",
+    "training": "3 epochs, one-step MSE + contact BCE, input noise 0.5 x one-step sigma, no curriculum, no branch loss",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "seed": 1,
+  "noise": 0.5,
+  "parameters": 653992,
+  "model": "single",
+  "branch_weight": 0.0,
+  "cw_data": "results/jenga/cw_data",
+  "cw_loss": "intervention",
+  "cw_groups": 32,
+  "cw_weight": 1.0,
+  "quiet_quantile": 0.5,
+  "init": "results/jenga/w6_cw_d2_s1.pt",
+  "d3_data": "results/jenga/d3_data",
+  "d3_groups": 2,
+  "d3_weight": 1.0,
+  "d3_local_weight": 1.0,
+  "orthonormalise": true,
+  "hard_contacts": false,
+  "states": 8810,
+  "history": [
+    {
+      "epoch": 1,
+      "train_mse": 0.6614659308856714,
+      "train_bce": 0.05106359043141421,
+      "validation": {
+        "one_step_mse": 0.36730139149773505,
+        "rollout_state_error": 0.18094242538415617,
+        "branch_ratio": 0.4485402949233334,
+        "topple_recall": 0.40860215053763443,
+        "topple_false_rate": 0.0014377205594039994,
+        "cw_train_terms": {
+          "response": 0.7234568147525163,
+          "difference": 0.5926437090042663,
+          "quiet": 0.06672492747900217,
+          "d3_response": 0.7893598946393098,
+          "d3_effect": 1.1728483619085617,
+          "d3_global_scale": 0.7303356063048277,
+          "d3_local_scale": 0.1569029257693812
+        }
+      },
+      "seconds": 889.5536386966705,
+      "batch_seconds": 884.2877280712128,
+      "batches": 1573
+    },
+    {
+      "epoch": 2,
+      "train_mse": 0.651641585420668,
+      "train_bce": 0.04984561683111561,
+      "validation": {
+        "one_step_mse": 0.38334041160921895,
+        "rollout_state_error": 0.21055754382283456,
+        "branch_ratio": 0.5899204942442408,
+        "topple_recall": 0.5806451612903226,
+        "topple_false_rate": 0.0020912299045876357,
+        "cw_train_terms": {
+          "response": 0.7369068722416471,
+          "difference": 0.6412899227551192,
+          "quiet": 0.06398098096393584,
+          "d3_response": 0.8482964596638867,
+          "d3_effect": 1.3215085995176157,
+          "d3_global_scale": 0.6984751976890139,
+          "d3_local_scale": 0.15313841166734138
+        }
+      },
+      "seconds": 886.7999505996704,
+      "batch_seconds": 881.4842858314514,
+      "batches": 1573
+    },
+    {
+      "epoch": 3,
+      "train_mse": 0.6496843235627603,
+      "train_bce": 0.047311560865977126,
+      "validation": {
+        "one_step_mse": 0.3846978828791649,
+        "rollout_state_error": 0.21103230299007508,
+        "branch_ratio": 0.696762775207203,
+        "topple_recall": 0.8279569892473119,
+        "topple_false_rate": 0.018690367272251995,
+        "cw_train_terms": {
+          "response": 0.6921501564737043,
+          "difference": 0.5751812811715923,
+          "quiet": 0.06285450551350993,
+          "d3_response": 0.7808506328955077,
+          "d3_effect": 1.266987069932935,
+          "d3_global_scale": 0.6640259201334744,
+          "d3_local_scale": 0.14502773735365768
+        }
+      },
+      "seconds": 876.4247975349426,
+      "batch_seconds": 871.2041795253754,
+      "batches": 1573
+    }
+  ],
+  "rollout_history": [],
+  "output": "results/jenga/w6_cw_d3_pilot_s1.pt"
+}

@@ -1,0 +1,59 @@
+{
+  "protocol": {
+    "id": "panda-motion-conditioned-anonymous-slot-dynamics-v1",
+    "motivation": "v0 rejected before monitor scoring: validation mask entropy remained near ln(8)",
+    "seed": 643,
+    "epochs": 12,
+    "batch_pairs": 4,
+    "optimizer": {
+      "name": "AdamW",
+      "learning_rate": 0.0003,
+      "weight_decay": 1e-05,
+      "gradient_clip": 1.0
+    },
+    "model": {
+      "descriptor_dim": 64,
+      "slot_dim": 48,
+      "slots": 8,
+      "iterations": 3,
+      "action_dim": 4
+    },
+    "loss_weights": {
+      "motion_reconstruction": 1.0,
+      "dynamics": 1.0,
+      "geometry": 0.5,
+      "pair_separation": 1.0,
+      "motion_assignment": 0.5,
+      "mask_sharpness": 0.1,
+      "slot_balance": 0.2
+    },
+    "input": "current projected DINO descriptor plus difference from common pre-action descriptor",
+    "reconstruction": "sample-specific descriptor motion only, not static appearance",
+    "motion_assignment": "slot motion magnitude reconstructs per-patch descriptor-change magnitude",
+    "checkpoint_selection": "minimum complete label-free validation objective",
+    "pre_monitor_gate": {
+      "validation_mask_entropy_below": 1.8,
+      "validation_motion_reconstruction_below_epoch1": true
+    },
+    "excluded": [
+      "physical state",
+      "contact",
+      "success",
+      "topple",
+      "object identity",
+      "physical monitor decision",
+      "alarm"
+    ],
+    "resource_policy": "CPU-compatible; Torch <=8 threads; no simulator during training"
+  },
+  "created": "2026-09-25T19:27:18+00:00",
+  "files_sha256": {
+    "src/models/slot_dynamics.py": "988148c82fe8a9a365a25b3694885aaed15a32d5f81b5605dd3d689617aeca08",
+    "src/models/motion_slot_dynamics.py": "0c017d79c6e654eb0b70810a90e18b568cf8d5985304dedcab92b84878af8045",
+    "eval/panda_push_slot_data.py": "3f261f7ccc346e068379993dbe704c72b3a4bf984933938b30b55d29512f6f0b",
+    "eval/panda_push_slot_train_v1.py": "e1567d002ab612449507d2b1f681a4ada48867b88a01a5d755916c7ceacb292c",
+    "results/panda_block_push/slot_dynamics/data_manifest.json": "a2ad7ec20985a01f60de08cf1d5c8fe0d25d2cbe0a8a7fb5d27d457b56fc29f0",
+    "results/panda_block_push/slot_dynamics/unlabeled_tokens.npz": "3d042758cad92eab52945f92264ca2820b992415475fc2871dc374ad09bd9746"
+  },
+  "protocol_sha256": "ad51ac336d6fca64767b9d842a238b94a3e6503a06aad03c3425acb735acc758"
+}

@@ -29,8 +29,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from jenga_runtime import DEFAULT_LMDB, JengaReplay  # noqa: E402
 from outcome_modes import coarse_persistent_fork, groupings_persist, multi_mode_test  # noqa: E402
-from state_dynamics import (StepGraphMoE, StepGraphNet, StepMLP,  # noqa: E402,F401
+from state_dynamics import (StepGraphMoE, StepGraphNet, StepMLP, StepSwitchingEdgeGNN,  # noqa: E402,F401
                             neighbour_tilt_deg, rollout)
+from trajectory_mixture import TrajectoryMixtureGNN  # noqa: E402
 sys.path.insert(0, str(ROOT / "eval"))
 from jenga_short_held_tails import DirectJengaSim, HORIZON, TOPPLE_DEG, extract_sim  # noqa: E402
 from jenga_stage0_noise_oracle import SCALES  # noqa: E402
@@ -51,8 +52,14 @@ def load_model(path, device):
     kind = state.get("kind", "single")
     if kind == "moe":
         model = StepGraphMoE(state["hidden"], state["rounds"], state["experts"]).to(device)
+    elif kind == "edge_switch":
+        model = StepSwitchingEdgeGNN(
+            state["hidden"], state["rounds"], state.get("modes", state["experts"])).to(device)
     elif kind == "mlp":
         model = StepMLP().to(device)
+    elif kind == "trajectory_mixture":
+        model = TrajectoryMixtureGNN(
+            state["hidden"], state["rounds"], state.get("modes", 3)).to(device)
     else:
         model = StepGraphNet(state["hidden"], state["rounds"]).to(device)
     model.load_state_dict(state["model"])
@@ -61,6 +68,8 @@ def load_model(path, device):
     # Integration options must match the checkpoint's training, not the default.
     model.orthonormalise = bool(state.get("orthonormalise", False))
     model.hard_contacts = bool(state.get("hard_contacts", False))
+    if kind == "trajectory_mixture":
+        model.state_scale = state["state_scale"].to(device)
     scale = (state["block_scale"].to(device), state["grip_scale"].to(device))
     return model, scale
 
@@ -71,6 +80,8 @@ def predict(model, scale, start, windows, device):
     held = np.repeat(np.asarray(windows)[:, 2:], getattr(model, "substeps", 1), axis=1)
     actions = torch.as_tensor(held, dtype=torch.float32, device=device)
     with torch.no_grad():
+        if isinstance(model, TrajectoryMixtureGNN):
+            return model.predict(state, actions, scale, model.state_scale)[0].cpu().numpy()
         return rollout(model, state, actions, scale).cpu().numpy()
 
 

@@ -1,0 +1,1219 @@
+{
+  "protocol": {
+    "id": "train-only-selective-cost-router-v1",
+    "status": "prospectively fixed before selective-router training",
+    "scope": "D3 TRAIN corpus only; benchmark DEV and frozen TEST prohibited",
+    "shared_model": "results/jenga/w6_cw_d2_s1.pt",
+    "parent_protocol": "results/jenga/causal_router_protocol.json",
+    "split": "same episode-level 12% held-out TRAIN split used by jenga_w6_simple.py",
+    "fit_groups_expected": 226,
+    "heldout_groups_expected": 30,
+    "options": [
+      "identity/no correction",
+      "balanced residual prototype 0",
+      "balanced residual prototype 1",
+      "balanced residual prototype 2"
+    ],
+    "causal_inputs": "unchanged 117 fit-standardized values: current state 61 + reconstructed nominal action 8x4 + execution-error direction 8x3",
+    "prohibited_inputs": "physical/predicted futures, response curves, midpoint choices, deeper nested endpoints, task/failure/topple/success labels",
+    "target_cost": {
+      "definition": "per-group global Huber curve error divided by mean fit identity global error plus adjacent-level local Huber error divided by mean fit identity local error",
+      "training_target": "log of each option cost with a numerical floor of 1e-6",
+      "selection": "hard argmin predicted cost; identity is a genuine abstention option"
+    },
+    "router": {
+      "architecture": "MLP 117-64-32 with GELU and 0.1 dropout; four predicted log-costs",
+      "loss": "smooth-L1 regression to all four fit-only physical reconstruction costs",
+      "optimizer": "AdamW, learning rate 0.001, weight decay 0.001",
+      "epochs": 400,
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "selection": "fixed final epoch; no held-out model or epoch selection"
+    },
+    "controls": [
+      "identity/uncorrected frozen D2",
+      "fit-set constant minimum-mean-cost option",
+      "future-informed minimum-cost option upper bound"
+    ],
+    "primary_summary": "median across ten fixed seeds",
+    "feasibility_gate": {
+      "cost_oracle_option_accuracy_min": 0.5,
+      "global_oracle_gain_fraction_min": 0.25,
+      "local_oracle_gain_fraction_min": 0.25,
+      "persistent_recall_min": 0.5,
+      "smooth_false_positive_rate_max": 0.5,
+      "identity_or_weak_mode_on_smooth_min": 0.5,
+      "interpretation": "all conditions must pass before any new DEV run"
+    },
+    "small_sample_warning": "held-out TRAIN has only four clearly smooth groups; smooth metrics remain a conservative veto"
+  },
+  "protocol_sha256": "d05dfc5073420e456f02b836dd303f6d2ec46cf9370c17810b3958667fd10cb6",
+  "checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+  "split_audit": {
+    "fit_groups": 226,
+    "heldout_groups": 30,
+    "fit_episode_ids": [
+      "21:102",
+      "21:105",
+      "21:107",
+      "21:109",
+      "25:101",
+      "25:102",
+      "25:103",
+      "25:104",
+      "25:105",
+      "30:104",
+      "30:109",
+      "31:105",
+      "31:106",
+      "33:101",
+      "33:104",
+      "33:107",
+      "33:108",
+      "33:109",
+      "34:102",
+      "34:104",
+      "35:101",
+      "35:102",
+      "35:103",
+      "35:105",
+      "35:106",
+      "35:107",
+      "35:109",
+      "36:101",
+      "36:104",
+      "37:101",
+      "37:104",
+      "37:105",
+      "37:107",
+      "37:109",
+      "40:102",
+      "40:106",
+      "40:109",
+      "41:101",
+      "41:103",
+      "41:105",
+      "41:106",
+      "41:107",
+      "42:100",
+      "42:101",
+      "42:102",
+      "42:104",
+      "42:106",
+      "42:107",
+      "42:108",
+      "43:101",
+      "43:102",
+      "43:103",
+      "43:104",
+      "43:105",
+      "43:106",
+      "43:107",
+      "43:109",
+      "45:100",
+      "45:103",
+      "45:108",
+      "46:104",
+      "46:106",
+      "46:107",
+      "46:108",
+      "47:104",
+      "47:105",
+      "47:106",
+      "47:107",
+      "47:109",
+      "48:102",
+      "48:103",
+      "48:106",
+      "48:107",
+      "48:109",
+      "49:100",
+      "49:106",
+      "49:107",
+      "50:102",
+      "50:103",
+      "50:105",
+      "50:106",
+      "50:107",
+      "50:108",
+      "50:109",
+      "51:104",
+      "51:108",
+      "54:102",
+      "54:103",
+      "54:106",
+      "54:107",
+      "54:108",
+      "54:109",
+      "59:100",
+      "59:103",
+      "59:105",
+      "5:102",
+      "5:103",
+      "5:105",
+      "5:109",
+      "62:101",
+      "62:104",
+      "62:105",
+      "62:108",
+      "62:109",
+      "63:103",
+      "63:109",
+      "67:100",
+      "67:103",
+      "67:105",
+      "67:106",
+      "67:107",
+      "67:109",
+      "68:100",
+      "68:101",
+      "68:102",
+      "68:108",
+      "72:101",
+      "72:102",
+      "72:103",
+      "72:104",
+      "74:103",
+      "74:104",
+      "74:106",
+      "74:108",
+      "78:102",
+      "78:105",
+      "78:107",
+      "78:109",
+      "7:102",
+      "7:103",
+      "7:104",
+      "7:106",
+      "7:107",
+      "7:108",
+      "7:109",
+      "82:103",
+      "82:106",
+      "82:109",
+      "88:102",
+      "88:103",
+      "88:107",
+      "88:108",
+      "88:109",
+      "89:101",
+      "89:102",
+      "89:103",
+      "89:106",
+      "93:104",
+      "93:105",
+      "93:106",
+      "93:107",
+      "94:101",
+      "94:102",
+      "94:103",
+      "94:104",
+      "94:106",
+      "94:107",
+      "97:102",
+      "97:105",
+      "97:107",
+      "97:108",
+      "97:109",
+      "99:101",
+      "99:102",
+      "99:106",
+      "99:107"
+    ],
+    "heldout_episode_ids": [
+      "0:102",
+      "0:105",
+      "0:107",
+      "12:102",
+      "12:103",
+      "12:106",
+      "12:109",
+      "13:101",
+      "13:105",
+      "13:108",
+      "13:109",
+      "16:100",
+      "16:103",
+      "16:106",
+      "16:107",
+      "16:109",
+      "1:100",
+      "1:101",
+      "1:102",
+      "1:103",
+      "1:106"
+    ],
+    "episode_overlap": []
+  },
+  "feature_audit": {
+    "dimensions": 117,
+    "fit_standardization_only": true,
+    "deeper_nested_actions_read": false
+  },
+  "prototype_fit_iterations": 4,
+  "corrections": [
+    [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    [
+      [
+        0.3003808856010437,
+        0.09822134673595428,
+        0.061335138976573944
+      ],
+      [
+        0.44881734251976013,
+        0.1517496109008789,
+        -0.08807893097400665
+      ],
+      [
+        0.6789287328720093,
+        0.21322566270828247,
+        -0.1962592750787735
+      ],
+      [
+        1.0056877136230469,
+        0.3612528145313263,
+        -0.3619295358657837
+      ],
+      [
+        1.3732178211212158,
+        0.6015428304672241,
+        -0.18159131705760956
+      ]
+    ],
+    [
+      [
+        0.5459698438644409,
+        0.40186119079589844,
+        0.29302406311035156
+      ],
+      [
+        0.9955312013626099,
+        0.7910872101783752,
+        0.6092944741249084
+      ],
+      [
+        1.5509049892425537,
+        1.1725554466247559,
+        0.8316150307655334
+      ],
+      [
+        2.0619029998779297,
+        1.5159997940063477,
+        1.0844439268112183
+      ],
+      [
+        2.547750949859619,
+        1.9328895807266235,
+        1.3337087631225586
+      ]
+    ],
+    [
+      [
+        0.4958776533603668,
+        0.6612167954444885,
+        0.753488302230835
+      ],
+      [
+        0.9294071197509766,
+        1.429904580116272,
+        1.5199542045593262
+      ],
+      [
+        1.480170726776123,
+        2.0585906505584717,
+        2.2495923042297363
+      ],
+      [
+        2.160219192504883,
+        2.7170512676239014,
+        2.7891499996185303
+      ],
+      [
+        2.733804941177368,
+        3.4013290405273438,
+        3.3602874279022217
+      ]
+    ]
+  ],
+  "cost_normalizers": {
+    "global": 0.8496049017714518,
+    "local": 0.17462165468764818
+  },
+  "fit_option_occupancy_oracle": [
+    0.09734513274336283,
+    0.24778761061946902,
+    0.3185840707964602,
+    0.336283185840708
+  ],
+  "heldout_option_occupancy_oracle": [
+    0.13333333333333333,
+    0.13333333333333333,
+    0.43333333333333335,
+    0.3
+  ],
+  "baseline": {
+    "loss": {
+      "global_scale_huber": 0.8810083866119385,
+      "local_scale_huber": 0.14764824509620667
+    },
+    "classification": {
+      "persistent_groups": 24,
+      "persistent_recall": 0.20833333333333334,
+      "smooth_groups": 4,
+      "smooth_recall": 0.75,
+      "median_final_ratio": {
+        "action": 0.03269144892692566,
+        "early_hold": 0.036439500749111176,
+        "late_hold": 0.05594547837972641
+      },
+      "smooth_false_positive_rate": 0.0
+    }
+  },
+  "constant_router": {
+    "fit_selected_option": 2,
+    "mode_occupancy": [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "loss": {
+      "global_scale_huber": 0.3594379013004247,
+      "local_scale_huber": 0.07548332765723798
+    },
+    "oracle_gain_fraction": {
+      "global_scale_huber": 0.6972463544124593,
+      "local_scale_huber": 0.7216031286856174
+    },
+    "classification": {
+      "persistent_groups": 24,
+      "persistent_recall": 0.9583333333333334,
+      "smooth_groups": 4,
+      "smooth_recall": 0.0,
+      "median_final_ratio": {
+        "action": 0.41774223303886515,
+        "early_hold": 0.2517767983337122,
+        "late_hold": 0.2123182471429822
+      },
+      "smooth_false_positive_rate": 1.0
+    },
+    "assignment": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "cost_oracle_option_accuracy": 0.43333333333333335,
+    "identity_or_weak_mode_on_smooth": 0.0
+  },
+  "future_informed_cost_oracle": {
+    "mode_occupancy": [
+      0.13333333333333333,
+      0.13333333333333333,
+      0.43333333333333335,
+      0.3
+    ],
+    "loss": {
+      "global_scale_huber": 0.1329650558568861,
+      "local_scale_huber": 0.04764186406732262
+    },
+    "oracle_gain_fraction": {
+      "global_scale_huber": 1.0,
+      "local_scale_huber": 1.0
+    },
+    "classification": {
+      "persistent_groups": 24,
+      "persistent_recall": 0.9166666666666666,
+      "smooth_groups": 4,
+      "smooth_recall": 0.5,
+      "median_final_ratio": {
+        "action": 0.4741519858737161,
+        "early_hold": 0.44017181782616244,
+        "late_hold": 0.7110828595659966
+      },
+      "smooth_false_positive_rate": 0.0
+    },
+    "assignment": [
+      0,
+      2,
+      0,
+      2,
+      1,
+      0,
+      2,
+      2,
+      2,
+      3,
+      0,
+      2,
+      1,
+      2,
+      1,
+      3,
+      3,
+      3,
+      2,
+      3,
+      2,
+      2,
+      2,
+      3,
+      3,
+      2,
+      1,
+      2,
+      3,
+      3
+    ],
+    "cost_oracle_option_accuracy": 1.0,
+    "identity_or_weak_mode_on_smooth": 1.0
+  },
+  "selective_router_seeds": [
+    {
+      "mode_occupancy": [
+        0.1,
+        0.16666666666666666,
+        0.4,
+        0.3333333333333333
+      ],
+      "loss": {
+        "global_scale_huber": 0.3298148856420799,
+        "local_scale_huber": 0.07568817660816832
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7368470225026944,
+        "local_scale_huber": 0.7195547698826807
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4757191904076926,
+          "early_hold": 0.4312677580616039,
+          "late_hold": 0.7338916588374977
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        1,
+        2,
+        2,
+        3,
+        3,
+        0,
+        2,
+        2,
+        2,
+        3,
+        0,
+        2,
+        3,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        1,
+        3,
+        3,
+        0,
+        1,
+        2,
+        3
+      ],
+      "cost_oracle_option_accuracy": 0.6,
+      "identity_or_weak_mode_on_smooth": 0.5,
+      "seed": 1
+    },
+    {
+      "mode_occupancy": [
+        0.13333333333333333,
+        0.16666666666666666,
+        0.43333333333333335,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.31013001047843297,
+        "local_scale_huber": 0.07252467508273117
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7631621761232441,
+        "local_scale_huber": 0.7511877666263932
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4325491470980189,
+          "early_hold": 0.38097391401105923,
+          "late_hold": 0.3700287574613528
+        },
+        "smooth_false_positive_rate": 0.25
+      },
+      "assignment": [
+        1,
+        2,
+        0,
+        2,
+        3,
+        0,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        3,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        1,
+        3,
+        3,
+        0,
+        1,
+        2,
+        3
+      ],
+      "cost_oracle_option_accuracy": 0.6333333333333333,
+      "identity_or_weak_mode_on_smooth": 0.75,
+      "seed": 2
+    },
+    {
+      "mode_occupancy": [
+        0.1,
+        0.16666666666666666,
+        0.4666666666666667,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.2748480654328628,
+        "local_scale_huber": 0.06608758839869527
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.8103278196026904,
+        "local_scale_huber": 0.8155545262052316
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4571063699202763,
+          "early_hold": 0.42939250898484244,
+          "late_hold": 0.4942826709243209
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        1,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        2,
+        2,
+        3,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        1,
+        3,
+        3,
+        0,
+        1,
+        3,
+        3
+      ],
+      "cost_oracle_option_accuracy": 0.6666666666666666,
+      "identity_or_weak_mode_on_smooth": 0.5,
+      "seed": 3
+    },
+    {
+      "mode_occupancy": [
+        0.13333333333333333,
+        0.16666666666666666,
+        0.5,
+        0.2
+      ],
+      "loss": {
+        "global_scale_huber": 0.3087499193983894,
+        "local_scale_huber": 0.0708888639160707
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7650071107992216,
+        "local_scale_huber": 0.7675448345437694
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7916666666666666,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4218238265722778,
+          "early_hold": 0.28472397366050706,
+          "late_hold": 0.3372742329598061
+        },
+        "smooth_false_positive_rate": 0.25
+      },
+      "assignment": [
+        1,
+        2,
+        0,
+        2,
+        2,
+        0,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        3,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        1,
+        2,
+        3,
+        0,
+        1,
+        3,
+        2
+      ],
+      "cost_oracle_option_accuracy": 0.6,
+      "identity_or_weak_mode_on_smooth": 0.75,
+      "seed": 4
+    },
+    {
+      "mode_occupancy": [
+        0.13333333333333333,
+        0.23333333333333334,
+        0.36666666666666664,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.33025695621196854,
+        "local_scale_huber": 0.07618351324727546
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7362560533011611,
+        "local_scale_huber": 0.7146017195471819
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.75,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4255983580971089,
+          "early_hold": 0.38097391401105923,
+          "late_hold": 0.3372742329598061
+        },
+        "smooth_false_positive_rate": 0.25
+      },
+      "assignment": [
+        1,
+        2,
+        1,
+        2,
+        3,
+        0,
+        2,
+        2,
+        2,
+        3,
+        0,
+        2,
+        3,
+        1,
+        1,
+        1,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        0,
+        1,
+        3,
+        2,
+        0,
+        1,
+        3,
+        2
+      ],
+      "cost_oracle_option_accuracy": 0.6333333333333333,
+      "identity_or_weak_mode_on_smooth": 0.75,
+      "seed": 5
+    },
+    {
+      "mode_occupancy": [
+        0.1,
+        0.2,
+        0.43333333333333335,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.33928486246094675,
+        "local_scale_huber": 0.07698887453581645
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7241873590453541,
+        "local_scale_huber": 0.7065486205323462
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7916666666666666,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4573567682106904,
+          "early_hold": 0.42939250898484244,
+          "late_hold": 0.47465480697278906
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        1,
+        2,
+        2,
+        2,
+        3,
+        0,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        3,
+        1,
+        1,
+        3,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        1,
+        1,
+        3,
+        3,
+        0,
+        1,
+        2,
+        2
+      ],
+      "cost_oracle_option_accuracy": 0.5666666666666667,
+      "identity_or_weak_mode_on_smooth": 0.5,
+      "seed": 6
+    },
+    {
+      "mode_occupancy": [
+        0.13333333333333333,
+        0.13333333333333333,
+        0.4666666666666667,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.33928783306707255,
+        "local_scale_huber": 0.0762406443208714
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7241833878768353,
+        "local_scale_huber": 0.7140304452643995
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7916666666666666,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.4779755354459879,
+          "early_hold": 0.43829656874940104,
+          "late_hold": 0.7110828595659966
+        },
+        "smooth_false_positive_rate": 0.25
+      },
+      "assignment": [
+        1,
+        2,
+        0,
+        2,
+        3,
+        0,
+        2,
+        2,
+        2,
+        3,
+        0,
+        2,
+        3,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        3,
+        2,
+        1,
+        2,
+        3,
+        0,
+        2,
+        2,
+        2
+      ],
+      "cost_oracle_option_accuracy": 0.6,
+      "identity_or_weak_mode_on_smooth": 0.75,
+      "seed": 7
+    },
+    {
+      "mode_occupancy": [
+        0.1,
+        0.16666666666666666,
+        0.5,
+        0.23333333333333334
+      ],
+      "loss": {
+        "global_scale_huber": 0.3122608035605631,
+        "local_scale_huber": 0.06908062057743318
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7603136872797177,
+        "local_scale_huber": 0.7856261141584698
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.25,
+        "median_final_ratio": {
+          "action": 0.4128373912661727,
+          "early_hold": 0.3128375952810364,
+          "late_hold": 0.3372742329598061
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        1,
+        2,
+        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        0,
+        2,
+        2,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        3,
+        2,
+        1,
+        3,
+        3,
+        0,
+        1,
+        2,
+        2
+      ],
+      "cost_oracle_option_accuracy": 0.5666666666666667,
+      "identity_or_weak_mode_on_smooth": 0.5,
+      "seed": 8
+    },
+    {
+      "mode_occupancy": [
+        0.16666666666666666,
+        0.16666666666666666,
+        0.36666666666666664,
+        0.3
+      ],
+      "loss": {
+        "global_scale_huber": 0.31070776660262633,
+        "local_scale_huber": 0.07097234520390616
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7623898196293896,
+        "local_scale_huber": 0.7667100749316668
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.7916666666666666,
+        "smooth_groups": 4,
+        "smooth_recall": 0.5,
+        "median_final_ratio": {
+          "action": 0.43996629010900723,
+          "early_hold": 0.43114106881484204,
+          "late_hold": 0.3700287574613528
+        },
+        "smooth_false_positive_rate": 0.25
+      },
+      "assignment": [
+        1,
+        2,
+        0,
+        2,
+        2,
+        0,
+        2,
+        2,
+        3,
+        3,
+        0,
+        2,
+        3,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        0,
+        2,
+        1,
+        3,
+        3,
+        0,
+        1,
+        3,
+        2
+      ],
+      "cost_oracle_option_accuracy": 0.6,
+      "identity_or_weak_mode_on_smooth": 0.75,
+      "seed": 9
+    },
+    {
+      "mode_occupancy": [
+        0.1,
+        0.16666666666666666,
+        0.4666666666666667,
+        0.26666666666666666
+      ],
+      "loss": {
+        "global_scale_huber": 0.333951859411414,
+        "local_scale_huber": 0.07519069564278547
+      },
+      "oracle_gain_fraction": {
+        "global_scale_huber": 0.7313166292764648,
+        "local_scale_huber": 0.7245292621127233
+      },
+      "classification": {
+        "persistent_groups": 24,
+        "persistent_recall": 0.8333333333333334,
+        "smooth_groups": 4,
+        "smooth_recall": 0.25,
+        "median_final_ratio": {
+          "action": 0.4325491470980189,
+          "early_hold": 0.38097391401105923,
+          "late_hold": 0.3700287574613528
+        },
+        "smooth_false_positive_rate": 0.5
+      },
+      "assignment": [
+        1,
+        2,
+        0,
+        2,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        3,
+        1,
+        1,
+        2,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        1,
+        3,
+        3,
+        0,
+        1,
+        2,
+        3
+      ],
+      "cost_oracle_option_accuracy": 0.6,
+      "identity_or_weak_mode_on_smooth": 0.5,
+      "seed": 10
+    }
+  ],
+  "selective_router_summary": {
+    "cost_oracle_option_accuracy": {
+      "median": 0.6,
+      "mean": 0.6066666666666666,
+      "minimum": 0.5666666666666667,
+      "maximum": 0.6666666666666666
+    },
+    "global_oracle_gain_fraction": {
+      "median": 0.748580354891206,
+      "mean": 0.7513991065436774,
+      "minimum": 0.7241833878768353,
+      "maximum": 0.8103278196026904
+    },
+    "local_oracle_gain_fraction": {
+      "median": 0.7378585143695582,
+      "mean": 0.7465888133804863,
+      "minimum": 0.7065486205323462,
+      "maximum": 0.8155545262052316
+    },
+    "persistent_recall": {
+      "median": 0.8125,
+      "mean": 0.8083333333333333,
+      "minimum": 0.75,
+      "maximum": 0.8333333333333334
+    },
+    "smooth_false_positive_rate": {
+      "median": 0.375,
+      "mean": 0.375,
+      "minimum": 0.25,
+      "maximum": 0.5
+    },
+    "identity_or_weak_mode_on_smooth": {
+      "median": 0.625,
+      "mean": 0.625,
+      "minimum": 0.5,
+      "maximum": 0.75
+    },
+    "option_occupancy_median": [
+      0.11666666666666667,
+      0.16666666666666666,
+      0.45,
+      0.26666666666666666
+    ]
+  },
+  "feasibility_gate": {
+    "cost_oracle_option_accuracy": true,
+    "global_oracle_gain_fraction": true,
+    "local_oracle_gain_fraction": true,
+    "persistent_recall": true,
+    "smooth_false_positive_rate": true,
+    "identity_or_weak_mode_on_smooth": true
+  },
+  "passes": true,
+  "decision": "selective cost router passes TRAIN-only gate; preregister DEV"
+}

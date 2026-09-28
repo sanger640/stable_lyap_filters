@@ -1,0 +1,90 @@
+{
+  "protocol": {
+    "plan": "W6 simple baseline: one-step training with input noise",
+    "architecture": "graph net, 4 nodes, hidden 128, 3 rounds",
+    "training": "3 epochs, one-step MSE + contact BCE, input noise 0.5 x one-step sigma, no curriculum, no branch loss",
+    "input": "privileged simulator state (oracle variant)"
+  },
+  "seed": 1,
+  "noise": 0.5,
+  "parameters": 653992,
+  "model": "single",
+  "branch_weight": 0.0,
+  "cw_data": "results/jenga/cw_data",
+  "cw_loss": "intervention",
+  "cw_groups": 32,
+  "cw_weight": 1.0,
+  "quiet_quantile": 0.5,
+  "init": "results/jenga/w6_cw_d2_s1.pt",
+  "d3_data": null,
+  "d3_groups": 2,
+  "d3_weight": 1.0,
+  "d3_local_weight": 1.0,
+  "orthonormalise": true,
+  "hard_contacts": false,
+  "states": 8810,
+  "history": [
+    {
+      "epoch": 1,
+      "train_mse": 0.6078648932102905,
+      "train_bce": 0.03986144715000017,
+      "validation": {
+        "one_step_mse": 0.34293157318907397,
+        "rollout_state_error": 0.20609739807344252,
+        "branch_ratio": 0.927132325948447,
+        "topple_recall": 0.8279569892473119,
+        "topple_false_rate": 0.006012285975689452,
+        "cw_train_terms": {
+          "response": 0.6742366485520297,
+          "difference": 0.5631630306486787,
+          "quiet": 0.058084537413087306
+        }
+      },
+      "seconds": 146.79184556007385,
+      "batch_seconds": 141.5081865787506,
+      "batches": 1573
+    },
+    {
+      "epoch": 2,
+      "train_mse": 0.5976716966024267,
+      "train_bce": 0.039289515434710445,
+      "validation": {
+        "one_step_mse": 0.3447458460446327,
+        "rollout_state_error": 0.20773842570281797,
+        "branch_ratio": 0.6424395916631638,
+        "topple_recall": 0.6881720430107527,
+        "topple_false_rate": 0.0026140373807345446,
+        "cw_train_terms": {
+          "response": 0.6549504425871623,
+          "difference": 0.5677278249489601,
+          "quiet": 0.06014910007034205
+        }
+      },
+      "seconds": 148.42458605766296,
+      "batch_seconds": 143.25503396987915,
+      "batches": 1573
+    },
+    {
+      "epoch": 3,
+      "train_mse": 0.5940439567320376,
+      "train_bce": 0.039188655980229754,
+      "validation": {
+        "one_step_mse": 0.3400618111894977,
+        "rollout_state_error": 0.1964465770269594,
+        "branch_ratio": 0.6637326279003332,
+        "topple_recall": 0.6129032258064516,
+        "topple_false_rate": 0.0036596523330283625,
+        "cw_train_terms": {
+          "response": 0.6772546158027134,
+          "difference": 0.5747665453036728,
+          "quiet": 0.05663797315399566
+        }
+      },
+      "seconds": 149.2388904094696,
+      "batch_seconds": 144.0398178100586,
+      "batches": 1573
+    }
+  ],
+  "rollout_history": [],
+  "output": "results/jenga/w6_cw_d2_continue_pilot_s1.pt"
+}

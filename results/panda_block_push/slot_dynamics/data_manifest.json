@@ -1,0 +1,55 @@
+{
+  "protocol": {
+    "id": "panda-generic-unlabeled-slot-dynamics-train-v0",
+    "seed": 640,
+    "pairs": {
+      "train": 64,
+      "validation": 16
+    },
+    "sequence": {
+      "action_steps": 10,
+      "held_steps": 6,
+      "frames_include_common_start": true
+    },
+    "render_size": [
+      160,
+      160
+    ],
+    "variation": [
+      "three unlabeled cuboid geometries",
+      "block pose",
+      "push direction/height",
+      "camera position",
+      "light intensity",
+      "object colour"
+    ],
+    "pairing": "same start and base action; symmetric nearby xyz action offsets <=3 mm",
+    "stored_fields": [
+      "frames",
+      "actions",
+      "split",
+      "pair_index"
+    ],
+    "excluded": [
+      "physical state",
+      "contact",
+      "success",
+      "topple",
+      "object identity",
+      "physical monitor decision",
+      "alarm"
+    ],
+    "encoder": "frozen DINOv2-S/14 x_norm_patchtokens",
+    "token_adapter": {
+      "projection": "fixed seeded Gaussian",
+      "seed": 641,
+      "dimensions": 64
+    },
+    "resource_policy": "one simulator and one DINO batch at a time; BLAS <=2 threads"
+  },
+  "created": "2026-09-25T19:21:59+00:00",
+  "files_sha256": {
+    "unlabeled_sequences.npz": "949200ff89ea31edd12d2a604abc885b00410a25fb8546e97292c7519385c556",
+    "unlabeled_tokens.npz": "3d042758cad92eab52945f92264ca2820b992415475fc2871dc374ad09bd9746"
+  }
+}

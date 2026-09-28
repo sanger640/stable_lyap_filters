@@ -1,0 +1,39 @@
+{
+  "name": "D4 full-neighbourhood relational world-model gate",
+  "status": "frozen before generation or training",
+  "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+  "data": {
+    "split": "TRAIN only",
+    "states": 48,
+    "selection": "deterministic episode-balanced sample from trace_data; no outcome labels",
+    "selection_seed": 404,
+    "probes_per_state": 64,
+    "intervention_steps": 8,
+    "shared_hold_steps": 30,
+    "maximum_workers": 4
+  },
+  "comparison": {
+    "seed": 1,
+    "epochs": 3,
+    "learning_rate": 1e-05,
+    "arms": [
+      "frozen original D2",
+      "matched continuation: response only",
+      "response + full-neighbourhood topology",
+      "response + topology + local commitment + nested D3 boundary"
+    ],
+    "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+    "model_selection": "unlabeled validation objectives only"
+  },
+  "evaluation": {
+    "generic_metrics": [
+      "continuous trajectory response error",
+      "full pairwise topology error",
+      "nearest-action commitment-curve error",
+      "smooth-vs-branch candidate agreement",
+      "candidate-partition agreement"
+    ],
+    "test_split_opened": false
+  },
+  "decision_rule": "Only expand beyond one seed if a relational arm improves topology and branch agreement over matched continuation without materially worsening response error. TEST remains closed."
+}

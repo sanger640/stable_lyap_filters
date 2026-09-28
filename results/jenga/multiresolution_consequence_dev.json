@@ -1,0 +1,6519 @@
+{
+  "protocol": {
+    "calibration_free": true,
+    "split": "DEV only; TEST untouched",
+    "trajectory_source": "dense MuJoCo ground-truth state",
+    "resolutions": "original bracket plus all five midpoint bisections (1x through 32x)",
+    "boundary": "saved per-pair early+late BIC plateau evidence",
+    "stable_commitment": "commitment evidence positive at the final three widths and fitted onset span <= one control step",
+    "shape_convergence": "BIC favours successive normalized-curve changes vanishing with bracket width rather than retaining a nonzero plateau",
+    "persistence": "final-width late decay-to-zero versus nonzero-asymptote BIC",
+    "decision": "the same >=2/3 pairs pass boundary, stable commitment, shape convergence and persistence",
+    "gate": ">=21/23 topple forks and <=4/89 quiet alarms",
+    "task_information": "none in alarm; Jenga classes are grading only"
+  },
+  "gate_passed": false,
+  "summary": {
+    "dev": {
+      "1.0": {
+        "topple_fork": {
+          "states": 23,
+          "alarms": 2,
+          "rate": 0.08695652173913043
+        },
+        "quiet": {
+          "states": 89,
+          "alarms": 1,
+          "rate": 0.011235955056179775
+        },
+        "nudge_fork": {
+          "states": 17,
+          "alarms": 1,
+          "rate": 0.058823529411764705
+        },
+        "small_split": {
+          "states": 8,
+          "alarms": 0,
+          "rate": 0.0
+        },
+        "weak": {
+          "states": 3,
+          "alarms": 0,
+          "rate": 0.0
+        }
+      }
+    },
+    "test": {
+      "1.0": {
+        "topple_fork": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "quiet": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "nudge_fork": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "small_split": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        },
+        "weak": {
+          "states": 0,
+          "alarms": 0,
+          "rate": null,
+          "action_disconnected": 0
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "split": "dev",
+      "episode_id": "2",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": false,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 1,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -2.326552808104694,
+          -5.37715067410187,
+          -5.704952585691785,
+          -10.559099840712577,
+          -4.747922142498098,
+          -10.812280030583636
+        ],
+        [
+          5.087675126832551,
+          12.431898720477818,
+          -6.871565347463552,
+          -10.463171659551463,
+          -1.5193668419432953,
+          -10.255542899672442
+        ],
+        [
+          -8.218449339279587,
+          -9.718692183560833,
+          -7.099807502994352,
+          -10.4110100790449,
+          -9.769410106417908,
+          -9.125458900251601
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          1,
+          1,
+          9,
+          1,
+          9
+        ],
+        [
+          1,
+          1,
+          1,
+          2,
+          2,
+          2
+        ],
+        [
+          2,
+          9,
+          2,
+          11,
+          2,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        158.84780677478147,
+        -2.774923428693583,
+        157.32227555721335
+      ],
+      "shape_convergence_delta_bic": [
+        -10.822483584119784,
+        -7.100701195512514,
+        -4.748599871690878
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -4.230178561470652,
+          -4.668660161016632,
+          -3.2343208718713186,
+          5.206723266585101,
+          -1.3207692604528063,
+          -1.8307179264763818
+        ],
+        [
+          -5.648810172300628,
+          -3.867154548950211,
+          6.133895156319227,
+          -4.156168512157635,
+          -1.848517842998234,
+          -0.35016210677667914
+        ],
+        [
+          -6.594832832274079,
+          -7.493737163151792,
+          -1.5858707295379588,
+          -2.92952106385178,
+          9.587885952067019,
+          -2.5389921958092287
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          9,
+          9,
+          7,
+          6,
+          9
+        ],
+        [
+          11,
+          11,
+          10,
+          11,
+          11,
+          11
+        ],
+        [
+          9,
+          5,
+          9,
+          9,
+          10,
+          9
+        ]
+      ],
+      "persistence_delta_bic": [
+        194.07341685268216,
+        206.5458798326129,
+        196.71973925344054
+      ],
+      "shape_convergence_delta_bic": [
+        -14.020765136369208,
+        -9.09047579586553,
+        -5.855948662057866
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "3",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "4",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 45,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 3,
+      "commitment_delta_bic_by_level": [
+        [
+          -0.8489331526081827,
+          -2.6472797408530226,
+          4.133244973115289,
+          -3.4983898709491825,
+          -2.3405871439719306,
+          0.6554274632179897
+        ],
+        [
+          -3.5958626866899124,
+          -10.947972665814063,
+          2.4380008588512965,
+          -0.6794875048561835,
+          -0.47910464379404516,
+          0.369272173000013
+        ],
+        [
+          -4.561236314923406,
+          -5.009481805424031,
+          17.36507384987725,
+          20.56041423794658,
+          18.282740077961975,
+          8.05410140796667
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          4,
+          6,
+          6,
+          8,
+          8,
+          7
+        ],
+        [
+          8,
+          13,
+          8,
+          8,
+          8,
+          8
+        ],
+        [
+          5,
+          5,
+          7,
+          7,
+          7,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        213.54966363196795,
+        196.83357620360715,
+        200.2689782172299
+      ],
+      "shape_convergence_delta_bic": [
+        0.051425692513303645,
+        1.6094379270927117,
+        0.9054292521536187
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          4.506042968416331,
+          7.499531516577505,
+          -7.631758187545195,
+          -6.604234517500714,
+          -6.136554514213842,
+          -6.468634375989318
+        ],
+        [
+          2.048465242589053,
+          -0.995491518337559,
+          4.869680542262692,
+          10.231884165761699,
+          6.868764284246176,
+          6.839439427180885
+        ],
+        [
+          -5.061955503635872,
+          -7.337176962079184,
+          -6.24428672004435,
+          -3.054723992649606,
+          -4.495115121816795,
+          -1.108765526423106
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          2,
+          2,
+          10,
+          2,
+          9
+        ],
+        [
+          3,
+          4,
+          3,
+          4,
+          3,
+          3
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      ],
+      "persistence_delta_bic": [
+        137.63486002220282,
+        132.36166661092483,
+        130.26889285677737
+      ],
+      "shape_convergence_delta_bic": [
+        -5.967557829415831,
+        -10.856826890864589,
+        -9.954228348604229
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "6",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 19,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          10.82696366242314,
+          12.072345107856933,
+          7.3158054571310345,
+          27.03301590926378,
+          28.946976127146385,
+          4.784593212121024
+        ],
+        [
+          3.7709412700249345,
+          36.67277891275675,
+          6.841587501472375,
+          6.268919205003087,
+          10.681656671235373,
+          18.899251765493467
+        ],
+        [
+          -8.456245049745306,
+          -6.136113276840334,
+          -6.291802208466571,
+          -5.27119802089117,
+          -4.101789427519634,
+          22.142007394304926
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          4,
+          4,
+          6,
+          6,
+          6,
+          7
+        ],
+        [
+          4,
+          4,
+          7,
+          6,
+          6,
+          6
+        ],
+        [
+          4,
+          6,
+          4,
+          6,
+          5,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        164.87120020439596,
+        184.674117442534,
+        188.42759605430336
+      ],
+      "shape_convergence_delta_bic": [
+        -0.6611919648321489,
+        -13.475260084236941,
+        -6.725961089015236
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "8",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -4.728340529672408,
+          -1.44910844431287,
+          -0.2484182012116456,
+          -7.7299007894056615,
+          -7.951249656665638,
+          -7.006320024471833
+        ],
+        [
+          3.066409277861723,
+          5.037784512612092,
+          1.682117212470132,
+          -3.2098305166728665,
+          4.1582058837322435,
+          22.712279826744
+        ],
+        [
+          -5.917231783433692,
+          -0.46389491026191365,
+          -5.994034623472032,
+          -5.323033335012646,
+          0.9940386028628261,
+          0.9175534854058824
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          7,
+          8,
+          1,
+          1,
+          8
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          7,
+          7
+        ],
+        [
+          1,
+          1,
+          7,
+          1,
+          8,
+          7
+        ]
+      ],
+      "persistence_delta_bic": [
+        120.973017400204,
+        117.47934168102603,
+        103.37169690556726
+      ],
+      "shape_convergence_delta_bic": [
+        0.7319871603747075,
+        -11.267340319316318,
+        -8.155491212865321
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "9",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          1.8448647585967777,
+          10.01362130620894,
+          5.942260028664904,
+          9.165526916539186,
+          4.101306695772692,
+          5.434425881333588
+        ],
+        [
+          -7.696315892831869,
+          1.6472717568965578,
+          16.236505357669962,
+          1.1385184011964924,
+          12.580960759293383,
+          0.6654576667428671
+        ],
+        [
+          12.686538672638399,
+          14.883538666269843,
+          7.917091537574528,
+          13.163620464172276,
+          7.3458744604450885,
+          5.416440007790591
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          1,
+          1,
+          9,
+          1,
+          9
+        ],
+        [
+          1,
+          9,
+          9,
+          9,
+          9,
+          2
+        ],
+        [
+          7,
+          8,
+          8,
+          8,
+          8,
+          9
+        ]
+      ],
+      "persistence_delta_bic": [
+        74.58228399512242,
+        71.76198497701571,
+        90.58435767834314
+      ],
+      "shape_convergence_delta_bic": [
+        -15.067880833348813,
+        -19.476603351674722,
+        0.030469099744308892
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          9.933467864336421,
+          -4.114900089913604,
+          -5.786097370988755,
+          -6.92165025563332,
+          -7.937419723088784,
+          -8.80058399342483
+        ],
+        [
+          3.062275038119452,
+          -7.136873960470602,
+          -9.814211845464264,
+          -9.672639730982297,
+          -9.561650124234816,
+          -10.223603149323125
+        ],
+        [
+          -5.636892914245394,
+          0.9458761865752621,
+          0.04573431239410297,
+          -8.353454492999909,
+          -10.782947833588906,
+          -10.385569943847475
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          5,
+          9,
+          10,
+          11,
+          1
+        ],
+        [
+          6,
+          1,
+          9,
+          1,
+          11,
+          13
+        ],
+        [
+          5,
+          6,
+          6,
+          6,
+          2,
+          1
+        ]
+      ],
+      "persistence_delta_bic": [
+        207.94515922764162,
+        196.02550787388424,
+        110.43495414739812
+      ],
+      "shape_convergence_delta_bic": [
+        -6.689964333719951,
+        -4.632639541681934,
+        -12.03270889033078
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "10",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          2.348270274525035,
+          4.339559755240515,
+          1.2310343674980544,
+          -4.582082002828159,
+          1.0295592281061658,
+          -1.4090920799287545
+        ],
+        [
+          -2.8249264875121725,
+          -8.52335697839196,
+          0.6288364287149477,
+          9.80382105631216,
+          1.4617039354418608,
+          0.9760329735354532
+        ],
+        [
+          -0.04110195943336237,
+          0.02590474761764483,
+          13.831055231072568,
+          -1.6226924926289996,
+          7.453394078826108,
+          5.404092807600605
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          8,
+          9,
+          9,
+          10,
+          11,
+          11
+        ],
+        [
+          2,
+          2,
+          8,
+          9,
+          10,
+          10
+        ],
+        [
+          6,
+          9,
+          9,
+          10,
+          11,
+          11
+        ]
+      ],
+      "persistence_delta_bic": [
+        24.296861200077537,
+        46.42774726930906,
+        38.91427851640176
+      ],
+      "shape_convergence_delta_bic": [
+        -6.855460687637647,
+        -13.981010868048662,
+        0.4757002315812251
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "11",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -1.975501691056138,
+          -8.642999077064438,
+          -8.092304050694366,
+          -9.779231198791273,
+          -9.723490926784223,
+          -4.096675755140851
+        ],
+        [
+          -9.257802626017977,
+          -7.182398573862656,
+          -9.490659715385704,
+          -6.887205083836676,
+          -5.681020460707288,
+          -5.82346741083046
+        ],
+        [
+          -4.6534919483744375,
+          -5.527129350845954,
+          -6.84118304269424,
+          -2.8797214654541676,
+          -4.194406479078353,
+          -7.926847651572373
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          13,
+          8,
+          11,
+          7,
+          10,
+          11
+        ],
+        [
+          13,
+          8,
+          12,
+          8,
+          7,
+          8
+        ],
+        [
+          8,
+          8,
+          3,
+          8,
+          2,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        0.9670690894243812,
+        4.054153145993428,
+        12.344471243668817
+      ],
+      "shape_convergence_delta_bic": [
+        -10.204370289327986,
+        -12.293827341430914,
+        -9.936054213820865
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          23.40747200829847,
+          21.50729296001682,
+          5.41456989506775,
+          -2.1736932152760744,
+          -4.3300877561550095,
+          -7.6248628654663975
+        ],
+        [
+          16.457353052880592,
+          13.640754412304418,
+          9.674478715292771,
+          0.1604860263644241,
+          -4.578314119676648,
+          3.2866927148109024
+        ],
+        [
+          4.523813833616657,
+          13.57492823630895,
+          1.2054704525130617,
+          0.24365403346092762,
+          -8.662458932099618,
+          -3.108052397542785
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          8,
+          8,
+          8,
+          8
+        ],
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        135.15219499805613,
+        127.15014925487382,
+        107.81334939366768
+      ],
+      "shape_convergence_delta_bic": [
+        -4.296173764520397,
+        -8.476488796965251,
+        -10.085069799200385
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "14",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -7.864818627650415,
+          -8.929964459321283,
+          -7.826414700314544,
+          -8.884785783222057,
+          -10.474013011533913,
+          -10.532112563845345
+        ],
+        [
+          -1.055391348882054,
+          -9.314090897575227,
+          -10.170991420944915,
+          -6.290408444721919,
+          -10.485815576454087,
+          -10.396325355975407
+        ],
+        [
+          -9.236188624138585,
+          -7.848318847808137,
+          -10.225057511457734,
+          -9.827367627870608,
+          -9.148835559696572,
+          -10.002684083787493
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          9,
+          1,
+          7,
+          11,
+          1
+        ],
+        [
+          8,
+          1,
+          10,
+          1,
+          11,
+          13
+        ],
+        [
+          1,
+          1,
+          10,
+          10,
+          5,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        45.983515363744544,
+        47.27993657297688,
+        20.652396531891128
+      ],
+      "shape_convergence_delta_bic": [
+        -7.358478148101751,
+        -18.441805095930153,
+        -10.242739943035845
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          3.139716514347498,
+          0.527158649635183,
+          19.418983790861283,
+          20.985531430980693,
+          22.238450749992175,
+          19.03904075452538
+        ],
+        [
+          -4.989897556441889,
+          -3.144894703350964,
+          -1.294193278880293,
+          -1.9975404770818201,
+          -2.411214971475772,
+          -0.7199868267512102
+        ],
+        [
+          -4.357352728704868,
+          -3.6498374441336665,
+          3.2935096681068714,
+          0.12529106973669002,
+          1.270860643594311,
+          11.442989450488916
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          5,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          6
+        ],
+        [
+          6,
+          6,
+          5,
+          5,
+          7,
+          7
+        ]
+      ],
+      "persistence_delta_bic": [
+        165.73058181582078,
+        164.9472668620443,
+        127.44305647982091
+      ],
+      "shape_convergence_delta_bic": [
+        1.371100285088474,
+        -2.805186331773868,
+        1.609437912434096
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "15",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          2.5441718749235065,
+          2.965475848846694,
+          4.436894169646791,
+          16.35259751788533,
+          20.217255308676087,
+          20.19259100238665
+        ],
+        [
+          -3.0905240838816326,
+          -5.4117404272985965,
+          -5.335253106679033,
+          6.427842312208639,
+          1.4472042669145821,
+          8.527154872510977
+        ],
+        [
+          6.6161264030446745,
+          5.64169011831568,
+          8.1597830694311,
+          2.8054369569576068,
+          20.14784467433043,
+          10.74858037471951
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          7,
+          12,
+          12,
+          12
+        ],
+        [
+          7,
+          6,
+          13,
+          12,
+          8,
+          7
+        ],
+        [
+          8,
+          8,
+          13,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        244.6756657107466,
+        24.074331710087307,
+        237.5594986753875
+      ],
+      "shape_convergence_delta_bic": [
+        1.5995733895720452,
+        -11.821993011940075,
+        -9.55643142053907
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -1.9492186704471237,
+          -6.33491050316227,
+          -2.646039110968033,
+          0.18468640404475423,
+          -5.5153465155288615,
+          -1.1933649595233078
+        ],
+        [
+          -4.468945741043825,
+          -4.028838584247019,
+          -3.0214317911325494,
+          -5.53791952233486,
+          3.236699687067947,
+          -1.3684426649020125
+        ],
+        [
+          21.419074234161535,
+          -4.395669181922429,
+          -3.5821400326055937,
+          -2.3166575515415673,
+          -5.5372242103374205,
+          -4.562133670027016
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          3,
+          11,
+          8,
+          3,
+          13
+        ],
+        [
+          10,
+          3,
+          3,
+          11,
+          12,
+          3
+        ],
+        [
+          11,
+          3,
+          6,
+          13,
+          3,
+          11
+        ]
+      ],
+      "persistence_delta_bic": [
+        4.047461991059151,
+        12.230481311980606,
+        9.945296517447552
+      ],
+      "shape_convergence_delta_bic": [
+        -9.508116161856343,
+        -12.925405255644648,
+        -18.870038579446675
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 4,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          6.9885301951797345,
+          17.0841566035202,
+          24.16778385621093,
+          24.245010484552964,
+          24.306758303361704,
+          24.761336580313582
+        ],
+        [
+          22.027907923512174,
+          5.348673050541521,
+          2.6841605470892773,
+          14.948799466593528,
+          24.195185516708605,
+          29.730880623000814
+        ],
+        [
+          1.0107534199046313,
+          5.334198380942283,
+          5.230800186908127,
+          11.208344344301238,
+          18.805087926776295,
+          13.243874157981892
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          12,
+          11,
+          11,
+          11,
+          11,
+          11
+        ],
+        [
+          9,
+          9,
+          9,
+          9,
+          13,
+          13
+        ],
+        [
+          9,
+          9,
+          13,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        177.62503149501163,
+        62.67543702099288,
+        14.745425065467845
+      ],
+      "shape_convergence_delta_bic": [
+        1.6094379392875382,
+        1.2291556822714043,
+        -0.021440854238253593
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 46,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          8.238091696659481,
+          6.868013020823625,
+          6.729829532236387,
+          10.171307638610237,
+          6.945948614499031,
+          7.23455432239048
+        ],
+        [
+          -1.012669862230375,
+          10.33559838363017,
+          13.78108377437946,
+          12.763962224238469,
+          10.637122499365844,
+          12.32251153593809
+        ],
+        [
+          4.556133641709138,
+          11.01107459296938,
+          10.649159288774221,
+          11.912997421373205,
+          7.649291130912836,
+          6.754854119953279
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          8,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          4,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        298.05597787025056,
+        236.37120418205708,
+        218.07889387548204
+      ],
+      "shape_convergence_delta_bic": [
+        -4.367383302273968,
+        -9.738400930402044,
+        -9.059619939868533
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "17",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          2.4850842059688887,
+          1.7233494418729762,
+          6.2480574681883,
+          -8.648575462187267,
+          -10.251179767185988,
+          -10.441859274282251
+        ],
+        [
+          2.7030676958933384,
+          2.7589966373891883,
+          2.917316199049054,
+          2.912288037723158,
+          2.988784445366079,
+          66.43104751699866
+        ],
+        [
+          9.371416614967302,
+          6.7114412725467005,
+          6.7367392795556995,
+          5.4245780097561465,
+          11.271175171241872,
+          -1.1930861164128714
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          10,
+          9,
+          8,
+          8,
+          7,
+          7
+        ],
+        [
+          8,
+          8,
+          8,
+          8,
+          8,
+          12
+        ],
+        [
+          6,
+          6,
+          6,
+          6,
+          8,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        33.171268061510176,
+        200.27042009997342,
+        194.8595856939869
+      ],
+      "shape_convergence_delta_bic": [
+        -6.719768955472087,
+        -2.726092171801316,
+        -11.010877914998984
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "18",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -7.941362835921126,
+          -9.530290614041675,
+          -9.406379800932058,
+          -6.164263391795716,
+          -8.825362659087546,
+          -8.42666378518309
+        ],
+        [
+          -0.12420355553142315,
+          -2.3097177853082513,
+          3.5619938571808376,
+          4.810194853875416,
+          5.452539724824476,
+          6.2453930009546355
+        ],
+        [
+          -5.50823287177154,
+          -7.6557103493625505,
+          -8.93323305787348,
+          -3.850626934931924,
+          -9.96162938097641,
+          -10.336754929127851
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          2,
+          2,
+          2,
+          6,
+          3,
+          6
+        ],
+        [
+          2,
+          10,
+          9,
+          9,
+          9,
+          11
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          7,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        91.36559083114253,
+        176.5612593849865,
+        76.5446660986959
+      ],
+      "shape_convergence_delta_bic": [
+        -19.22972246495076,
+        -3.228925360128068,
+        -12.0168136448497
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 61,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": true,
+      "consequential_pairs": 2,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          -3.8399674284422645,
+          12.46348426763116,
+          4.945688408060647,
+          18.71988692642288,
+          19.57829804906111,
+          22.177649835399613
+        ],
+        [
+          -3.5873240066371466,
+          -3.6082462282427343,
+          12.245996226522763,
+          15.978284737979621,
+          18.153102149779812,
+          18.12333507632185
+        ],
+        [
+          12.69283269830467,
+          6.63891032073434,
+          2.4407052241959235,
+          2.545428464044349,
+          19.240213171603074,
+          11.998890609836891
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          10,
+          10,
+          10,
+          9,
+          9,
+          9
+        ],
+        [
+          9,
+          9,
+          9,
+          9,
+          9,
+          9
+        ],
+        [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      ],
+      "persistence_delta_bic": [
+        278.12996064348505,
+        285.07458705148906,
+        247.69928969842695
+      ],
+      "shape_convergence_delta_bic": [
+        1.4324749316436858,
+        1.6094379606193492,
+        -5.766712307222914
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "19",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "22",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "23",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "24",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": true,
+      "consequential_pairs": 2,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          2.625793546269634,
+          3.489121520436427,
+          0.36878457790083985,
+          2.2595125198334074,
+          3.8430902337051123,
+          1.2093174447012274
+        ],
+        [
+          7.122895319058031,
+          4.7513560433744,
+          8.573546028104055,
+          6.565946120605837,
+          5.564318082700204,
+          8.54588672546452
+        ],
+        [
+          12.40283139110776,
+          10.578074219152796,
+          3.694950094573123,
+          2.6999981518719878,
+          2.4306400397048904,
+          1.742797619042328
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          7,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        146.13183854450384,
+        110.7923621932804,
+        175.85891816169422
+      ],
+      "shape_convergence_delta_bic": [
+        -18.047112679220923,
+        0.12175369591327012,
+        1.609004452229037
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          8.003496813959927,
+          9.992612545914554,
+          3.080803031435039,
+          -0.3711310919291577,
+          -4.595684933441117,
+          -6.746785473151824
+        ],
+        [
+          4.525795530716223,
+          -0.6427450589596191,
+          -2.1055436683943256,
+          -1.8909998004554183,
+          -4.63779411265871,
+          -4.105346748907422
+        ],
+        [
+          -0.9936582853337086,
+          -2.745006947623935,
+          -3.5456094888382523,
+          -1.9760008965263367,
+          -0.3446055490194766,
+          -2.073656377178578
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          5,
+          5,
+          10,
+          5,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        116.65904279682127,
+        46.517303401174566,
+        90.08267707748382
+      ],
+      "shape_convergence_delta_bic": [
+        -1.4752122547295201,
+        -15.795838489832194,
+        -2.5509360293483994
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          1.078619338486405,
+          2.665113668653401,
+          -7.099302271697326,
+          -1.8706150796434944,
+          -4.094622785118773,
+          -8.001996541372066
+        ],
+        [
+          18.99937449057507,
+          5.353992423424131,
+          25.585371165906942,
+          7.098656154089966,
+          9.17529314824521,
+          10.552784082939823
+        ],
+        [
+          14.780088555879544,
+          11.244233473378259,
+          7.510592692539497,
+          -10.2865778803979,
+          -8.815849312188682,
+          -9.388856838499123
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          11,
+          4,
+          4,
+          5,
+          4
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          5,
+          6
+        ],
+        [
+          3,
+          1,
+          1,
+          4,
+          4,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        121.38257163526997,
+        47.463727740899266,
+        53.32790858181313
+      ],
+      "shape_convergence_delta_bic": [
+        -10.025599219631463,
+        -3.193911169084501,
+        -0.6295579181119813
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -3.550545138684697,
+          -2.071090393367328,
+          -0.18893975108265693,
+          11.177740374044546,
+          5.80262922903178,
+          11.902516987746353
+        ],
+        [
+          -8.644253012458051,
+          4.363603265983286,
+          7.440794160028005,
+          6.504043962108554,
+          7.520071849128868,
+          9.048535944787176
+        ],
+        [
+          0.7670291177173283,
+          0.751446034153517,
+          0.9398174735152196,
+          30.962392956791668,
+          11.506532615547385,
+          2.5731385586597213
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          11,
+          11,
+          12,
+          13,
+          12,
+          13
+        ],
+        [
+          13,
+          13,
+          13,
+          11,
+          11,
+          13
+        ],
+        [
+          6,
+          11,
+          11,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        204.11616932556606,
+        1.0156619476633253,
+        205.82905083395863
+      ],
+      "shape_convergence_delta_bic": [
+        -3.8753356525407057,
+        -2.844474494311541,
+        -3.325419348354764
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "26",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 8,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -7.125157285784127,
+          4.969435147603164,
+          10.416273058483611,
+          13.40114418123565,
+          12.755460615572659,
+          13.837077659708413
+        ],
+        [
+          -2.8717668936156144,
+          8.88775561996789,
+          10.941511255490909,
+          9.899254495166801,
+          10.597345428657789,
+          14.648331524895212
+        ],
+        [
+          -0.5356662076305838,
+          -3.041020843497435,
+          19.962924892344297,
+          5.633163502765356,
+          6.1279702544243975,
+          6.387447672051209
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          11,
+          11,
+          11,
+          11,
+          11,
+          11
+        ],
+        [
+          9,
+          10,
+          10,
+          10,
+          9,
+          10
+        ],
+        [
+          10,
+          6,
+          10,
+          12,
+          12,
+          12
+        ]
+      ],
+      "persistence_delta_bic": [
+        200.54273785407756,
+        218.78211443408637,
+        179.52350355894058
+      ],
+      "shape_convergence_delta_bic": [
+        -4.183299783538743,
+        -7.470849610835941,
+        1.6094379124515896
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "27",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 6,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -7.941422206210206,
+          -2.7852837081626802,
+          1.5074861913990247,
+          1.1533050649341874,
+          2.19046449667141,
+          1.5781590683779996
+        ],
+        [
+          1.059645151237504,
+          0.05573860137492659,
+          1.0700441903334479,
+          1.0026625350970733,
+          1.2621194574628447,
+          1.5390583099647586
+        ],
+        [
+          -4.404486961910038,
+          -4.281216561871801,
+          -0.5440496122214142,
+          2.2530449445552847,
+          2.791208445112659,
+          23.09531101404456
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          9,
+          9,
+          9,
+          9,
+          9,
+          9
+        ],
+        [
+          8,
+          8,
+          8,
+          8,
+          8,
+          9
+        ]
+      ],
+      "persistence_delta_bic": [
+        194.43056545484126,
+        193.38865680028968,
+        180.4177948875466
+      ],
+      "shape_convergence_delta_bic": [
+        -8.78944923868579,
+        -9.144605951693215,
+        -0.20811270435939733
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -5.078198551992784,
+          -8.561744097186967,
+          -9.939828596936131,
+          -8.357057559253422,
+          -8.127284659922257,
+          -10.404019142849195
+        ],
+        [
+          -6.525506376324074,
+          4.340552277656485,
+          6.0018483556251,
+          4.8184223701811675,
+          2.727903272379635,
+          61.44007712888251
+        ],
+        [
+          -3.1213229130239597,
+          -3.412032638324547,
+          -7.416718945662396,
+          -5.013232174942765,
+          -6.990400156839357,
+          -9.4981659701402
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          6,
+          6,
+          6,
+          6,
+          7
+        ],
+        [
+          1,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          1,
+          1,
+          7,
+          7,
+          7,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        25.984239364413042,
+        147.85552177241962,
+        209.9769608376273
+      ],
+      "shape_convergence_delta_bic": [
+        -21.6630109904834,
+        -4.364907506098346,
+        -4.896674629407421
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          3.310041796720654,
+          5.69502538505408,
+          7.011325247299638,
+          8.46366198829159,
+          7.260566595063466,
+          6.381072324029034
+        ],
+        [
+          -2.5626800060151425,
+          -0.8383559917840415,
+          10.176626732146786,
+          12.334831277128856,
+          8.886766978028163,
+          8.843069905060176
+        ],
+        [
+          4.859452162288633,
+          6.043682039540329,
+          23.193357634123778,
+          1.906444370879413,
+          6.196957444861553,
+          6.362624231135911
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          11,
+          11,
+          11,
+          11,
+          11
+        ],
+        [
+          6,
+          11,
+          10,
+          9,
+          11,
+          10
+        ],
+        [
+          6,
+          9,
+          10,
+          10,
+          10,
+          12
+        ]
+      ],
+      "persistence_delta_bic": [
+        210.58497221741257,
+        206.7328741659146,
+        211.0320950969053
+      ],
+      "shape_convergence_delta_bic": [
+        -14.477987917070315,
+        -0.5552387027718773,
+        -3.111172133549962
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "28",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          6.794477809169194,
+          6.720106826876915,
+          3.3434164374040307,
+          5.701215618420591,
+          -1.1139157983202495,
+          -1.1096171196049625
+        ],
+        [
+          -5.911425504375842,
+          4.639293990719715,
+          2.7243581177545764,
+          2.5098707535440496,
+          2.46558381886112,
+          2.78774010290725
+        ],
+        [
+          0.5254117579023188,
+          4.333802910248039,
+          -0.3094273917999715,
+          -0.3334810071984009,
+          -0.35127026133058337,
+          1.981730836123191
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        497.3422001423641,
+        497.3422002639337,
+        497.34220014225895
+      ],
+      "shape_convergence_delta_bic": [
+        0.45710253325032113,
+        -5.1664275947794565,
+        1.545330371394435
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "29",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          1.1336404563287346,
+          7.747981226817835,
+          3.21499969852524,
+          2.552956198753648,
+          1.2441442251190793,
+          4.830322845282495
+        ],
+        [
+          -0.5132059170198744,
+          -1.6344950412806298,
+          12.449864524308033,
+          10.11008254053511,
+          14.074253209203725,
+          22.856583915241167
+        ],
+        [
+          -8.533146814174444,
+          -4.194687703400817,
+          2.5042134812979597,
+          12.40642883671735,
+          3.2418765031488803,
+          11.760783760208714
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          5,
+          5,
+          5,
+          7,
+          5
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          3,
+          5,
+          4,
+          4,
+          4,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        140.28926009047427,
+        172.7922136711795,
+        150.15374667262353
+      ],
+      "shape_convergence_delta_bic": [
+        0.41531688583879856,
+        -11.64661432128328,
+        -11.448512775520399
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": false,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 0,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -5.376872977731264,
+          -8.418923021131704,
+          -6.036235795334619,
+          -10.728770870627976,
+          -10.323155481708255,
+          -9.583430815080725
+        ],
+        [
+          -9.736765719551002,
+          -9.373876150857257,
+          -7.886341403858317,
+          -8.719617061600673,
+          -9.674981048783366,
+          -8.010626269601882
+        ],
+        [
+          -3.6591404151656945,
+          -4.221447523749774,
+          -10.799878847986491,
+          -10.056212188746002,
+          -10.65480416786285,
+          -10.245835661840687
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          8,
+          8,
+          4,
+          2,
+          11,
+          4
+        ],
+        [
+          1,
+          4,
+          1,
+          11,
+          5,
+          5
+        ],
+        [
+          9,
+          9,
+          13,
+          1,
+          11,
+          1
+        ]
+      ],
+      "persistence_delta_bic": [
+        43.67676076717518,
+        37.82236747276659,
+        -3.0445224377234226
+      ],
+      "shape_convergence_delta_bic": [
+        -16.123968366737003,
+        -12.717525769750297,
+        -11.006691883045615
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -0.9649842109984235,
+          1.0447238268411354,
+          1.6535944929226787,
+          6.148987304480713,
+          8.911586474815444,
+          16.82043444191722
+        ],
+        [
+          -6.636243154403417,
+          -5.005657918809149,
+          -8.140933779330865,
+          -7.868235065070834,
+          -6.849669720475589,
+          -4.183683908696942
+        ],
+        [
+          0.9106474016603414,
+          3.0223903271589876,
+          -2.263036501236172,
+          -3.379632530116922,
+          0.1318814475827068,
+          -1.6872274321914276
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          2,
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      ],
+      "persistence_delta_bic": [
+        351.37636128983655,
+        314.1029558227858,
+        338.52419795652736
+      ],
+      "shape_convergence_delta_bic": [
+        -2.8481034469687536,
+        -4.742860207724101,
+        -8.482762170713542
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "32",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "38",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          19.674508335595448,
+          -0.9117154283910764,
+          -6.603524956125177,
+          -7.751618506794564,
+          -9.206722663550494,
+          -10.590018248839733
+        ],
+        [
+          -1.7736070617542197,
+          -1.7098160713831447,
+          -1.4399070980055768,
+          -0.31412046708545915,
+          -1.8209592213426617,
+          -1.2977653788256447
+        ],
+        [
+          5.811796466067911,
+          1.8834372135698203,
+          0.29995357735853645,
+          0.21853061845422417,
+          0.37695672834774996,
+          -0.2994345105428806
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          6,
+          6,
+          7,
+          7,
+          10
+        ],
+        [
+          1,
+          9,
+          9,
+          2,
+          2,
+          2
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        109.43911337495766,
+        140.87834353946687,
+        142.60320258357515
+      ],
+      "shape_convergence_delta_bic": [
+        -3.894889935641496,
+        0.15685859940658986,
+        -0.21188851084836813
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": true,
+      "consequential_pairs": 2,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          2.272454127890512,
+          17.583389826926222,
+          19.480914661863537,
+          25.710709425744206,
+          26.24972270958134,
+          25.69162115342543
+        ],
+        [
+          5.305566996484771,
+          19.668098466638334,
+          27.59696459158448,
+          17.823461816309738,
+          20.963967487810102,
+          22.680068078647345
+        ],
+        [
+          11.16871159288715,
+          28.646672141545757,
+          27.17906922268007,
+          27.11339407157282,
+          15.234645445055278,
+          15.24352536919372
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ]
+      ],
+      "persistence_delta_bic": [
+        83.11509774569345,
+        59.811614156445344,
+        25.73702766724204
+      ],
+      "shape_convergence_delta_bic": [
+        0.7691603369378157,
+        1.2991788574403316,
+        -1.1148587287113187
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          11.907424245322517,
+          4.460612659217446,
+          0.7941451546574996,
+          -9.412133069063927,
+          -2.6912015285602138,
+          -8.255476675373956
+        ],
+        [
+          14.314847158590936,
+          -0.6027203680303401,
+          3.942249005934279,
+          -2.1117331385848175,
+          -6.309594467640309,
+          -2.6582569563283442
+        ],
+        [
+          8.707892761189498,
+          3.4896137539870864,
+          -1.5619200627387286,
+          -10.466608308610944,
+          -8.822152195955404,
+          -7.7107349995052665
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          7,
+          6,
+          6,
+          6,
+          1,
+          6
+        ],
+        [
+          7,
+          6,
+          7,
+          9,
+          10,
+          11
+        ]
+      ],
+      "persistence_delta_bic": [
+        38.554880951726076,
+        -2.716385688670286,
+        90.55758030843506
+      ],
+      "shape_convergence_delta_bic": [
+        -12.336583594592538,
+        -11.6604423720707,
+        -8.722550530989016
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "44",
+      "chunk_start": 194,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": false,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 1,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -1.3564332592702186,
+          -2.5138509989393896,
+          -0.7830092043738404,
+          2.600959636259212,
+          -8.091219844037,
+          -3.173901567438948
+        ],
+        [
+          8.890322601567135,
+          2.368070469176402,
+          -8.66201420213649,
+          3.4737038153949147,
+          -7.587802187040694,
+          -7.298144083413504
+        ],
+        [
+          2.9609286170626916,
+          -7.328063112693741,
+          -8.092255288953922,
+          -3.0098721588840505,
+          -5.4196536950052305,
+          -5.7118311050783745
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          7,
+          7,
+          13,
+          7
+        ],
+        [
+          2,
+          2,
+          13,
+          8,
+          7,
+          12
+        ],
+        [
+          7,
+          7,
+          8,
+          7,
+          7,
+          12
+        ]
+      ],
+      "persistence_delta_bic": [
+        63.482729772109394,
+        81.70286481812835,
+        62.98991105337748
+      ],
+      "shape_convergence_delta_bic": [
+        -8.557109195989522,
+        -14.614506128109651,
+        -30.241970361540723
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          30.709033955391135,
+          20.57463007967325,
+          -8.225657712730182,
+          -10.437853870772983,
+          -8.386561958990924,
+          -4.60581870029813
+        ],
+        [
+          -3.339666788686685,
+          14.667949598267768,
+          -1.862098534979289,
+          -6.002294241897278,
+          1.6160068231130964,
+          0.6864545521965368
+        ],
+        [
+          7.588828085469331,
+          0.008567237964456353,
+          15.975140430790951,
+          3.6394463679017193,
+          -6.787214244322826,
+          -3.652866575017825
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          4,
+          6,
+          1,
+          1,
+          2,
+          6
+        ],
+        [
+          2,
+          7,
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          8,
+          2,
+          5,
+          7,
+          7,
+          7
+        ]
+      ],
+      "persistence_delta_bic": [
+        160.70056422817296,
+        141.22721959311258,
+        179.93197464070542
+      ],
+      "shape_convergence_delta_bic": [
+        -7.299467119157036,
+        -1.411578586724561,
+        -4.283148988042555
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "52",
+      "chunk_start": 290,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "53",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "55",
+      "chunk_start": 106,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -9.990330193823326,
+          -10.88920471729574,
+          -2.3512651077664515,
+          -0.15092846523793568,
+          -10.440587174640527,
+          -10.79603232443985
+        ],
+        [
+          -8.121105382586236,
+          -9.715787112167448,
+          -4.037253412345535,
+          -2.6217532268469395,
+          9.698373958740424,
+          -0.6952844780486203
+        ],
+        [
+          -10.742824889468679,
+          -10.712656939996705,
+          -5.64715909139106,
+          1.4375957530247518,
+          -0.14308704587573118,
+          -0.003679713447326094
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          12,
+          13,
+          11,
+          1,
+          6,
+          5
+        ],
+        [
+          9,
+          11,
+          6,
+          1,
+          6,
+          4
+        ],
+        [
+          8,
+          5,
+          5,
+          6,
+          5,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        497.34204219995877,
+        497.34220786816906,
+        497.3422002324686
+      ],
+      "shape_convergence_delta_bic": [
+        0.37534737063625556,
+        -14.102812450731875,
+        -34.19840880390578
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "56",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          20.71271446070252,
+          0.18107423213463392,
+          -3.8497275648523015,
+          -5.2708548763962,
+          -6.998085823694055,
+          -1.5642350360623851
+        ],
+        [
+          -2.0422604559283286,
+          7.84619470190686,
+          0.6744181978973316,
+          2.258359902696789,
+          -7.090060052332377,
+          -7.842721664325092
+        ],
+        [
+          9.087152392063004,
+          -4.139995807223443,
+          -6.261568891051951,
+          -8.157555417680127,
+          -6.895196544008675,
+          -6.744064090647541
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          4,
+          4,
+          4,
+          4,
+          2,
+          2
+        ],
+        [
+          4,
+          4,
+          4,
+          4,
+          3,
+          5
+        ],
+        [
+          4,
+          4,
+          4,
+          4,
+          9,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        195.85869262531546,
+        325.27048722859416,
+        160.40470736843292
+      ],
+      "shape_convergence_delta_bic": [
+        -9.621687940891544,
+        -17.070961258954235,
+        -10.268032183907826
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "57",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "58",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          2.0647670392290536,
+          0.48324261380523126,
+          -1.83552215785474,
+          0.9471202923137412,
+          4.753008825503784,
+          1.4468211910165252
+        ],
+        [
+          -7.509820306090404,
+          -0.16179246385877377,
+          -2.8178550324217504,
+          -4.2388544848133805,
+          -8.111184472003494,
+          -8.602459550375347
+        ],
+        [
+          -5.694474857055567,
+          -1.1526173154329626,
+          -0.2647078316494387,
+          -2.151227693099159,
+          7.905468992317829,
+          -2.822910141212361
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          11,
+          10,
+          10,
+          11
+        ],
+        [
+          13,
+          2,
+          7,
+          7,
+          4,
+          13
+        ],
+        [
+          11,
+          10,
+          12,
+          12,
+          11,
+          10
+        ]
+      ],
+      "persistence_delta_bic": [
+        172.25515991394906,
+        130.35172480779158,
+        183.78305985595836
+      ],
+      "shape_convergence_delta_bic": [
+        -5.958980293657236,
+        -12.108399745999687,
+        -20.003832459190242
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "60",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          12.177253987682093,
+          12.571972356749086,
+          26.40190567718374,
+          24.395432840048883,
+          8.337935283279435,
+          9.282190774762853
+        ],
+        [
+          20.84965538549106,
+          24.054009798251542,
+          23.95282390460138,
+          26.91852125658231,
+          21.15460451074091,
+          24.41481917296894
+        ],
+        [
+          -2.6011491200924013,
+          10.46420442154188,
+          9.803695326061124,
+          22.13939902047958,
+          25.408722496964124,
+          20.585214238089677
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          4,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          8,
+          7,
+          7,
+          7,
+          7,
+          7
+        ]
+      ],
+      "persistence_delta_bic": [
+        141.8688692739683,
+        150.98106914421675,
+        152.77008125360686
+      ],
+      "shape_convergence_delta_bic": [
+        -10.486250784077193,
+        -7.764414766298458,
+        -7.414732583505597
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 29,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          18.455773756149476,
+          2.985876824891605,
+          9.107916172151434,
+          20.31534673053173,
+          19.32944693434854,
+          9.6537813580494
+        ],
+        [
+          9.866353177470884,
+          22.4305189059629,
+          -3.26806506057747,
+          -3.3959388757313604,
+          29.84029616376344,
+          27.02337445123407
+        ],
+        [
+          2.324052350012508,
+          -2.5202560332867847,
+          -0.4632677994222618,
+          -5.382263615438447,
+          2.3676582524603305,
+          4.21866123091155
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          11,
+          12,
+          12,
+          13,
+          13,
+          13
+        ],
+        [
+          8,
+          8,
+          9,
+          9,
+          10,
+          10
+        ],
+        [
+          7,
+          7,
+          7,
+          8,
+          9,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        -0.45478839142298,
+        266.05280107319726,
+        221.59964380479232
+      ],
+      "shape_convergence_delta_bic": [
+        1.6047605836648735,
+        1.276696454426924,
+        -7.2750506847976215
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 48,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -10.09526458750463,
+          -10.311005655887271,
+          -10.356712787630926,
+          -10.600495718207355,
+          -10.40815046343387,
+          -10.542820325495668
+        ],
+        [
+          8.752870466655814,
+          -0.5597825471365638,
+          -1.0444372987565202,
+          3.01838039084447,
+          3.102222513038555,
+          -0.17424384565195794
+        ],
+        [
+          -1.3798131757640633,
+          5.485490606683271,
+          4.301529533729223,
+          3.349864876631287,
+          4.276990442275618,
+          26.126450457314036
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          4,
+          6,
+          6,
+          7,
+          7,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        497.342200150434,
+        497.34220014313786,
+        497.3422001410929
+      ],
+      "shape_convergence_delta_bic": [
+        0.7704883830376801,
+        -4.073227973316959,
+        -0.87900985472419
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "61",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 0,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          22.433820183550957,
+          14.490851975149667,
+          12.32695244276217,
+          14.94409253927482,
+          6.89214287135691,
+          2.781671540527414
+        ],
+        [
+          44.144936296203575,
+          20.316757670072633,
+          12.883713472360043,
+          7.288964210744318,
+          -3.573957389570232,
+          3.4107129796240443
+        ],
+        [
+          20.495791429371195,
+          11.590694353490896,
+          10.1825216219858,
+          2.2679885305612615,
+          -5.183147499985515,
+          -3.997251963345043
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          8,
+          6,
+          6,
+          6,
+          8
+        ],
+        [
+          7,
+          7,
+          7,
+          7,
+          6,
+          7
+        ],
+        [
+          7,
+          6,
+          7,
+          6,
+          6,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        -2.912750446608989,
+        -2.9945972623203687,
+        -2.246893991516316
+      ],
+      "shape_convergence_delta_bic": [
+        -11.298516000809814,
+        -9.850125362859446,
+        -23.837009729825247
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "64",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -9.449129015754039,
+          -10.27752328072134,
+          -7.1639002043216635,
+          -8.459418865981121,
+          -3.309595393054181,
+          0.3400077425078081
+        ],
+        [
+          1.0342437938666649,
+          6.924034679928397,
+          -0.4715674990702752,
+          -1.9163332074972388,
+          -1.6191973331170573,
+          24.463476747838705
+        ],
+        [
+          -0.8940871540310127,
+          -0.9245254484535792,
+          -7.762121393120637,
+          -5.22033356571886,
+          -7.215601711308921,
+          5.553315339674171
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          9,
+          9,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          8,
+          1,
+          8
+        ],
+        [
+          1,
+          9,
+          8,
+          1,
+          1,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        77.74462395711484,
+        85.4986546239059,
+        99.06693691231828
+      ],
+      "shape_convergence_delta_bic": [
+        -5.518018251805032,
+        -10.027888293758405,
+        -3.3076683033949603
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "66",
+      "chunk_start": 138,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 3,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          16.13069603323713,
+          17.597799204087266,
+          17.5412748224,
+          17.822061627784905,
+          14.56866639179438,
+          14.273824634043677
+        ],
+        [
+          26.140346773880708,
+          28.89413742141562,
+          8.668444147914443,
+          19.54443564728055,
+          20.126035629895114,
+          0.9176152328994931
+        ],
+        [
+          -2.948307374824708,
+          23.137443080722505,
+          24.671919126075636,
+          25.889826425861116,
+          25.515716270201125,
+          20.02734920265381
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13
+        ],
+        [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13
+        ],
+        [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        48.59478979800612,
+        120.95855882065476,
+        143.49771847131316
+      ],
+      "shape_convergence_delta_bic": [
+        -0.441982187839443,
+        1.5789662914990075,
+        -10.295609365906962
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 31,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          2.3073465046419273,
+          2.4200995901085918,
+          2.334100820921094,
+          1.882860409166014,
+          2.6827288381136896,
+          2.352729456903745
+        ],
+        [
+          -1.3934100493205932,
+          -1.1862604111277193,
+          15.750758367554795,
+          11.533125413149499,
+          1.3554497664659522,
+          1.0888720710935047
+        ],
+        [
+          1.28360394026258,
+          2.123249935228273,
+          -4.341905133332631,
+          -4.689588765990393,
+          -2.1630573190805364,
+          10.121605303050686
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          7,
+          6,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          7,
+          6,
+          8,
+          8,
+          7,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        219.73564754319605,
+        209.2761737393134,
+        237.03040239250834
+      ],
+      "shape_convergence_delta_bic": [
+        -15.889298185263392,
+        1.1339892532763862,
+        1.1887450670818112
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "69",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 56,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": true,
+      "consequential_pairs": 2,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 3,
+      "commitment_delta_bic_by_level": [
+        [
+          4.771263500401332,
+          2.719722103086255,
+          6.122458008096686,
+          7.100635431014652,
+          5.001388481816434,
+          12.546156355617086
+        ],
+        [
+          -1.1752088606704945,
+          2.2896134429707615,
+          27.422424479535948,
+          30.788733803939834,
+          26.055107301579625,
+          30.782929083509572
+        ],
+        [
+          -3.211421597352711,
+          9.731051168356828,
+          11.829396509974202,
+          17.820134193524623,
+          17.597749916506714,
+          18.118347568313794
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          10,
+          11,
+          13,
+          13,
+          13,
+          13
+        ],
+        [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13
+        ],
+        [
+          10,
+          10,
+          10,
+          12,
+          12,
+          12
+        ]
+      ],
+      "persistence_delta_bic": [
+        238.7525947720238,
+        -1.3657247264541184,
+        302.75116180598167
+      ],
+      "shape_convergence_delta_bic": [
+        1.2115087645667462,
+        1.6094379361356879,
+        1.5214300401448302
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": false,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 0,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -5.136207786911697,
+          -7.819509624439554,
+          -4.48297280389226,
+          -8.863502047465246,
+          -8.698673018453789,
+          -9.97133407386778
+        ],
+        [
+          4.129888429513628,
+          0.522217551445209,
+          32.81755315502787,
+          17.38197133754081,
+          -5.818057623274811,
+          -5.465960903130977
+        ],
+        [
+          2.3731826452762164,
+          -4.445079832376848,
+          -3.1272680643198925,
+          -5.525632547175839,
+          -9.059509293137573,
+          -9.514059020609722
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          5,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          2,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          2,
+          2,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        57.506194487143674,
+        69.48120559786719,
+        60.60789386451391
+      ],
+      "shape_convergence_delta_bic": [
+        -12.010782154189474,
+        -9.173833489033514,
+        -15.245242982096507
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          0.036524595583557584,
+          -6.870670027214409,
+          -6.223254169342809,
+          -0.04422145569351699,
+          2.2508772036692193,
+          5.844138744253115
+        ],
+        [
+          -5.1904489707141295,
+          2.1372525340496367,
+          7.199052328317428,
+          10.283520176052185,
+          13.481170870386507,
+          29.945541387573492
+        ],
+        [
+          -4.250278293498866,
+          -7.0433870579745985,
+          -8.163614687136398,
+          -7.0631525718347845,
+          -8.275371064247047,
+          -4.518701509608146
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          3,
+          4,
+          4,
+          4,
+          4
+        ],
+        [
+          10,
+          3,
+          3,
+          4,
+          4,
+          5
+        ],
+        [
+          1,
+          1,
+          5,
+          13,
+          7,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        126.92775577896126,
+        162.68550534864954,
+        152.27943701223379
+      ],
+      "shape_convergence_delta_bic": [
+        -0.9921160001451739,
+        1.5409585842945361,
+        1.6094379124341032
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 154,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 162,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 13,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -4.775776594998661,
+          -1.3547525074864524,
+          -0.23422864112897912,
+          0.21917844046758717,
+          1.6861924714167884,
+          5.151956105148855
+        ],
+        [
+          -0.21520408904108024,
+          -0.7912406791260338,
+          -0.6420086103511835,
+          0.29610421574523116,
+          0.13716448397865122,
+          9.300487979789892
+        ],
+        [
+          2.856621816035002,
+          9.92692724731549,
+          10.09944345107867,
+          11.666657228769623,
+          8.567037903872148,
+          12.04524557597145
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          10,
+          10,
+          10,
+          10,
+          10,
+          9
+        ],
+        [
+          8,
+          8,
+          8,
+          9,
+          9,
+          9
+        ],
+        [
+          10,
+          13,
+          13,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        209.20188441284844,
+        211.99092503747207,
+        224.81395194646947
+      ],
+      "shape_convergence_delta_bic": [
+        -4.4044578084421,
+        1.2832772057489876,
+        -15.60240543652393
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "70",
+      "chunk_start": 250,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -2.8691305591475498,
+          0.16529651310528948,
+          -6.260385222059014,
+          -8.042827726123065,
+          -7.936956684736302,
+          -9.949715598387542
+        ],
+        [
+          -7.8788080686616695,
+          -7.2129117832938405,
+          -9.902774550833577,
+          -9.587282245964929,
+          -9.694498329880034,
+          -10.614047363146298
+        ],
+        [
+          -7.417796512819834,
+          -8.976007611337707,
+          -7.1475584403346915,
+          -8.4027255626863,
+          -9.199944840586866,
+          -9.16590454103168
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          1,
+          1,
+          3,
+          6,
+          6
+        ],
+        [
+          1,
+          7,
+          9,
+          3,
+          1,
+          7
+        ],
+        [
+          7,
+          1,
+          1,
+          11,
+          1,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        43.66347043831176,
+        65.4625138442814,
+        132.16100135750378
+      ],
+      "shape_convergence_delta_bic": [
+        -17.38662589190265,
+        -5.076308381975137,
+        -2.302456963156711
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -4.110856666044526,
+          -3.775414426611917,
+          -4.229636125737784,
+          -0.9141539672389172,
+          -4.5376607622652045,
+          -2.0788011221426075
+        ],
+        [
+          -7.937835585493644,
+          -0.27723956884199197,
+          5.242248255818673,
+          6.340402651015154,
+          6.196225832701465,
+          7.537022435718406
+        ],
+        [
+          -2.8984168502726106,
+          -4.955430644599261,
+          -2.2338673239302125,
+          -4.809692097089098,
+          -8.387076918915398,
+          -2.1316131675046464
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          7,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      ],
+      "persistence_delta_bic": [
+        153.66597668584546,
+        138.129303406805,
+        149.41781733391014
+      ],
+      "shape_convergence_delta_bic": [
+        -1.6684489507635156,
+        -23.82436178959891,
+        0.6943816716603806
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "71",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 17,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          7.705363230992539,
+          7.63358682168051,
+          7.209299331163827,
+          -2.7176903114977478,
+          -6.98566445611894,
+          2.2077122114936856
+        ],
+        [
+          -7.305453885783848,
+          -0.28448015792700687,
+          -0.4529780161318655,
+          1.8589645210885237,
+          6.925479651604292,
+          4.3776780011963154
+        ],
+        [
+          -6.062199337882831,
+          -6.077096688928883,
+          -6.793667109232807,
+          -1.3023052831970077,
+          -6.591405620455731,
+          -6.662401528672319
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          4,
+          1,
+          7,
+          7
+        ],
+        [
+          9,
+          8,
+          12,
+          12,
+          9,
+          13
+        ],
+        [
+          10,
+          7,
+          6,
+          7,
+          10,
+          10
+        ]
+      ],
+      "persistence_delta_bic": [
+        86.16520428498895,
+        111.80459621624159,
+        165.4227404272126
+      ],
+      "shape_convergence_delta_bic": [
+        -21.65973113518274,
+        -10.423416749660811,
+        -5.182419588054625
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "73",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          1.8229560347664489,
+          -1.5981228361516742,
+          0.07884383524022809,
+          -2.837819325341499,
+          -2.0887509123951062,
+          -4.620025236418741
+        ],
+        [
+          -2.547113069145979,
+          -5.7918775518553005,
+          -2.7927899626782704,
+          -5.742228878575929,
+          14.690632227290621,
+          2.7112712577740012
+        ],
+        [
+          18.83607374106043,
+          13.350608822069347,
+          -5.650084712506455,
+          -4.84301117071098,
+          -3.949678533620812,
+          -9.040448153277168
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          1,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          8,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        118.35751535003273,
+        231.77095542040553,
+        166.59030092740156
+      ],
+      "shape_convergence_delta_bic": [
+        -4.7085093031548695,
+        -1.1946532299354207,
+        -0.6843451863192769
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "76",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          8.715826348963247,
+          -2.3082011454348503,
+          -1.7111127133485269,
+          -8.979303807318828,
+          -9.698740893843677,
+          -9.473100421069319
+        ],
+        [
+          -7.114370573765058,
+          -5.499976878066406,
+          -9.777117606720182,
+          -10.217489086428756,
+          -8.805159520232678,
+          -9.6412563504948
+        ],
+        [
+          -0.7194495576898561,
+          -7.338767700086862,
+          -2.5184587478824767,
+          -3.0045063326625723,
+          -7.1820076124558625,
+          -8.081005177627212
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          6,
+          6,
+          7,
+          8,
+          7,
+          7
+        ],
+        [
+          8,
+          7,
+          7,
+          7,
+          3,
+          7
+        ]
+      ],
+      "persistence_delta_bic": [
+        497.34215262421804,
+        497.3421987356765,
+        497.34221097670127
+      ],
+      "shape_convergence_delta_bic": [
+        -2.425977015617468,
+        -3.900395823139064,
+        -5.850465596557189
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 178,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "77",
+      "chunk_start": 210,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": false,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 1,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -6.088698309255832,
+          -8.492011994281526,
+          -1.8826297622785688,
+          -10.032761995678868,
+          -9.55296972606449,
+          -8.237259458301688
+        ],
+        [
+          -0.5898222973748517,
+          -1.8060110865706065,
+          -8.434607746120996,
+          -5.972733931555972,
+          -10.55696615358417,
+          -9.29922457912673
+        ],
+        [
+          -6.9509322421171476,
+          -2.48449366665092,
+          -9.401493031007831,
+          -3.6666085314959744,
+          -9.303906648399646,
+          -4.433513640617662
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          10,
+          1,
+          10,
+          10,
+          4
+        ],
+        [
+          12,
+          6,
+          5,
+          7,
+          10,
+          7
+        ],
+        [
+          1,
+          1,
+          9,
+          8,
+          8,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        7.146896323196202,
+        16.260034607256912,
+        120.01322498906775
+      ],
+      "shape_convergence_delta_bic": [
+        -8.155944805097164,
+        -13.248715115933978,
+        -22.605914079437557
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "79",
+      "chunk_start": 90,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -3.4981254506371044,
+          -5.3997292409436,
+          -3.7707073977154835,
+          9.379136587071613,
+          -0.5444397286510991,
+          4.013950147739031
+        ],
+        [
+          -4.024710876141,
+          -4.192527864384289,
+          17.10715786127936,
+          17.01872119844716,
+          30.1956438098018,
+          20.078910169706965
+        ],
+        [
+          2.057895003674318,
+          3.2670384816886155,
+          8.347330564909278,
+          21.076307084552276,
+          26.95977285418195,
+          28.7879917170943
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          8,
+          8,
+          8,
+          8,
+          8
+        ],
+        [
+          9,
+          4,
+          8,
+          8,
+          9,
+          9
+        ],
+        [
+          9,
+          9,
+          8,
+          8,
+          8,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        90.43678828228398,
+        73.01425355862045,
+        90.68085837449658
+      ],
+      "shape_convergence_delta_bic": [
+        -6.863024009091838,
+        0.7028789064273298,
+        -7.023464693398211
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -7.105291404000923,
+          -6.774485094480667,
+          -7.4337930851785,
+          -6.002218789478533,
+          -9.449362218940578,
+          -8.111330459498632
+        ],
+        [
+          -7.739479062148021,
+          -9.130579022338921,
+          -9.565360795915609,
+          -7.359344199704118,
+          2.599512271538238,
+          -9.544051395696858
+        ],
+        [
+          -3.8456091015252127,
+          -4.368555019246514,
+          2.7838046700808405,
+          3.7235835176209164,
+          -6.94626979313535,
+          -5.980832918872082
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          10,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          13,
+          5,
+          11,
+          5,
+          5,
+          10
+        ],
+        [
+          5,
+          1,
+          5,
+          5,
+          5,
+          5
+        ]
+      ],
+      "persistence_delta_bic": [
+        16.37659667476214,
+        0.27844204995261634,
+        6.777543249194366
+      ],
+      "shape_convergence_delta_bic": [
+        -11.221736589510435,
+        -9.83912142230262,
+        -4.460045069599287
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "80",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 2,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 1,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -4.497959120052315,
+          -1.8826911949276877,
+          -5.225301444305721,
+          -8.727864975274148,
+          -9.162086855902082,
+          -7.401640950580763
+        ],
+        [
+          12.011509297138417,
+          -0.6615046723429003,
+          -1.5199314900586671,
+          -6.811976890369564,
+          -8.676821185578467,
+          -9.319308551504186
+        ],
+        [
+          4.843651012443573,
+          -2.1138705856146487,
+          -4.90364647862436,
+          -5.59847995222686,
+          -6.576984522682366,
+          -6.641558563585598
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          6,
+          6,
+          2,
+          10,
+          1
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          10,
+          5
+        ],
+        [
+          6,
+          5,
+          5,
+          7,
+          6,
+          6
+        ]
+      ],
+      "persistence_delta_bic": [
+        -3.044522437724588,
+        71.74726631503768,
+        -3.0445224377262576
+      ],
+      "shape_convergence_delta_bic": [
+        -11.536736242709718,
+        -15.817683151812778,
+        -16.861976399575816
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "81",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -5.583744850824758,
+          -10.514820983944233,
+          9.100941353651095,
+          21.18965162839028,
+          56.30337222935243,
+          5.491628311968256
+        ],
+        [
+          -5.245884900414467,
+          -7.670539758251493,
+          -7.526959295749862,
+          -8.422924591022195,
+          -9.387301779276342,
+          -8.272952803522877
+        ],
+        [
+          -3.455089330812015,
+          10.714136752877067,
+          5.957890199429329,
+          2.1016335283383683,
+          -0.005346630580817191,
+          -0.501215302354808
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          9,
+          12,
+          12,
+          12,
+          11,
+          13
+        ],
+        [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13
+        ],
+        [
+          13,
+          13,
+          13,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        148.58390436303733,
+        -1.0132350297129609,
+        21.021382730483843
+      ],
+      "shape_convergence_delta_bic": [
+        -1.6155445329217617,
+        -8.681249574994482,
+        -12.232724027136735
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "83",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 1,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 3,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          8.344573375441882,
+          9.093138203628328,
+          20.03539047557785,
+          16.691841146114093,
+          16.083577142829903,
+          24.870900349651258
+        ],
+        [
+          13.895674444316484,
+          12.377920031115721,
+          22.81684754031614,
+          29.671107101781566,
+          30.136946114384337,
+          19.03298688801511
+        ],
+        [
+          4.182349544537942,
+          9.518938794573565,
+          19.390177064270674,
+          22.278785211206525,
+          23.330618656796773,
+          28.538055178989964
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ]
+      ],
+      "persistence_delta_bic": [
+        11.66174072795517,
+        30.79665649656532,
+        44.762202998124295
+      ],
+      "shape_convergence_delta_bic": [
+        -1.1018561171841057,
+        -27.987393048061136,
+        -6.202157861075143
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "84",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 43,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 1,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          2.028839455809681,
+          -2.340398930210881,
+          -2.1408013457813126,
+          14.365023862699744,
+          8.205214438800702,
+          0.488711693456537
+        ],
+        [
+          -2.201566579736948,
+          -2.05510301100189,
+          5.506077105100729,
+          6.370239755080476,
+          7.027247647155576,
+          6.405017409163648
+        ],
+        [
+          -6.2243460334616,
+          6.646474155693596,
+          5.697786452040191,
+          3.781904830692355,
+          1.8490106314220185,
+          -1.6437222127201352
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        [
+          6,
+          6,
+          10,
+          10,
+          10,
+          10
+        ],
+        [
+          6,
+          7,
+          7,
+          7,
+          8,
+          8
+        ]
+      ],
+      "persistence_delta_bic": [
+        256.1884533652505,
+        224.8743702908019,
+        219.63776453057537
+      ],
+      "shape_convergence_delta_bic": [
+        -2.808815481850875,
+        1.6094379164039978,
+        -3.539751570363668
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "85",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 50,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 2,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          0.9403371704374308,
+          0.4688407958048799,
+          4.800601218051838,
+          0.1718746555050501,
+          3.869216247291675,
+          2.9678696214260754
+        ],
+        [
+          3.6807680914960343,
+          -5.896892544654108,
+          -5.147064776911279,
+          -6.067775844524775,
+          -3.745117681469509,
+          1.4572125246323964
+        ],
+        [
+          1.1188026882521172,
+          0.9531464036356283,
+          0.6161381987252241,
+          1.5423704832159189,
+          2.5131423556063623,
+          0.37439265185413717
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          2,
+          1,
+          2,
+          3,
+          3,
+          3
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        219.55626024893496,
+        167.8243673741515,
+        181.26289128588257
+      ],
+      "shape_convergence_delta_bic": [
+        -5.631846385565744,
+        -5.406557006470514,
+        -4.655111548471297
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 58,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 22,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          15.833020023809325,
+          3.1887658058885435,
+          0.15866660951532197,
+          -8.561059594877541,
+          -10.024280838051055,
+          -2.633128011279709
+        ],
+        [
+          15.769066566378726,
+          -0.37079206349345384,
+          8.783344901329514,
+          -3.2364834758451906,
+          -6.656347872585549,
+          -3.8545523831523383
+        ],
+        [
+          -4.5079495085027474,
+          -3.378196909113683,
+          0.15902240495390174,
+          -10.081520543702304,
+          -5.658621544754229,
+          -5.1831826277555635
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          6,
+          6,
+          2,
+          8,
+          7
+        ],
+        [
+          6,
+          7,
+          5,
+          7,
+          7,
+          6
+        ],
+        [
+          7,
+          7,
+          7,
+          7,
+          6,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        213.5769541997177,
+        88.37697593376937,
+        156.94473838847495
+      ],
+      "shape_convergence_delta_bic": [
+        -6.682273763564586,
+        -4.182019210890779,
+        -15.306834090259485
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 2,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -7.534087057188515,
+          -7.693907356539285,
+          -10.200006330571554,
+          -6.831617310502139,
+          -10.266470027745882,
+          -9.832008293912132
+        ],
+        [
+          -3.7346195809874416,
+          -9.76009875247567,
+          -10.546267364660366,
+          -10.020090467154828,
+          -7.874793872828489,
+          -10.526015162070342
+        ],
+        [
+          -3.0839551622219687,
+          -1.9999667845315017,
+          -4.27934083490932,
+          -2.4076415190284877,
+          -8.3524934676621,
+          -8.020677700692822
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          13,
+          13,
+          12,
+          13,
+          9,
+          13
+        ],
+        [
+          8,
+          9,
+          9,
+          1,
+          9,
+          10
+        ],
+        [
+          10,
+          6,
+          7,
+          7,
+          7,
+          2
+        ]
+      ],
+      "persistence_delta_bic": [
+        -2.1024869244538884,
+        77.43076469024564,
+        158.21963132721658
+      ],
+      "shape_convergence_delta_bic": [
+        -14.985143985180956,
+        -20.83035246260012,
+        -4.4468024214928
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "86",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 2,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "87",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "weak",
+      "topple_count": 63,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 2,
+      "commitment_delta_bic_by_level": [
+        [
+          -10.85539660830105,
+          -9.679074349165916,
+          -9.416439183222309,
+          -9.63452014520091,
+          -9.619913574829411,
+          -9.352658495560547
+        ],
+        [
+          -9.828720796569897,
+          -10.937809247824816,
+          -10.355933368191074,
+          -10.939467912010628,
+          -9.981447867159432,
+          -9.344860174559841
+        ],
+        [
+          -9.463804180015188,
+          -10.409461982696655,
+          -10.295842972740473,
+          -10.405718196784065,
+          -10.246840378600155,
+          -10.415151559661211
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          8,
+          9,
+          9,
+          9,
+          9,
+          9
+        ],
+        [
+          3,
+          11,
+          10,
+          11,
+          10,
+          9
+        ],
+        [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      ],
+      "persistence_delta_bic": [
+        182.3374396558964,
+        325.3427901233085,
+        174.37253874533428
+      ],
+      "shape_convergence_delta_bic": [
+        0.7179034219212959,
+        -5.046941558027141,
+        0.4550824294147695
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "90",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 18,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "91",
+      "chunk_start": 122,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 26,
+      "scale": "1.0",
+      "class": "nudge_fork",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -1.4510068594836127,
+          -5.4761754310335675,
+          0.23666874071653865,
+          -0.20494899909913755,
+          -5.00126492466309,
+          39.359001045790144
+        ],
+        [
+          -5.790190828353161,
+          -4.655929908596121,
+          -1.067244714306696,
+          6.062132756598238,
+          7.366088733036335,
+          6.814240519346065
+        ],
+        [
+          -1.576261279252293,
+          -4.093957590795355,
+          -3.4021024078951427,
+          -1.014450520107168,
+          5.055705510623696,
+          3.552573456572631
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          6,
+          6,
+          9,
+          13,
+          3,
+          10
+        ],
+        [
+          3,
+          11,
+          12,
+          12,
+          12,
+          13
+        ],
+        [
+          8,
+          7,
+          13,
+          7,
+          8,
+          12
+        ]
+      ],
+      "persistence_delta_bic": [
+        67.44138209897682,
+        126.03229278631903,
+        97.96953206882893
+      ],
+      "shape_convergence_delta_bic": [
+        -4.8042070865033395,
+        -8.055247994354854,
+        -13.895952308819751
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "92",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 35,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 1,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 1,
+      "commitment_delta_bic_by_level": [
+        [
+          -2.1234184418260753,
+          5.855513485009226,
+          2.1660452649815483,
+          14.209003208216387,
+          -2.42647095586743,
+          1.509803119324829
+        ],
+        [
+          -4.181337312219043,
+          -5.111722392341278,
+          20.281567551392584,
+          -4.737098021369178,
+          22.04469943153635,
+          19.290432076523565
+        ],
+        [
+          -4.4085846227732475,
+          3.813904786597135,
+          16.535070921251318,
+          8.804433692626773,
+          16.56540533789928,
+          11.07384954529708
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          5,
+          13,
+          13,
+          13,
+          11,
+          12
+        ],
+        [
+          5,
+          6,
+          13,
+          12,
+          10,
+          10
+        ],
+        [
+          5,
+          13,
+          13,
+          13,
+          13,
+          13
+        ]
+      ],
+      "persistence_delta_bic": [
+        166.83951655444253,
+        169.81100859923424,
+        171.12682921361593
+      ],
+      "shape_convergence_delta_bic": [
+        -13.916737992803387,
+        0.6043494937352207,
+        -3.1712360530016355
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 10,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "small_split",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 146,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "95",
+      "chunk_start": 170,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 66,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          -9.564799447523939,
+          -8.998509251487235,
+          -10.823610215116432,
+          -10.724319501760107,
+          -10.743696727628233,
+          20.45497929833241
+        ],
+        [
+          0.49262034002887134,
+          -10.354711581462574,
+          -9.796156215884523,
+          -10.13812416879717,
+          -9.226688777510944,
+          -9.895494036354833
+        ],
+        [
+          -10.760534768795225,
+          -7.231541777370396,
+          -10.43960600693957,
+          -7.786906601038652,
+          11.332207918822235,
+          4.297721401145878
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          1,
+          5,
+          6,
+          11,
+          13,
+          4
+        ],
+        [
+          9,
+          12,
+          10,
+          10,
+          9,
+          9
+        ],
+        [
+          11,
+          1,
+          4,
+          4,
+          3,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        143.4800382787527,
+        119.8009026527032,
+        150.81778158523267
+      ],
+      "shape_convergence_delta_bic": [
+        -9.804659361676016,
+        -2.3370602874344932,
+        -5.018579491131387
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "96",
+      "chunk_start": 130,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 34,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 42,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 74,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": true,
+      "boundary_refined_alarm": false,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 1,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          10.23705922206392,
+          10.243983236707635,
+          6.961666253336908,
+          -9.743653702247887,
+          -7.518316939540469,
+          -7.95208325834917
+        ],
+        [
+          2.7134836543007737,
+          1.1442656081206053,
+          8.97304743300353,
+          -8.37867706455751,
+          -7.9390575677116,
+          -9.915486680799846
+        ],
+        [
+          4.784184887365342,
+          -1.0132589410487753,
+          0.9400902040490067,
+          -0.6829664664435455,
+          -7.2174496596990565,
+          -8.042896992070062
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          4,
+          4,
+          4,
+          9,
+          7,
+          11
+        ],
+        [
+          4,
+          4,
+          4,
+          1,
+          4,
+          6
+        ],
+        [
+          1,
+          2,
+          2,
+          4,
+          4,
+          5
+        ]
+      ],
+      "persistence_delta_bic": [
+        144.59239260392587,
+        132.05198041552535,
+        147.18877133214204
+      ],
+      "shape_convergence_delta_bic": [
+        -20.69659613274296,
+        -17.037200314172573,
+        -11.961607902130167
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 82,
+      "scale": "1.0",
+      "class": "topple_fork",
+      "topple_count": 2,
+      "initial_alarm": true,
+      "boundary_refined_alarm": true,
+      "alarm": false,
+      "consequential_pairs": 0,
+      "pairs": 3,
+      "boundary_pairs": 3,
+      "stable_commitment_pairs": 0,
+      "persistence_pairs": 3,
+      "shape_convergence_pairs": 0,
+      "commitment_delta_bic_by_level": [
+        [
+          13.090976431361483,
+          11.154653667476381,
+          9.552752847020145,
+          3.97541590200413,
+          -0.440202566469992,
+          -2.648194785872036
+        ],
+        [
+          -1.187408176155813,
+          -6.886582054885487,
+          3.1020700009663784,
+          5.2819210305440265,
+          -1.5151658909962293,
+          4.665742885028095
+        ],
+        [
+          4.833062302957444,
+          5.248556779389084,
+          6.213515723264493,
+          6.093710336692297,
+          5.557404456441134,
+          1.4218800175007118
+        ]
+      ],
+      "commitment_onsets_by_level": [
+        [
+          3,
+          4,
+          4,
+          6,
+          6,
+          2
+        ],
+        [
+          10,
+          10,
+          5,
+          4,
+          5,
+          5
+        ],
+        [
+          4,
+          4,
+          4,
+          4,
+          7,
+          4
+        ]
+      ],
+      "persistence_delta_bic": [
+        159.90604894814442,
+        141.52462903402196,
+        158.28765633199325
+      ],
+      "shape_convergence_delta_bic": [
+        -2.8591985201252044,
+        -11.937411168575675,
+        -6.620443085898977
+      ]
+    },
+    {
+      "split": "dev",
+      "episode_id": "98",
+      "chunk_start": 98,
+      "scale": "1.0",
+      "class": "quiet",
+      "topple_count": 0,
+      "initial_alarm": false,
+      "boundary_refined_alarm": false,
+      "alarm": false
+    }
+  ]
+}

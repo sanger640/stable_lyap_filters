@@ -1,0 +1,333 @@
+{
+  "protocol": {
+    "name": "D4 fixed-seed TRAIN replication",
+    "status": "frozen before expanded data generation and training",
+    "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+    "data": {
+      "split": "TRAIN only",
+      "states": 256,
+      "selection": "unchanged deterministic episode-balanced selection without outcome labels",
+      "selection_seed": 404,
+      "probes_per_state": 64,
+      "trajectory_steps": 38,
+      "validation_fraction_by_episode": 0.12,
+      "target_validation_states": "at least 30",
+      "maximum_simulator_workers": 4
+    },
+    "training": {
+      "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "epochs": 3,
+      "learning_rate": 1e-05,
+      "states_per_batch": 4,
+      "evaluation": "fixed final epoch only",
+      "arms": {
+        "matched_continuation": "response loss only",
+        "full_d4": "response + complete topology + local commitment + nested D3 boundary"
+      }
+    },
+    "gate": {
+      "primary": "full D4 has lower median topology and commitment error than matched continuation",
+      "retention": "full D4 has no lower median physical-candidate recall than frozen D2",
+      "response_guardrail": "full D4 median response error is no more than 25% above matched continuation",
+      "reporting": "all five seeds and medians; no best-seed selection",
+      "if_pass": "freeze a matched DEV comparison",
+      "if_fail": "test one multimodal trajectory architecture under the same universal supervision"
+    },
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "protocol_sha256": "811f809f71003b228a4a75dacce01a1eb391cfcde28e4103fedca8608c2d0843",
+  "report_sha256": {
+    "d4_replication_s1.json": "999ca48e354476377ecbea870bc0d3a891561bffe11030a63dd534658a90a180",
+    "d4_replication_s2.json": "51ec2a30cbf6e85b3d403f2e7c34b94344a3f550dd5d1b97ae05d9673c081cbc",
+    "d4_replication_s3.json": "b5e5bcd04fba25b08d44922582cc92bbbaba03e65373270a6404ce4b0cebee1f",
+    "d4_replication_s4.json": "384cf8963a1beb97c586ba36e92133e894aa858e0d22a045ac8c68937f85340f",
+    "d4_replication_s5.json": "3249cfb9cdeeca3076d7d4e80b0f037ec92bfc52ca3ce812a841e854c26aa8f7"
+  },
+  "validation": {
+    "states": 36,
+    "episodes": 6,
+    "physical_candidates": 24,
+    "physical_quiet": 12
+  },
+  "arms": {
+    "frozen_d2": {
+      "response": {
+        "values": [
+          0.058702234308131866,
+          0.058702234308131866,
+          0.058702234308131866,
+          0.058702234308131866,
+          0.058702234308131866
+        ],
+        "median": 0.058702234308131866,
+        "min": 0.058702234308131866,
+        "max": 0.058702234308131866
+      },
+      "topology": {
+        "values": [
+          0.04653865675855842,
+          0.04653865675855842,
+          0.04653865675855842,
+          0.04653865675855842,
+          0.04653865675855842
+        ],
+        "median": 0.04653865675855842,
+        "min": 0.04653865675855842,
+        "max": 0.04653865675855842
+      },
+      "commitment": {
+        "values": [
+          0.04141638253349811,
+          0.04141638253349811,
+          0.04141638253349811,
+          0.04141638253349811,
+          0.04141638253349811
+        ],
+        "median": 0.04141638253349811,
+        "min": 0.04141638253349811,
+        "max": 0.04141638253349811
+      },
+      "candidate_recall": {
+        "values": [
+          0.625,
+          0.625,
+          0.625,
+          0.625,
+          0.625
+        ],
+        "median": 0.625,
+        "min": 0.625,
+        "max": 0.625
+      },
+      "quiet_false_rate": {
+        "values": [
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666
+        ],
+        "median": 0.16666666666666666,
+        "min": 0.16666666666666666,
+        "max": 0.16666666666666666
+      },
+      "alarm_agreement": {
+        "values": [
+          0.6944444444444444,
+          0.6944444444444444,
+          0.6944444444444444,
+          0.6944444444444444,
+          0.6944444444444444
+        ],
+        "median": 0.6944444444444444,
+        "min": 0.6944444444444444,
+        "max": 0.6944444444444444
+      },
+      "partition_agreement": {
+        "values": [
+          0.7248263888888888,
+          0.7248263888888888,
+          0.7248263888888888,
+          0.7248263888888888,
+          0.7248263888888888
+        ],
+        "median": 0.7248263888888888,
+        "min": 0.7248263888888888,
+        "max": 0.7248263888888888
+      }
+    },
+    "matched_continuation": {
+      "response": {
+        "values": [
+          0.029684606048653625,
+          0.02982910486268035,
+          0.029154994157983713,
+          0.02951584867130603,
+          0.02982258151395298
+        ],
+        "median": 0.029684606048653625,
+        "min": 0.029154994157983713,
+        "max": 0.02982910486268035
+      },
+      "topology": {
+        "values": [
+          0.04423647831814984,
+          0.044837663273534015,
+          0.043905891782035016,
+          0.04370039776484999,
+          0.044389563250458904
+        ],
+        "median": 0.04423647831814984,
+        "min": 0.04370039776484999,
+        "max": 0.044837663273534015
+      },
+      "commitment": {
+        "values": [
+          0.04092540987120527,
+          0.040815963144672826,
+          0.040945598085980035,
+          0.04038612964278501,
+          0.041507876109487064
+        ],
+        "median": 0.04092540987120527,
+        "min": 0.04038612964278501,
+        "max": 0.041507876109487064
+      },
+      "candidate_recall": {
+        "values": [
+          0.5833333333333334,
+          0.5833333333333334,
+          0.5416666666666666,
+          0.5833333333333334,
+          0.5833333333333334
+        ],
+        "median": 0.5833333333333334,
+        "min": 0.5416666666666666,
+        "max": 0.5833333333333334
+      },
+      "quiet_false_rate": {
+        "values": [
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666
+        ],
+        "median": 0.16666666666666666,
+        "min": 0.16666666666666666,
+        "max": 0.16666666666666666
+      },
+      "alarm_agreement": {
+        "values": [
+          0.6666666666666666,
+          0.6666666666666666,
+          0.6388888888888888,
+          0.6666666666666666,
+          0.6666666666666666
+        ],
+        "median": 0.6666666666666666,
+        "min": 0.6388888888888888,
+        "max": 0.6666666666666666
+      },
+      "partition_agreement": {
+        "values": [
+          0.7404513888888888,
+          0.7287326388888888,
+          0.7365451388888888,
+          0.7374131944444444,
+          0.7309027777777778
+        ],
+        "median": 0.7365451388888888,
+        "min": 0.7287326388888888,
+        "max": 0.7404513888888888
+      }
+    },
+    "full_d4": {
+      "response": {
+        "values": [
+          0.031007064013263315,
+          0.030245440840695262,
+          0.031104104540039163,
+          0.03437190864739629,
+          0.0344215754529513
+        ],
+        "median": 0.031104104540039163,
+        "min": 0.030245440840695262,
+        "max": 0.0344215754529513
+      },
+      "topology": {
+        "values": [
+          0.04066227980850575,
+          0.0407423309257461,
+          0.039706638681107305,
+          0.04034070843934185,
+          0.04174220816801406
+        ],
+        "median": 0.04066227980850575,
+        "min": 0.039706638681107305,
+        "max": 0.04174220816801406
+      },
+      "commitment": {
+        "values": [
+          0.038526727714472346,
+          0.0392169167753309,
+          0.03931425630192583,
+          0.04031362916834445,
+          0.040076146303262145
+        ],
+        "median": 0.03931425630192583,
+        "min": 0.038526727714472346,
+        "max": 0.04031362916834445
+      },
+      "candidate_recall": {
+        "values": [
+          0.6666666666666666,
+          0.5833333333333334,
+          0.625,
+          0.6666666666666666,
+          0.625
+        ],
+        "median": 0.625,
+        "min": 0.5833333333333334,
+        "max": 0.6666666666666666
+      },
+      "quiet_false_rate": {
+        "values": [
+          0.16666666666666666,
+          0.25,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.25
+        ],
+        "median": 0.16666666666666666,
+        "min": 0.16666666666666666,
+        "max": 0.25
+      },
+      "alarm_agreement": {
+        "values": [
+          0.7222222222222222,
+          0.6388888888888888,
+          0.6944444444444444,
+          0.7222222222222222,
+          0.6666666666666666
+        ],
+        "median": 0.6944444444444444,
+        "min": 0.6388888888888888,
+        "max": 0.7222222222222222
+      },
+      "partition_agreement": {
+        "values": [
+          0.7517361111111112,
+          0.7708333333333334,
+          0.7686631944444444,
+          0.7608506944444444,
+          0.7291666666666666
+        ],
+        "median": 0.7608506944444444,
+        "min": 0.7291666666666666,
+        "max": 0.7708333333333334
+      }
+    }
+  },
+  "full_d4_vs_matched_median_percent": {
+    "response": 4.781934747791339,
+    "topology": -8.079753736132355,
+    "commitment": -3.936804968721974
+  },
+  "gates": {
+    "lower_topology": true,
+    "lower_commitment": true,
+    "retains_frozen_candidate_recall": true,
+    "response_within_25_percent": true
+  },
+  "passed": true,
+  "conclusion": "Advance to a frozen matched DEV comparison; TEST remains closed."
+}

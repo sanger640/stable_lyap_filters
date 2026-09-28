@@ -1,0 +1,82 @@
+{
+  "protocol": {
+    "name": "D5 complete-trajectory multimodal architecture gate",
+    "status": "frozen before D5 training",
+    "motivation": "D4 improves average relational geometry but deterministic rollouts fail matched DEV",
+    "architecture": {
+      "shared_dynamics": "D2 StepGraphNet warm start",
+      "modes": 3,
+      "mode_scope": "one coherent mode per complete 38-step counterfactual trajectory",
+      "gate_inputs": "initial privileged state and action sequence only",
+      "decoder": "shared action GRU plus learned mode embeddings and residual trajectory decoder",
+      "deployment": "argmax action-conditioned gate; no physical future, task label or failure label"
+    },
+    "training": {
+      "data": "unchanged 256-state D4 TRAIN corpus",
+      "split": "unchanged 220 train / 36 episode-held-out TRAIN validation",
+      "probes": 64,
+      "steps": 38,
+      "objective": "proper mixture likelihood + D4 response/topology/commitment/boundary + task-free balance/routing regularization",
+      "initial_seed": 1,
+      "epochs": 3,
+      "learning_rate": 1e-05,
+      "states_per_batch": 4
+    },
+    "pilot_gate": {
+      "noncollapse": "every deployed mode has at least 5% validation occupancy",
+      "topology": "lower topology and commitment error than deterministic full-D4 seed 1",
+      "candidate_recall": "at least deterministic full-D4 seed 1 (0.6667)",
+      "quiet": "no higher than deterministic full-D4 seed 1 (0.1667)"
+    },
+    "if_pass": "replicate fixed seeds 1-5 on TRAIN before any new DEV run",
+    "if_fail": "stop privileged Jenga architecture search and reassess the monitor/model interface",
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "protocol_sha256": "fa2a0dee4d7eb5b1b4134cc7df8ee06428192c04c4e105e6fe78258416aad7f2",
+  "deterministic_d4_result_sha256": "999ca48e354476377ecbea870bc0d3a891561bffe11030a63dd534658a90a180",
+  "multimodal_train_result_sha256": "7c4710f709a044c29be2c8486091b72d129d977fce01ea936d34ada3348a32a4",
+  "deterministic_full_d4_seed1": {
+    "states": 36,
+    "response": 0.031007064013263315,
+    "topology": 0.04066227980850575,
+    "commitment": 0.038526727714472346,
+    "physical_candidates": 24,
+    "predicted_candidates": 18,
+    "alarm_agreement": 0.7222222222222222,
+    "candidate_recall": 0.6666666666666666,
+    "quiet_false_rate": 0.16666666666666666,
+    "partition_agreement": 0.7517361111111112
+  },
+  "multimodal_d5_seed1": {
+    "states": 36,
+    "response": 0.03213307720013998,
+    "topology": 0.04027785825180925,
+    "commitment": 0.03955370648246673,
+    "mode_occupancy": [
+      0.4149305555555556,
+      0.20052083333333334,
+      0.3845486111111111
+    ],
+    "physical_candidates": 24,
+    "predicted_candidates": 18,
+    "alarm_agreement": 0.7222222222222222,
+    "candidate_recall": 0.6666666666666666,
+    "quiet_false_rate": 0.16666666666666666,
+    "partition_agreement": 0.7677951388888888
+  },
+  "relative_percent": {
+    "response": 3.6314730939859707,
+    "topology": -0.9454008936707226,
+    "commitment": 2.6656267711223203
+  },
+  "gates": {
+    "noncollapse": true,
+    "lower_topology": true,
+    "lower_commitment": false,
+    "candidate_recall": true,
+    "quiet": true
+  },
+  "passed": false,
+  "conclusion": "Stop privileged Jenga architecture search; do not replicate or open DEV/TEST. Reassess the monitor/world-model interface."
+}

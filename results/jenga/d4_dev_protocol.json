@@ -1,0 +1,38 @@
+{
+  "name": "D4 matched Regime Monitor v0 DEV comparison",
+  "status": "frozen after the TRAIN replication passed and before any D4 DEV rollout",
+  "monitor": {
+    "name": "Regime Monitor v0",
+    "sha256": "4e1a20ca3c64bf18733315fe31df5850529027f8f48cda2c5f547ce43ecdc317",
+    "split": "DEV",
+    "scale": 1.0,
+    "changes": "none"
+  },
+  "arms": {
+    "original_d2": [
+      ["results/jenga/w6_cw_d2_s1.pt", "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965"]
+    ],
+    "matched_continuation": [
+      ["results/jenga/d4_replication/matched_continuation_s1.pt", "1c12e412e61af045e6fe0bb7eff6a7f97e6ed8069bcc6e1826ab91234a62b255"],
+      ["results/jenga/d4_replication/matched_continuation_s2.pt", "b0cdac65ca3f95730620b9fc66e47963c3f8a33dbcf420cc35e0a6f8d4606f9c"],
+      ["results/jenga/d4_replication/matched_continuation_s3.pt", "4c7e52602a8030c884c5a98bc4a28f567f6404f0a47ab5fb0ae9e8a344500ca1"],
+      ["results/jenga/d4_replication/matched_continuation_s4.pt", "4469c9f49d9a9363cc34935d59e33b5876e997d5ed191ee6edd11a44574cda10"],
+      ["results/jenga/d4_replication/matched_continuation_s5.pt", "7e001a9ab54d969597f1ae988c5ff949e31f472894dbd0f50a1c0d632ce9fd18"]
+    ],
+    "full_d4": [
+      ["results/jenga/d4_replication/full_d4_s1.pt", "6fb4f48c816b228242f85b02ac188670979c81b975a6b2613abfe3132d00bc56"],
+      ["results/jenga/d4_replication/full_d4_s2.pt", "6ecae43b4e8b5a58b34e028950f85bed0808d5fcad29acf5126c7852ff1c49fc"],
+      ["results/jenga/d4_replication/full_d4_s3.pt", "f6704a1a57054a01ffab0468d92cfa66729fe583932016ebf74f57e44612a362"],
+      ["results/jenga/d4_replication/full_d4_s4.pt", "4193363b2cb4f3ad84cdeca01213b96d0f3bc1ab656bacdce575497402019207"],
+      ["results/jenga/d4_replication/full_d4_s5.pt", "b38a9ed663df7cd721b607e94b25ce078aa4ea57a4209382e94e1b183c4dde3f"]
+    ]
+  },
+  "grading": "task labels are joined only after every monitor decision",
+  "gates": {
+    "recall": "full-D4 median topple-fork recall is greater than matched-continuation median",
+    "specificity": "full-D4 median quiet alarms are at most matched median plus 2 of 89 states",
+    "physical_agreement": "full-D4 median agreement with physical Monitor v0 is at least matched median"
+  },
+  "reporting": "all five fixed seeds and medians; original D2 is a fixed reference; no seed selection",
+  "test_opened": false
+}

@@ -1,0 +1,296 @@
+{
+  "protocol": {
+    "name": "D4 one-seed full-neighbourhood architecture gate",
+    "seed": 1,
+    "epochs": 3,
+    "lr": 1e-05,
+    "train_states": 41,
+    "validation_states": 7,
+    "validation_episodes": [
+      "0",
+      "1",
+      "5",
+      "7"
+    ],
+    "test_opened": false,
+    "arms": [
+      "frozen_d2",
+      "matched_continuation",
+      "topology",
+      "full_d4"
+    ],
+    "full_d4": "response + complete topology + local commitment + D3 boundary",
+    "selection": "unlabeled episode split and final validation objective"
+  },
+  "data_sha256": "cd89c7ad73aeb2ceb062a898060f38d16ff8d2b7a5cb127f43d2c4b938b21bb9",
+  "initial_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+  "initial_checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+  "arms": {
+    "frozen_d2": {
+      "validation": {
+        "states": 7,
+        "response": 0.06635461721037116,
+        "topology": 0.044873770426160524,
+        "commitment": 0.04342504437746746,
+        "physical_candidates": 5,
+        "predicted_candidates": 5,
+        "alarm_agreement": 0.7142857142857143,
+        "candidate_recall": 0.8,
+        "quiet_false_rate": 0.5,
+        "partition_agreement": 0.78125
+      },
+      "history": []
+    },
+    "matched_continuation": {
+      "weights": {
+        "response": 1.0
+      },
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 22.675807237625122,
+          "train": {
+            "response": 0.281611387382216
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.040925624165018756,
+            "topology": 0.045557859453505704,
+            "commitment": 0.044336488004773855,
+            "physical_candidates": 5,
+            "predicted_candidates": 4,
+            "alarm_agreement": 0.5714285714285714,
+            "candidate_recall": 0.6,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7946428571428571
+          }
+        },
+        {
+          "epoch": 2,
+          "seconds": 23.388837814331055,
+          "train": {
+            "response": 0.23799591111132828
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.037866465880402496,
+            "topology": 0.04742398428996759,
+            "commitment": 0.04758523644081184,
+            "physical_candidates": 5,
+            "predicted_candidates": 4,
+            "alarm_agreement": 0.5714285714285714,
+            "candidate_recall": 0.6,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7946428571428571
+          }
+        },
+        {
+          "epoch": 3,
+          "seconds": 23.62455701828003,
+          "train": {
+            "response": 0.21985952535973544
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.03823408560960421,
+            "topology": 0.048994321176516156,
+            "commitment": 0.050407876327101676,
+            "physical_candidates": 5,
+            "predicted_candidates": 3,
+            "alarm_agreement": 0.42857142857142855,
+            "candidate_recall": 0.4,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7924107142857143
+          }
+        }
+      ],
+      "validation": {
+        "states": 7,
+        "response": 0.03823408560960421,
+        "topology": 0.048994321176516156,
+        "commitment": 0.050407876327101676,
+        "physical_candidates": 5,
+        "predicted_candidates": 3,
+        "alarm_agreement": 0.42857142857142855,
+        "candidate_recall": 0.4,
+        "quiet_false_rate": 0.5,
+        "partition_agreement": 0.7924107142857143
+      },
+      "checkpoint": "results/jenga/d4/matched_continuation_s1.pt",
+      "checkpoint_sha256": "f4b097efd7a6b6032bf53511607a9443cb3cf4e086f5384de3ea0b00a2d23976"
+    },
+    "topology": {
+      "weights": {
+        "response": 1.0,
+        "topology": 42.0625829386977
+      },
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 22.80943274497986,
+          "train": {
+            "response": 0.2986441449000977,
+            "topology": 0.08788557644797171
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.04485775937791914,
+            "topology": 0.043587004799129705,
+            "commitment": 0.04227972582780889,
+            "physical_candidates": 5,
+            "predicted_candidates": 4,
+            "alarm_agreement": 0.5714285714285714,
+            "candidate_recall": 0.6,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7410714285714286
+          }
+        },
+        {
+          "epoch": 2,
+          "seconds": 21.766039609909058,
+          "train": {
+            "response": 0.28125686872830025,
+            "topology": 0.0789573387038417
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.04458934627473354,
+            "topology": 0.04284704799231674,
+            "commitment": 0.040903890372387,
+            "physical_candidates": 5,
+            "predicted_candidates": 4,
+            "alarm_agreement": 0.5714285714285714,
+            "candidate_recall": 0.6,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.75
+          }
+        },
+        {
+          "epoch": 3,
+          "seconds": 22.224193811416626,
+          "train": {
+            "response": 0.27105691867721515,
+            "topology": 0.07243678836072455
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.04690425001483943,
+            "topology": 0.04316709636311446,
+            "commitment": 0.04159205300467355,
+            "physical_candidates": 5,
+            "predicted_candidates": 3,
+            "alarm_agreement": 0.42857142857142855,
+            "candidate_recall": 0.4,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7455357142857143
+          }
+        }
+      ],
+      "validation": {
+        "states": 7,
+        "response": 0.04690425001483943,
+        "topology": 0.04316709636311446,
+        "commitment": 0.04159205300467355,
+        "physical_candidates": 5,
+        "predicted_candidates": 3,
+        "alarm_agreement": 0.42857142857142855,
+        "candidate_recall": 0.4,
+        "quiet_false_rate": 0.5,
+        "partition_agreement": 0.7455357142857143
+      },
+      "checkpoint": "results/jenga/d4/topology_s1.pt",
+      "checkpoint_sha256": "4d42bce66bdd14afa87499ba233be5b738c1a6cf0c1625727c62f20d7a014fcd"
+    },
+    "full_d4": {
+      "weights": {
+        "response": 1.0,
+        "topology": 20.18086531088273,
+        "commitment": 9.322170346675769,
+        "boundary": 0.041796045606797054
+      },
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 43.8744056224823,
+          "train": {
+            "response": 0.3086576688205596,
+            "topology": 0.09846158892983889,
+            "commitment": 0.07669818983981158,
+            "boundary": 3.663745800896389
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.04271924089906471,
+            "topology": 0.04360509464251144,
+            "commitment": 0.041831318621656725,
+            "physical_candidates": 5,
+            "predicted_candidates": 4,
+            "alarm_agreement": 0.5714285714285714,
+            "candidate_recall": 0.6,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7879464285714286
+          }
+        },
+        {
+          "epoch": 2,
+          "seconds": 43.69971060752869,
+          "train": {
+            "response": 0.27788749258828965,
+            "topology": 0.08018289151794572,
+            "commitment": 0.06629514176307655,
+            "boundary": 2.3547620564790033
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.043216623282725256,
+            "topology": 0.04258735700776534,
+            "commitment": 0.039862097307507484,
+            "physical_candidates": 5,
+            "predicted_candidates": 3,
+            "alarm_agreement": 0.42857142857142855,
+            "candidate_recall": 0.4,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7879464285714286
+          }
+        },
+        {
+          "epoch": 3,
+          "seconds": 44.115562200546265,
+          "train": {
+            "response": 0.2664164948708764,
+            "topology": 0.07404904845511405,
+            "commitment": 0.06263208934446661,
+            "boundary": 2.715153478267716
+          },
+          "validation": {
+            "states": 7,
+            "response": 0.04375863457763834,
+            "topology": 0.042832640964271765,
+            "commitment": 0.04050931507455451,
+            "physical_candidates": 5,
+            "predicted_candidates": 5,
+            "alarm_agreement": 0.7142857142857143,
+            "candidate_recall": 0.8,
+            "quiet_false_rate": 0.5,
+            "partition_agreement": 0.7678571428571429
+          }
+        }
+      ],
+      "validation": {
+        "states": 7,
+        "response": 0.04375863457763834,
+        "topology": 0.042832640964271765,
+        "commitment": 0.04050931507455451,
+        "physical_candidates": 5,
+        "predicted_candidates": 5,
+        "alarm_agreement": 0.7142857142857143,
+        "candidate_recall": 0.8,
+        "quiet_false_rate": 0.5,
+        "partition_agreement": 0.7678571428571429
+      },
+      "checkpoint": "results/jenga/d4/full_d4_s1.pt",
+      "checkpoint_sha256": "c10f72547e69550e3818cbe84afda6b3ec4b4f5f6813ef474cc85a441dc9d8e6"
+    }
+  },
+  "decision": "Promising TRAIN-only architecture result, not a monitor claim. Full D4 preserves frozen D2's 0.80 candidate recall while improving response/topology/commitment errors by 34.1%/4.5%/6.7%; matched continuation falls to 0.40 recall. Relative to matched continuation, full D4 trades 14.4% higher response error for 12.6% lower topology error, 19.6% lower commitment error and restored branch agreement. Replicate across seeds on a larger TRAIN-held-out panel before opening DEV; TEST remains closed."
+}

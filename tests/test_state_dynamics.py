@@ -150,6 +150,107 @@ def test_load_balance_is_zero_when_usage_is_uniform():
     assert float(load_balance(torch.tensor([[[1.0, 0.0, 0.0]]]).repeat(4, 3, 1))) > 1.0
 
 
+from state_dynamics import (StepSwitchingEdgeGNN, initialise_switching_from_single,  # noqa: E402
+                            switching_mode_regularizers)
+
+
+def test_switching_edge_model_contract_and_persistent_state():
+    model = StepSwitchingEdgeGNN(hidden=32, rounds=2, modes=3).eval()
+    state, action = random_state(), torch.zeros(5, 4)
+    first = model(state, action)
+    assert first["block_mean"].shape == (5, 3, 15)
+    assert first["gate_probabilities"].shape == (5, 12, 3)
+    assert first["next_mode_state"].shape == (5, 12, 3)
+    assert torch.all(first["regime"].sum(-1) == 1)
+    second = model(state, action, first["next_mode_state"])
+    assert second["next_mode_state"].shape == first["next_mode_state"].shape
+    gates = []
+    states = rollout(model, random_state(batch=2), torch.zeros(2, 4, 4), unit_scale(),
+                     collect=gates)
+    assert states.shape == (2, 4, STATE_DIM)
+    assert torch.stack(gates, dim=1).shape == (2, 4, 12, 3)
+
+
+def test_switching_edge_gate_and_message_experts_receive_gradients():
+    torch.manual_seed(0)
+    model = StepSwitchingEdgeGNN(hidden=24, rounds=2, modes=3).train()
+    gates = []
+    states = rollout(model, random_state(batch=3), torch.zeros(3, 4, 4), unit_scale(),
+                     collect=gates)
+    regularizers = switching_mode_regularizers(torch.stack(gates, dim=1))
+    loss = states.square().mean() + 0.01 * sum(regularizers.values())
+    loss.backward()
+    assert model.mode_gate[0].weight.grad is not None
+    assert model.mode_gate[0].weight.grad.abs().sum() > 0
+    expert_gradients = [parameter.grad for experts in model.mode_edge_updates for expert in experts
+                        for parameter in expert.parameters()]
+    assert any(gradient is not None and gradient.abs().sum() > 0
+               for gradient in expert_gradients)
+
+
+def test_switching_edge_eval_is_deterministic_and_equivariant():
+    torch.manual_seed(0)
+    model = StepSwitchingEdgeGNN(hidden=32, rounds=2, modes=3).eval()
+    state = random_state(batch=1)
+    swapped = state.clone()
+    for base, width in ((0, 3), (9, 6), (27, 6)):
+        left = slice(base + width, base + 2 * width)
+        right = slice(base + 2 * width, base + 3 * width)
+        swapped[:, left], swapped[:, right] = state[:, right].clone(), state[:, left].clone()
+    contacts, swapped_contacts = state[:, 45:57], swapped[:, 45:57]
+    swapped_contacts[:, 0], swapped_contacts[:, 1] = contacts[:, 1], contacts[:, 0]
+    for offset in (3, 6, 9):
+        swapped_contacts[:, offset + 1], swapped_contacts[:, offset + 2] = (
+            contacts[:, offset + 2], contacts[:, offset + 1])
+    action = torch.tensor([[0.001, 0.0, 0.0, 0.0]])
+    with torch.no_grad():
+        first = model(state, action)
+        repeated = model(state, action)
+        permuted = model(swapped, action)
+    assert torch.equal(first["block_mean"], repeated["block_mean"])
+    assert torch.allclose(first["block_mean"][0, 1], permuted["block_mean"][0, 2], atol=1e-5)
+
+
+def test_switching_regularizers_have_expected_extrema():
+    uniform = torch.full((2, 4, 12, 3), 1 / 3)
+    terms = switching_mode_regularizers(uniform)
+    assert abs(float(terms["mode_balance"])) < 1e-6
+    assert abs(float(terms["mode_entropy"]) - 1.0) < 1e-6
+    assert abs(float(terms["mode_persistence"])) < 1e-6
+    collapsed = torch.zeros_like(uniform); collapsed[..., 0] = 1
+    assert float(switching_mode_regularizers(collapsed)["mode_balance"]) > 1.0
+    alternating = collapsed.clone()
+    alternating[:, 1::2, :, 0] = 0; alternating[:, 1::2, :, 1] = 1
+    assert float(switching_mode_regularizers(alternating)["mode_persistence"]) > 0
+
+
+def test_switching_checkpoint_loads_through_shared_evaluator(tmp_path):
+    sys.path.insert(0, str(ROOT / "eval"))
+    from jenga_w5_eval import load_model
+    model = StepSwitchingEdgeGNN(24, 2, 3)
+    path = tmp_path / "edge_switch.pt"
+    torch.save({"model": model.state_dict(), "hidden": 24, "rounds": 2,
+                "kind": "edge_switch", "experts": 3, "modes": 3, "substeps": 1,
+                "block_scale": torch.ones(15), "grip_scale": torch.ones(3)}, path)
+    loaded, scale = load_model(str(path), "cpu")
+    assert isinstance(loaded, StepSwitchingEdgeGNN)
+    assert loaded.modes == 3 and scale[0].shape == (15,)
+
+
+def test_switching_warm_start_exactly_embeds_single_graph_dynamics():
+    torch.manual_seed(4)
+    single = StepGraphNet(32, 2).eval()
+    switching = StepSwitchingEdgeGNN(32, 2, 3).eval()
+    copied = initialise_switching_from_single(switching, single.state_dict())
+    assert any(name.startswith("mode_edge_updates.0.2") for name in copied)
+    state, action = random_state(batch=4), torch.randn(4, 4) * 0.01
+    with torch.no_grad():
+        expected, actual = single(state, action), switching(state, action)
+    for name in ("block_mean", "block_logvar", "block_contact_logits", "gripper_mean",
+                 "gripper_logvar", "pair_contact_logits"):
+        assert torch.equal(expected[name], actual[name])
+
+
 def test_baseline_checkpoint_still_loads_after_refactor():
     import os
     path = ROOT / "results/jenga/w5_stepnet.pt"

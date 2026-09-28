@@ -1,0 +1,332 @@
+{
+  "protocol": {
+    "id": "panda-balanced-motion-slot-dynamics-v2",
+    "motivation": "v1 rejected pre-monitor because one slot monopolized all patches",
+    "seed": 644,
+    "epochs": 12,
+    "batch_pairs": 4,
+    "model": {
+      "descriptor_dim": 64,
+      "slot_dim": 48,
+      "slots": 8,
+      "iterations": 3,
+      "action_dim": 4
+    },
+    "loss_weights": {
+      "motion_reconstruction": 1.0,
+      "dynamics": 1.0,
+      "geometry": 0.5,
+      "pair_separation": 1.0,
+      "motion_assignment": 0.5,
+      "mask_sharpness": 0.05,
+      "slot_balance": 0.2
+    },
+    "assignment": "six-iteration differentiable balanced slot/patch normalization",
+    "checkpoint_selection": "minimum complete label-free validation objective",
+    "pre_monitor_quality_gates": {
+      "minimum_effective_slots": 6.0,
+      "maximum_slot_mass": 0.25,
+      "minimum_geometry_motion_rms": 0.002,
+      "minimum_motion_map_correlation": 0.2
+    },
+    "quality_information": "validation descriptors and actions only; no task/physical labels",
+    "excluded": [
+      "physical state",
+      "contact",
+      "success",
+      "topple",
+      "object identity",
+      "physical monitor decision",
+      "alarm"
+    ],
+    "resource_policy": "CPU-compatible; Torch <=8 threads; no simulator during training"
+  },
+  "protocol_sha256": "512ef487d342c909cae4676fb1b3b98791977776d8f29722b22dfa8181a0628f",
+  "created": "2026-09-25T19:35:13+00:00",
+  "parameters": 60993,
+  "best_epoch": 12,
+  "best_validation_total": 0.4280623495578766,
+  "pre_monitor_gate": {
+    "mask_entropy": 2.079417586326599,
+    "mask_entropy_pass": false,
+    "motion_reconstruction_pass": true
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train": {
+        "total": 0.49295896477997303,
+        "motion_reconstruction": 0.2680004769936204,
+        "dynamics": 0.01159443796495907,
+        "geometry": 1.1968807611673071e-08,
+        "pair_separation": 0.008434944407781586,
+        "motion_assignment": 0.201914232224226,
+        "mask_sharpness": 2.079439863562584,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4499150514602661,
+        "motion_reconstruction": 0.2347537875175476,
+        "dynamics": 0.006567018339410424,
+        "geometry": 5.59378066089522e-09,
+        "pair_separation": 0.003958684275858104,
+        "motion_assignment": 0.20132705941796303,
+        "mask_sharpness": 2.079440712928772,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 2,
+      "train": {
+        "total": 0.4731196630746126,
+        "motion_reconstruction": 0.2605292936787009,
+        "dynamics": 0.004635745222913101,
+        "geometry": 2.8703297516585735e-09,
+        "pair_separation": 0.0030446196178672835,
+        "motion_assignment": 0.20187591761350632,
+        "mask_sharpness": 2.0794408917427063,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.44052089750766754,
+        "motion_reconstruction": 0.23105569928884506,
+        "dynamics": 0.002926983346696943,
+        "geometry": 1.0758153673462445e-09,
+        "pair_separation": 0.0019140570948366076,
+        "motion_assignment": 0.20130421593785286,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 3,
+      "train": {
+        "total": 0.4655899666249752,
+        "motion_reconstruction": 0.2562639294192195,
+        "dynamics": 0.0025072068165172823,
+        "geometry": 6.803970477309296e-10,
+        "pair_separation": 0.0019131775479763746,
+        "motion_assignment": 0.20186720602214336,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.43657658994197845,
+        "motion_reconstruction": 0.22818458825349808,
+        "dynamics": 0.002142119308700785,
+        "geometry": 4.2317062354246815e-10,
+        "pair_separation": 0.0016261741693597287,
+        "motion_assignment": 0.20130332186818123,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 4,
+      "train": {
+        "total": 0.4618423543870449,
+        "motion_reconstruction": 0.252505948767066,
+        "dynamics": 0.0024636021407786757,
+        "geometry": 4.009076369493325e-10,
+        "pair_separation": 0.0019672989001264796,
+        "motion_assignment": 0.20186692290008068,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4348302483558655,
+        "motion_reconstruction": 0.22551557421684265,
+        "dynamics": 0.0025476693990640342,
+        "geometry": 3.8947038649705945e-10,
+        "pair_separation": 0.002143326331861317,
+        "motion_assignment": 0.20130326226353645,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 5,
+      "train": {
+        "total": 0.45902828127145767,
+        "motion_reconstruction": 0.24779537972062826,
+        "dynamics": 0.0036015960213262588,
+        "geometry": 4.347716613811725e-10,
+        "pair_separation": 0.0027257490291958675,
+        "motion_assignment": 0.20186702627688646,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4340614005923271,
+        "motion_reconstruction": 0.22187872976064682,
+        "dynamics": 0.004024039546493441,
+        "geometry": 4.667423253446046e-10,
+        "pair_separation": 0.0035346526419743896,
+        "motion_assignment": 0.2013038545846939,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 6,
+      "train": {
+        "total": 0.4569224379956722,
+        "motion_reconstruction": 0.24346825946122408,
+        "dynamics": 0.0050114823679905385,
+        "geometry": 4.5728471877171106e-10,
+        "pair_separation": 0.003536972653819248,
+        "motion_assignment": 0.20186734106391668,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4331747815012932,
+        "motion_reconstruction": 0.21989858523011208,
+        "dynamics": 0.004576621518936008,
+        "geometry": 4.2622733814612346e-10,
+        "pair_separation": 0.004075460659805685,
+        "motion_assignment": 0.2013041451573372,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 7,
+      "train": {
+        "total": 0.4545271024107933,
+        "motion_reconstruction": 0.2409645887091756,
+        "dynamics": 0.005134620310855098,
+        "geometry": 3.8512621043651496e-10,
+        "pair_separation": 0.0035219633718952537,
+        "motion_assignment": 0.20186777226626873,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.43203093111515045,
+        "motion_reconstruction": 0.21863165497779846,
+        "dynamics": 0.004612771037500352,
+        "geometry": 3.882163132629124e-10,
+        "pair_separation": 0.004161929071415216,
+        "motion_assignment": 0.2013050578534603,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 8,
+      "train": {
+        "total": 0.4523366652429104,
+        "motion_reconstruction": 0.23944437503814697,
+        "dynamics": 0.00474141538143158,
+        "geometry": 3.757374975391081e-10,
+        "pair_separation": 0.0032445637407363392,
+        "motion_assignment": 0.2018685257062316,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4306683763861656,
+        "motion_reconstruction": 0.21788974851369858,
+        "dynamics": 0.0042641632608138025,
+        "geometry": 4.30759941605352e-10,
+        "pair_separation": 0.0038893548189662397,
+        "motion_assignment": 0.20130613446235657,
+        "mask_sharpness": 2.0794410705566406,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 9,
+      "train": {
+        "total": 0.4511203430593014,
+        "motion_reconstruction": 0.23850279953330755,
+        "dynamics": 0.0045473959762603045,
+        "geometry": 4.237040249904789e-10,
+        "pair_separation": 0.0031635079358238727,
+        "motion_assignment": 0.20186917949467897,
+        "mask_sharpness": 2.079441010951996,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4295360669493675,
+        "motion_reconstruction": 0.21744896098971367,
+        "dynamics": 0.0038825502851977944,
+        "geometry": 4.6029837580396915e-10,
+        "pair_separation": 0.0035794053692370653,
+        "motion_assignment": 0.20130621269345284,
+        "mask_sharpness": 2.0794408917427063,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 10,
+      "train": {
+        "total": 0.45016022585332394,
+        "motion_reconstruction": 0.237983837723732,
+        "dynamics": 0.0042750614520628005,
+        "geometry": 4.6173885721867425e-10,
+        "pair_separation": 0.002995195405674167,
+        "motion_assignment": 0.20186816155910492,
+        "mask_sharpness": 2.0794409066438675,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.42941006273031235,
+        "motion_reconstruction": 0.21666572242975235,
+        "dynamics": 0.004258141270838678,
+        "geometry": 6.16638080874754e-10,
+        "pair_separation": 0.003863693622406572,
+        "motion_assignment": 0.2013009414076805,
+        "mask_sharpness": 2.0794407725334167,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 11,
+      "train": {
+        "total": 0.449265806004405,
+        "motion_reconstruction": 0.23730188701301813,
+        "dynamics": 0.0041423328657401726,
+        "geometry": 1.360664771826725e-09,
+        "pair_separation": 0.0029208107735030353,
+        "motion_assignment": 0.20185752119868994,
+        "mask_sharpness": 2.0794402360916138,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.42807234078645706,
+        "motion_reconstruction": 0.21625032275915146,
+        "dynamics": 0.0037752853240817785,
+        "geometry": 3.5821573485250724e-09,
+        "pair_separation": 0.003437985258642584,
+        "motion_assignment": 0.20127364620566368,
+        "mask_sharpness": 2.0794385075569153,
+        "slot_balance": 0.0
+      }
+    },
+    {
+      "epoch": 12,
+      "train": {
+        "total": 0.4487462770193815,
+        "motion_reconstruction": 0.23625409975647926,
+        "dynamics": 0.0044589068565983325,
+        "geometry": 1.2985544403654181e-08,
+        "pair_separation": 0.0031644599221181124,
+        "motion_assignment": 0.20179425086826086,
+        "mask_sharpness": 2.079433634877205,
+        "slot_balance": 0.0
+      },
+      "validation": {
+        "total": 0.4280623495578766,
+        "motion_reconstruction": 0.2160719633102417,
+        "dynamics": 0.003910571220330894,
+        "geometry": 3.582947405433856e-08,
+        "pair_separation": 0.003566206432878971,
+        "motion_assignment": 0.201085414737463,
+        "mask_sharpness": 2.079417586326599,
+        "slot_balance": 0.0
+      }
+    }
+  ]
+}
