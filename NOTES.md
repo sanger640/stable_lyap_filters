@@ -5931,3 +5931,18 @@ model steps at 20 ms; otherwise at 100 ms. (2) Branches: one branch point in a s
 trajectories, with 8 AR(1)-residual branches (sigma 3.2 mm) of 8 + 12 control steps. (3) The
 real Jenga layout (three upright 25 x 20 x 75 mm blocks in a row) is also rejected from the generic
 corpus. The corpus reuses only the Panda model, its controller and the table.
+
+## Program B timestep audit: the model steps at 100 ms (2026-09-29)
+
+Under addendum 1's frozen rule, on the 100 generic validation trajectories (no Jenga data, no
+model), 1,794 new MuJoCo contacts were logged. The fraction not within FIGNet's 5 mm graph radius
+at the previous graph build is 2.4% at 20 ms and **8.75% at 100 ms**, below the 0.10 bar, so the
+model steps at **100 ms**, and the protocol's 500k training transitions stand. By category at
+100 ms: object/gripper 10.9% (743), object/object 4.4% (847), object/table 14.6% (157).
+
+Audit flaw, disclosed: the pair pre-filter uses bounding radii, so the infinite floor plane is
+never "near". All 13 object/floor contacts (objects pushed off the table) therefore count as missed
+at both periods. Excluding them gives 1.7% / 8.1%; the decision is unchanged. The generic
+corpus moves the gripper faster than Jenga (site p50 9 mm/step vs Jenga moving-step p90 4.3), so
+Jenga miss rates should be no higher. Result: `results/jenga/program_b_timestep_audit_result.json`
+(SHA-256 `8e672b6cd2f037b4c59ca1019be0fb10fa1aa2ebcb6d9da0dcaba60a04549619`). This choice is final and is not revisited after any model or Jenga result.
