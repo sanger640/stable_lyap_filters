@@ -1,0 +1,21 @@
+{
+  "id": "program-b-stage1-addendum-1",
+  "amends": "results/jenga/program_b_stage1_protocol.json (SHA-256 c688e59afc1b36965cab138313a099bfca14b23653dffcb1bb102bd2aa81bcab)",
+  "status": "frozen before execution; the timestep measurement approach was approved by the user 2026-09-29, and the interpretations are implementation choices reported to the user; written before any corpus data exists",
+  "scope": "implementation choices the frozen protocol leaves open. No gate, arm, threshold or seed count changes.",
+  "model_timestep": {
+    "question": "FIGNet builds face-face contact edges only for faces within its 5 mm connectivity radius at graph-build time. At 100 ms steps, gripper and block motion in the important Jenga steps exceeds that radius (d4 neighbourhood traces, moving steps: gripper p90 4.3 mm, p99 11.3 mm; blocks p90 3.1 mm, p99 14.1 mm).",
+    "recording": "the corpus records every 10 physics substeps (20 ms); the 100 ms series is its exact subsample, so both options come from identical trajectories",
+    "measurement": "on the 100 generic-corpus VALIDATION trajectories only, before any model training and before any Jenga metric",
+    "new_contact": "a body pair (involving at least one free object; pairs are object/object, object/table, object/hand-or-finger) that is in MuJoCo contact after substep s and was not in contact at any of the previous 10 substeps",
+    "represented": "a new contact at substep s is represented at graph period k (k = 10 or 50 substeps) if, at the last graph-build time b = k * floor((s - 1) / k), the pair's minimum geom distance (mujoco.mj_geomDistance) is <= 5 mm, i.e. FIGNet's graph at b already contains the pair's face-face edges",
+    "metric": "missed fraction = new contacts not represented / all new contacts, pooled over the validation trajectories; report it for both periods, plus separate object/object, object/table and object/gripper rates",
+    "rule": "if the missed fraction at k = 50 (100 ms) exceeds 0.10, the model steps at 20 ms (5 internal steps per control step; training transitions = 5 x the protocol's 500k, from the same trajectories). Otherwise it steps at 100 ms.",
+    "fixed_after": "the chosen period is recorded in NOTES.md and is not revisited after any model or Jenga result"
+  },
+  "interpretations": {
+    "branches": "The protocol's '25% of states also get 8 same-state action branches' is implemented as: a seeded 25% of trajectories get one branch point at a uniformly random control step in [10, 80]. From that state, 8 branches each replay the trajectory's next 8 commands plus an AR(1) execution residual (per-axis sigma 3.2 mm, the measured Jenga execution-error scale; lag-1 correlation 0.8), then hold the last command for 12 steps (20 control steps per branch). Branch transitions are ~29% of main-trajectory transitions. Branches are reached by uninterrupted replay (never restore-then-continue after probing).",
+    "no_jenga_layout": "The Jenga testbed is three upright 25 x 20 x 75 mm blocks in a row, not a crossed-layer tower. Beyond the protocol's literal exclusion, any settled scene is rejected and resampled if it has >= 3 upright boxes whose sorted dimensions are each within 20% of (20, 25, 75) mm and whose centres lie within 10 mm of a common line. The Jenga scene file is never loaded; the corpus reuses only the robot model (panda.xml), its operational-space controller and the table geometry, which are robot and environment properties, not task features.",
+    "execution_noise": "the AR(1) residual above is generic and synthetic; the Jenga benchmark snippets are not read"
+  }
+}

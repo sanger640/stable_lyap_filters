@@ -5920,3 +5920,14 @@ that D2 erases.
 - B2 gates on both axes: G0 port beats a matched GNS; G1 NRMSE <= 1.10 x D2 and contact F1 >= D2;
   G2 H8 error <= 1.10 x D2; G3 candidate recall >= D2 + 0.10; G4 nested final recall >= 0.50;
   G5 DEV fork recall >= 45% with quiet alarms <= 2 x physical; G6 TEST once.
+
+## Program B stage 1 addendum 1 frozen (2026-09-29)
+
+`results/jenga/program_b_stage1_addendum_1.json` (SHA-256 `97f3371cebaac103751f5a587d5f9dd784e8487b8f7977b0da19862717be8385`) fixes three implementation
+choices left open by the frozen protocol, before any corpus data exists. (1) Model timestep: the
+corpus records at 20 ms. On the 100 generic validation trajectories only, if more than 10% of new
+MuJoCo contacts are not within FIGNet's 5 mm graph radius at the previous 100 ms graph build, the
+model steps at 20 ms; otherwise at 100 ms. (2) Branches: one branch point in a seeded 25% of
+trajectories, with 8 AR(1)-residual branches (sigma 3.2 mm) of 8 + 12 control steps. (3) The
+real Jenga layout (three upright 25 x 20 x 75 mm blocks in a row) is also rejected from the generic
+corpus. The corpus reuses only the Panda model, its controller and the table.
