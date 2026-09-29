@@ -5901,3 +5901,22 @@ branch; A2 is the informative arm and also fails. (2) 87% of configuration-axis 
 favours D2 and makes the failure conservative. Canonical result:
 `results/jenga/program_a_feasibility_result.json` (SHA-256
 `6b988abd9a9a84e009156eaaae6995d3225a1ea0f857dfba924e995e055631d7`).
+
+## Program B stage 1 protocol frozen (2026-09-29)
+
+After Program A failed its feasibility gate, Program B stage 1 was frozen at
+`results/jenga/program_b_stage1_protocol.json` (SHA-256 `c688e59afc1b36965cab138313a099bfca14b23653dffcb1bb102bd2aa81bcab`). It is a Track A
+(privileged) test of whether a mesh/face-level learned rigid-body simulator (FIGNet*, with the
+gripper as an action-conditioned kinematic object) preserves the local action-response geometry
+that D2 erases.
+
+- Pretraining corpus: generic MuJoCo scenes with no Jenga layout and no labels. 5,000 training
+  trajectories x 100 steps (500k transitions, matching Act-FIGNet) plus MOVi-style 100 validation
+  and 100 test trajectories; fallback to the MOVi size (1,500/100/100) if generation exceeds 48 h.
+- Arms: B0 = frozen D2; B1 = zero-shot pretrained model (descriptive only); B2 = fine-tuned on Jenga
+  TRAIN excluding both validation axes (the only gated arm, 3 seeds, medians); R = true simulator
+  from states perturbed by 0 / 1 / 2.65 / 4.44 mm, with a 5-cousin friction ensemble at 2.65 mm
+  (descriptive precision ceiling).
+- B2 gates on both axes: G0 port beats a matched GNS; G1 NRMSE <= 1.10 x D2 and contact F1 >= D2;
+  G2 H8 error <= 1.10 x D2; G3 candidate recall >= D2 + 0.10; G4 nested final recall >= 0.50;
+  G5 DEV fork recall >= 45% with quiet alarms <= 2 x physical; G6 TEST once.

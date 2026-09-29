@@ -1,0 +1,113 @@
+{
+  "id": "program-b-stage1-mesh-dynamics-v1",
+  "status": "frozen before execution (approved by user 2026-09-29)",
+  "purpose": "Stage 1 of Program B (privileged diagnostic, Track A). Test whether a pretrained mesh/face-level learned rigid-body simulator preserves the local action-response geometry that D2 erases, and measure, with an identified-simulator reference, how much state error the frozen monitor tolerates.",
+  "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+  "track": "A (privileged mechanism study). Inputs are exact simulator meshes/poses plus robot proprioception. No result from this protocol is a deployment claim.",
+  "motivation": {
+    "program_a": "results/jenga/program_a_feasibility_result.json: causal re-anchoring recovers <= 0.155 of the open-loop-to-oracle gap. The defect is D2's local action-response dynamics, not open-loop drift.",
+    "why_faces": "V1 gate (NOTES 2026-09-21): 'what matters is where a block's FACE sits relative to its neighbour, not where its centre is'. Blind forks are upright blocks pivoting past their tipping edge. D2 has one node per block and no representation of which edge or face is in contact.",
+    "why_not_d22": "Materially different on the two axes PLAN_NEXT requires: (1) contact geometry represented at mesh-face level; (2) pretraining on a broad generic rigid-body corpus that contains no Jenga layout, with the model frozen before any Jenga evaluation.",
+    "literature": "Allen et al. CoRL 2022: graph simulators learn discontinuous rigid contact from few trajectories. FIGNet/FIGNet* (ICLR 2023 / 2024): face-face contact edges. Act-FIGNet (2025): action-conditioned FIGNet for control. PIN-WM (RSS 2025): identified differentiable simulator as a world model."
+  },
+  "prerequisites": {
+    "environment": "mujoco==3.13.0 (requirements.txt) is missing from .venv and must be installed; the three simulator tests must then pass before any generation.",
+    "implementation": "third-party FIGNet* port https://github.com/jongyaoy/fignet (MIT; self-described as experimental). Pinned to a commit hash recorded at freeze.",
+    "fallback": "if G0 fails: implement FIGNet* from the paper in-repo. Act-FIGNet code (CC BY-NC-ND 4.0) may be READ as a reference but not modified or redistributed."
+  },
+  "arms": {
+    "B0_d2": "frozen D2 (results/jenga/w6_cw_d2_s1..s10.pt), existing numbers; no retraining. Note: D2's fit data overlap the configuration axis (87%), which favours D2.",
+    "B1_zero_shot": "FIGNet* pretrained on the generic corpus only; never sees Jenga data. DESCRIPTIVE ONLY: G1-G4 metrics are reported, but B1 has no gates, cannot open DEV and cannot license stage 2.",
+    "B2_finetuned": "B1 fine-tuned on Jenga TRAIN data (the same trace_data + cw_data sources D2 used), with a fit fold that EXCLUDES both validation axes (episode ids 0, 1, 5, 7, 12, 13 and reset seeds 108, 109). Cleaner than D2.",
+    "R_identified_simulator": "Reference ceiling, not a candidate. The true Jenga MuJoCo simulator run from a perturbed initial state (PIN-WM with perfect model structure). Runs regardless of the other gates."
+  },
+  "generic_pretraining_corpus": {
+    "simulator": "MuJoCo 3.13.0, 10 Hz control with 50 x 2 ms substeps (identical to Jenga)",
+    "scenes": "2-12 rigid convex objects (boxes with each side sampled log-uniformly from 10-120 mm, including slender blocks; cylinders; wedges) on a table, arranged as random stacks, rows, leaning pairs and piles. Masses and friction coefficients are sampled from broad ranges.",
+    "agent": "a kinematic parallel-gripper end effector executing random pushes, pokes, pulls, sweeps and grasps, with commands at the same 10 Hz",
+    "branches": "25% of states also get 8 same-state action branches perturbed by execution-noise-like residuals (generic, as in D2's contact-window data) so that action differences are represented in training",
+    "excluded": "3-wide crossed-layer tower layouts and any Jenga scene file. No labels of any kind: no topple, success or failure.",
+    "size_target": "5,000 training trajectories x 100 control steps (500k transitions), plus 100 validation and 100 test trajectories. Trajectory length and the 100/100 held-out split follow the Kubric MOVi protocol used by FIGNet and SDF-Sim (1,500/100/100 trajectories, ~100 steps, 3-10 objects). The training size matches Act-FIGNet's 500k simulated steps, the closest action-conditioned precedent, because our model must also learn action conditioning, which MOVi's passive scenes lack. It sits inside the range of Allen et al. 2022 (up to 10,000 trajectories / 1M steps).",
+    "validation": "the 100 validation trajectories are for pretraining monitoring and the G0 contact-threshold fit; the 100 test trajectories are for G0 only; neither is used for Jenga decisions",
+    "git": "the corpus directory is gitignored BEFORE generation starts; workers <= 4; SIM_HEADLESS=1",
+    "size_fallback": "If G0 throughput cannot generate the full corpus in 48 h with <= 4 workers, fall back to the MOVi size (1,500/100/100 x 100 steps). The size is fixed before pretraining and never changed after a Jenga result."
+  },
+  "model": {
+    "architecture": "FIGNet* (object meshes, node and face-face collision edges, encode-process-decode), with the gripper as an action-conditioned kinematic object (the Act-FIGNet idea) whose commanded target enters as a node feature",
+    "state_interface": "Jenga 61-D state <-> meshes: block poses place the known box meshes; after each predicted step, block pose is the rigid (Kabsch) fit to predicted vertices; velocities are finite differences; contact flags are face-face distances below a threshold fixed on the generic validation split; gripper from proprioception. The monitor consumes dims [0:45] exactly as for D2.",
+    "seeds": "3 pretraining seeds (approved); each is fine-tuned once for B2. All three are reported; decisions use the median.",
+    "frozen_before_jenga": "corpus generator, training config and all checkpoints are hashed and committed before ANY Jenga metric is computed"
+  },
+  "reference_arm_R": {
+    "perturbation": "at each evaluated state, add isotropic Gaussian noise to every block position with sigma in {0, 1.0, 2.65, 4.44} mm (0 = replay floor; 2.65 and 4.44 = V1's best and older perception RMSE), plus small-angle rotation noise sigma_theta = sigma / (block half-length read from the XML). The gripper is exact (proprioception).",
+    "cousins": "at sigma = 2.65 mm only: K = 5 cousins (the ensemble size of deep ensembles, Lakshminarayanan et al. 2017, and of PETS, Chua et al. 2018), with friction scaled by factors drawn uniformly from 0.9-1.1. Report the single-cousin decisions and their disagreement rate.",
+    "replay_caveat": "DirectJengaSim restore-then-continue is not bit-identical to recorded traces; sigma = 0 measures that floor, and every R number is read relative to it",
+    "budget": "about 54k rollouts of 38 steps (4 noise levels + 4 extra cousins over ~6.7k probe paths; ~3.3x the D4 corpus), <= 4 workers, run detached",
+    "size_basis": "There is no academic analogue for this arm's size. Its states are fixed by the frozen benchmark (the same neighbourhoods and nested groups used for every arm), matching the literature practice of evaluating all models on one fixed held-out test set."
+  },
+  "evaluation": {
+    "data": "identical to Program A: results/jenga/d4_neighborhood_data_large.npz and results/jenga/d3_data, on the episode axis (ids 0, 1, 5, 7, 12, 13) and the configuration axis (reset seeds 108, 109). TRAIN only until G5.",
+    "pairs": "report both the physically selected nested pairs (d3_data) and the model-free T3 fixed pairs (8 principal-direction pairs), the latter as candidate-coverage evidence only",
+    "monitor": "unchanged frozen v0 components, with the exact calls in eval/program_a_feasibility.py",
+    "task_labels": "none before G5; DEV/TEST labels are for grading only"
+  },
+  "gates": {
+    "rule": "Only B2 is gated, in order, stopping at its first failure. B1 and R are descriptive. All thresholds apply on BOTH axes, as medians over the 3 seeds.",
+    "G0_port_validation": {
+      "what": "on the 100 corpus test trajectories (MOVi-style), the port must train stably and beat a plain object-level GNS baseline of matched size on 20-step rollout position error, with mean interpenetration below 1 mm; also report ms per 64-probe x 38-step batch and corpus-generation throughput",
+      "fail": "switch to the in-repo implementation (prerequisites.fallback) and repeat G0 once; a second failure ends the program"
+    },
+    "G1_one_step": {
+      "what": "the D21 validation folds and metric code (continuous NRMSE, contact-event macro-F1)",
+      "pass": "NRMSE <= 1.10 x D2 (0.462 / 0.466) AND contact F1 >= D2 (0.426 / 0.431). A floor, not a selection target."
+    },
+    "G2_h8_rollout": {
+      "what": "open-loop 38-step continuous error on the neighbourhood data",
+      "pass": "<= 1.10 x D2 open-loop"
+    },
+    "G3_topology": {
+      "what": "smooth_vs_branch candidate recall and added-positive rate against the physical decision; partition agreement",
+      "pass": "median candidate recall >= D2 + 0.10 (D2 open loop 0.562 / 0.636) AND added-positive rate <= D2 + 0.05"
+    },
+    "G4_monitor_agreement": {
+      "what": "nested boundary, commitment, persistence and final decisions against the physical decisions",
+      "pass": "median final recall >= 0.50 (D2 open loop 0.056 / 0.083; per-branch oracle ~0.78-0.83) AND final added-positive rate <= D2 + 0.05"
+    },
+    "G5_dev": {
+      "what": "opened ONCE, only for an arm passing G1-G4: frozen v0 with the model's trajectories on the DEV fork panel, against physical v0 on the same panel",
+      "pass": "fork recall >= 45% (D2 31.1% mean on TEST; physical 65.5%) AND quiet-alarm rate <= 2 x physical DEV quiet rate"
+    },
+    "G6_test": "only if G5 passes: one run, reported as the headline, with no adjustment"
+  },
+  "decision": {
+    "B2_pass_G4": "stage 2 is licensed: write a separate protocol for visual input (V-JEPA 2-AC action predictor, or FIGNet on perceived meshes/poses), using R to set the required perception precision",
+    "B2_fail_R_pass_at_2.65mm": "learned dynamics still erase the branches even with face geometry and pretraining, while an identified simulator at V1 perception precision keeps them. Next: a simulator-based world model (PIN-WM-style identification), or publish the monitor plus a learned-model failure benchmark.",
+    "B2_fail_R_fail_at_2.65mm": "perception precision is binding for ANY model. Report the sigma at which R keeps final recall >= 0.50 as the precision requirement; stage 2 must meet it first.",
+    "B1_reading": "descriptive: if B1 approaches B2, broad pretraining carries the physics; if B1 is far below, Jenga fine-tuning carries it"
+  },
+  "discipline": [
+    "Generic corpus, model and checkpoints are frozen and committed before any Jenga metric is computed.",
+    "No threshold, arm, fold, seed count or corpus change after any Jenga result is seen.",
+    "Monitor v0 and all TEST results stay frozen; DEV opens at most once, for B2 only, after G4.",
+    "Every feature is labelled: meshes/poses = privileged diagnostic; gripper = proprioception (universal); topple/fork labels = grading only.",
+    "Record protocol, corpus, code-commit and checkpoint SHA-256 in the results and NOTES.md.",
+    "Simulator jobs: SIM_HEADLESS=1, <= 4 workers; long jobs run detached (setsid) because background shells are capped at 2 h."
+  ],
+  "implementation_plan": {
+    "scripts": [
+      "eval/program_b_corpus.py (generic scene generator)",
+      "eval/program_b_train.py (FIGNet* pretraining and B2 fine-tuning)",
+      "eval/program_b_reference.py (arm R)",
+      "eval/program_b_evaluate.py (G1-G4, reusing program_a_feasibility and D21 metric functions)"
+    ],
+    "tests": "state<->mesh round trip is exact on recorded Jenga states; the Kabsch fit recovers known poses; the contact threshold reproduces recorded Jenga contact flags on a fit-fold sample; noise at sigma = 0 leaves states unchanged; the corpus generator emits no Jenga scene",
+    "order": "prerequisites -> corpus -> G0 -> pretrain (freeze) -> B1 metrics and R -> B2 fine-tune (freeze) -> B2 G1-G4 -> G5/G6 if licensed"
+  },
+  "literature_basis_for_sizes": [
+    "FIGNet (Allen et al., ICLR 2023): Kubric MOVi 1,500/100/100 trajectories, 96 steps, 3-10 objects",
+    "SDF-Sim (Rubanova et al., NeurIPS 2024): Kubric MOVi-B/C 1,500/100/100 trajectories, 100 steps, 3-10 objects",
+    "Allen et al., CoRL 2022: up to 10,000 simulated trajectories (1e6 steps); beats analytic simulators with 8-128 real trajectories",
+    "Act-FIGNet (Yi et al., 2025): 500k simulated + 400k real steps",
+    "Deep ensembles (Lakshminarayanan et al., 2017) and PETS (Chua et al., 2018): 5-member ensembles"
+  ]
+}
