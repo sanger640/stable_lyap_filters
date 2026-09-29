@@ -109,6 +109,12 @@ Protocol SHA-256:
 
 ## What the next agent should do
 
+**Update 2026-09-29:** the Program A feasibility test ran and failed its T1 gate (causal
+re-anchoring recovers at most 0.155 of the gap vs 0.50 required); its T3 found that a model-free
+fixed-pair rule outperforms D2's pair selection. Program B is now the active direction, starting
+with an availability survey of pretrained world models. The original text below is kept for
+provenance.
+
 No automatic model run is pending. First choose and preregister one of two genuinely different
 programs:
 

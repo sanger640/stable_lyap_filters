@@ -54,7 +54,16 @@ new test of the research hypothesis.
 
 Choose one of the following programs and freeze its protocol before implementation.
 
-### Program A — online re-observation and active sensing (recommended first)
+### Program A — online re-observation and active sensing (feasibility FAILED 2026-09-29)
+
+> **Status.** The frozen feasibility test (`results/jenga/program_a_feasibility_result.json`)
+> failed its T1 gate. Re-anchoring only from the executed branch recovers at most 0.155 of the
+> open-loop-to-oracle final-recall gap (required 0.50) on both held-out axes. The 09-28 recovery came
+> from observing each counterfactual branch's own future. Program A is not pursued further with D2.
+> A positive by-product survives: a fixed, model-free action-space rule (principal-direction extremes
+> of the execution residuals) picks straddling pairs on 92%/97% of physical-candidate states and
+> beats D2's own pair choice. See NOTES.md.
+
 
 Replace one long imagined rollout with a short receding interaction:
 
@@ -87,7 +96,7 @@ pair selection and monitor evidence, long open-loop drift is a major cause and t
 rendered re-observation. If correction fails even at one- or two-step segments, local contact
 branching is already absent and further scheduling work should stop in favour of Program B.
 
-### Program B — pretrained physical/visual world model
+### Program B — pretrained physical/visual world model (now the active direction)
 
 Start a new data/model budget rather than extending D21:
 

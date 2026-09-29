@@ -5859,3 +5859,45 @@ and DEV/TEST closed:
 
 The implementation must reproduce the 09-28 open-loop and per-branch numbers exactly before any new
 condition is read. Script: `eval/program_a_feasibility.py`.
+
+## Program A feasibility: causal re-anchoring fails; fixed pairs pass (2026-09-29)
+
+Executed under the frozen protocol above (SHA-256 `6bd05071...9dc9a7`). All ten D2 seeds first
+reproduced the 09-28 open-loop and per-branch-oracle candidate and nested metrics exactly. No
+simulation, training, task label, DEV or TEST data was used; from the benchmark file only the shared
+`snippets` array was read (probe/snippet mapping error < 1e-7).
+
+**T3 passes.** Pairs taken as the extremes along the first eight principal directions of the shared
+execution-residual snippets straddle the physical action-response partition on 91.7% (episode, 24
+physical-candidate states) and 97.0% (configuration, 33) of physical-candidate states, against
+63.2%/71.6% for eight random pairs and a median 66.7%/72.7% for D2's own three nearest cross-branch
+pairs. At three pairs the fixed rule already reaches 83.3%/93.9%. Candidate pairs can therefore be
+chosen by a model-free action-space rule; straddling alone does not yet supply the nested refinement
+v0's boundary test needs (T3b, new simulation).
+
+**T1 fails; T2 not run.** Medians over ten seeds, nested final-consequence recall / added positives:
+
+| condition | episode | configuration |
+|---|---|---|
+| open loop | 5.6% / 8.6% | 8.3% / 7.9% |
+| per-branch oracle, k=1/2/4 | 77.8 / 77.8 / 88.9% | 83.3 / 83.3 / 83.3% |
+| A1 shared anchor, k=1/2/4 | 0 / 0 / 0% | 0 / 0 / 0% |
+| A2 offset anchor, k=1/2/4 | 16.7 / 8.3 / 16.7% | 16.7 / 16.7 / 12.5% |
+
+Median recovery of the open-loop-to-oracle gap is at most 0.155 (A2, k=1, episode) against the
+required 0.50. A1 also lowers candidate recall to 19-36%; A2 keeps it near open loop (54-67%).
+Frozen outcome: `T1_fail` -> Program A is not supported as specified; move to Program B.
+
+Interpretation. Nearly all of the 09-28 recovery came from re-anchoring each counterfactual branch
+to its own recorded future, which a robot cannot observe. When only the executed branch is observed,
+D2 must still generate the counterfactual divergence itself, and it does not. This locates the
+defect in D2's local action-response dynamics rather than in open-loop drift, which is the
+protocol's stated condition for Program B.
+
+Limitations recorded, not used to rescue the result. (1) A1 as frozen resets every probe to one
+state every k steps, including the 30-step hold, so it structurally cannot express a persistent
+branch; A2 is the informative arm and also fails. (2) 87% of configuration-axis neighbourhoods and
+88% of its nested groups (34%/34% on the episode axis) come from ids D2 was fitted on, which
+favours D2 and makes the failure conservative. Canonical result:
+`results/jenga/program_a_feasibility_result.json` (SHA-256
+`6b988abd9a9a84e009156eaaae6995d3225a1ea0f857dfba924e995e055631d7`).
