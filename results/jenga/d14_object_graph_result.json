@@ -1,0 +1,495 @@
+{
+  "protocol": {
+    "name": "D14 anonymous object/contact graph monitor evidence pilot",
+    "status": "frozen before model fitting",
+    "purpose": "isolate whether object-centric relational inductive bias improves held-out continuous monitor evidence over the D13 ordered 61-D vector encoder",
+    "scope": "combined D3+D12 TRAIN corpus only; DEV and TEST remain closed",
+    "data": {
+      "manifest": "results/jenga/d12_combined_manifest.json",
+      "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+      "d3_directory": "results/jenga/d3_data",
+      "d12_directory": "results/jenga/d12_coverage_data",
+      "groups": {
+        "fit": 511,
+        "episode_validation": 139,
+        "configuration_validation": 132,
+        "joint_validation": 50
+      },
+      "normalizers": "unchanged D13 fit-only normalizers",
+      "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+      "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+      "task_failure_alarm_or_object_role_labels_used": false
+    },
+    "frozen_controls": {
+      "d13_result": "results/jenga/d13_monitor_evidence_result.json",
+      "d13_result_sha256": "1b9d5c52b0424eeabcde76657376889dd198a72593af9de496897a636efe1d03",
+      "ordered_vector_joint_checkpoint": "results/jenga/d13_monitor_evidence/joint_seed1.pt",
+      "ordered_vector_joint_checkpoint_sha256": "7df8c2321e865924b56c252796f8e06931753cbd30eb3f5d5ff2a3c20ef56519"
+    },
+    "representation": {
+      "objects": "three anonymous rigid-body nodes with shared weights",
+      "node_channels": "centred and gripper-relative position, vertical height, rotation6, linear/angular velocity, table/floor/robot contacts",
+      "edges": "all directed block pairs with relative position, distance, and pair-contact flag",
+      "control": "Cartesian targets relative to current gripper plus native gripper command",
+      "readout": "permutation-invariant node mean/max plus gripper token",
+      "graph_rounds": 3,
+      "causal_history": false,
+      "reason_history_excluded": "isolate representation causality",
+      "task_specific_roles": false
+    },
+    "outputs_and_loss": {
+      "head": "unchanged D13 joint amplitude/shape curves plus four direct continuous evidence values",
+      "evidence": [
+        "early_boundary_delta_bic",
+        "full_boundary_delta_bic",
+        "commitment_delta_bic",
+        "persistence_delta_bic"
+      ],
+      "decision": "inverse-transform and unchanged zero sign; no fitted threshold",
+      "loss": "evidence MSE plus the six unchanged equally weighted D9b amplitude/shape losses"
+    },
+    "model": {
+      "hidden": 128,
+      "heads": 4,
+      "layers": 2,
+      "graph_rounds": 3,
+      "action_horizon": 8,
+      "curve_steps": 39
+    },
+    "optimization": {
+      "pilot_seed": 1,
+      "replication_seeds_if_passes_both_axes": [
+        2,
+        3
+      ],
+      "steps": 5000,
+      "group_batch_size": 32,
+      "optimizer": "AdamW",
+      "initial_learning_rate": 0.001,
+      "final_learning_rate": 1e-05,
+      "schedule": "CosineAnnealingLR",
+      "gradient_clip": 1.0,
+      "checkpoint_selection": "fixed final step only"
+    },
+    "primary_validation_axes": [
+      "episode_validation",
+      "configuration_validation"
+    ],
+    "gate_on_each_primary_axis": {
+      "normalized_evidence_mse_no_worse_than_curve_baseline": true,
+      "mean_channel_sign_agreement_no_worse_than_curve_baseline": true,
+      "boundary_added_positive_reduction": 0.1,
+      "final_added_positive_reduction": 0.1,
+      "maximum_boundary_recall_loss": 0.05,
+      "maximum_final_recall_loss": 0.05,
+      "endpoint_and_level_symmetry_max_abs": 1e-05,
+      "object_permutation_and_horizontal_translation_max_abs": 1e-05
+    },
+    "decision": {
+      "pass_both_axes": "replicate seeds 2 and 3 before collecting upright-push TRAIN responses",
+      "otherwise": "stop; do not collect push data or tune against validation",
+      "joint_validation": "diagnostic only",
+      "dev_and_test": "remain closed for every outcome"
+    }
+  },
+  "created": "2026-09-29T14:49:11+00:00",
+  "protocol_sha256": "186b8a45fe7927f7733d951a16acd0b6f39b093820dd96fd1ed06edc6d1a8355",
+  "device": "cuda:0",
+  "parameter_count": 1300142,
+  "training": {
+    "seconds": 70.52331280708313,
+    "history": [
+      {
+        "step": 1,
+        "total": 3.674990653991699,
+        "amplitude": 1.3554434776306152,
+        "shape_early_gap": 0.33172962069511414,
+        "shape_full_gap": 0.3142220675945282,
+        "shape_action": 0.3970586359500885,
+        "shape_early_hold": 0.17552758753299713,
+        "shape_late_hold": 0.12169509381055832,
+        "evidence": 0.9793141484260559
+      },
+      {
+        "step": 1000,
+        "total": 0.7077106237411499,
+        "amplitude": 0.01804226264357567,
+        "shape_early_gap": 0.02333608642220497,
+        "shape_full_gap": 0.018161682412028313,
+        "shape_action": 0.18738378584384918,
+        "shape_early_hold": 0.1227022334933281,
+        "shape_late_hold": 0.0683189183473587,
+        "evidence": 0.2697656750679016
+      },
+      {
+        "step": 2000,
+        "total": 0.3685765266418457,
+        "amplitude": 0.00992607418447733,
+        "shape_early_gap": 0.0079524926841259,
+        "shape_full_gap": 0.007931258529424667,
+        "shape_action": 0.15627315640449524,
+        "shape_early_hold": 0.03621934726834297,
+        "shape_late_hold": 0.01555927749723196,
+        "evidence": 0.13471494615077972
+      },
+      {
+        "step": 3000,
+        "total": 0.08449219167232513,
+        "amplitude": 0.0006563009228557348,
+        "shape_early_gap": 0.0011328642722219229,
+        "shape_full_gap": 0.001403076690621674,
+        "shape_action": 0.04691492021083832,
+        "shape_early_hold": 0.01343135628849268,
+        "shape_late_hold": 0.01402716338634491,
+        "evidence": 0.006926506757736206
+      },
+      {
+        "step": 4000,
+        "total": 0.04449591413140297,
+        "amplitude": 2.712486093514599e-05,
+        "shape_early_gap": 0.0009774424834176898,
+        "shape_full_gap": 0.0007246786844916642,
+        "shape_action": 0.02646494284272194,
+        "shape_early_hold": 0.010531991720199585,
+        "shape_late_hold": 0.004642251878976822,
+        "evidence": 0.0011274826247245073
+      },
+      {
+        "step": 5000,
+        "total": 0.046037863940000534,
+        "amplitude": 1.3823626431985758e-05,
+        "shape_early_gap": 0.0013562527019530535,
+        "shape_full_gap": 0.0009866913314908743,
+        "shape_action": 0.030114535242319107,
+        "shape_early_hold": 0.009645485319197178,
+        "shape_late_hold": 0.00333624379709363,
+        "evidence": 0.0005848349537700415
+      }
+    ],
+    "checkpoint": "results/jenga/d14_object_graph/graph_joint_seed1.pt",
+    "checkpoint_sha256": "0633c626797278597c1472f09bb0140a7bef5376e7e509d9921ea0ce2972877f"
+  },
+  "invariance": {
+    "endpoint_swap_max_abs": 0.0,
+    "level_permutation_max_abs": 7.152557373046875e-07,
+    "object_permutation_max_abs": 8.702278137207031e-06,
+    "horizontal_translation_max_abs": 3.477931022644043e-05
+  },
+  "evaluations": {
+    "fit": {
+      "groups": 511,
+      "normalized_evidence_mse": 0.0009091758984141052,
+      "transformed_evidence_mae": 0.017139125615358353,
+      "channel_sign_agreement": {
+        "early_boundary": 0.9960861056751468,
+        "full_boundary": 0.9980430528375733,
+        "commitment": 1.0,
+        "persistence": 1.0
+      },
+      "mean_channel_sign_agreement": 0.9985322896281801,
+      "nested": {
+        "boundary": {
+          "states": 511,
+          "reference_positive": 362,
+          "predicted_positive": 362,
+          "tp": 361,
+          "fn": 1,
+          "fp": 1,
+          "tn": 148,
+          "agreement": 0.9960861056751468,
+          "recall": 0.9972375690607734,
+          "added_positive_rate": 0.006711409395973154
+        },
+        "commitment": {
+          "states": 511,
+          "reference_positive": 148,
+          "predicted_positive": 148,
+          "tp": 148,
+          "fn": 0,
+          "fp": 0,
+          "tn": 363,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 511,
+          "reference_positive": 405,
+          "predicted_positive": 405,
+          "tp": 405,
+          "fn": 0,
+          "fp": 0,
+          "tn": 106,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 511,
+          "reference_positive": 131,
+          "predicted_positive": 131,
+          "tp": 131,
+          "fn": 0,
+          "fp": 0,
+          "tn": 380,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      }
+    },
+    "episode_validation": {
+      "groups": 139,
+      "normalized_evidence_mse": 0.8772218823432922,
+      "transformed_evidence_mae": 0.6238498687744141,
+      "channel_sign_agreement": {
+        "early_boundary": 0.8345323741007195,
+        "full_boundary": 0.8633093525179856,
+        "commitment": 0.5683453237410072,
+        "persistence": 0.8705035971223022
+      },
+      "mean_channel_sign_agreement": 0.7841726618705036,
+      "nested": {
+        "boundary": {
+          "states": 139,
+          "reference_positive": 105,
+          "predicted_positive": 99,
+          "tp": 92,
+          "fn": 13,
+          "fp": 7,
+          "tn": 27,
+          "agreement": 0.8561151079136691,
+          "recall": 0.8761904761904762,
+          "added_positive_rate": 0.20588235294117646
+        },
+        "commitment": {
+          "states": 139,
+          "reference_positive": 55,
+          "predicted_positive": 37,
+          "tp": 16,
+          "fn": 39,
+          "fp": 21,
+          "tn": 63,
+          "agreement": 0.5683453237410072,
+          "recall": 0.2909090909090909,
+          "added_positive_rate": 0.25
+        },
+        "persistence": {
+          "states": 139,
+          "reference_positive": 118,
+          "predicted_positive": 112,
+          "tp": 106,
+          "fn": 12,
+          "fp": 6,
+          "tn": 15,
+          "agreement": 0.8705035971223022,
+          "recall": 0.8983050847457628,
+          "added_positive_rate": 0.2857142857142857
+        },
+        "alarm": {
+          "states": 139,
+          "reference_positive": 44,
+          "predicted_positive": 34,
+          "tp": 13,
+          "fn": 31,
+          "fp": 21,
+          "tn": 74,
+          "agreement": 0.6258992805755396,
+          "recall": 0.29545454545454547,
+          "added_positive_rate": 0.22105263157894736
+        }
+      }
+    },
+    "configuration_validation": {
+      "groups": 132,
+      "normalized_evidence_mse": 0.6939950585365295,
+      "transformed_evidence_mae": 0.5485826730728149,
+      "channel_sign_agreement": {
+        "early_boundary": 0.8636363636363636,
+        "full_boundary": 0.8333333333333334,
+        "commitment": 0.6136363636363636,
+        "persistence": 0.9393939393939394
+      },
+      "mean_channel_sign_agreement": 0.8125,
+      "nested": {
+        "boundary": {
+          "states": 132,
+          "reference_positive": 91,
+          "predicted_positive": 98,
+          "tp": 83,
+          "fn": 8,
+          "fp": 15,
+          "tn": 26,
+          "agreement": 0.8257575757575758,
+          "recall": 0.9120879120879121,
+          "added_positive_rate": 0.36585365853658536
+        },
+        "commitment": {
+          "states": 132,
+          "reference_positive": 38,
+          "predicted_positive": 37,
+          "tp": 12,
+          "fn": 26,
+          "fp": 25,
+          "tn": 69,
+          "agreement": 0.6136363636363636,
+          "recall": 0.3157894736842105,
+          "added_positive_rate": 0.26595744680851063
+        },
+        "persistence": {
+          "states": 132,
+          "reference_positive": 107,
+          "predicted_positive": 109,
+          "tp": 104,
+          "fn": 3,
+          "fp": 5,
+          "tn": 20,
+          "agreement": 0.9393939393939394,
+          "recall": 0.9719626168224299,
+          "added_positive_rate": 0.2
+        },
+        "alarm": {
+          "states": 132,
+          "reference_positive": 35,
+          "predicted_positive": 36,
+          "tp": 12,
+          "fn": 23,
+          "fp": 24,
+          "tn": 73,
+          "agreement": 0.6439393939393939,
+          "recall": 0.34285714285714286,
+          "added_positive_rate": 0.24742268041237114
+        }
+      }
+    },
+    "joint_validation": {
+      "groups": 50,
+      "normalized_evidence_mse": 0.6008456349372864,
+      "transformed_evidence_mae": 0.5264475345611572,
+      "channel_sign_agreement": {
+        "early_boundary": 0.84,
+        "full_boundary": 0.82,
+        "commitment": 0.72,
+        "persistence": 0.9
+      },
+      "mean_channel_sign_agreement": 0.82,
+      "nested": {
+        "boundary": {
+          "states": 50,
+          "reference_positive": 34,
+          "predicted_positive": 40,
+          "tp": 32,
+          "fn": 2,
+          "fp": 8,
+          "tn": 8,
+          "agreement": 0.8,
+          "recall": 0.9411764705882353,
+          "added_positive_rate": 0.5
+        },
+        "commitment": {
+          "states": 50,
+          "reference_positive": 14,
+          "predicted_positive": 14,
+          "tp": 7,
+          "fn": 7,
+          "fp": 7,
+          "tn": 29,
+          "agreement": 0.72,
+          "recall": 0.5,
+          "added_positive_rate": 0.19444444444444445
+        },
+        "persistence": {
+          "states": 50,
+          "reference_positive": 40,
+          "predicted_positive": 43,
+          "tp": 39,
+          "fn": 1,
+          "fp": 4,
+          "tn": 6,
+          "agreement": 0.9,
+          "recall": 0.975,
+          "added_positive_rate": 0.4
+        },
+        "alarm": {
+          "states": 50,
+          "reference_positive": 13,
+          "predicted_positive": 14,
+          "tp": 7,
+          "fn": 6,
+          "fp": 7,
+          "tn": 30,
+          "agreement": 0.74,
+          "recall": 0.5384615384615384,
+          "added_positive_rate": 0.1891891891891892
+        }
+      }
+    }
+  },
+  "ordered_vector_deltas": {
+    "episode_validation": {
+      "normalized_evidence_mse": -0.14355820417404175,
+      "mean_sign_agreement": 0.02877697841726623,
+      "boundary_recall": 0.08571428571428574,
+      "boundary_added_positive_rate": -0.05882352941176472,
+      "final_recall": 0.04545454545454547,
+      "final_added_positive_rate": 0.05263157894736842
+    },
+    "configuration_validation": {
+      "normalized_evidence_mse": -0.059880197048187256,
+      "mean_sign_agreement": -0.007575757575757569,
+      "boundary_recall": -0.02197802197802201,
+      "boundary_added_positive_rate": -0.024390243902439046,
+      "final_recall": 0.08571428571428574,
+      "final_added_positive_rate": 0.09278350515463918
+    }
+  },
+  "gates": {
+    "episode_validation": {
+      "comparisons": {
+        "normalized_evidence_mse_change": -0.393676221370697,
+        "mean_sign_agreement_change": -0.0053956834532373765,
+        "boundary_added_positive_reduction": 0.3823529411764706,
+        "final_added_positive_reduction": 0.28421052631578947,
+        "boundary_recall_change": -0.10476190476190472,
+        "final_recall_change": -0.24999999999999994,
+        "symmetry_max_abs": 3.477931022644043e-05
+      },
+      "checks": {
+        "evidence_mse": true,
+        "sign_agreement": false,
+        "boundary_specificity": true,
+        "final_specificity": true,
+        "boundary_recall": false,
+        "final_recall": false,
+        "symmetry": false
+      },
+      "passes": false
+    },
+    "configuration_validation": {
+      "comparisons": {
+        "normalized_evidence_mse_change": -0.5779600739479065,
+        "mean_sign_agreement_change": 0.037878787878787845,
+        "boundary_added_positive_reduction": 0.19512195121951226,
+        "final_added_positive_reduction": 0.18556701030927836,
+        "boundary_recall_change": -0.08791208791208793,
+        "final_recall_change": -0.22857142857142854,
+        "symmetry_max_abs": 3.477931022644043e-05
+      },
+      "checks": {
+        "evidence_mse": true,
+        "sign_agreement": true,
+        "boundary_specificity": true,
+        "final_specificity": true,
+        "boundary_recall": false,
+        "final_recall": false,
+        "symmetry": false
+      },
+      "passes": false
+    }
+  },
+  "stage1_passes": false,
+  "replication_authorized": false,
+  "stage2_push_collection_authorized": false,
+  "dev_or_test_read": false,
+  "interpretation": "graph_failed_stop_before_push_collection"
+}

@@ -1,0 +1,648 @@
+{
+  "protocol": {
+    "name": "D6 small-subset memorization/capacity audit",
+    "status": "frozen before execution",
+    "purpose": "distinguish inadequate architecture/objective from held-out data generalization",
+    "scope": "diagnostic only; cannot authorize DEV, TEST, or deployment",
+    "data": {
+      "source": "results/jenga/d4_neighborhood_data_large.npz",
+      "excluded_episode_holdout": [
+        "0",
+        "1",
+        "5",
+        "7",
+        "12",
+        "13"
+      ],
+      "selection": "first state from each of the first eight numerically sorted remaining episodes",
+      "selected_episodes": [
+        "16",
+        "21",
+        "25",
+        "30",
+        "31",
+        "33",
+        "34",
+        "35"
+      ],
+      "states": 8,
+      "probes_per_state": 64,
+      "nested_source": "results/jenga/d3_data",
+      "nested_selection": "first deterministic group from each selected episode",
+      "nested_groups": 8,
+      "evaluation": "the exact same selected examples used for optimization",
+      "task_failure_or_object_role_labels": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "models": {
+      "arms": [
+        "independent_direct",
+        "set_conditioned"
+      ],
+      "architecture": "unchanged D6",
+      "initialization_seed": 1,
+      "loss_weights": "unchanged frozen D6 pilot weights"
+    },
+    "optimization": {
+      "steps": 2000,
+      "states_per_step": 4,
+      "learning_rate": 0.0003,
+      "optimizer": "AdamW",
+      "gradient_clip": 1.0,
+      "probe_use": "all 64 with independently randomized order per selected state",
+      "checkpoint_selection": "fixed final step only"
+    },
+    "capacity_gate_per_arm": {
+      "response_error": "at most 0.02",
+      "topology_error": "at most 0.01",
+      "commitment_error": "at most 0.01",
+      "candidate_decision_agreement": "1.0",
+      "partition_agreement": "at least 0.90",
+      "nested_boundary_agreement": "at least 0.90",
+      "nested_final_agreement": "at least 0.90",
+      "response_spread": "median predicted/physical ratio in every phase between 0.5 and 1.5",
+      "permutation_equivariance_max_abs": "at most 0.00001",
+      "decision": "all conditions must pass"
+    },
+    "interpretation": {
+      "any_arm_passes": "mapping is representable; held-out failure primarily implicates data diversity/generalization",
+      "neither_arm_passes": "current output parameterization/objective/optimization is inadequate before data collection",
+      "independent_only": "set-conditioning mechanism specifically causes collapse",
+      "set_only": "joint neighborhood context is necessary and representable"
+    }
+  },
+  "created": "2026-09-28T14:21:42+00:00",
+  "protocol_sha256": "db81832780b6c273ccf81253fd2ca15df406ac6c68b82137fb3beab7319c71d0",
+  "pilot_sha256": "b01c33247a2628a7adfe45c71c3a56ad5e4f94101815777882ba77de4786c8bc",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "selected_rows": [
+    36,
+    42,
+    48,
+    54,
+    60,
+    66,
+    72,
+    78
+  ],
+  "selected_episodes": [
+    "16",
+    "21",
+    "25",
+    "30",
+    "31",
+    "33",
+    "34",
+    "35"
+  ],
+  "loss_weights": {
+    "response": 1.0,
+    "topology": 0.6457651484434727,
+    "commitment": 1.0256487504115952,
+    "nested": 0.04642875248371264
+  },
+  "arms": {
+    "independent_direct": {
+      "history": [
+        {
+          "response": 0.35474100708961487,
+          "topology": 0.37300705909729004,
+          "commitment": 0.21731191873550415,
+          "nested": 5.5373005867004395,
+          "step": 1,
+          "total": 1.0755915641784668
+        },
+        {
+          "response": 0.4098007082939148,
+          "topology": 0.13113081455230713,
+          "commitment": 0.1300085484981537,
+          "nested": 1.0136421918869019,
+          "step": 100,
+          "total": 0.6748856902122498
+        },
+        {
+          "response": 0.6258383393287659,
+          "topology": 0.15382163226604462,
+          "commitment": 0.15109291672706604,
+          "nested": 8.710687637329102,
+          "step": 200,
+          "total": 1.2845655679702759
+        },
+        {
+          "response": 0.06066379323601723,
+          "topology": 0.05134764686226845,
+          "commitment": 0.055044375360012054,
+          "nested": 5.308442115783691,
+          "step": 300,
+          "total": 0.3967428505420685
+        },
+        {
+          "response": 0.06749752163887024,
+          "topology": 0.07645810395479202,
+          "commitment": 0.09039365500211716,
+          "nested": 4.809709072113037,
+          "step": 400,
+          "total": 0.43289244174957275
+        },
+        {
+          "response": 0.05589691549539566,
+          "topology": 0.07039628177881241,
+          "commitment": 0.07834368199110031,
+          "nested": 5.209593772888184,
+          "step": 500,
+          "total": 0.4235844016075134
+        },
+        {
+          "response": 0.038464147597551346,
+          "topology": 0.03970351815223694,
+          "commitment": 0.03979777544736862,
+          "nested": 0.4607865512371063,
+          "step": 600,
+          "total": 0.12631557881832123
+        },
+        {
+          "response": 0.051854584366083145,
+          "topology": 0.05106232687830925,
+          "commitment": 0.05483435094356537,
+          "nested": 4.602675914764404,
+          "step": 700,
+          "total": 0.3547661304473877
+        },
+        {
+          "response": 0.06715139001607895,
+          "topology": 0.05736860632896423,
+          "commitment": 0.06416355073451996,
+          "nested": 3.2739033699035645,
+          "step": 800,
+          "total": 0.3220105469226837
+        },
+        {
+          "response": 0.07524725794792175,
+          "topology": 0.051201313734054565,
+          "commitment": 0.06006760150194168,
+          "nested": 4.593179225921631,
+          "step": 900,
+          "total": 0.3831751048564911
+        },
+        {
+          "response": 0.5514801740646362,
+          "topology": 0.09618128836154938,
+          "commitment": 0.0967237651348114,
+          "nested": 2.8132054805755615,
+          "step": 1000,
+          "total": 0.8434089422225952
+        },
+        {
+          "response": 0.03412867337465286,
+          "topology": 0.029523875564336777,
+          "commitment": 0.023932483047246933,
+          "nested": 4.448309421539307,
+          "step": 1100,
+          "total": 0.28426992893218994
+        },
+        {
+          "response": 0.5434236526489258,
+          "topology": 0.10867712646722794,
+          "commitment": 0.10922200977802277,
+          "nested": 6.903827667236328,
+          "step": 1200,
+          "total": 1.0461630821228027
+        },
+        {
+          "response": 0.04282068833708763,
+          "topology": 0.04194587469100952,
+          "commitment": 0.04367492347955704,
+          "nested": 3.2607154846191406,
+          "step": 1300,
+          "total": 0.2660939693450928
+        },
+        {
+          "response": 0.46105948090553284,
+          "topology": 0.09495655447244644,
+          "commitment": 0.08664777874946594,
+          "nested": 4.213919162750244,
+          "step": 1400,
+          "total": 0.8068962693214417
+        },
+        {
+          "response": 0.5114671587944031,
+          "topology": 0.08793266117572784,
+          "commitment": 0.08399598300457001,
+          "nested": 4.606908798217773,
+          "step": 1500,
+          "total": 0.868294358253479
+        },
+        {
+          "response": 0.07253262400627136,
+          "topology": 0.053926050662994385,
+          "commitment": 0.05436743050813675,
+          "nested": 0.3719399869441986,
+          "step": 1600,
+          "total": 0.18038678169250488
+        },
+        {
+          "response": 0.4636308252811432,
+          "topology": 0.08558168262243271,
+          "commitment": 0.0940714105963707,
+          "nested": 4.284650802612305,
+          "step": 1700,
+          "total": 0.814311683177948
+        },
+        {
+          "response": 0.04207981750369072,
+          "topology": 0.03158578649163246,
+          "commitment": 0.04340924322605133,
+          "nested": 4.368376731872559,
+          "step": 1800,
+          "total": 0.30981773138046265
+        },
+        {
+          "response": 0.036907684057950974,
+          "topology": 0.029851296916604042,
+          "commitment": 0.03792780637741089,
+          "nested": 7.0001020431518555,
+          "step": 1900,
+          "total": 0.4200912117958069
+        },
+        {
+          "response": 0.0382712259888649,
+          "topology": 0.036261461675167084,
+          "commitment": 0.034626804292201996,
+          "nested": 2.9236466884613037,
+          "step": 2000,
+          "total": 0.2329438030719757
+        }
+      ],
+      "seconds": 40.93596410751343,
+      "evaluation": {
+        "candidate": {
+          "states": 8,
+          "reference_positive": 8,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 4,
+          "fp": 0,
+          "tn": 0,
+          "agreement": 0.5,
+          "recall": 0.5,
+          "added_positive_rate": 0.0,
+          "valid_states": 8,
+          "mean_partition_agreement": 0.64453125
+        },
+        "continuous": {
+          "response": 0.2521568238735199,
+          "topology": 0.06302817910909653,
+          "commitment": 0.06410546600818634
+        },
+        "nested": {
+          "boundary": {
+            "states": 8,
+            "reference_positive": 6,
+            "predicted_positive": 1,
+            "tp": 0,
+            "fn": 6,
+            "fp": 1,
+            "tn": 1,
+            "agreement": 0.125,
+            "recall": 0.0,
+            "added_positive_rate": 0.5
+          },
+          "commitment": {
+            "states": 8,
+            "reference_positive": 4,
+            "predicted_positive": 3,
+            "tp": 1,
+            "fn": 3,
+            "fp": 2,
+            "tn": 2,
+            "agreement": 0.375,
+            "recall": 0.25,
+            "added_positive_rate": 0.5
+          },
+          "persistence": {
+            "states": 8,
+            "reference_positive": 6,
+            "predicted_positive": 8,
+            "tp": 6,
+            "fn": 0,
+            "fp": 2,
+            "tn": 0,
+            "agreement": 0.75,
+            "recall": 1.0,
+            "added_positive_rate": 1.0
+          },
+          "alarm": {
+            "states": 8,
+            "reference_positive": 4,
+            "predicted_positive": 0,
+            "tp": 0,
+            "fn": 4,
+            "fp": 0,
+            "tn": 4,
+            "agreement": 0.5,
+            "recall": 0.0,
+            "added_positive_rate": 0.0
+          }
+        },
+        "checks": {
+          "permutation_max_abs": 5.245208740234375e-06,
+          "subset_response_rms": 0.0
+        }
+      },
+      "spread_ratio": {
+        "action": 0.871853768825531,
+        "early_hold": 0.9285647869110107,
+        "late_hold": 0.8796013593673706
+      },
+      "checkpoint": "results/jenga/d6_memorization/independent_direct_s1.pt",
+      "checkpoint_sha256": "e86eb948d6f57c7679fbc45a1b314818e5c6cc96e400201823178e0c001366f3"
+    },
+    "set_conditioned": {
+      "history": [
+        {
+          "response": 0.35052934288978577,
+          "topology": 0.37246307730674744,
+          "commitment": 0.21674486994743347,
+          "nested": 5.533690929412842,
+          "step": 1,
+          "total": 1.0702794790267944
+        },
+        {
+          "response": 0.210166797041893,
+          "topology": 0.1604151576757431,
+          "commitment": 0.1418478935956955,
+          "nested": 0.9530836939811707,
+          "step": 100,
+          "total": 0.5034939050674438
+        },
+        {
+          "response": 0.6023151874542236,
+          "topology": 0.1613553911447525,
+          "commitment": 0.15160924196243286,
+          "nested": 8.458041191101074,
+          "step": 200,
+          "total": 1.2547069787979126
+        },
+        {
+          "response": 0.058740388602018356,
+          "topology": 0.041212841868400574,
+          "commitment": 0.04562172293663025,
+          "nested": 5.2981181144714355,
+          "step": 300,
+          "total": 0.37813109159469604
+        },
+        {
+          "response": 0.056301992386579514,
+          "topology": 0.07073991745710373,
+          "commitment": 0.0783148929476738,
+          "nested": 4.756425857543945,
+          "step": 400,
+          "total": 0.4031418561935425
+        },
+        {
+          "response": 0.05311506986618042,
+          "topology": 0.07070077210664749,
+          "commitment": 0.07542628049850464,
+          "nested": 5.012425422668457,
+          "step": 500,
+          "total": 0.4088526964187622
+        },
+        {
+          "response": 0.034917693585157394,
+          "topology": 0.04645777866244316,
+          "commitment": 0.042911283671855927,
+          "nested": 0.4802328646183014,
+          "step": 600,
+          "total": 0.1312270164489746
+        },
+        {
+          "response": 0.04399353265762329,
+          "topology": 0.05516008660197258,
+          "commitment": 0.05402470380067825,
+          "nested": 4.292929649353027,
+          "step": 700,
+          "total": 0.3343397378921509
+        },
+        {
+          "response": 0.04593696817755699,
+          "topology": 0.061864160001277924,
+          "commitment": 0.06390616297721863,
+          "nested": 2.920715093612671,
+          "step": 800,
+          "total": 0.2870371341705322
+        },
+        {
+          "response": 0.044012848287820816,
+          "topology": 0.05329431593418121,
+          "commitment": 0.058997031301259995,
+          "nested": 4.309698104858398,
+          "step": 900,
+          "total": 0.3390325903892517
+        },
+        {
+          "response": 0.5464558005332947,
+          "topology": 0.09965882450342178,
+          "commitment": 0.09153567254543304,
+          "nested": 2.7333648204803467,
+          "step": 1000,
+          "total": 0.831602156162262
+        },
+        {
+          "response": 0.01744266226887703,
+          "topology": 0.033850960433483124,
+          "commitment": 0.025825537741184235,
+          "nested": 4.39854621887207,
+          "step": 1100,
+          "total": 0.2700093686580658
+        },
+        {
+          "response": 0.3637767732143402,
+          "topology": 0.09903036803007126,
+          "commitment": 0.09604904055595398,
+          "nested": 6.707244396209717,
+          "step": 1200,
+          "total": 0.8376486301422119
+        },
+        {
+          "response": 0.0374479703605175,
+          "topology": 0.04910416528582573,
+          "commitment": 0.04130610451102257,
+          "nested": 3.09486985206604,
+          "step": 1300,
+          "total": 0.25521421432495117
+        },
+        {
+          "response": 0.31614598631858826,
+          "topology": 0.09170974045991898,
+          "commitment": 0.0813843309879303,
+          "nested": 4.1816816329956055,
+          "step": 1400,
+          "total": 0.6529909372329712
+        },
+        {
+          "response": 0.2924996018409729,
+          "topology": 0.07347779721021652,
+          "commitment": 0.06821943074464798,
+          "nested": 4.392866611480713,
+          "step": 1500,
+          "total": 0.6138734817504883
+        },
+        {
+          "response": 0.06108754128217697,
+          "topology": 0.06605442613363266,
+          "commitment": 0.06154700368642807,
+          "nested": 0.2693728506565094,
+          "step": 1600,
+          "total": 0.17937542498111725
+        },
+        {
+          "response": 0.2795400023460388,
+          "topology": 0.06951714307069778,
+          "commitment": 0.07357341051101685,
+          "nested": 4.245229244232178,
+          "step": 1700,
+          "total": 0.5969929099082947
+        },
+        {
+          "response": 0.0344969667494297,
+          "topology": 0.03073720447719097,
+          "commitment": 0.03660450875759125,
+          "nested": 4.332481861114502,
+          "step": 1800,
+          "total": 0.29304108023643494
+        },
+        {
+          "response": 0.03248095512390137,
+          "topology": 0.036044422537088394,
+          "commitment": 0.039951857179403305,
+          "nested": 5.844301223754883,
+          "step": 1900,
+          "total": 0.3680773675441742
+        },
+        {
+          "response": 0.03507522866129875,
+          "topology": 0.042410798370838165,
+          "commitment": 0.03621209040284157,
+          "nested": 1.6550098657608032,
+          "step": 2000,
+          "total": 0.17644357681274414
+        }
+      ],
+      "seconds": 44.141796350479126,
+      "evaluation": {
+        "candidate": {
+          "states": 8,
+          "reference_positive": 8,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 2,
+          "fp": 0,
+          "tn": 0,
+          "agreement": 0.75,
+          "recall": 0.75,
+          "added_positive_rate": 0.0,
+          "valid_states": 8,
+          "mean_partition_agreement": 0.75
+        },
+        "continuous": {
+          "response": 0.14862380921840668,
+          "topology": 0.0539277158677578,
+          "commitment": 0.05296427756547928
+        },
+        "nested": {
+          "boundary": {
+            "states": 8,
+            "reference_positive": 6,
+            "predicted_positive": 1,
+            "tp": 1,
+            "fn": 5,
+            "fp": 0,
+            "tn": 2,
+            "agreement": 0.375,
+            "recall": 0.16666666666666666,
+            "added_positive_rate": 0.0
+          },
+          "commitment": {
+            "states": 8,
+            "reference_positive": 4,
+            "predicted_positive": 3,
+            "tp": 1,
+            "fn": 3,
+            "fp": 2,
+            "tn": 2,
+            "agreement": 0.375,
+            "recall": 0.25,
+            "added_positive_rate": 0.5
+          },
+          "persistence": {
+            "states": 8,
+            "reference_positive": 6,
+            "predicted_positive": 8,
+            "tp": 6,
+            "fn": 0,
+            "fp": 2,
+            "tn": 0,
+            "agreement": 0.75,
+            "recall": 1.0,
+            "added_positive_rate": 1.0
+          },
+          "alarm": {
+            "states": 8,
+            "reference_positive": 4,
+            "predicted_positive": 1,
+            "tp": 0,
+            "fn": 4,
+            "fp": 1,
+            "tn": 3,
+            "agreement": 0.375,
+            "recall": 0.0,
+            "added_positive_rate": 0.25
+          }
+        },
+        "checks": {
+          "permutation_max_abs": 4.76837158203125e-06,
+          "subset_response_rms": 0.1320059895515442
+        }
+      },
+      "spread_ratio": {
+        "action": 0.8566550016403198,
+        "early_hold": 0.8693462610244751,
+        "late_hold": 0.8204790353775024
+      },
+      "checkpoint": "results/jenga/d6_memorization/set_conditioned_s1.pt",
+      "checkpoint_sha256": "46c214dfba81aa850fd1f5ec484020b124aeb693fa320051f83307f691531198"
+    }
+  },
+  "capacity_gates": {
+    "independent_direct": {
+      "checks": {
+        "response": false,
+        "topology": false,
+        "commitment": false,
+        "candidate_decision": false,
+        "partition": false,
+        "nested_boundary": false,
+        "nested_final": false,
+        "response_spread": true,
+        "permutation": true
+      },
+      "passes": false
+    },
+    "set_conditioned": {
+      "checks": {
+        "response": false,
+        "topology": false,
+        "commitment": false,
+        "candidate_decision": false,
+        "partition": false,
+        "nested_boundary": false,
+        "nested_final": false,
+        "response_spread": true,
+        "permutation": true
+      },
+      "passes": false
+    }
+  },
+  "interpretation": "neither_passes_architecture_objective_optimization"
+}

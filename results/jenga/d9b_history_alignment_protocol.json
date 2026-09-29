@@ -1,0 +1,38 @@
+{
+  "name": "D9b generic pre-probe history reconstruction",
+  "status": "frozen before replay",
+  "purpose": "construct causally aligned temporal input for the D9b history factorial",
+  "scope": "all 256 TRAIN nested groups; no task labels, alarm labels, DEV, or TEST",
+  "sources": {
+    "nested": "results/jenga/d3_data",
+    "trace": "results/jenga/trace_data",
+    "episode_actions": "JengaReplay training episodes",
+    "simulator": "vendor/panda_express_sim.tar"
+  },
+  "history": {
+    "states": 4,
+    "actions": 3,
+    "state_dimension": 61,
+    "action_dimension": 4,
+    "construction": "warm-start-safe replay to the original chunk snapshot, then execute the D3 source path through its contact_step; retain the final four states and three transitions",
+    "causal": true,
+    "current_state_is_last_history_state": true,
+    "generic_channels_only": "block pose and velocity, contact signature, gripper proprioception, and executed controls"
+  },
+  "alignment_gate": {
+    "groups": 256,
+    "maximum_absolute_current_state_error": 0.000001,
+    "maximum_rms_current_state_error": 0.000001,
+    "contact_signature_exact_for_every_group": true,
+    "action_transition_alignment_exact": true,
+    "all_groups_must_pass": true
+  },
+  "execution": {
+    "simulator_instances": 1,
+    "reason": "avoid desktop resource exhaustion and reproduce D3 deterministically"
+  },
+  "decision": {
+    "pass": "freeze history cache and authorize the fit-only 2-by-2 temporal factorial",
+    "fail": "do not train; diagnose simulator/version or source-index mismatch"
+  }
+}

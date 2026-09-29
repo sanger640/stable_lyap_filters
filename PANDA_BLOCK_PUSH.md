@@ -5,8 +5,11 @@ space controller, assets, table, camera convention and Jenga dimensions as the e
 One red Jenga block stands upright and must be pushed into a non-colliding green goal without ever
 toppling.
 
-The environment, physical-state v0 diagnostic, and first rendered-future transfer diagnostic are
-complete. No world-model-predicted-future result has been run yet.
+The environment, physical-state v0 diagnostic, and rendered-future representation diagnostics are
+complete. No world-model-predicted-future result has been run. The Jenga state-world-model ladder
+is now closed at D21, so Panda prediction should not be opened with those rejected checkpoints.
+It resumes only under a materially new pretrained/large-scale model program; see
+[`WORLD_MODEL.md`](WORLD_MODEL.md).
 
 ## Task and grading
 

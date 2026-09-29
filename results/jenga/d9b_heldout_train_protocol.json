@@ -1,0 +1,67 @@
+{
+  "name": "D9b episode-held-out TRAIN comparison",
+  "status": "frozen before execution",
+  "purpose": "test whether the shared-amplitude direct response model generalizes beyond its training episodes and improves on D2 learned futures",
+  "scope": "TRAIN partition only; DEV and TEST remain closed",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+    "nested_source": "results/jenga/d3_data",
+    "split_rule": "same deterministic first-12-percent episode split used by D2 and D6",
+    "fit_episodes": 37,
+    "fit_groups": 218,
+    "heldout_episode_ids": ["0", "1", "5", "7", "12", "13"],
+    "heldout_groups": 38,
+    "heldout_physical_boundary_positive": 24,
+    "heldout_physical_final_positive": 9,
+    "heldout_exact_zero_groups": 9,
+    "task_failure_or_object_role_labels_used_for_training": false,
+    "heldout_used_for_epoch_or_model_selection": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "model": {
+    "architecture": "unchanged D9b raw temporal pair encoder, six-level context, shared ReLU group amplitude and per-level softplus shapes",
+    "amplitude_target": "RMS magnitude over all six levels and all 41 continuous log1p response values",
+    "shape_target": "per-level continuous target divided by shared amplitude for nonzero groups",
+    "external_amplitude_threshold": false,
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2
+  },
+  "optimization": {
+    "seeds": [1, 2, 3],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "sampling": "deterministic uniform group sampling without replacement within each step; no class balancing",
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "loss": "shared group amplitude MSE plus five equally weighted shape MSE terms masked only for exact-zero groups",
+    "checkpoint_selection": "fixed final step for every seed"
+  },
+  "d2_reference": {
+    "source": "results/jenga/reobservation_interface_result.json",
+    "source_sha256": "601e8c2e8423ce42bcc5d06a85a8e8b361719fce94a2b740025c8ba58d52ecaa",
+    "arm": "unchanged open-loop interval-38 summary over ten D2 seeds",
+    "median_boundary_recall": 0.25,
+    "median_boundary_added_positive_rate": 0.14285714285714285,
+    "median_final_recall": 0.05555555555555555,
+    "median_final_added_positive_rate": 0.08620689655172414
+  },
+  "frozen_success_gate_on_three_seed_medians": {
+    "boundary_recall_gain_over_d2_at_least": 0.1,
+    "boundary_added_positive_increase_over_d2_at_most": 0.05,
+    "final_recall_gain_over_d2_at_least": 0.15,
+    "final_added_positive_increase_over_d2_at_most": 0.05,
+    "endpoint_swap_max_abs_each_seed": 0.00001,
+    "level_permutation_max_abs_each_seed": 0.00001
+  },
+  "reporting": "all seed metrics, medians, continuous errors, exact-zero confusion counts, per-episode monitor decisions and D2 comparison",
+  "decision": {
+    "pass": "freeze D9b state-space formulation and preregister a separate DEV evaluation",
+    "fail": "keep DEV and TEST closed; diagnose generalization and data coverage without tuning on these held-out outcomes"
+  }
+}

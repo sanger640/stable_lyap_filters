@@ -1,0 +1,812 @@
+{
+  "protocol": {
+    "name": "D9b shared group amplitude confirmation",
+    "status": "frozen before execution",
+    "purpose": "replace six redundant per-level zero decisions with one permutation-invariant response amplitude per nested probe group",
+    "scope": "TRAIN-only same-example confirmation; cannot authorize DEV, TEST, deployment, or visual transfer",
+    "data": {
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "nested_source": "results/jenga/d3_data",
+      "selected_episodes": [
+        "16",
+        "21",
+        "25",
+        "30",
+        "31",
+        "33",
+        "34",
+        "35"
+      ],
+      "selection": "identical eight groups used by D6-D9 audits",
+      "states": 8,
+      "levels_per_state": 6,
+      "known_exact_zero_target_episodes": [
+        "25",
+        "31"
+      ],
+      "task_failure_or_object_role_labels": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "model": {
+      "encoder": "unchanged D9 raw temporal endpoint encoder and level context",
+      "factorization": "predicted log-separation equals one shared ReLU group amplitude times a per-level softplus normalized shape",
+      "amplitude_pooling": "mean of the six contextualized level features; invariant to level permutation",
+      "amplitude_target": "RMS magnitude over all six levels and all 41 continuous log1p gap/curve values in a group",
+      "shape_target": "each level target divided by the shared group amplitude for nonzero groups only",
+      "zero_handling": "all shape losses omitted exactly when the continuous group target amplitude is zero",
+      "external_amplitude_threshold": false,
+      "hidden": 128,
+      "heads": 4,
+      "layers": 2
+    },
+    "optimization": {
+      "seeds": [
+        1,
+        2,
+        3
+      ],
+      "steps": 5000,
+      "optimizer": "AdamW",
+      "initial_learning_rate": 0.001,
+      "schedule": "CosineAnnealingLR",
+      "final_learning_rate": 1e-05,
+      "gradient_clip": 1.0,
+      "batching": "deterministic full batch of all eight groups and six levels",
+      "loss": "shared group amplitude MSE plus five equally weighted masked per-level shape MSE terms",
+      "checkpoint_selection": "fixed final step for every seed; no best-seed or intermediate selection"
+    },
+    "frozen_gate_per_seed": {
+      "early_gap_log_mse": 0.0001,
+      "full_gap_log_mse": 0.0001,
+      "each_curve_phase_log_mse": 0.001,
+      "exact_zero_output_on_exact_zero_groups": true,
+      "positive_amplitude_on_nonzero_groups": true,
+      "nested_boundary_agreement": 1.0,
+      "nested_final_agreement": 1.0,
+      "endpoint_swap_max_abs": 1e-05,
+      "level_permutation_max_abs": 1e-05
+    },
+    "replication_decision": "all three fixed final checkpoints must pass every per-seed gate",
+    "interpretation": {
+      "all_pass": "freeze D9b and authorize one episode-held-out TRAIN comparison against D2",
+      "any_fail": "stop modifying the predictor and investigate a boundary test that is robust to microscopic amplitude without a calibrated cutoff"
+    }
+  },
+  "created": "2026-09-28T19:55:48+00:00",
+  "protocol_sha256": "879f74b754c7bff8e516a8897a4411c1c3e476c34eb434eba6215d0ac457de35",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "target_zero_groups": 2,
+  "target_group_amplitudes": [
+    1.8916089534759521,
+    1.8951942920684814,
+    0.0,
+    1.8861266374588013,
+    0.0,
+    1.2936794757843018,
+    1.750586986541748,
+    1.579205870628357
+  ],
+  "seeds": [
+    {
+      "seed": 1,
+      "seconds": 35.4088990688324,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.4873712062835693,
+          "amplitude": 1.160494327545166,
+          "shape_early_gap": 0.24089914560317993,
+          "shape_full_gap": 0.22962144017219543,
+          "shape_action": 0.440367728471756,
+          "shape_early_hold": 0.24028316140174866,
+          "shape_late_hold": 0.17570553719997406
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.027341965585947037,
+          "amplitude": 7.128045399440452e-05,
+          "shape_early_gap": 0.0006810524500906467,
+          "shape_full_gap": 0.000498575100209564,
+          "shape_action": 0.023152822628617287,
+          "shape_early_hold": 0.0017010188894346356,
+          "shape_late_hold": 0.0012372145429253578
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.0005057785892859101,
+          "amplitude": 1.0341626648369129e-06,
+          "shape_early_gap": 1.418404917785665e-05,
+          "shape_full_gap": 1.1239596460654866e-05,
+          "shape_action": 0.00032271657255478203,
+          "shape_early_hold": 7.291661313502118e-05,
+          "shape_late_hold": 8.36876206449233e-05
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.0002463211421854794,
+          "amplitude": 1.325241782978992e-06,
+          "shape_early_gap": 1.5777579392306507e-05,
+          "shape_full_gap": 1.6280097042908892e-05,
+          "shape_action": 0.00014419092622119933,
+          "shape_early_hold": 3.964171264669858e-05,
+          "shape_late_hold": 2.9105589419486932e-05
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 5.597946437774226e-05,
+          "amplitude": 9.03915065464389e-07,
+          "shape_early_gap": 5.237671757640783e-06,
+          "shape_full_gap": 4.592018740368076e-06,
+          "shape_action": 2.9077678846078925e-05,
+          "shape_early_hold": 8.475602044200059e-06,
+          "shape_late_hold": 7.692578037676867e-06
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 9.484770089329686e-06,
+          "amplitude": 1.2690845707652443e-08,
+          "shape_early_gap": 1.1711482557075215e-06,
+          "shape_full_gap": 9.899049473460764e-07,
+          "shape_action": 4.656556029658532e-06,
+          "shape_early_hold": 9.313985742664954e-07,
+          "shape_late_hold": 1.7230712501259404e-06
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 6.01896954322001e-06,
+          "amplitude": 6.788347661768057e-11,
+          "shape_early_gap": 8.827253736853891e-07,
+          "shape_full_gap": 6.659986979684618e-07,
+          "shape_action": 3.0337914722622372e-06,
+          "shape_early_hold": 3.9942244711710373e-07,
+          "shape_late_hold": 1.0369634537710226e-06
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 4.99664201925043e-06,
+          "amplitude": 2.1078250256323372e-11,
+          "shape_early_gap": 7.866289024605067e-07,
+          "shape_full_gap": 5.877995477021614e-07,
+          "shape_action": 2.5379436010553036e-06,
+          "shape_early_hold": 3.01557008697273e-07,
+          "shape_late_hold": 7.826917567399505e-07
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 4.450721462490037e-06,
+          "amplitude": 1.3891110484109959e-12,
+          "shape_early_gap": 7.295781756511133e-07,
+          "shape_full_gap": 5.426404072750302e-07,
+          "shape_action": 2.264729801026988e-06,
+          "shape_early_hold": 2.56953370580959e-07,
+          "shape_late_hold": 6.568183152921847e-07
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 4.197270754957572e-06,
+          "amplitude": 3.090860900556436e-13,
+          "shape_early_gap": 7.020543648650346e-07,
+          "shape_full_gap": 5.209510050008248e-07,
+          "shape_action": 2.1353555439418415e-06,
+          "shape_early_hold": 2.3699948314970243e-07,
+          "shape_late_hold": 6.019097327225609e-07
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 4.11316023019026e-06,
+          "amplitude": 1.794120407794253e-12,
+          "shape_early_gap": 6.926167657184124e-07,
+          "shape_full_gap": 5.135577225701127e-07,
+          "shape_action": 2.0918873815389816e-06,
+          "shape_early_hold": 2.3064541210260359e-07,
+          "shape_late_hold": 5.844509018970712e-07
+        }
+      ],
+      "curve_errors": {
+        "early_gap": 1.5922132661216892e-06,
+        "full_gap": 1.1815297966677463e-06,
+        "curve_action": 4.224399617669405e-06,
+        "curve_early_hold": 5.23111282291211e-07,
+        "curve_late_hold": 1.2583543593791546e-06
+      },
+      "factor_losses": {
+        "amplitude": 2.5412560944459983e-11,
+        "shape_early_gap": 6.925800448698283e-07,
+        "shape_full_gap": 5.136976142239291e-07,
+        "shape_action": 2.095915078825783e-06,
+        "shape_early_hold": 2.3216759359456773e-07,
+        "shape_late_hold": 5.856861662323354e-07
+      },
+      "predicted_group_amplitudes": [
+        1.891611099243164,
+        1.895186424255371,
+        0.0,
+        1.8861253261566162,
+        0.0,
+        1.293670892715454,
+        1.7505793571472168,
+        1.5792076587677002
+      ],
+      "nested": {
+        "boundary": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "commitment": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 7.152557373046875e-07
+      },
+      "gate": {
+        "checks": {
+          "early_gap": true,
+          "full_gap": true,
+          "curve_action": true,
+          "curve_early_hold": true,
+          "curve_late_hold": true,
+          "exact_zero": true,
+          "nonzero_positive": true,
+          "nested_boundary": true,
+          "nested_final": true,
+          "endpoint_swap": true,
+          "level_permutation": true
+        },
+        "passes": true,
+        "zero_groups": 2,
+        "predicted_zero_groups": 2
+      },
+      "checkpoint": "results/jenga/d9b_shared_amplitude/seed1.pt",
+      "checkpoint_sha256": "f6b09193cc21f27c76dd85670a29bb0280c319d0145123bc024dc28adc067d7b"
+    },
+    {
+      "seed": 2,
+      "seconds": 35.526097536087036,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.5202503204345703,
+          "amplitude": 1.2827873229980469,
+          "shape_early_gap": 0.2046525776386261,
+          "shape_full_gap": 0.17986805737018585,
+          "shape_action": 0.43081730604171753,
+          "shape_early_hold": 0.2398262321949005,
+          "shape_late_hold": 0.18229900300502777
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.05484447255730629,
+          "amplitude": 0.00025823249598033726,
+          "shape_early_gap": 0.0011460712412372231,
+          "shape_full_gap": 0.0007702668663114309,
+          "shape_action": 0.0384029783308506,
+          "shape_early_hold": 0.006761519238352776,
+          "shape_late_hold": 0.007505406625568867
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.0036713038571178913,
+          "amplitude": 3.1717525416752324e-05,
+          "shape_early_gap": 7.614945207023993e-05,
+          "shape_full_gap": 4.888809417025186e-05,
+          "shape_action": 0.003028223989531398,
+          "shape_early_hold": 0.00030116585548967123,
+          "shape_late_hold": 0.00018515913689043373
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 9.674095781520009e-05,
+          "amplitude": 2.4448532087717467e-10,
+          "shape_early_gap": 2.498263029337977e-06,
+          "shape_full_gap": 3.219047584934742e-06,
+          "shape_action": 5.732851423090324e-05,
+          "shape_early_hold": 1.8824184735422023e-05,
+          "shape_late_hold": 1.4870704944769386e-05
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 2.869398485927377e-05,
+          "amplitude": 5.768647781678737e-10,
+          "shape_early_gap": 1.2932342770000105e-06,
+          "shape_full_gap": 1.565673073855578e-06,
+          "shape_action": 1.7140540876425803e-05,
+          "shape_early_hold": 4.200841885904083e-06,
+          "shape_late_hold": 4.493118467507884e-06
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 1.065402011590777e-05,
+          "amplitude": 1.920952286127431e-11,
+          "shape_early_gap": 8.701790648046881e-07,
+          "shape_full_gap": 1.2303362382226624e-06,
+          "shape_action": 5.415669420472113e-06,
+          "shape_early_hold": 1.2011372518827557e-06,
+          "shape_late_hold": 1.936678927449975e-06
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 6.606360784644494e-06,
+          "amplitude": 1.191935439237568e-11,
+          "shape_early_gap": 7.52915241264418e-07,
+          "shape_full_gap": 1.0288797511748271e-06,
+          "shape_action": 3.1053291422722396e-06,
+          "shape_early_hold": 5.631199542222021e-07,
+          "shape_late_hold": 1.156104531219171e-06
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 5.106052867631661e-06,
+          "amplitude": 3.785896041108572e-10,
+          "shape_early_gap": 7.087180051712494e-07,
+          "shape_full_gap": 9.096401072383742e-07,
+          "shape_action": 2.287846655235626e-06,
+          "shape_early_hold": 3.343606920225284e-07,
+          "shape_late_hold": 8.65108631842304e-07
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 4.353493750386406e-06,
+          "amplitude": 1.6751044995544362e-11,
+          "shape_early_gap": 6.866769126645522e-07,
+          "shape_full_gap": 8.35853825265076e-07,
+          "shape_action": 1.8685025224840501e-06,
+          "shape_early_hold": 2.2414990041852434e-07,
+          "shape_late_hold": 7.382938065347844e-07
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 4.021808308607433e-06,
+          "amplitude": 6.24389429049188e-12,
+          "shape_early_gap": 6.768584626115626e-07,
+          "shape_full_gap": 7.988790571289428e-07,
+          "shape_action": 1.678537046245765e-06,
+          "shape_early_hold": 1.8040186944290326e-07,
+          "shape_late_hold": 6.871256346130394e-07
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 3.915611614502268e-06,
+          "amplitude": 3.6077807408219087e-12,
+          "shape_early_gap": 6.737270155099395e-07,
+          "shape_full_gap": 7.863507676120207e-07,
+          "shape_action": 1.6175868040591013e-06,
+          "shape_early_hold": 1.6716587936116412e-07,
+          "shape_late_hold": 6.707774105052522e-07
+        }
+      ],
+      "curve_errors": {
+        "early_gap": 1.5489010820601834e-06,
+        "full_gap": 1.8074888430419378e-06,
+        "curve_action": 3.586812226785696e-06,
+        "curve_early_hold": 3.804502739512827e-07,
+        "curve_late_hold": 1.4177223874867195e-06
+      },
+      "factor_losses": {
+        "amplitude": 3.0612135049068456e-10,
+        "shape_early_gap": 6.738209208378976e-07,
+        "shape_full_gap": 7.863430369070556e-07,
+        "shape_action": 1.618843953110627e-06,
+        "shape_early_hold": 1.6779041800418781e-07,
+        "shape_late_hold": 6.711214268761978e-07
+      },
+      "predicted_group_amplitudes": [
+        1.8916054964065552,
+        1.8951694965362549,
+        0.0,
+        1.8861088752746582,
+        0.0,
+        1.2936800718307495,
+        1.7505583763122559,
+        1.5791796445846558
+      ],
+      "nested": {
+        "boundary": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "commitment": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 5,
+          "tp": 5,
+          "fn": 1,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 0.875,
+          "recall": 0.8333333333333334,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 9.5367431640625e-07
+      },
+      "gate": {
+        "checks": {
+          "early_gap": true,
+          "full_gap": true,
+          "curve_action": true,
+          "curve_early_hold": true,
+          "curve_late_hold": true,
+          "exact_zero": true,
+          "nonzero_positive": true,
+          "nested_boundary": true,
+          "nested_final": true,
+          "endpoint_swap": true,
+          "level_permutation": true
+        },
+        "passes": true,
+        "zero_groups": 2,
+        "predicted_zero_groups": 2
+      },
+      "checkpoint": "results/jenga/d9b_shared_amplitude/seed2.pt",
+      "checkpoint_sha256": "d62cef6cf9c1a567b704341232f60e6afcbc7b7be60c3bf2d8799f7b1cfc32ba"
+    },
+    {
+      "seed": 3,
+      "seconds": 35.73576068878174,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.5878756046295166,
+          "amplitude": 1.3446500301361084,
+          "shape_early_gap": 0.20938917994499207,
+          "shape_full_gap": 0.16598282754421234,
+          "shape_action": 0.4544488787651062,
+          "shape_early_hold": 0.2323722243309021,
+          "shape_late_hold": 0.18103240430355072
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.035697802901268005,
+          "amplitude": 1.8283051758771762e-05,
+          "shape_early_gap": 0.0007725738687440753,
+          "shape_full_gap": 0.0004277679545339197,
+          "shape_action": 0.03055964969098568,
+          "shape_early_hold": 0.002981500932946801,
+          "shape_late_hold": 0.0009380258270539343
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.00828299019485712,
+          "amplitude": 1.316346060775686e-05,
+          "shape_early_gap": 7.454954175045714e-05,
+          "shape_full_gap": 5.832927126903087e-05,
+          "shape_action": 0.0072838664054870605,
+          "shape_early_hold": 0.0004749297513626516,
+          "shape_late_hold": 0.0003781519189942628
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.0002499031543266028,
+          "amplitude": 3.4589575648169557e-10,
+          "shape_early_gap": 7.450305929523893e-06,
+          "shape_full_gap": 2.4050827960309107e-06,
+          "shape_action": 0.0001766281493473798,
+          "shape_early_hold": 3.955208740080707e-05,
+          "shape_late_hold": 2.3867185518611223e-05
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 4.1606032027630135e-05,
+          "amplitude": 8.470821200035061e-08,
+          "shape_early_gap": 2.8432336875994224e-06,
+          "shape_full_gap": 1.1888363360412768e-06,
+          "shape_action": 2.19969660975039e-05,
+          "shape_early_hold": 7.844148967706133e-06,
+          "shape_late_hold": 7.648136488569435e-06
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 1.8083565009874292e-05,
+          "amplitude": 7.911515353953291e-08,
+          "shape_early_gap": 1.881183266050357e-06,
+          "shape_full_gap": 8.524574468538049e-07,
+          "shape_action": 9.313082045991905e-06,
+          "shape_early_hold": 2.985453875226085e-06,
+          "shape_late_hold": 2.9722737053816672e-06
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 1.0074974852614105e-05,
+          "amplitude": 2.8995756906624592e-09,
+          "shape_early_gap": 1.368509401800111e-06,
+          "shape_full_gap": 5.843090775670134e-07,
+          "shape_action": 5.391976173996227e-06,
+          "shape_early_hold": 9.056893759407103e-07,
+          "shape_late_hold": 1.8215916952613043e-06
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 7.320325494220015e-06,
+          "amplitude": 5.275957448702684e-11,
+          "shape_early_gap": 1.160417809842329e-06,
+          "shape_full_gap": 4.621066693744069e-07,
+          "shape_action": 3.851322617265396e-06,
+          "shape_early_hold": 4.1075139733948163e-07,
+          "shape_late_hold": 1.435674221283989e-06
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 6.151687102828873e-06,
+          "amplitude": 1.3695711231775931e-11,
+          "shape_early_gap": 1.0551102604949847e-06,
+          "shape_full_gap": 4.007042946341244e-07,
+          "shape_action": 3.168115199514432e-06,
+          "shape_early_hold": 3.006048245879356e-07,
+          "shape_late_hold": 1.2271389095985796e-06
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 5.648769729305059e-06,
+          "amplitude": 1.2043699371133698e-12,
+          "shape_early_gap": 1.007275614028913e-06,
+          "shape_full_gap": 3.739949647751928e-07,
+          "shape_action": 2.8752688194799703e-06,
+          "shape_early_hold": 2.61958490455072e-07,
+          "shape_late_hold": 1.1302702205284731e-06
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 5.486857844516635e-06,
+          "amplitude": 2.2080115513745113e-12,
+          "shape_early_gap": 9.915117971104337e-07,
+          "shape_full_gap": 3.6545739590110315e-07,
+          "shape_action": 2.781620196401491e-06,
+          "shape_early_hold": 2.502544589333411e-07,
+          "shape_late_hold": 1.0980120350723155e-06
+        }
+      ],
+      "curve_errors": {
+        "early_gap": 2.2792894469603198e-06,
+        "full_gap": 8.40936934309866e-07,
+        "curve_action": 6.100972314015962e-06,
+        "curve_early_hold": 5.544450800698542e-07,
+        "curve_late_hold": 2.320556632184889e-06
+      },
+      "factor_losses": {
+        "amplitude": 5.589484430856828e-11,
+        "shape_early_gap": 9.91365027402935e-07,
+        "shape_full_gap": 3.6549104720506875e-07,
+        "shape_action": 2.784122671073419e-06,
+        "shape_early_hold": 2.5012363380483293e-07,
+        "shape_late_hold": 1.0981973446178017e-06
+      },
+      "predicted_group_amplitudes": [
+        1.891603708267212,
+        1.8951826095581055,
+        0.0,
+        1.8861212730407715,
+        0.0,
+        1.293670415878296,
+        1.750579595565796,
+        1.5791950225830078
+      ],
+      "nested": {
+        "boundary": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "commitment": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 5,
+          "tp": 5,
+          "fn": 1,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 0.875,
+          "recall": 0.8333333333333334,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 2.1457672119140625e-06
+      },
+      "gate": {
+        "checks": {
+          "early_gap": true,
+          "full_gap": true,
+          "curve_action": true,
+          "curve_early_hold": true,
+          "curve_late_hold": true,
+          "exact_zero": true,
+          "nonzero_positive": true,
+          "nested_boundary": true,
+          "nested_final": true,
+          "endpoint_swap": true,
+          "level_permutation": true
+        },
+        "passes": true,
+        "zero_groups": 2,
+        "predicted_zero_groups": 2
+      },
+      "checkpoint": "results/jenga/d9b_shared_amplitude/seed3.pt",
+      "checkpoint_sha256": "36da92288db73f91b6b1af364a14cb4626c609d9531b0f783167d471f0fe5cbb"
+    }
+  ],
+  "aggregate": {
+    "all_seeds_pass": true,
+    "passing_seeds": 3,
+    "boundary_agreement": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "final_agreement": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "predicted_zero_groups": [
+      2,
+      2,
+      2
+    ]
+  },
+  "d9": {
+    "result_sha256": "e828d12e010ce08a32ec7be73fdb53c243e390698f8c000456c2fa5301a72167",
+    "aggregate": {
+      "all_seeds_pass": false,
+      "passing_seeds": 2,
+      "boundary_agreement": [
+        1.0,
+        1.0,
+        0.875
+      ],
+      "final_agreement": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "predicted_zero_levels": [
+        12,
+        12,
+        11
+      ]
+    }
+  },
+  "interpretation": "all_seed_pass_authorize_episode_heldout_train"
+}

@@ -1,0 +1,63 @@
+{
+  "name": "D6 staged representation-versus-objective overfit audit",
+  "status": "frozen before execution",
+  "purpose": "identify the first stage at which the current direct response formulation cannot memorize exact TRAIN examples",
+  "scope": "diagnostic only; cannot authorize DEV, TEST, deployment, or visual transfer",
+  "data": {
+    "source": "results/jenga/d4_neighborhood_data_large.npz",
+    "selected_episodes": ["16", "21", "25", "30", "31", "33", "34", "35"],
+    "selection": "same first state and first nested group per episode as the frozen D6 memorization audit",
+    "one_state_episode": "16",
+    "probes_per_state": 64,
+    "nested_source": "results/jenga/d3_data",
+    "evaluation": "exact optimization examples only",
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "models": {
+    "arms": ["independent_direct", "set_conditioned"],
+    "architecture": "unchanged D6",
+    "initialization_seed": 1,
+    "stage_transition": "warm-start model from prior final checkpoint and reset AdamW",
+    "checkpoint_selection": "fixed final update of every stage"
+  },
+  "optimization": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.0003,
+    "gradient_clip": 1.0,
+    "batching": "deterministic full batch with all states and all 64 probes",
+    "stages": [
+      {"name": "one_state_response", "steps": 2000, "states": 1, "terms": ["response"]},
+      {"name": "eight_state_response", "steps": 3000, "states": 8, "terms": ["response"]},
+      {"name": "add_topology", "steps": 1500, "states": 8, "terms": ["response", "topology"]},
+      {"name": "add_commitment", "steps": 1500, "states": 8, "terms": ["response", "topology", "commitment"]},
+      {"name": "add_nested", "steps": 1500, "states": 8, "terms": ["response", "topology", "commitment", "nested"]}
+    ],
+    "loss_weights": "unchanged frozen D6 pilot weights for active terms",
+    "gradient_diagnostics": "unweighted and weighted gradient norms plus pairwise cosine at stage entry and exit"
+  },
+  "stage_gates": {
+    "one_state_response": {"response_error": 0.005},
+    "eight_state_response": {"response_error": 0.02},
+    "add_topology": {"response_error": 0.02, "topology_error": 0.01},
+    "add_commitment": {"response_error": 0.02, "topology_error": 0.01, "commitment_error": 0.01},
+    "add_nested": {
+      "response_error": 0.02,
+      "topology_error": 0.01,
+      "commitment_error": 0.01,
+      "candidate_decision_agreement": 1.0,
+      "partition_agreement": 0.9,
+      "nested_boundary_agreement": 0.9,
+      "nested_final_agreement": 0.9,
+      "response_spread_ratio_each_phase": [0.5, 1.5],
+      "permutation_equivariance_max_abs": 0.00001
+    }
+  },
+  "interpretation": {
+    "one_state_response_fails": "decoder or optimization cannot represent even one fixed action-response map",
+    "eight_state_response_first_fails": "scene conditioning or model capacity cannot store several response maps",
+    "relational_stage_first_fails": "that added objective conflicts with or fails to enforce the required relational structure",
+    "all_stages_pass": "formulation can memorize; held-out failure returns focus to generalization and data diversity"
+  }
+}

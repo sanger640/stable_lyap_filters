@@ -7,7 +7,8 @@ Each hidden unit i defines a switching hyperplane  W2[i]·s + h2[i] = 0. Those h
 carve state space into polyhedral cells; inside a cell the map is exactly affine, so the
 Jacobian is analytic and piecewise constant. That is the whole point: a smooth network can
 only *steepen* a discontinuity, never represent it, which is why the existing causal-ViT
-head's Jacobian is correct but useless at the operating perturbation scale (PLAN.md §0).
+head's Jacobian is correct but useless at the operating perturbation scale
+(`docs/archive/PLAN_ORIGINAL_FTLE.md` §0).
 
 Keep d in 20-60. The FTLE step does d x d QR at every evaluation point and high-d Jacobian
 estimates are noise-dominated at realistic data scale.

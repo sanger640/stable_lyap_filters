@@ -1,0 +1,613 @@
+{
+  "protocol": {
+    "name": "D7 explicit nested pair-curve memorization audit",
+    "status": "frozen before execution",
+    "purpose": "test whether explicit balanced curve reconstruction fixes the nested consequence failure of aggregate D3 supervision",
+    "scope": "TRAIN-only same-example mechanism diagnostic; cannot authorize DEV, TEST, deployment, or visual transfer",
+    "data": {
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "nested_source": "results/jenga/d3_data",
+      "selected_episodes": [
+        "16",
+        "21",
+        "25",
+        "30",
+        "31",
+        "33",
+        "34",
+        "35"
+      ],
+      "selection": "same first state and first nested group per episode as D6 audits",
+      "states": 8,
+      "nested_levels": 6,
+      "evaluation": "exact optimization examples only",
+      "task_failure_or_object_role_labels": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "model": {
+      "backbone": "unchanged set-conditioned D6 at the passed add_commitment stage",
+      "backbone_checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_commitment.pt",
+      "backbone_checkpoint_sha256": "f67ff4b30795eded71127e9af44b489d6e1272a545aaba7b369140a8091f3f3b",
+      "backbone_frozen": true,
+      "head": "symmetric endpoint-pair MLP over permutation-equivariant backbone tokens",
+      "outputs": "log1p early/full normalized gaps and a 39-sample whole-trajectory separation curve per nested level",
+      "curve_monitor": "unchanged calibration-free boundary, commitment, and persistence rules applied directly to predicted curves"
+    },
+    "optimization": {
+      "seed": 1,
+      "steps": 5000,
+      "optimizer": "AdamW",
+      "learning_rate": 0.001,
+      "gradient_clip": 1.0,
+      "batching": "deterministic full batch of all eight groups and six levels",
+      "checkpoint_selection": "fixed final step only",
+      "loss": "equal sum of five group-level balanced MSE terms",
+      "terms": [
+        "early_gap",
+        "full_gap",
+        "curve_action",
+        "curve_early_hold",
+        "curve_late_hold"
+      ]
+    },
+    "frozen_gates": {
+      "early_gap_log_mse": 0.0001,
+      "full_gap_log_mse": 0.0001,
+      "each_curve_phase_log_mse": 0.001,
+      "nested_boundary_agreement": 1.0,
+      "nested_final_agreement": 1.0,
+      "candidate_agreement_not_below_backbone": 0.875,
+      "partition_agreement_not_below_backbone": 0.875,
+      "pair_endpoint_swap_max_abs": 1e-05,
+      "level_permutation_max_abs": 1e-05,
+      "complete_same_example_gate": "all curve gates plus candidate and partition agreement equal 1.0"
+    },
+    "comparison": {
+      "aggregate_baseline": "results/jenga/d6_staged_overfit/set_conditioned_add_nested.pt",
+      "aggregate_result": "results/jenga/d6_staged_overfit_result.json",
+      "decision": "explicit curve formulation passes only if it exactly recovers nested boundary and final decisions without degrading the frozen backbone neighborhood"
+    }
+  },
+  "created": "2026-09-28T14:43:01+00:00",
+  "protocol_sha256": "7f917641917fa7d8a131ac9eb00b9bfe1d03ac751e5d8a860c9d27b0bd954289",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "history": [
+    {
+      "step": 1,
+      "total": 8.468259811401367,
+      "early_gap": 1.1037691831588745,
+      "full_gap": 0.332893431186676,
+      "curve_action": 1.829326868057251,
+      "curve_early_hold": 2.827812671661377,
+      "curve_late_hold": 2.374457597732544
+    },
+    {
+      "step": 250,
+      "total": 0.07951629161834717,
+      "early_gap": 0.0012986476067453623,
+      "full_gap": 0.0030801999382674694,
+      "curve_action": 0.04842417687177658,
+      "curve_early_hold": 0.012628410011529922,
+      "curve_late_hold": 0.014084858819842339
+    },
+    {
+      "step": 500,
+      "total": 0.05136838182806969,
+      "early_gap": 0.0006347115850076079,
+      "full_gap": 0.0005243264022283256,
+      "curve_action": 0.03397458791732788,
+      "curve_early_hold": 0.006515035405755043,
+      "curve_late_hold": 0.009719719178974628
+    },
+    {
+      "step": 750,
+      "total": 0.03187987953424454,
+      "early_gap": 0.00031491025583818555,
+      "full_gap": 0.0003878939605783671,
+      "curve_action": 0.02164282277226448,
+      "curve_early_hold": 0.0030270915012806654,
+      "curve_late_hold": 0.006507163401693106
+    },
+    {
+      "step": 1000,
+      "total": 0.02975458838045597,
+      "early_gap": 0.00023097921803127974,
+      "full_gap": 4.586442810250446e-05,
+      "curve_action": 0.01998777501285076,
+      "curve_early_hold": 0.0033084002789109945,
+      "curve_late_hold": 0.0061815702356398106
+    },
+    {
+      "step": 1250,
+      "total": 0.022844810038805008,
+      "early_gap": 0.002230912446975708,
+      "full_gap": 0.0018868523184210062,
+      "curve_action": 0.015336260199546814,
+      "curve_early_hold": 0.001358003239147365,
+      "curve_late_hold": 0.0020327838137745857
+    },
+    {
+      "step": 1500,
+      "total": 0.014436978846788406,
+      "early_gap": 0.0003127875388599932,
+      "full_gap": 8.220002928283066e-05,
+      "curve_action": 0.012801862321794033,
+      "curve_early_hold": 0.000524968549143523,
+      "curve_late_hold": 0.0007151596364565194
+    },
+    {
+      "step": 1750,
+      "total": 0.019803836941719055,
+      "early_gap": 7.693236693739891e-05,
+      "full_gap": 0.00026958592934533954,
+      "curve_action": 0.016034457832574844,
+      "curve_early_hold": 0.001075434498488903,
+      "curve_late_hold": 0.0023474255576729774
+    },
+    {
+      "step": 2000,
+      "total": 0.0347452238202095,
+      "early_gap": 0.000723648932762444,
+      "full_gap": 0.00107304728589952,
+      "curve_action": 0.01751727983355522,
+      "curve_early_hold": 0.007133337203413248,
+      "curve_late_hold": 0.00829791184514761
+    },
+    {
+      "step": 2250,
+      "total": 0.01384105533361435,
+      "early_gap": 3.575526352506131e-05,
+      "full_gap": 3.711513272719458e-05,
+      "curve_action": 0.012565013952553272,
+      "curve_early_hold": 0.0006037599523551762,
+      "curve_late_hold": 0.0005994116072542965
+    },
+    {
+      "step": 2500,
+      "total": 0.013678736053407192,
+      "early_gap": 2.87042603304144e-05,
+      "full_gap": 4.9996113375527784e-05,
+      "curve_action": 0.011555980890989304,
+      "curve_early_hold": 0.0010246378369629383,
+      "curve_late_hold": 0.0010194171918556094
+    },
+    {
+      "step": 2750,
+      "total": 0.010605872608721256,
+      "early_gap": 2.7534610126167536e-05,
+      "full_gap": 3.483503678580746e-05,
+      "curve_action": 0.009596479125320911,
+      "curve_early_hold": 0.0004920478677377105,
+      "curve_late_hold": 0.00045497622340917587
+    },
+    {
+      "step": 3000,
+      "total": 0.010760136879980564,
+      "early_gap": 0.00032485881820321083,
+      "full_gap": 0.00021059386199340224,
+      "curve_action": 0.00934838131070137,
+      "curve_early_hold": 0.0004638989921659231,
+      "curve_late_hold": 0.0004124036349821836
+    },
+    {
+      "step": 3250,
+      "total": 0.006980851758271456,
+      "early_gap": 5.573946509684902e-06,
+      "full_gap": 6.329315056063933e-06,
+      "curve_action": 0.0068511744029819965,
+      "curve_early_hold": 6.759397365385666e-05,
+      "curve_late_hold": 5.018027513870038e-05
+    },
+    {
+      "step": 3500,
+      "total": 0.009553391486406326,
+      "early_gap": 2.69512202066835e-05,
+      "full_gap": 3.4177206543972716e-05,
+      "curve_action": 0.008683950640261173,
+      "curve_early_hold": 0.0004357219731900841,
+      "curve_late_hold": 0.000372590176993981
+    },
+    {
+      "step": 3750,
+      "total": 0.009000265970826149,
+      "early_gap": 1.9456971131148748e-05,
+      "full_gap": 7.811455361661501e-06,
+      "curve_action": 0.00853079091757536,
+      "curve_early_hold": 0.00023414642782881856,
+      "curve_late_hold": 0.00020805983513128012
+    },
+    {
+      "step": 4000,
+      "total": 0.00989100243896246,
+      "early_gap": 0.0006541749462485313,
+      "full_gap": 0.0002523400471545756,
+      "curve_action": 0.007971897721290588,
+      "curve_early_hold": 0.0005045042489655316,
+      "curve_late_hold": 0.0005080854753032327
+    },
+    {
+      "step": 4250,
+      "total": 0.00944535806775093,
+      "early_gap": 0.00010770650987979025,
+      "full_gap": 0.00018845711019821465,
+      "curve_action": 0.00709578488022089,
+      "curve_early_hold": 0.0008520522387698293,
+      "curve_late_hold": 0.0012013574596494436
+    },
+    {
+      "step": 4500,
+      "total": 0.005832821596413851,
+      "early_gap": 1.2264236829651054e-05,
+      "full_gap": 6.89042190060718e-06,
+      "curve_action": 0.005378163885325193,
+      "curve_early_hold": 0.00022059948241803795,
+      "curve_late_hold": 0.00021490349899977446
+    },
+    {
+      "step": 4750,
+      "total": 0.006509719416499138,
+      "early_gap": 0.0002445380378048867,
+      "full_gap": 4.769769020640524e-06,
+      "curve_action": 0.006001322530210018,
+      "curve_early_hold": 0.00013048938126303256,
+      "curve_late_hold": 0.00012859972775913775
+    },
+    {
+      "step": 5000,
+      "total": 0.019975632429122925,
+      "early_gap": 0.004820806439965963,
+      "full_gap": 0.00018581622862257063,
+      "curve_action": 0.0089640561491251,
+      "curve_early_hold": 0.002781032584607601,
+      "curve_late_hold": 0.003223923034965992
+    }
+  ],
+  "seconds": 14.782959699630737,
+  "curve_errors": {
+    "early_gap": 0.0012132859556004405,
+    "full_gap": 0.0008134349482133985,
+    "curve_action": 0.005114513449370861,
+    "curve_early_hold": 0.0009024529717862606,
+    "curve_late_hold": 0.0009111592662520707
+  },
+  "physical_rows": [
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": false,
+      "commitment": false,
+      "persistence": false,
+      "alarm": false
+    },
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": false,
+      "commitment": false,
+      "persistence": false,
+      "alarm": false
+    },
+    {
+      "boundary": true,
+      "commitment": false,
+      "persistence": true,
+      "alarm": false
+    },
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": true,
+      "commitment": false,
+      "persistence": true,
+      "alarm": false
+    }
+  ],
+  "predicted_rows": [
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": true,
+      "commitment": false,
+      "persistence": false,
+      "alarm": false
+    },
+    {
+      "boundary": true,
+      "commitment": true,
+      "persistence": true,
+      "alarm": true
+    },
+    {
+      "boundary": true,
+      "commitment": false,
+      "persistence": false,
+      "alarm": false
+    },
+    {
+      "boundary": true,
+      "commitment": false,
+      "persistence": true,
+      "alarm": false
+    },
+    {
+      "boundary": false,
+      "commitment": true,
+      "persistence": true,
+      "alarm": false
+    },
+    {
+      "boundary": true,
+      "commitment": false,
+      "persistence": false,
+      "alarm": false
+    }
+  ],
+  "nested": {
+    "boundary": {
+      "states": 8,
+      "reference_positive": 6,
+      "predicted_positive": 7,
+      "tp": 5,
+      "fn": 1,
+      "fp": 2,
+      "tn": 0,
+      "agreement": 0.625,
+      "recall": 0.8333333333333334,
+      "added_positive_rate": 1.0
+    },
+    "commitment": {
+      "states": 8,
+      "reference_positive": 4,
+      "predicted_positive": 4,
+      "tp": 4,
+      "fn": 0,
+      "fp": 0,
+      "tn": 4,
+      "agreement": 1.0,
+      "recall": 1.0,
+      "added_positive_rate": 0.0
+    },
+    "persistence": {
+      "states": 8,
+      "reference_positive": 6,
+      "predicted_positive": 5,
+      "tp": 5,
+      "fn": 1,
+      "fp": 0,
+      "tn": 2,
+      "agreement": 0.875,
+      "recall": 0.8333333333333334,
+      "added_positive_rate": 0.0
+    },
+    "alarm": {
+      "states": 8,
+      "reference_positive": 4,
+      "predicted_positive": 3,
+      "tp": 3,
+      "fn": 1,
+      "fp": 0,
+      "tn": 4,
+      "agreement": 0.875,
+      "recall": 0.75,
+      "added_positive_rate": 0.0
+    }
+  },
+  "neighborhood": {
+    "candidate": {
+      "states": 8,
+      "reference_positive": 8,
+      "predicted_positive": 7,
+      "tp": 7,
+      "fn": 1,
+      "fp": 0,
+      "tn": 0,
+      "agreement": 0.875,
+      "recall": 0.875,
+      "added_positive_rate": 0.0,
+      "valid_states": 8,
+      "mean_partition_agreement": 0.875
+    },
+    "continuous": {
+      "response": 0.008108125068247318,
+      "topology": 0.004725700244307518,
+      "commitment": 0.00512920506298542
+    },
+    "nested": {
+      "boundary": {
+        "states": 8,
+        "reference_positive": 6,
+        "predicted_positive": 2,
+        "tp": 2,
+        "fn": 4,
+        "fp": 0,
+        "tn": 2,
+        "agreement": 0.5,
+        "recall": 0.3333333333333333,
+        "added_positive_rate": 0.0
+      },
+      "commitment": {
+        "states": 8,
+        "reference_positive": 4,
+        "predicted_positive": 2,
+        "tp": 1,
+        "fn": 3,
+        "fp": 1,
+        "tn": 3,
+        "agreement": 0.5,
+        "recall": 0.25,
+        "added_positive_rate": 0.25
+      },
+      "persistence": {
+        "states": 8,
+        "reference_positive": 6,
+        "predicted_positive": 8,
+        "tp": 6,
+        "fn": 0,
+        "fp": 2,
+        "tn": 0,
+        "agreement": 0.75,
+        "recall": 1.0,
+        "added_positive_rate": 1.0
+      },
+      "alarm": {
+        "states": 8,
+        "reference_positive": 4,
+        "predicted_positive": 1,
+        "tp": 0,
+        "fn": 4,
+        "fp": 1,
+        "tn": 3,
+        "agreement": 0.375,
+        "recall": 0.0,
+        "added_positive_rate": 0.25
+      }
+    },
+    "checks": {
+      "permutation_max_abs": 2.956390380859375e-05,
+      "subset_response_rms": 0.08445963263511658
+    }
+  },
+  "invariance": {
+    "endpoint_swap_max_abs": 9.775161743164062e-06,
+    "level_permutation_max_abs": 1.1682510375976562e-05
+  },
+  "gates": {
+    "curve_formulation": {
+      "checks": {
+        "early_gap": false,
+        "full_gap": false,
+        "curve_action": false,
+        "curve_early_hold": true,
+        "curve_late_hold": true,
+        "nested_boundary": false,
+        "nested_final": false,
+        "candidate_not_degraded": true,
+        "partition_not_degraded": true,
+        "endpoint_swap": true,
+        "level_permutation": false
+      },
+      "passes": false
+    },
+    "complete_same_example": {
+      "checks": {
+        "early_gap": false,
+        "full_gap": false,
+        "curve_action": false,
+        "curve_early_hold": true,
+        "curve_late_hold": true,
+        "nested_boundary": false,
+        "nested_final": false,
+        "candidate_not_degraded": true,
+        "partition_not_degraded": true,
+        "endpoint_swap": true,
+        "level_permutation": false,
+        "candidate_exact": false,
+        "partition_exact": false
+      },
+      "passes": false
+    }
+  },
+  "aggregate_baseline": {
+    "nested": {
+      "boundary": {
+        "states": 8,
+        "reference_positive": 6,
+        "predicted_positive": 5,
+        "tp": 4,
+        "fn": 2,
+        "fp": 1,
+        "tn": 1,
+        "agreement": 0.625,
+        "recall": 0.6666666666666666,
+        "added_positive_rate": 0.5
+      },
+      "commitment": {
+        "states": 8,
+        "reference_positive": 4,
+        "predicted_positive": 3,
+        "tp": 2,
+        "fn": 2,
+        "fp": 1,
+        "tn": 3,
+        "agreement": 0.625,
+        "recall": 0.5,
+        "added_positive_rate": 0.25
+      },
+      "persistence": {
+        "states": 8,
+        "reference_positive": 6,
+        "predicted_positive": 8,
+        "tp": 6,
+        "fn": 0,
+        "fp": 2,
+        "tn": 0,
+        "agreement": 0.75,
+        "recall": 1.0,
+        "added_positive_rate": 1.0
+      },
+      "alarm": {
+        "states": 8,
+        "reference_positive": 4,
+        "predicted_positive": 1,
+        "tp": 1,
+        "fn": 3,
+        "fp": 0,
+        "tn": 4,
+        "agreement": 0.625,
+        "recall": 0.25,
+        "added_positive_rate": 0.0
+      }
+    },
+    "candidate": {
+      "states": 8,
+      "reference_positive": 8,
+      "predicted_positive": 7,
+      "tp": 7,
+      "fn": 1,
+      "fp": 0,
+      "tn": 0,
+      "agreement": 0.875,
+      "recall": 0.875,
+      "added_positive_rate": 0.0,
+      "valid_states": 8,
+      "mean_partition_agreement": 0.8984375
+    },
+    "continuous": {
+      "response": 0.007811444811522961,
+      "topology": 0.003935865592211485,
+      "commitment": 0.004234031308442354
+    }
+  },
+  "checkpoint": "results/jenga/d7_explicit_curve/model.pt",
+  "checkpoint_sha256": "439b10c5c4d4d87b9f7578ef54070169841fb6c0d5ad9d7b56e896f8ccaec208",
+  "interpretation": "explicit_curve_fails_nested_memorization"
+}

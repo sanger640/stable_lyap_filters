@@ -1,0 +1,51 @@
+{
+  "purpose": "post-gate task-label-free collapse diagnosis; no model selection",
+  "split": "episode-held-out TRAIN",
+  "heldout_episodes": [
+    "0",
+    "1",
+    "5",
+    "7",
+    "12",
+    "13"
+  ],
+  "states": 36,
+  "metric": "RMS response variation across the 64 actions after removing their mean",
+  "arms": {
+    "independent_direct": {
+      "action": {
+        "median_per_state_predicted_over_physical": 1.1224714517593384,
+        "median_predicted_spread": 0.0027181103359907866,
+        "median_physical_spread": 0.08037229627370834
+      },
+      "early_hold": {
+        "median_per_state_predicted_over_physical": 0.9302624464035034,
+        "median_predicted_spread": 0.0026406070683151484,
+        "median_physical_spread": 0.060899458825588226
+      },
+      "late_hold": {
+        "median_per_state_predicted_over_physical": 1.240307331085205,
+        "median_predicted_spread": 0.002245743526145816,
+        "median_physical_spread": 0.02358430251479149
+      }
+    },
+    "set_conditioned": {
+      "action": {
+        "median_per_state_predicted_over_physical": 0.032843682914972305,
+        "median_predicted_spread": 0.00033789785811677575,
+        "median_physical_spread": 0.08037229627370834
+      },
+      "early_hold": {
+        "median_per_state_predicted_over_physical": 0.026705749332904816,
+        "median_predicted_spread": 0.000407439743867144,
+        "median_physical_spread": 0.060899458825588226
+      },
+      "late_hold": {
+        "median_per_state_predicted_over_physical": 0.059997931122779846,
+        "median_predicted_spread": 0.0004181261174380779,
+        "median_physical_spread": 0.02358430251479149
+      }
+    }
+  },
+  "conclusion": "set conditioning suppresses action-dependent response variation to roughly 3-6% of physical scale; the independent model retains magnitude on many states but not the correct relational geometry"
+}

@@ -1,0 +1,79 @@
+{
+  "name": "D9c explicit generic interaction-event pilot",
+  "status": "frozen before model fitting",
+  "purpose": "test whether identifiable recent interaction events recover response specificity better than snapshot or opaque temporal history",
+  "scope": "the same 218 fit groups and five episode-blocked folds as D9b; prior inspected TRAIN, DEV, and TEST remain closed",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+    "nested_source": "results/jenga/d3_data",
+    "history_source": "results/jenga/d9b_history_data.npz",
+    "history_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502",
+    "history_alignment_result": "results/jenga/d9b_history_alignment_result.json",
+    "history_alignment_result_sha256": "f108f2caa64846f617d57044f0a0598b3b86637ce6c4eb797c492c35141fa9c4",
+    "history_states": 4,
+    "history_actions": 3,
+    "eligible_episodes": 37,
+    "eligible_groups": 218,
+    "excluded_inspected_episode_ids": ["0", "1", "5", "7", "12", "13"],
+    "folds": 5,
+    "validation_episode_ids": [
+      ["16", "33", "40", "46", "51", "67", "82", "97"],
+      ["21", "34", "41", "47", "54", "68", "88", "99"],
+      ["25", "35", "42", "48", "59", "72", "89"],
+      ["30", "36", "43", "49", "62", "74", "93"],
+      ["31", "37", "45", "50", "63", "78", "94"]
+    ],
+    "training_fraction": 1.0,
+    "normalization": "reuse each D9b fold's current-state, future-action, and response normalizers; fit transition-delta and executed-control input normalizers on all non-validation histories",
+    "task_failure_or_alarm_labels_used": false
+  },
+  "controls": {
+    "snapshot_result": "results/jenga/d9b_scaling_result.json",
+    "snapshot_result_sha256": "fc1d392c490271ee188eaccb3a35e437d884c524214e12b4a68324d2060736a1",
+    "history_result": "results/jenga/d9b_history_factorial_result.json",
+    "history_result_sha256": "6dc67d86ad8f88e4f5728de11b9e926f43c123365ed00f197388c3388d34d764"
+  },
+  "event_representation": {
+    "per_transition": [
+      "normalized signed change in the first 45 continuous pose/velocity channels",
+      "absolute continuous change divided by the same scale",
+      "12 contact flags before and after the transition",
+      "12 contact-creation and 12 contact-loss indicators",
+      "normalized executed control"
+    ],
+    "token_dimension": 142,
+    "pooling": "shared event MLP followed by mean, maximum, and latest-event pooling",
+    "scene_context": "fuse event pools with the unchanged normalized current-state D9b encoding",
+    "semantics": "no named modes, task goal, failure label, alarm target, Jenga geometry, or task-specific object role"
+  },
+  "model": {"hidden": 128, "heads": 4, "layers": 2, "action_horizon": 8, "curve_steps": 39},
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_pilot_passes": [2, 3],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "sampling": "deterministic uniform group sampling without replacement; no class balancing",
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "checkpoint_selection": "fixed final step only",
+    "execution": "one sequential GPU run at a time"
+  },
+  "pilot_gate": {
+    "boundary_added_positive_reduction_from_snapshot": 0.10,
+    "final_added_positive_reduction_from_snapshot": 0.10,
+    "added_positive_no_worse_than_gru_history": true,
+    "maximum_boundary_recall_loss_from_snapshot": 0.05,
+    "maximum_final_recall_loss_from_snapshot": 0.05,
+    "mean_mse_no_worse_than_snapshot": true,
+    "endpoint_and_level_symmetry_max_abs": 0.00001
+  },
+  "decision": {
+    "pass": "replicate seeds 2 and 3 on the same fit-only folds before opening any held-out split",
+    "fail": "do not add event complexity or tune on these folds; reconsider continuous curve prediction as the learned-model interface",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

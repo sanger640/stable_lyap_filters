@@ -13,7 +13,7 @@ Per arm: robust-blind count recomputed across THAT arm's seeds (q >= 0.8 at the 
 and at a matched 5% test FPR, and under both); how many of D0's robust-blind forks it recovers;
 recall at matched 1/3/5/10% FPR; AUC; quiet p99; fork spread p50 -- means and ranges over seeds.
 Also, for reporting only (Track A), the miss rate on forks whose toppling neighbour starts upright,
-the class `blind_fork_analysis.md` identified.
+the class `docs/archive/BLIND_FORK_ANALYSIS.md` identified.
 """
 import argparse
 import glob

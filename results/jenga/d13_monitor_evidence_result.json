@@ -1,0 +1,1343 @@
+{
+  "protocol": {
+    "name": "D13 direct continuous monitor-evidence interface",
+    "status": "frozen before target materialization or model fitting",
+    "purpose": "test whether predicting universal monitor-sufficient statistics directly generalizes better than reconstructing curves and recomputing those statistics",
+    "scope": "combined D3+D12 TRAIN corpus only; DEV and TEST remain closed",
+    "data": {
+      "manifest": "results/jenga/d12_combined_manifest.json",
+      "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+      "d3_directory": "results/jenga/d3_data",
+      "d12_directory": "results/jenga/d12_coverage_data",
+      "groups": {
+        "fit": 511,
+        "episode_validation": 139,
+        "configuration_validation": 132,
+        "joint_validation": 50
+      },
+      "normalizers": "fit groups only",
+      "task_failure_alarm_or_object_role_labels_used": false
+    },
+    "inputs": {
+      "channels": "current generic 61-D physical state and six pairs of raw 8-step action chunks",
+      "causal_history": false,
+      "reason_history_excluded": "isolate output-interface causality; exact causal event history already failed D9c/D11/D12",
+      "endpoint_symmetric": true,
+      "level_order_invariant_group_readout": true
+    },
+    "continuous_targets": {
+      "dimension": 4,
+      "order": [
+        "early_boundary_delta_bic",
+        "full_boundary_delta_bic",
+        "commitment_delta_bic",
+        "persistence_delta_bic"
+      ],
+      "boundary": "unchanged v0 scaling-law BIC difference over all six refinement levels",
+      "commitment": "unchanged v0 narrowest-pair whole-trajectory commitment BIC difference",
+      "persistence": "unchanged v0 narrowest-pair late-hold persistence BIC difference",
+      "transform": "sign(x) * log1p(abs(x)), then per-channel fit-only mean/std normalization",
+      "decision": "inverse-transform and use the unchanged zero sign; no fitted threshold",
+      "final_alarm_supervision": false
+    },
+    "arms": {
+      "curve_baseline": "frozen D12 deterministic checkpoint; recompute all four evidence values from its predicted curves",
+      "direct_evidence": "same D9b state/action pair encoder with an invariant four-value evidence head",
+      "joint": "same encoder with both D9b curve reconstruction and four-value direct evidence heads"
+    },
+    "frozen_curve_baseline": {
+      "result": "results/jenga/d12_ladder_result.json",
+      "result_sha256": "51b14e1a652adfb56bcc1f98cb938e161571222ac2c50bb96aa1210a330c5330",
+      "checkpoint": "results/jenga/d12_ladder/deterministic_seed1.pt",
+      "checkpoint_sha256": "0c0deec9720a69c35cebd350b81cf30af1714a0fb3ac69af5d1d45ed76fb6a65"
+    },
+    "model": {
+      "hidden": 128,
+      "heads": 4,
+      "layers": 2,
+      "action_horizon": 8,
+      "curve_steps": 39
+    },
+    "optimization": {
+      "pilot_seed": 1,
+      "replication_seeds_if_an_arm_passes_both_axes": [
+        2,
+        3
+      ],
+      "steps": 5000,
+      "group_batch_size": 32,
+      "optimizer": "AdamW",
+      "initial_learning_rate": 0.001,
+      "final_learning_rate": 1e-05,
+      "schedule": "CosineAnnealingLR",
+      "gradient_clip": 1.0,
+      "direct_loss": "mean normalized transformed evidence MSE",
+      "joint_loss": "evidence MSE plus the six unchanged equally weighted D9b amplitude/shape losses",
+      "checkpoint_selection": "fixed final step only",
+      "execution": "one sequential GPU arm at a time"
+    },
+    "primary_validation_axes": [
+      "episode_validation",
+      "configuration_validation"
+    ],
+    "gate_on_each_primary_axis": {
+      "normalized_evidence_mse_no_worse_than_curve_baseline": true,
+      "mean_channel_sign_agreement_no_worse_than_curve_baseline": true,
+      "boundary_added_positive_reduction": 0.1,
+      "final_added_positive_reduction": 0.1,
+      "maximum_boundary_recall_loss": 0.05,
+      "maximum_final_recall_loss": 0.05,
+      "endpoint_and_level_symmetry_max_abs": 1e-05
+    },
+    "decision": {
+      "pass_both_axes": "replicate the passing arm with seeds 2 and 3 before any DEV run",
+      "otherwise": "do not tune on validation; if both direct interfaces fail, stop this privileged Jenga encoder family",
+      "joint_validation": "diagnostic only",
+      "dev_and_test": "remain closed for every outcome"
+    }
+  },
+  "created": "2026-09-29T14:31:31+00:00",
+  "protocol_sha256": "7cf3b77945978a3f2e630eb03ed3f392820663755aff344f6e77d7ec78de426f",
+  "device": "cuda",
+  "targets": {
+    "path": "results/jenga/d13_monitor_evidence_targets.npz",
+    "sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+    "fit_mean": [
+      1.2236477136611938,
+      1.2853270769119263,
+      -0.8911482691764832,
+      2.7441391944885254
+    ],
+    "fit_scale": [
+      2.8212316036224365,
+      2.854945659637451,
+      1.743809461593628,
+      4.279444694519043
+    ],
+    "fit_positive_fraction": [
+      0.7279843444227005,
+      0.7201565557729941,
+      0.2896281800391389,
+      0.7925636007827789
+    ]
+  },
+  "curve_baseline": {
+    "evaluations": {
+      "fit": {
+        "groups": 511,
+        "normalized_evidence_mse": 0.7424090504646301,
+        "transformed_evidence_mae": 0.5551572442054749,
+        "channel_sign_agreement": {
+          "early_boundary": 0.8747553816046967,
+          "full_boundary": 0.8669275929549902,
+          "commitment": 0.7984344422700587,
+          "persistence": 0.9432485322896281
+        },
+        "mean_channel_sign_agreement": 0.8708414872798435,
+        "nested": {
+          "boundary": {
+            "states": 511,
+            "reference_positive": 362,
+            "predicted_positive": 434,
+            "tp": 361,
+            "fn": 1,
+            "fp": 73,
+            "tn": 76,
+            "agreement": 0.8551859099804305,
+            "recall": 0.9972375690607734,
+            "added_positive_rate": 0.4899328859060403
+          },
+          "commitment": {
+            "states": 511,
+            "reference_positive": 148,
+            "predicted_positive": 235,
+            "tp": 140,
+            "fn": 8,
+            "fp": 95,
+            "tn": 268,
+            "agreement": 0.7984344422700587,
+            "recall": 0.9459459459459459,
+            "added_positive_rate": 0.26170798898071623
+          },
+          "persistence": {
+            "states": 511,
+            "reference_positive": 405,
+            "predicted_positive": 418,
+            "tp": 397,
+            "fn": 8,
+            "fp": 21,
+            "tn": 85,
+            "agreement": 0.9432485322896281,
+            "recall": 0.980246913580247,
+            "added_positive_rate": 0.19811320754716982
+          },
+          "alarm": {
+            "states": 511,
+            "reference_positive": 131,
+            "predicted_positive": 232,
+            "tp": 125,
+            "fn": 6,
+            "fp": 107,
+            "tn": 273,
+            "agreement": 0.7788649706457925,
+            "recall": 0.9541984732824428,
+            "added_positive_rate": 0.28157894736842104
+          }
+        }
+      },
+      "episode_validation": {
+        "groups": 139,
+        "normalized_evidence_mse": 1.2708981037139893,
+        "transformed_evidence_mae": 0.8110047578811646,
+        "channel_sign_agreement": {
+          "early_boundary": 0.8633093525179856,
+          "full_boundary": 0.8489208633093526,
+          "commitment": 0.5539568345323741,
+          "persistence": 0.8920863309352518
+        },
+        "mean_channel_sign_agreement": 0.789568345323741,
+        "nested": {
+          "boundary": {
+            "states": 139,
+            "reference_positive": 105,
+            "predicted_positive": 123,
+            "tp": 103,
+            "fn": 2,
+            "fp": 20,
+            "tn": 14,
+            "agreement": 0.841726618705036,
+            "recall": 0.9809523809523809,
+            "added_positive_rate": 0.5882352941176471
+          },
+          "commitment": {
+            "states": 139,
+            "reference_positive": 55,
+            "predicted_positive": 73,
+            "tp": 33,
+            "fn": 22,
+            "fp": 40,
+            "tn": 44,
+            "agreement": 0.5539568345323741,
+            "recall": 0.6,
+            "added_positive_rate": 0.47619047619047616
+          },
+          "persistence": {
+            "states": 139,
+            "reference_positive": 118,
+            "predicted_positive": 119,
+            "tp": 111,
+            "fn": 7,
+            "fp": 8,
+            "tn": 13,
+            "agreement": 0.8920863309352518,
+            "recall": 0.940677966101695,
+            "added_positive_rate": 0.38095238095238093
+          },
+          "alarm": {
+            "states": 139,
+            "reference_positive": 44,
+            "predicted_positive": 72,
+            "tp": 24,
+            "fn": 20,
+            "fp": 48,
+            "tn": 47,
+            "agreement": 0.5107913669064749,
+            "recall": 0.5454545454545454,
+            "added_positive_rate": 0.5052631578947369
+          }
+        }
+      },
+      "configuration_validation": {
+        "groups": 132,
+        "normalized_evidence_mse": 1.271955132484436,
+        "transformed_evidence_mae": 0.7725821137428284,
+        "channel_sign_agreement": {
+          "early_boundary": 0.8484848484848485,
+          "full_boundary": 0.8333333333333334,
+          "commitment": 0.5303030303030303,
+          "persistence": 0.8863636363636364
+        },
+        "mean_channel_sign_agreement": 0.7746212121212122,
+        "nested": {
+          "boundary": {
+            "states": 132,
+            "reference_positive": 91,
+            "predicted_positive": 114,
+            "tp": 91,
+            "fn": 0,
+            "fp": 23,
+            "tn": 18,
+            "agreement": 0.8257575757575758,
+            "recall": 1.0,
+            "added_positive_rate": 0.5609756097560976
+          },
+          "commitment": {
+            "states": 132,
+            "reference_positive": 38,
+            "predicted_positive": 64,
+            "tp": 20,
+            "fn": 18,
+            "fp": 44,
+            "tn": 50,
+            "agreement": 0.5303030303030303,
+            "recall": 0.5263157894736842,
+            "added_positive_rate": 0.46808510638297873
+          },
+          "persistence": {
+            "states": 132,
+            "reference_positive": 107,
+            "predicted_positive": 108,
+            "tp": 100,
+            "fn": 7,
+            "fp": 8,
+            "tn": 17,
+            "agreement": 0.8863636363636364,
+            "recall": 0.9345794392523364,
+            "added_positive_rate": 0.32
+          },
+          "alarm": {
+            "states": 132,
+            "reference_positive": 35,
+            "predicted_positive": 62,
+            "tp": 20,
+            "fn": 15,
+            "fp": 42,
+            "tn": 55,
+            "agreement": 0.5681818181818182,
+            "recall": 0.5714285714285714,
+            "added_positive_rate": 0.4329896907216495
+          }
+        }
+      },
+      "joint_validation": {
+        "groups": 50,
+        "normalized_evidence_mse": 1.6483306884765625,
+        "transformed_evidence_mae": 0.8850564360618591,
+        "channel_sign_agreement": {
+          "early_boundary": 0.8,
+          "full_boundary": 0.8,
+          "commitment": 0.56,
+          "persistence": 0.88
+        },
+        "mean_channel_sign_agreement": 0.76,
+        "nested": {
+          "boundary": {
+            "states": 50,
+            "reference_positive": 34,
+            "predicted_positive": 46,
+            "tp": 34,
+            "fn": 0,
+            "fp": 12,
+            "tn": 4,
+            "agreement": 0.76,
+            "recall": 1.0,
+            "added_positive_rate": 0.75
+          },
+          "commitment": {
+            "states": 50,
+            "reference_positive": 14,
+            "predicted_positive": 32,
+            "tp": 12,
+            "fn": 2,
+            "fp": 20,
+            "tn": 16,
+            "agreement": 0.56,
+            "recall": 0.8571428571428571,
+            "added_positive_rate": 0.5555555555555556
+          },
+          "persistence": {
+            "states": 50,
+            "reference_positive": 40,
+            "predicted_positive": 44,
+            "tp": 39,
+            "fn": 1,
+            "fp": 5,
+            "tn": 5,
+            "agreement": 0.88,
+            "recall": 0.975,
+            "added_positive_rate": 0.5
+          },
+          "alarm": {
+            "states": 50,
+            "reference_positive": 13,
+            "predicted_positive": 30,
+            "tp": 11,
+            "fn": 2,
+            "fp": 19,
+            "tn": 18,
+            "agreement": 0.58,
+            "recall": 0.8461538461538461,
+            "added_positive_rate": 0.5135135135135135
+          }
+        }
+      }
+    },
+    "checkpoint": "results/jenga/d12_ladder/deterministic_seed1.pt"
+  },
+  "arms": {
+    "direct_evidence": {
+      "seed": 1,
+      "seconds": 27.01331663131714,
+      "history": [
+        {
+          "step": 1,
+          "total": 1.1438124179840088,
+          "evidence": 1.1438124179840088
+        },
+        {
+          "step": 1000,
+          "total": 0.12881939113140106,
+          "evidence": 0.12881939113140106
+        },
+        {
+          "step": 2000,
+          "total": 0.06340152025222778,
+          "evidence": 0.06340152025222778
+        },
+        {
+          "step": 3000,
+          "total": 0.0032446528784930706,
+          "evidence": 0.0032446528784930706
+        },
+        {
+          "step": 4000,
+          "total": 0.00040585367241874337,
+          "evidence": 0.00040585367241874337
+        },
+        {
+          "step": 5000,
+          "total": 0.0004399247991386801,
+          "evidence": 0.0004399247991386801
+        }
+      ],
+      "checkpoint": "results/jenga/d13_monitor_evidence/direct_evidence_seed1.pt",
+      "checkpoint_sha256": "837e8af381bd46efea1975c871b8b54643a20e1bfb92eac4ad72a48e6fd1eb89",
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 2.384185791015625e-07
+      },
+      "evaluations": {
+        "fit": {
+          "groups": 511,
+          "normalized_evidence_mse": 0.00043970090337097645,
+          "transformed_evidence_mae": 0.011842235922813416,
+          "channel_sign_agreement": {
+            "early_boundary": 1.0,
+            "full_boundary": 0.9980430528375733,
+            "commitment": 1.0,
+            "persistence": 1.0
+          },
+          "mean_channel_sign_agreement": 0.9995107632093934,
+          "nested": {
+            "boundary": {
+              "states": 511,
+              "reference_positive": 362,
+              "predicted_positive": 361,
+              "tp": 361,
+              "fn": 1,
+              "fp": 0,
+              "tn": 149,
+              "agreement": 0.9980430528375733,
+              "recall": 0.9972375690607734,
+              "added_positive_rate": 0.0
+            },
+            "commitment": {
+              "states": 511,
+              "reference_positive": 148,
+              "predicted_positive": 148,
+              "tp": 148,
+              "fn": 0,
+              "fp": 0,
+              "tn": 363,
+              "agreement": 1.0,
+              "recall": 1.0,
+              "added_positive_rate": 0.0
+            },
+            "persistence": {
+              "states": 511,
+              "reference_positive": 405,
+              "predicted_positive": 405,
+              "tp": 405,
+              "fn": 0,
+              "fp": 0,
+              "tn": 106,
+              "agreement": 1.0,
+              "recall": 1.0,
+              "added_positive_rate": 0.0
+            },
+            "alarm": {
+              "states": 511,
+              "reference_positive": 131,
+              "predicted_positive": 131,
+              "tp": 131,
+              "fn": 0,
+              "fp": 0,
+              "tn": 380,
+              "agreement": 1.0,
+              "recall": 1.0,
+              "added_positive_rate": 0.0
+            }
+          }
+        },
+        "episode_validation": {
+          "groups": 139,
+          "normalized_evidence_mse": 0.9917812347412109,
+          "transformed_evidence_mae": 0.6614681482315063,
+          "channel_sign_agreement": {
+            "early_boundary": 0.762589928057554,
+            "full_boundary": 0.8201438848920863,
+            "commitment": 0.5323741007194245,
+            "persistence": 0.9136690647482014
+          },
+          "mean_channel_sign_agreement": 0.7571942446043165,
+          "nested": {
+            "boundary": {
+              "states": 139,
+              "reference_positive": 105,
+              "predicted_positive": 98,
+              "tp": 86,
+              "fn": 19,
+              "fp": 12,
+              "tn": 22,
+              "agreement": 0.7769784172661871,
+              "recall": 0.819047619047619,
+              "added_positive_rate": 0.35294117647058826
+            },
+            "commitment": {
+              "states": 139,
+              "reference_positive": 55,
+              "predicted_positive": 48,
+              "tp": 19,
+              "fn": 36,
+              "fp": 29,
+              "tn": 55,
+              "agreement": 0.5323741007194245,
+              "recall": 0.34545454545454546,
+              "added_positive_rate": 0.34523809523809523
+            },
+            "persistence": {
+              "states": 139,
+              "reference_positive": 118,
+              "predicted_positive": 120,
+              "tp": 113,
+              "fn": 5,
+              "fp": 7,
+              "tn": 14,
+              "agreement": 0.9136690647482014,
+              "recall": 0.9576271186440678,
+              "added_positive_rate": 0.3333333333333333
+            },
+            "alarm": {
+              "states": 139,
+              "reference_positive": 44,
+              "predicted_positive": 31,
+              "tp": 13,
+              "fn": 31,
+              "fp": 18,
+              "tn": 77,
+              "agreement": 0.6474820143884892,
+              "recall": 0.29545454545454547,
+              "added_positive_rate": 0.18947368421052632
+            }
+          }
+        },
+        "configuration_validation": {
+          "groups": 132,
+          "normalized_evidence_mse": 0.8025318384170532,
+          "transformed_evidence_mae": 0.57598876953125,
+          "channel_sign_agreement": {
+            "early_boundary": 0.8409090909090909,
+            "full_boundary": 0.8181818181818182,
+            "commitment": 0.6287878787878788,
+            "persistence": 0.9090909090909091
+          },
+          "mean_channel_sign_agreement": 0.7992424242424242,
+          "nested": {
+            "boundary": {
+              "states": 132,
+              "reference_positive": 91,
+              "predicted_positive": 98,
+              "tp": 82,
+              "fn": 9,
+              "fp": 16,
+              "tn": 25,
+              "agreement": 0.8106060606060606,
+              "recall": 0.9010989010989011,
+              "added_positive_rate": 0.3902439024390244
+            },
+            "commitment": {
+              "states": 132,
+              "reference_positive": 38,
+              "predicted_positive": 41,
+              "tp": 15,
+              "fn": 23,
+              "fp": 26,
+              "tn": 68,
+              "agreement": 0.6287878787878788,
+              "recall": 0.39473684210526316,
+              "added_positive_rate": 0.2765957446808511
+            },
+            "persistence": {
+              "states": 132,
+              "reference_positive": 107,
+              "predicted_positive": 115,
+              "tp": 105,
+              "fn": 2,
+              "fp": 10,
+              "tn": 15,
+              "agreement": 0.9090909090909091,
+              "recall": 0.9813084112149533,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 132,
+              "reference_positive": 35,
+              "predicted_positive": 39,
+              "tp": 14,
+              "fn": 21,
+              "fp": 25,
+              "tn": 72,
+              "agreement": 0.6515151515151515,
+              "recall": 0.4,
+              "added_positive_rate": 0.25773195876288657
+            }
+          }
+        },
+        "joint_validation": {
+          "groups": 50,
+          "normalized_evidence_mse": 1.1892324686050415,
+          "transformed_evidence_mae": 0.7096127867698669,
+          "channel_sign_agreement": {
+            "early_boundary": 0.84,
+            "full_boundary": 0.74,
+            "commitment": 0.6,
+            "persistence": 0.84
+          },
+          "mean_channel_sign_agreement": 0.755,
+          "nested": {
+            "boundary": {
+              "states": 50,
+              "reference_positive": 34,
+              "predicted_positive": 35,
+              "tp": 29,
+              "fn": 5,
+              "fp": 6,
+              "tn": 10,
+              "agreement": 0.78,
+              "recall": 0.8529411764705882,
+              "added_positive_rate": 0.375
+            },
+            "commitment": {
+              "states": 50,
+              "reference_positive": 14,
+              "predicted_positive": 14,
+              "tp": 4,
+              "fn": 10,
+              "fp": 10,
+              "tn": 26,
+              "agreement": 0.6,
+              "recall": 0.2857142857142857,
+              "added_positive_rate": 0.2777777777777778
+            },
+            "persistence": {
+              "states": 50,
+              "reference_positive": 40,
+              "predicted_positive": 44,
+              "tp": 38,
+              "fn": 2,
+              "fp": 6,
+              "tn": 4,
+              "agreement": 0.84,
+              "recall": 0.95,
+              "added_positive_rate": 0.6
+            },
+            "alarm": {
+              "states": 50,
+              "reference_positive": 13,
+              "predicted_positive": 12,
+              "tp": 4,
+              "fn": 9,
+              "fp": 8,
+              "tn": 29,
+              "agreement": 0.66,
+              "recall": 0.3076923076923077,
+              "added_positive_rate": 0.21621621621621623
+            }
+          }
+        }
+      }
+    },
+    "joint": {
+      "seed": 1,
+      "seconds": 37.92198848724365,
+      "history": [
+        {
+          "step": 1,
+          "total": 3.915832757949829,
+          "evidence": 1.1358506679534912,
+          "amplitude": 1.227889060974121,
+          "shape_early_gap": 0.3711843192577362,
+          "shape_full_gap": 0.3590726852416992,
+          "shape_action": 0.40610405802726746,
+          "shape_early_hold": 0.30525264143943787,
+          "shape_late_hold": 0.11047937721014023
+        },
+        {
+          "step": 1000,
+          "total": 0.3565138280391693,
+          "evidence": 0.12276554852724075,
+          "amplitude": 0.008858723565936089,
+          "shape_early_gap": 0.0049778190441429615,
+          "shape_full_gap": 0.004993982147425413,
+          "shape_action": 0.14786453545093536,
+          "shape_early_hold": 0.042040687054395676,
+          "shape_late_hold": 0.0250125452876091
+        },
+        {
+          "step": 2000,
+          "total": 0.194028839468956,
+          "evidence": 0.03745437413454056,
+          "amplitude": 0.004117197822779417,
+          "shape_early_gap": 0.003577218158170581,
+          "shape_full_gap": 0.0044400314800441265,
+          "shape_action": 0.08585173636674881,
+          "shape_early_hold": 0.03187406063079834,
+          "shape_late_hold": 0.026714224368333817
+        },
+        {
+          "step": 3000,
+          "total": 0.06648658215999603,
+          "evidence": 0.0033538988791406155,
+          "amplitude": 0.00044051482109352946,
+          "shape_early_gap": 0.0015139098977670074,
+          "shape_full_gap": 0.0015248461859300733,
+          "shape_action": 0.03685017302632332,
+          "shape_early_hold": 0.012389834970235825,
+          "shape_late_hold": 0.010413408279418945
+        },
+        {
+          "step": 4000,
+          "total": 0.06036953628063202,
+          "evidence": 0.0006429440109059215,
+          "amplitude": 6.362886779243127e-05,
+          "shape_early_gap": 0.001546288374811411,
+          "shape_full_gap": 0.0017998026451095939,
+          "shape_action": 0.03798453137278557,
+          "shape_early_hold": 0.011284777894616127,
+          "shape_late_hold": 0.007047564256936312
+        },
+        {
+          "step": 5000,
+          "total": 0.03944835439324379,
+          "evidence": 0.0005419363733381033,
+          "amplitude": 4.0978178731165826e-05,
+          "shape_early_gap": 0.0008264877833425999,
+          "shape_full_gap": 0.0008452075417153537,
+          "shape_action": 0.0245386753231287,
+          "shape_early_hold": 0.007863607257604599,
+          "shape_late_hold": 0.004791460931301117
+        }
+      ],
+      "checkpoint": "results/jenga/d13_monitor_evidence/joint_seed1.pt",
+      "checkpoint_sha256": "7df8c2321e865924b56c252796f8e06931753cbd30eb3f5d5ff2a3c20ef56519",
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 1.7881393432617188e-07
+      },
+      "evaluations": {
+        "fit": {
+          "groups": 511,
+          "normalized_evidence_mse": 0.0006390361813828349,
+          "transformed_evidence_mae": 0.0146357836201787,
+          "channel_sign_agreement": {
+            "early_boundary": 1.0,
+            "full_boundary": 0.9980430528375733,
+            "commitment": 1.0,
+            "persistence": 1.0
+          },
+          "mean_channel_sign_agreement": 0.9995107632093934,
+          "nested": {
+            "boundary": {
+              "states": 511,
+              "reference_positive": 362,
+              "predicted_positive": 363,
+              "tp": 362,
+              "fn": 0,
+              "fp": 1,
+              "tn": 148,
+              "agreement": 0.9980430528375733,
+              "recall": 1.0,
+              "added_positive_rate": 0.006711409395973154
+            },
+            "commitment": {
+              "states": 511,
+              "reference_positive": 148,
+              "predicted_positive": 148,
+              "tp": 148,
+              "fn": 0,
+              "fp": 0,
+              "tn": 363,
+              "agreement": 1.0,
+              "recall": 1.0,
+              "added_positive_rate": 0.0
+            },
+            "persistence": {
+              "states": 511,
+              "reference_positive": 405,
+              "predicted_positive": 405,
+              "tp": 405,
+              "fn": 0,
+              "fp": 0,
+              "tn": 106,
+              "agreement": 1.0,
+              "recall": 1.0,
+              "added_positive_rate": 0.0
+            },
+            "alarm": {
+              "states": 511,
+              "reference_positive": 131,
+              "predicted_positive": 131,
+              "tp": 131,
+              "fn": 0,
+              "fp": 0,
+              "tn": 380,
+              "agreement": 1.0,
+              "recall": 1.0,
+              "added_positive_rate": 0.0
+            }
+          }
+        },
+        "episode_validation": {
+          "groups": 139,
+          "normalized_evidence_mse": 1.020780086517334,
+          "transformed_evidence_mae": 0.6736266016960144,
+          "channel_sign_agreement": {
+            "early_boundary": 0.762589928057554,
+            "full_boundary": 0.8345323741007195,
+            "commitment": 0.5971223021582733,
+            "persistence": 0.8273381294964028
+          },
+          "mean_channel_sign_agreement": 0.7553956834532374,
+          "nested": {
+            "boundary": {
+              "states": 139,
+              "reference_positive": 105,
+              "predicted_positive": 92,
+              "tp": 83,
+              "fn": 22,
+              "fp": 9,
+              "tn": 25,
+              "agreement": 0.7769784172661871,
+              "recall": 0.7904761904761904,
+              "added_positive_rate": 0.2647058823529412
+            },
+            "commitment": {
+              "states": 139,
+              "reference_positive": 55,
+              "predicted_positive": 31,
+              "tp": 15,
+              "fn": 40,
+              "fp": 16,
+              "tn": 68,
+              "agreement": 0.5971223021582733,
+              "recall": 0.2727272727272727,
+              "added_positive_rate": 0.19047619047619047
+            },
+            "persistence": {
+              "states": 139,
+              "reference_positive": 118,
+              "predicted_positive": 106,
+              "tp": 100,
+              "fn": 18,
+              "fp": 6,
+              "tn": 15,
+              "agreement": 0.8273381294964028,
+              "recall": 0.847457627118644,
+              "added_positive_rate": 0.2857142857142857
+            },
+            "alarm": {
+              "states": 139,
+              "reference_positive": 44,
+              "predicted_positive": 27,
+              "tp": 11,
+              "fn": 33,
+              "fp": 16,
+              "tn": 79,
+              "agreement": 0.6474820143884892,
+              "recall": 0.25,
+              "added_positive_rate": 0.16842105263157894
+            }
+          }
+        },
+        "configuration_validation": {
+          "groups": 132,
+          "normalized_evidence_mse": 0.7538752555847168,
+          "transformed_evidence_mae": 0.5488572120666504,
+          "channel_sign_agreement": {
+            "early_boundary": 0.8560606060606061,
+            "full_boundary": 0.8409090909090909,
+            "commitment": 0.6666666666666666,
+            "persistence": 0.9166666666666666
+          },
+          "mean_channel_sign_agreement": 0.8200757575757576,
+          "nested": {
+            "boundary": {
+              "states": 132,
+              "reference_positive": 91,
+              "predicted_positive": 101,
+              "tp": 85,
+              "fn": 6,
+              "fp": 16,
+              "tn": 25,
+              "agreement": 0.8333333333333334,
+              "recall": 0.9340659340659341,
+              "added_positive_rate": 0.3902439024390244
+            },
+            "commitment": {
+              "states": 132,
+              "reference_positive": 38,
+              "predicted_positive": 24,
+              "tp": 9,
+              "fn": 29,
+              "fp": 15,
+              "tn": 79,
+              "agreement": 0.6666666666666666,
+              "recall": 0.23684210526315788,
+              "added_positive_rate": 0.1595744680851064
+            },
+            "persistence": {
+              "states": 132,
+              "reference_positive": 107,
+              "predicted_positive": 112,
+              "tp": 104,
+              "fn": 3,
+              "fp": 8,
+              "tn": 17,
+              "agreement": 0.9166666666666666,
+              "recall": 0.9719626168224299,
+              "added_positive_rate": 0.32
+            },
+            "alarm": {
+              "states": 132,
+              "reference_positive": 35,
+              "predicted_positive": 24,
+              "tp": 9,
+              "fn": 26,
+              "fp": 15,
+              "tn": 82,
+              "agreement": 0.6893939393939394,
+              "recall": 0.2571428571428571,
+              "added_positive_rate": 0.15463917525773196
+            }
+          }
+        },
+        "joint_validation": {
+          "groups": 50,
+          "normalized_evidence_mse": 0.9944953322410583,
+          "transformed_evidence_mae": 0.6547232866287231,
+          "channel_sign_agreement": {
+            "early_boundary": 0.82,
+            "full_boundary": 0.78,
+            "commitment": 0.62,
+            "persistence": 0.86
+          },
+          "mean_channel_sign_agreement": 0.77,
+          "nested": {
+            "boundary": {
+              "states": 50,
+              "reference_positive": 34,
+              "predicted_positive": 34,
+              "tp": 28,
+              "fn": 6,
+              "fp": 6,
+              "tn": 10,
+              "agreement": 0.76,
+              "recall": 0.8235294117647058,
+              "added_positive_rate": 0.375
+            },
+            "commitment": {
+              "states": 50,
+              "reference_positive": 14,
+              "predicted_positive": 9,
+              "tp": 2,
+              "fn": 12,
+              "fp": 7,
+              "tn": 29,
+              "agreement": 0.62,
+              "recall": 0.14285714285714285,
+              "added_positive_rate": 0.19444444444444445
+            },
+            "persistence": {
+              "states": 50,
+              "reference_positive": 40,
+              "predicted_positive": 41,
+              "tp": 37,
+              "fn": 3,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.86,
+              "recall": 0.925,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 50,
+              "reference_positive": 13,
+              "predicted_positive": 7,
+              "tp": 1,
+              "fn": 12,
+              "fp": 6,
+              "tn": 31,
+              "agreement": 0.64,
+              "recall": 0.07692307692307693,
+              "added_positive_rate": 0.16216216216216217
+            }
+          }
+        }
+      },
+      "curve_derived_evaluations": {
+        "fit": {
+          "groups": 511,
+          "normalized_evidence_mse": 0.6681777834892273,
+          "transformed_evidence_mae": 0.5180428624153137,
+          "channel_sign_agreement": {
+            "early_boundary": 0.8747553816046967,
+            "full_boundary": 0.8669275929549902,
+            "commitment": 0.8160469667318982,
+            "persistence": 0.9530332681017613
+          },
+          "mean_channel_sign_agreement": 0.8776908023483366,
+          "nested": {
+            "boundary": {
+              "states": 511,
+              "reference_positive": 362,
+              "predicted_positive": 434,
+              "tp": 361,
+              "fn": 1,
+              "fp": 73,
+              "tn": 76,
+              "agreement": 0.8551859099804305,
+              "recall": 0.9972375690607734,
+              "added_positive_rate": 0.4899328859060403
+            },
+            "commitment": {
+              "states": 511,
+              "reference_positive": 148,
+              "predicted_positive": 214,
+              "tp": 134,
+              "fn": 14,
+              "fp": 80,
+              "tn": 283,
+              "agreement": 0.8160469667318982,
+              "recall": 0.9054054054054054,
+              "added_positive_rate": 0.22038567493112948
+            },
+            "persistence": {
+              "states": 511,
+              "reference_positive": 405,
+              "predicted_positive": 421,
+              "tp": 401,
+              "fn": 4,
+              "fp": 20,
+              "tn": 86,
+              "agreement": 0.9530332681017613,
+              "recall": 0.9901234567901235,
+              "added_positive_rate": 0.18867924528301888
+            },
+            "alarm": {
+              "states": 511,
+              "reference_positive": 131,
+              "predicted_positive": 211,
+              "tp": 120,
+              "fn": 11,
+              "fp": 91,
+              "tn": 289,
+              "agreement": 0.8003913894324853,
+              "recall": 0.916030534351145,
+              "added_positive_rate": 0.2394736842105263
+            }
+          }
+        },
+        "episode_validation": {
+          "groups": 139,
+          "normalized_evidence_mse": 1.2259740829467773,
+          "transformed_evidence_mae": 0.7851725220680237,
+          "channel_sign_agreement": {
+            "early_boundary": 0.8705035971223022,
+            "full_boundary": 0.8561151079136691,
+            "commitment": 0.5971223021582733,
+            "persistence": 0.8561151079136691
+          },
+          "mean_channel_sign_agreement": 0.7949640287769785,
+          "nested": {
+            "boundary": {
+              "states": 139,
+              "reference_positive": 105,
+              "predicted_positive": 124,
+              "tp": 104,
+              "fn": 1,
+              "fp": 20,
+              "tn": 14,
+              "agreement": 0.8489208633093526,
+              "recall": 0.9904761904761905,
+              "added_positive_rate": 0.5882352941176471
+            },
+            "commitment": {
+              "states": 139,
+              "reference_positive": 55,
+              "predicted_positive": 65,
+              "tp": 32,
+              "fn": 23,
+              "fp": 33,
+              "tn": 51,
+              "agreement": 0.5971223021582733,
+              "recall": 0.5818181818181818,
+              "added_positive_rate": 0.39285714285714285
+            },
+            "persistence": {
+              "states": 139,
+              "reference_positive": 118,
+              "predicted_positive": 114,
+              "tp": 106,
+              "fn": 12,
+              "fp": 8,
+              "tn": 13,
+              "agreement": 0.8561151079136691,
+              "recall": 0.8983050847457628,
+              "added_positive_rate": 0.38095238095238093
+            },
+            "alarm": {
+              "states": 139,
+              "reference_positive": 44,
+              "predicted_positive": 60,
+              "tp": 25,
+              "fn": 19,
+              "fp": 35,
+              "tn": 60,
+              "agreement": 0.6115107913669064,
+              "recall": 0.5681818181818182,
+              "added_positive_rate": 0.3684210526315789
+            }
+          }
+        },
+        "configuration_validation": {
+          "groups": 132,
+          "normalized_evidence_mse": 1.2565460205078125,
+          "transformed_evidence_mae": 0.7577943801879883,
+          "channel_sign_agreement": {
+            "early_boundary": 0.8409090909090909,
+            "full_boundary": 0.8257575757575758,
+            "commitment": 0.6287878787878788,
+            "persistence": 0.8712121212121212
+          },
+          "mean_channel_sign_agreement": 0.7916666666666666,
+          "nested": {
+            "boundary": {
+              "states": 132,
+              "reference_positive": 91,
+              "predicted_positive": 115,
+              "tp": 91,
+              "fn": 0,
+              "fp": 24,
+              "tn": 17,
+              "agreement": 0.8181818181818182,
+              "recall": 1.0,
+              "added_positive_rate": 0.5853658536585366
+            },
+            "commitment": {
+              "states": 132,
+              "reference_positive": 38,
+              "predicted_positive": 51,
+              "tp": 20,
+              "fn": 18,
+              "fp": 31,
+              "tn": 63,
+              "agreement": 0.6287878787878788,
+              "recall": 0.5263157894736842,
+              "added_positive_rate": 0.32978723404255317
+            },
+            "persistence": {
+              "states": 132,
+              "reference_positive": 107,
+              "predicted_positive": 108,
+              "tp": 99,
+              "fn": 8,
+              "fp": 9,
+              "tn": 16,
+              "agreement": 0.8712121212121212,
+              "recall": 0.9252336448598131,
+              "added_positive_rate": 0.36
+            },
+            "alarm": {
+              "states": 132,
+              "reference_positive": 35,
+              "predicted_positive": 50,
+              "tp": 20,
+              "fn": 15,
+              "fp": 30,
+              "tn": 67,
+              "agreement": 0.6590909090909091,
+              "recall": 0.5714285714285714,
+              "added_positive_rate": 0.30927835051546393
+            }
+          }
+        },
+        "joint_validation": {
+          "groups": 50,
+          "normalized_evidence_mse": 1.6582318544387817,
+          "transformed_evidence_mae": 0.8880483508110046,
+          "channel_sign_agreement": {
+            "early_boundary": 0.78,
+            "full_boundary": 0.78,
+            "commitment": 0.66,
+            "persistence": 0.8
+          },
+          "mean_channel_sign_agreement": 0.755,
+          "nested": {
+            "boundary": {
+              "states": 50,
+              "reference_positive": 34,
+              "predicted_positive": 45,
+              "tp": 33,
+              "fn": 1,
+              "fp": 12,
+              "tn": 4,
+              "agreement": 0.74,
+              "recall": 0.9705882352941176,
+              "added_positive_rate": 0.75
+            },
+            "commitment": {
+              "states": 50,
+              "reference_positive": 14,
+              "predicted_positive": 19,
+              "tp": 8,
+              "fn": 6,
+              "fp": 11,
+              "tn": 25,
+              "agreement": 0.66,
+              "recall": 0.5714285714285714,
+              "added_positive_rate": 0.3055555555555556
+            },
+            "persistence": {
+              "states": 50,
+              "reference_positive": 40,
+              "predicted_positive": 42,
+              "tp": 36,
+              "fn": 4,
+              "fp": 6,
+              "tn": 4,
+              "agreement": 0.8,
+              "recall": 0.9,
+              "added_positive_rate": 0.6
+            },
+            "alarm": {
+              "states": 50,
+              "reference_positive": 13,
+              "predicted_positive": 18,
+              "tp": 6,
+              "fn": 7,
+              "fp": 12,
+              "tn": 25,
+              "agreement": 0.62,
+              "recall": 0.46153846153846156,
+              "added_positive_rate": 0.32432432432432434
+            }
+          }
+        }
+      }
+    }
+  },
+  "gates": {
+    "direct_evidence": {
+      "episode_validation": {
+        "comparisons": {
+          "normalized_evidence_mse_change": -0.2791168689727783,
+          "mean_sign_agreement_change": -0.03237410071942448,
+          "boundary_added_positive_reduction": 0.23529411764705882,
+          "final_added_positive_reduction": 0.3157894736842105,
+          "boundary_recall_change": -0.16190476190476188,
+          "final_recall_change": -0.24999999999999994,
+          "symmetry_max_abs": 2.384185791015625e-07
+        },
+        "checks": {
+          "evidence_mse": true,
+          "sign_agreement": false,
+          "boundary_specificity": true,
+          "final_specificity": true,
+          "boundary_recall": false,
+          "final_recall": false,
+          "symmetry": true
+        },
+        "passes": false
+      },
+      "configuration_validation": {
+        "comparisons": {
+          "normalized_evidence_mse_change": -0.4694232940673828,
+          "mean_sign_agreement_change": 0.024621212121212044,
+          "boundary_added_positive_reduction": 0.1707317073170732,
+          "final_added_positive_reduction": 0.17525773195876293,
+          "boundary_recall_change": -0.09890109890109888,
+          "final_recall_change": -0.17142857142857137,
+          "symmetry_max_abs": 2.384185791015625e-07
+        },
+        "checks": {
+          "evidence_mse": true,
+          "sign_agreement": true,
+          "boundary_specificity": true,
+          "final_specificity": true,
+          "boundary_recall": false,
+          "final_recall": false,
+          "symmetry": true
+        },
+        "passes": false
+      }
+    },
+    "joint": {
+      "episode_validation": {
+        "comparisons": {
+          "normalized_evidence_mse_change": -0.2501180171966553,
+          "mean_sign_agreement_change": -0.03417266187050361,
+          "boundary_added_positive_reduction": 0.3235294117647059,
+          "final_added_positive_reduction": 0.33684210526315794,
+          "boundary_recall_change": -0.19047619047619047,
+          "final_recall_change": -0.2954545454545454,
+          "symmetry_max_abs": 1.7881393432617188e-07
+        },
+        "checks": {
+          "evidence_mse": true,
+          "sign_agreement": false,
+          "boundary_specificity": true,
+          "final_specificity": true,
+          "boundary_recall": false,
+          "final_recall": false,
+          "symmetry": true
+        },
+        "passes": false
+      },
+      "configuration_validation": {
+        "comparisons": {
+          "normalized_evidence_mse_change": -0.5180798768997192,
+          "mean_sign_agreement_change": 0.045454545454545414,
+          "boundary_added_positive_reduction": 0.1707317073170732,
+          "final_added_positive_reduction": 0.27835051546391754,
+          "boundary_recall_change": -0.06593406593406592,
+          "final_recall_change": -0.3142857142857143,
+          "symmetry_max_abs": 1.7881393432617188e-07
+        },
+        "checks": {
+          "evidence_mse": true,
+          "sign_agreement": true,
+          "boundary_specificity": true,
+          "final_specificity": true,
+          "boundary_recall": false,
+          "final_recall": false,
+          "symmetry": true
+        },
+        "passes": false
+      }
+    }
+  },
+  "passing_arms": [],
+  "replication_authorized": false,
+  "dev_or_test_read": false,
+  "interpretation": "direct_evidence_failed_stop_privileged_jenga_encoder_family"
+}

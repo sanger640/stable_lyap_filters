@@ -1,5 +1,9 @@
 # Cross-task contact benchmark prototypes
 
+> **Current-project note (2026-09-29):** these pages establish physical mechanism benchmarks, not
+> successful learned rollouts. The incremental Jenga world-model line ended at D21 without opening
+> a pushing/insertion predicted-future test. See [`WORLD_MODEL.md`](WORLD_MODEL.md).
+
 These environments are now both visual prototypes and the subjects of the frozen ground-truth U1
 universality test. The visual scenes are valid, but U1 rejects the claim that Regime Monitor v0
 transfers unchanged from Jenga. The separate natural-episode intervention distribution is

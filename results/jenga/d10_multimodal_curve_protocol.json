@@ -1,0 +1,73 @@
+{
+  "name": "D10 task-free multimodal response-curve pilot",
+  "status": "frozen before model fitting",
+  "purpose": "test whether deterministic point-curve regression averages incompatible physical regimes and corrupts monitor geometry",
+  "scope": "the same 218 fit groups and five episode-blocked folds as D9b; prior inspected TRAIN, DEV, and TEST remain closed",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+    "nested_source": "results/jenga/d3_data",
+    "eligible_episodes": 37,
+    "eligible_groups": 218,
+    "excluded_inspected_episode_ids": ["0", "1", "5", "7", "12", "13"],
+    "folds": 5,
+    "validation_episode_ids": [
+      ["16", "33", "40", "46", "51", "67", "82", "97"],
+      ["21", "34", "41", "47", "54", "68", "88", "99"],
+      ["25", "35", "42", "48", "59", "72", "89"],
+      ["30", "36", "43", "49", "62", "74", "93"],
+      ["31", "37", "45", "50", "63", "78", "94"]
+    ],
+    "training_fraction": 1.0,
+    "normalization": "reuse each D9b fold's current-state, future-action, and response normalizers",
+    "task_failure_or_alarm_labels_used": false
+  },
+  "control": {
+    "snapshot_result": "results/jenga/d9b_scaling_result.json",
+    "snapshot_result_sha256": "fc1d392c490271ee188eaccb3a35e437d884c524214e12b4a68324d2060736a1"
+  },
+  "model": {
+    "input_and_backbone": "unchanged D9b snapshot state, eight-step paired future controls, endpoint-symmetric pair encoder, and six-level context",
+    "distribution": "one shared categorical latent for the complete six-level response group",
+    "modes": 3,
+    "per_mode_output": "one nonnegative ReLU group amplitude times six level-specific softplus shapes",
+    "objective": "categorical mixture of fixed-variance isotropic Gaussians over the complete 6-by-41 task-free log-response curve",
+    "fixed_sigma": 0.5,
+    "fixed_sigma_reason": "predeclared order-one normalized log-response scale; not selected using monitor decisions",
+    "deployment_readout": "most probable component from input-conditioned categorical logits; never target-conditioned",
+    "diagnostic_only": "oracle-best component MSE and component coverage; these cannot select deployment output",
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2,
+    "action_horizon": 8,
+    "curve_steps": 39
+  },
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_pilot_passes": [2, 3],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "sampling": "deterministic uniform group sampling without replacement; no class balancing",
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "checkpoint_selection": "fixed final step only",
+    "execution": "one sequential GPU run at a time"
+  },
+  "pilot_gate": {
+    "boundary_added_positive_reduction_from_snapshot": 0.10,
+    "final_added_positive_reduction_from_snapshot": 0.10,
+    "maximum_boundary_recall_loss_from_snapshot": 0.05,
+    "maximum_final_recall_loss_from_snapshot": 0.05,
+    "map_mean_mse_no_worse_than_snapshot": true,
+    "endpoint_and_level_symmetry_max_abs": 0.00001
+  },
+  "decision": {
+    "pass": "replicate seeds 2 and 3 on the same fit-only folds before opening any held-out split",
+    "fail_with_oracle_coverage_gain": "mode inference is the bottleneck; test task-free latent routing without changing the monitor",
+    "fail_without_oracle_coverage_gain": "stop architecture iteration on this dataset; broaden generic physical interaction-response data or redesign the learned-model/monitor contract",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

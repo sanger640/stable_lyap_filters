@@ -1,0 +1,793 @@
+{
+  "protocol": {
+    "name": "D9 zero-preserving amplitude-times-shape confirmation",
+    "status": "frozen before execution",
+    "purpose": "prevent scale-invariant BIC from promoting microscopic model residue on exact-zero physical responses",
+    "scope": "TRAIN-only same-example confirmation; cannot authorize DEV, TEST, deployment, or visual transfer",
+    "data": {
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "nested_source": "results/jenga/d3_data",
+      "selected_episodes": [
+        "16",
+        "21",
+        "25",
+        "30",
+        "31",
+        "33",
+        "34",
+        "35"
+      ],
+      "selection": "identical eight groups used by D6-D8b audits",
+      "states": 8,
+      "levels_per_state": 6,
+      "known_exact_zero_target_episodes": [
+        "25",
+        "31"
+      ],
+      "task_failure_or_object_role_labels": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "model": {
+      "encoder": "unchanged D8b raw temporal endpoint encoder and level context",
+      "factorization": "predicted log-separation equals ReLU amplitude times softplus normalized shape",
+      "amplitude_target": "RMS magnitude of the 41-dimensional continuous log1p gap/curve target per group and level",
+      "shape_target": "target divided by amplitude for nonzero-amplitude levels only",
+      "zero_handling": "shape loss omitted exactly when continuous target amplitude is zero",
+      "external_amplitude_threshold": false,
+      "hidden": 128,
+      "heads": 4,
+      "layers": 2
+    },
+    "optimization": {
+      "seeds": [
+        1,
+        2,
+        3
+      ],
+      "steps": 5000,
+      "optimizer": "AdamW",
+      "initial_learning_rate": 0.001,
+      "schedule": "CosineAnnealingLR",
+      "final_learning_rate": 1e-05,
+      "gradient_clip": 1.0,
+      "batching": "deterministic full batch of all eight groups and six levels",
+      "loss": "amplitude MSE plus five equally weighted masked shape MSE terms",
+      "checkpoint_selection": "fixed final step for every seed; no best-seed or intermediate selection"
+    },
+    "frozen_gate_per_seed": {
+      "early_gap_log_mse": 0.0001,
+      "full_gap_log_mse": 0.0001,
+      "each_curve_phase_log_mse": 0.001,
+      "exact_zero_output_on_exact_zero_targets": true,
+      "positive_amplitude_on_nonzero_targets": true,
+      "nested_boundary_agreement": 1.0,
+      "nested_final_agreement": 1.0,
+      "endpoint_swap_max_abs": 1e-05,
+      "level_permutation_max_abs": 1e-05
+    },
+    "replication_decision": "all three fixed final checkpoints must pass every per-seed gate",
+    "interpretation": {
+      "all_pass": "authorize one episode-held-out TRAIN comparison against D2",
+      "any_fail": "zero-preserving parameterization is not yet stable; keep held-out TRAIN closed"
+    }
+  },
+  "created": "2026-09-28T19:47:05+00:00",
+  "protocol_sha256": "94cabad727e1e08a64ed48a34f8b41608abe11b1ee81b512d8d6517d290db361",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "target_zero_levels": 12,
+  "seeds": [
+    {
+      "seed": 1,
+      "seconds": 34.77678990364075,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.5837438106536865,
+          "amplitude": 1.1684587001800537,
+          "shape_early_gap": 0.25760790705680847,
+          "shape_full_gap": 0.2357167899608612,
+          "shape_action": 0.4692014455795288,
+          "shape_early_hold": 0.29983505606651306,
+          "shape_late_hold": 0.1529240906238556
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.042061492800712585,
+          "amplitude": 0.0003973401617258787,
+          "shape_early_gap": 0.0007970905280672014,
+          "shape_full_gap": 0.0005653136176988482,
+          "shape_action": 0.03691179305315018,
+          "shape_early_hold": 0.0025821574963629246,
+          "shape_late_hold": 0.0008077950333245099
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.013496719300746918,
+          "amplitude": 0.0001723865862004459,
+          "shape_early_gap": 0.00021428770560305566,
+          "shape_full_gap": 0.00015481033187825233,
+          "shape_action": 0.011455233208835125,
+          "shape_early_hold": 0.0007225729059427977,
+          "shape_late_hold": 0.0007774280966259539
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.00011976128735113889,
+          "amplitude": 2.143569872714579e-07,
+          "shape_early_gap": 3.793869382207049e-06,
+          "shape_full_gap": 4.3674131120496895e-06,
+          "shape_action": 6.914023833815008e-05,
+          "shape_early_hold": 2.0569721527863294e-05,
+          "shape_late_hold": 2.167569073208142e-05
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 3.583221769076772e-05,
+          "amplitude": 6.762444115793187e-08,
+          "shape_early_gap": 2.292209728693706e-06,
+          "shape_full_gap": 2.176758698624326e-06,
+          "shape_action": 2.085802952933591e-05,
+          "shape_early_hold": 4.941465249430621e-06,
+          "shape_late_hold": 5.496129688253859e-06
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 1.5239764252328314e-05,
+          "amplitude": 1.3175863955439127e-07,
+          "shape_early_gap": 1.5295008779503405e-06,
+          "shape_full_gap": 1.2696442581727752e-06,
+          "shape_action": 7.024750630080234e-06,
+          "shape_early_hold": 2.586720938779763e-06,
+          "shape_late_hold": 2.697388254091493e-06
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 7.252208888530731e-06,
+          "amplitude": 5.912839551314164e-09,
+          "shape_early_gap": 1.2114378478145227e-06,
+          "shape_full_gap": 8.802219895187591e-07,
+          "shape_action": 3.1210277029458666e-06,
+          "shape_early_hold": 7.112902835615387e-07,
+          "shape_late_hold": 1.3223178711996297e-06
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 5.426540610642405e-06,
+          "amplitude": 2.2500061813701677e-09,
+          "shape_early_gap": 1.0854397487491951e-06,
+          "shape_full_gap": 7.287003427336458e-07,
+          "shape_action": 2.18922650674358e-06,
+          "shape_early_hold": 4.7005249825815554e-07,
+          "shape_late_hold": 9.508716516393179e-07
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 4.619161700247787e-06,
+          "amplitude": 1.0105425385376066e-09,
+          "shape_early_gap": 1.0165766752834315e-06,
+          "shape_full_gap": 6.588606993318535e-07,
+          "shape_action": 1.8082670294461423e-06,
+          "shape_early_hold": 3.493998121939512e-07,
+          "shape_late_hold": 7.850471206438669e-07
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 4.2718343138403725e-06,
+          "amplitude": 6.114626027731163e-10,
+          "shape_early_gap": 9.824530025070999e-07,
+          "shape_full_gap": 6.281878768277238e-07,
+          "shape_action": 1.6501103345945012e-06,
+          "shape_early_hold": 2.9539870638473076e-07,
+          "shape_late_hold": 7.150730425564689e-07
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 4.160407115705311e-06,
+          "amplitude": 5.12764053439696e-10,
+          "shape_early_gap": 9.708093102744897e-07,
+          "shape_full_gap": 6.182210086080886e-07,
+          "shape_action": 1.600157588654838e-06,
+          "shape_early_hold": 2.778954240056919e-07,
+          "shape_late_hold": 6.928112270543352e-07
+        }
+      ],
+      "curve_errors": {
+        "early_gap": 2.201511506427778e-06,
+        "full_gap": 1.4013238569532405e-06,
+        "curve_action": 3.3546509712323314e-06,
+        "curve_early_hold": 6.052785010979278e-07,
+        "curve_late_hold": 1.1928052572329761e-06
+      },
+      "factor_losses": {
+        "amplitude": 5.600035990482866e-10,
+        "shape_early_gap": 9.70664245869557e-07,
+        "shape_full_gap": 6.183284995131544e-07,
+        "shape_action": 1.600844484528352e-06,
+        "shape_early_hold": 2.7823611503663415e-07,
+        "shape_late_hold": 6.931427378731314e-07
+      },
+      "nested": {
+        "boundary": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "commitment": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 9.5367431640625e-07
+      },
+      "gate": {
+        "checks": {
+          "early_gap": true,
+          "full_gap": true,
+          "curve_action": true,
+          "curve_early_hold": true,
+          "curve_late_hold": true,
+          "exact_zero": true,
+          "nonzero_positive": true,
+          "nested_boundary": true,
+          "nested_final": true,
+          "endpoint_swap": true,
+          "level_permutation": true
+        },
+        "passes": true,
+        "zero_levels": 12,
+        "predicted_zero_levels": 12
+      },
+      "checkpoint": "results/jenga/d9_amplitude_shape/seed1.pt",
+      "checkpoint_sha256": "40ec5838515e364c07a4e846e029928f40587b018bb34a94329e12d7d317e290"
+    },
+    {
+      "seed": 2,
+      "seconds": 34.55067443847656,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.616919994354248,
+          "amplitude": 1.2895945310592651,
+          "shape_early_gap": 0.22289827466011047,
+          "shape_full_gap": 0.18737973272800446,
+          "shape_action": 0.45927363634109497,
+          "shape_early_hold": 0.2988624572753906,
+          "shape_late_hold": 0.15891143679618835
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.03993882238864899,
+          "amplitude": 0.00023767733364365995,
+          "shape_early_gap": 0.0009449029457755387,
+          "shape_full_gap": 0.0005258612218312919,
+          "shape_action": 0.0345599502325058,
+          "shape_early_hold": 0.002513039391487837,
+          "shape_late_hold": 0.0011573920492082834
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.16594484448432922,
+          "amplitude": 0.009145714342594147,
+          "shape_early_gap": 0.019510814920067787,
+          "shape_full_gap": 0.016546517610549927,
+          "shape_action": 0.07646718621253967,
+          "shape_early_hold": 0.027258317917585373,
+          "shape_late_hold": 0.017016291618347168
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.0002360511280130595,
+          "amplitude": 7.140549200812529e-07,
+          "shape_early_gap": 5.716465238947421e-06,
+          "shape_full_gap": 6.897948424011702e-06,
+          "shape_action": 0.0001393895799992606,
+          "shape_early_hold": 4.947682828060351e-05,
+          "shape_late_hold": 3.385625677765347e-05
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 4.451860877452418e-05,
+          "amplitude": 1.002750309453404e-07,
+          "shape_early_gap": 1.7617377352507901e-06,
+          "shape_full_gap": 1.988792064366862e-06,
+          "shape_action": 1.8960163288284093e-05,
+          "shape_early_hold": 1.1230291420361027e-05,
+          "shape_late_hold": 1.0477348041604273e-05
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 1.9873685232596472e-05,
+          "amplitude": 9.640281461997802e-08,
+          "shape_early_gap": 1.2546892094178475e-06,
+          "shape_full_gap": 1.059895112121012e-06,
+          "shape_action": 8.768172847339883e-06,
+          "shape_early_hold": 4.0918234844866674e-06,
+          "shape_late_hold": 4.6027016651351005e-06
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 1.1606758562265895e-05,
+          "amplitude": 7.72582993135984e-08,
+          "shape_early_gap": 9.837999641604256e-07,
+          "shape_full_gap": 8.254855856648646e-07,
+          "shape_action": 5.8076375353266485e-06,
+          "shape_early_hold": 1.5875360759309842e-06,
+          "shape_late_hold": 2.325041577933007e-06
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 7.977657332958188e-06,
+          "amplitude": 5.792755786160342e-08,
+          "shape_early_gap": 8.478235145048529e-07,
+          "shape_full_gap": 7.335088412219193e-07,
+          "shape_action": 4.189704668533523e-06,
+          "shape_early_hold": 7.495702334381349e-07,
+          "shape_late_hold": 1.3991229934617877e-06
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 6.3447109823755454e-06,
+          "amplitude": 5.003189329499946e-08,
+          "shape_early_gap": 7.873298386584793e-07,
+          "shape_full_gap": 6.874781774968142e-07,
+          "shape_action": 3.274771643191343e-06,
+          "shape_early_hold": 4.86690566958714e-07,
+          "shape_late_hold": 1.0584085430309642e-06
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 5.669921847584192e-06,
+          "amplitude": 4.676480358511981e-08,
+          "shape_early_gap": 7.629055289726239e-07,
+          "shape_full_gap": 6.65822994960763e-07,
+          "shape_action": 2.856571200027247e-06,
+          "shape_early_hold": 4.0219117636297597e-07,
+          "shape_late_hold": 9.356664918414026e-07
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 5.457618499349337e-06,
+          "amplitude": 4.5681666449581826e-08,
+          "shape_early_gap": 7.553196041953925e-07,
+          "shape_full_gap": 6.586053018509119e-07,
+          "shape_action": 2.721015562201501e-06,
+          "shape_early_hold": 3.780395729791053e-07,
+          "shape_late_hold": 8.989566140371608e-07
+        }
+      ],
+      "curve_errors": {
+        "early_gap": 1.711514642011025e-06,
+        "full_gap": 1.4960058933866094e-06,
+        "curve_action": 5.9761696320492774e-06,
+        "curve_early_hold": 9.94887727756577e-07,
+        "curve_late_hold": 1.5949190128594637e-06
+      },
+      "factor_losses": {
+        "amplitude": 4.609276516021055e-08,
+        "shape_early_gap": 7.557333674412803e-07,
+        "shape_full_gap": 6.588072096747055e-07,
+        "shape_action": 2.72459578809503e-06,
+        "shape_early_hold": 3.780401698350033e-07,
+        "shape_late_hold": 8.988334911919083e-07
+      },
+      "nested": {
+        "boundary": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "commitment": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 1.5497207641601562e-06
+      },
+      "gate": {
+        "checks": {
+          "early_gap": true,
+          "full_gap": true,
+          "curve_action": true,
+          "curve_early_hold": true,
+          "curve_late_hold": true,
+          "exact_zero": true,
+          "nonzero_positive": true,
+          "nested_boundary": true,
+          "nested_final": true,
+          "endpoint_swap": true,
+          "level_permutation": true
+        },
+        "passes": true,
+        "zero_levels": 12,
+        "predicted_zero_levels": 12
+      },
+      "checkpoint": "results/jenga/d9_amplitude_shape/seed2.pt",
+      "checkpoint_sha256": "980988f304ff961cf2f93cfac30e72252a863730262041617ddd3159775183a0"
+    },
+    {
+      "seed": 3,
+      "seconds": 34.73755240440369,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.6845521926879883,
+          "amplitude": 1.350929617881775,
+          "shape_early_gap": 0.2274201661348343,
+          "shape_full_gap": 0.17400625348091125,
+          "shape_action": 0.48352888226509094,
+          "shape_early_hold": 0.2909175157546997,
+          "shape_late_hold": 0.15774965286254883
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.016919385641813278,
+          "amplitude": 0.00016638566739857197,
+          "shape_early_gap": 0.00042537032277323306,
+          "shape_full_gap": 0.00026365381199866533,
+          "shape_action": 0.013674815185368061,
+          "shape_early_hold": 0.0013780159642919898,
+          "shape_late_hold": 0.0010111451847478747
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.0001912657025968656,
+          "amplitude": 1.9670926576509373e-06,
+          "shape_early_gap": 6.959255642868811e-06,
+          "shape_full_gap": 1.3512941222870722e-05,
+          "shape_action": 0.00011164630996063352,
+          "shape_early_hold": 2.7448752007330768e-05,
+          "shape_late_hold": 2.973135451611597e-05
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 3.9934064261615276e-05,
+          "amplitude": 3.1482088047596335e-07,
+          "shape_early_gap": 2.275146243846393e-06,
+          "shape_full_gap": 1.6275397456411156e-06,
+          "shape_action": 2.341157232876867e-05,
+          "shape_early_hold": 7.884224942245055e-06,
+          "shape_late_hold": 4.420759523782181e-06
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 2.1284469767124392e-05,
+          "amplitude": 7.197949969395268e-08,
+          "shape_early_gap": 1.748696945469419e-06,
+          "shape_full_gap": 1.1297364608253702e-06,
+          "shape_action": 1.2277743735467084e-05,
+          "shape_early_hold": 3.992259735241532e-06,
+          "shape_late_hold": 2.0640534330595983e-06
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 1.3711283827433363e-05,
+          "amplitude": 5.6918349145007596e-08,
+          "shape_early_gap": 1.4303117268354981e-06,
+          "shape_full_gap": 8.825961117508996e-07,
+          "shape_action": 8.384453394683078e-06,
+          "shape_early_hold": 1.7402081766704214e-06,
+          "shape_late_hold": 1.2167953400421538e-06
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 8.95539233169984e-06,
+          "amplitude": 4.949868070980301e-08,
+          "shape_early_gap": 1.093233322535525e-06,
+          "shape_full_gap": 6.343210543491296e-07,
+          "shape_action": 5.608701030723751e-06,
+          "shape_early_hold": 6.855275387351867e-07,
+          "shape_late_hold": 8.841108751767024e-07
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 6.738096544722794e-06,
+          "amplitude": 4.4691230272064786e-08,
+          "shape_early_gap": 9.307809136771539e-07,
+          "shape_full_gap": 5.323168466020434e-07,
+          "shape_action": 4.1422104004595894e-06,
+          "shape_early_hold": 3.804006212249078e-07,
+          "shape_late_hold": 7.076963584040641e-07
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 5.697528195014456e-06,
+          "amplitude": 4.186083657486961e-08,
+          "shape_early_gap": 8.491356879858358e-07,
+          "shape_full_gap": 4.808122753274802e-07,
+          "shape_action": 3.4457175388524774e-06,
+          "shape_early_hold": 2.781589500955306e-07,
+          "shape_late_hold": 6.018429985488183e-07
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 5.251511538517661e-06,
+          "amplitude": 4.03150863803603e-08,
+          "shape_early_gap": 8.134228437484126e-07,
+          "shape_full_gap": 4.582375936479366e-07,
+          "shape_action": 3.148163614241639e-06,
+          "shape_early_hold": 2.414669779682299e-07,
+          "shape_late_hold": 5.499050530488603e-07
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 5.108074674353702e-06,
+          "amplitude": 3.974324869204793e-08,
+          "shape_early_gap": 8.018496941986086e-07,
+          "shape_full_gap": 4.509321342993644e-07,
+          "shape_action": 3.052365173061844e-06,
+          "shape_early_hold": 2.3051806863350066e-07,
+          "shape_late_hold": 5.326660925675242e-07
+        }
+      ],
+      "curve_errors": {
+        "early_gap": 1.8165983419748954e-06,
+        "full_gap": 1.0220562671747757e-06,
+        "curve_action": 6.844093149993569e-06,
+        "curve_early_hold": 6.726682499902381e-07,
+        "curve_late_hold": 1.2651199767788057e-06
+      },
+      "factor_losses": {
+        "amplitude": 4.034805201058589e-08,
+        "shape_early_gap": 8.020810469133721e-07,
+        "shape_full_gap": 4.511287272634945e-07,
+        "shape_action": 3.055951083297259e-06,
+        "shape_early_hold": 2.3112417579795874e-07,
+        "shape_late_hold": 5.325690608515288e-07
+      },
+      "nested": {
+        "boundary": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 7,
+          "tp": 6,
+          "fn": 0,
+          "fp": 1,
+          "tn": 1,
+          "agreement": 0.875,
+          "recall": 1.0,
+          "added_positive_rate": 0.5
+        },
+        "commitment": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "persistence": {
+          "states": 8,
+          "reference_positive": 6,
+          "predicted_positive": 6,
+          "tp": 6,
+          "fn": 0,
+          "fp": 0,
+          "tn": 2,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 8,
+          "reference_positive": 4,
+          "predicted_positive": 4,
+          "tp": 4,
+          "fn": 0,
+          "fp": 0,
+          "tn": 4,
+          "agreement": 1.0,
+          "recall": 1.0,
+          "added_positive_rate": 0.0
+        }
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 9.5367431640625e-07
+      },
+      "gate": {
+        "checks": {
+          "early_gap": true,
+          "full_gap": true,
+          "curve_action": true,
+          "curve_early_hold": true,
+          "curve_late_hold": true,
+          "exact_zero": false,
+          "nonzero_positive": true,
+          "nested_boundary": false,
+          "nested_final": true,
+          "endpoint_swap": true,
+          "level_permutation": true
+        },
+        "passes": false,
+        "zero_levels": 12,
+        "predicted_zero_levels": 11
+      },
+      "checkpoint": "results/jenga/d9_amplitude_shape/seed3.pt",
+      "checkpoint_sha256": "24ee967098eeebdaad07f900cfd875794b5005d3a2344cb9c5130d1d26679e94"
+    }
+  ],
+  "aggregate": {
+    "all_seeds_pass": false,
+    "passing_seeds": 2,
+    "boundary_agreement": [
+      1.0,
+      1.0,
+      0.875
+    ],
+    "final_agreement": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "predicted_zero_levels": [
+      12,
+      12,
+      11
+    ]
+  },
+  "d8b": {
+    "result_sha256": "7f0536454f94900ee43aafb5009e164d800468590af3ae77a4db9ae5f3d67695",
+    "aggregate": {
+      "all_seeds_pass": false,
+      "passing_seeds": 1,
+      "curve_error_ranges": {
+        "early_gap": {
+          "min": 1.2295198192902035e-09,
+          "median": 7.785991407160964e-09,
+          "max": 1.5170801503927578e-08
+        },
+        "full_gap": {
+          "min": 8.204106727305316e-09,
+          "median": 1.0514780157677706e-08,
+          "max": 1.5301017342039813e-08
+        },
+        "curve_action": {
+          "min": 2.1403526773156045e-07,
+          "median": 2.8897119364046375e-07,
+          "max": 1.44991406614281e-06
+        },
+        "curve_early_hold": {
+          "min": 4.2705838154688536e-07,
+          "median": 5.592793854702904e-07,
+          "max": 1.1918886002604268e-06
+        },
+        "curve_late_hold": {
+          "min": 8.225115379900672e-07,
+          "median": 9.820795412451844e-07,
+          "max": 1.4804793408984551e-06
+        }
+      },
+      "boundary_agreement": [
+        1.0,
+        0.875,
+        0.875
+      ],
+      "final_agreement": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "interpretation": "zero_preserving_confirmation_failed"
+}

@@ -1,0 +1,54 @@
+{
+  "name": "Fit-only nonparametric response baseline",
+  "status": "frozen before cross-validation and held-out scoring",
+  "purpose": "test whether local interpolation can recover held-out physical response curves better than D9b without changing the input representation",
+  "scope": "TRAIN only; 218 fit groups for model selection and 38 previously held-out TRAIN groups for one final score; DEV and TEST closed",
+  "inputs": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+    "nested_source": "results/jenga/d3_data",
+    "support_audit": "results/jenga/d9b_support_audit_result.json",
+    "support_audit_sha256": "463ce570bef9b2d575654cbd60a546a604c05b4d85e7f49ed94f0cc3cc9c8ebd",
+    "d9b_result": "results/jenga/d9b_heldout_train_result.json",
+    "d9b_result_sha256": "1049240894f9d6984c2f4fd4fba034d3a244bd405634a85c177b7c180afe35a3",
+    "fit_groups": 218,
+    "heldout_groups": 38,
+    "heldout_episode_ids": ["0", "1", "5", "7", "12", "13"]
+  },
+  "features": {
+    "state": "fit-normalized 61D initial state",
+    "action": "fit-normalized endpoint-symmetric pair mean and absolute difference over eight visible action steps and six levels",
+    "joint_distance": "sqrt(state_weight * state_rms_squared + (1-state_weight) * action_rms_squared)",
+    "target": "complete 6-by-41 physical log-response curve",
+    "task_or_alarm_labels": false
+  },
+  "selection": {
+    "folds": 5,
+    "fold_rule": "sorted fit episode ids assigned round-robin by index modulo five; every validation fold is episode-disjoint",
+    "state_weights": [0.0, 0.25, 0.5, 0.75, 1.0],
+    "neighbors": [1, 3, 5, 9, 15],
+    "kernels": ["uniform", "inverse_distance"],
+    "criterion": "lowest pooled cross-validated mean squared error over every 6-by-41 log-response value",
+    "tie_break": "candidate order as listed: state weight, then neighbor count, then kernel",
+    "heldout_used_for_selection": false
+  },
+  "prediction": {
+    "uniform": "arithmetic mean of k nearest physical log-response curves",
+    "inverse_distance": "distance-inverse weighted mean; if any distance is exactly zero, average only zero-distance neighbors",
+    "amplitude_threshold": false,
+    "new_parameters_fit_after_selection": false
+  },
+  "comparison": {
+    "d9b_mean_group_mse": 0.36910591875352733,
+    "d9b_median_group_rmse": 0.46988871693611145,
+    "d9b_median_boundary_agreement": 0.8421052631578947,
+    "d9b_median_boundary_added_positive_rate": 0.35714285714285715,
+    "d9b_median_final_agreement": 0.7368421052631579,
+    "d9b_median_final_added_positive_rate": 0.13793103448275862
+  },
+  "interpretation": {
+    "local_rule_beats_d9b": "held-out mean curve MSE improves by at least 10 percent and either boundary or final agreement is no worse, with neither added-positive rate increasing by more than 0.05; prioritize neural architecture/objective repair",
+    "otherwise": "the fixed state/action metric and fit data do not locally identify held-out response; prioritize denser generic response data or generic temporal/contact history",
+    "dev_and_test": "remain closed for either outcome"
+  }
+}

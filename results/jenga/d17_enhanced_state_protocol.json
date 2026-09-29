@@ -1,0 +1,63 @@
+{
+  "name": "D17 prospective enhanced-state separability experiment",
+  "status": "frozen before enhanced-state replay",
+  "purpose": "identify whether deployable robot proprioception or simulator contact dynamics resolve D15-D16 commitment aliases before fitting another model",
+  "scope": "the same 832 D3+D12 TRAIN groups and frozen primary folds; joint validation, DEV, and TEST remain unread",
+  "sources": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "trace_directory": "results/jenga/trace_data",
+    "trace_meta_sha256": "e849bdd205230137c206489bc96e0a48284c5cbd0778fe4a7d248a99295400e9",
+    "d3_directory": "results/jenga/d3_data",
+    "d3_meta_sha256": "a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "d12_meta_sha256": "b95d81a13d91bf6607cd4b0b882f50314118028a831511ffd0d67d613be4e861",
+    "simulator": "vendor/panda_express_sim.tar",
+    "simulator_sha256": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f",
+    "d16_result": "results/jenga/d16_history_separability_result.json",
+    "d16_result_sha256": "68004199ef78efa99a72fbe2a0d56368063674921d1c75ea80aefda88826d749",
+    "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f"
+  },
+  "collection": {
+    "workers": 1,
+    "groups": 832,
+    "alignment": "warm-start-safe replay to each source snapshot and source contact step; existing 61-D state must match exactly",
+    "proprioception_channels": {
+      "arm_joint_position": 7,
+      "finger_joint_position": 2,
+      "arm_joint_velocity": 7,
+      "finger_joint_velocity": 2,
+      "end_effector_linear_angular_velocity": 6,
+      "total": 24,
+      "deployment_class": "robot proprioception"
+    },
+    "contact_channels": {
+      "categories": 12,
+      "instant_per_category": ["normal_force", "tangential_force_norm", "torque_norm", "penetration", "contact_count"],
+      "recent_per_category": ["normal_impulse", "tangential_impulse_norm", "torque_impulse_norm"],
+      "total": 96,
+      "deployment_class": "privileged simulator diagnostic unless supplied by force sensing/estimation"
+    },
+    "task_failure_alarm_or_object_role_labels": false
+  },
+  "separability_arms": {
+    "snapshot": "unchanged D15 anonymous graph and action distance",
+    "snapshot_plus_proprioception": "equal-weight scene, future-action, and fit-normalized proprioception distances",
+    "snapshot_plus_contact": "equal-weight scene, future-action, and fit-normalized contact-force/impulse distances with consistent object relabeling",
+    "all_enhanced": "equal-weight scene, future-action, proprioception, and contact distances"
+  },
+  "primary_subset": "the exact D15 reference-positive, D14-predicted-nonpositive commitment groups",
+  "gate_on_each_primary_axis": {
+    "minimum_primary_error_same_sign_purity_gain": 0.20,
+    "minimum_primary_error_opposite_to_same_ratio": 1.05,
+    "maximum_overall_five_neighbor_accuracy_loss": 0.02,
+    "neighbors": 5
+  },
+  "decision": {
+    "arm_passes_both_axes": "authorize one relational model using only the channels in the simplest passing arm",
+    "only_privileged_contact_passes": "record the observability limitation and do not call the resulting model deployable without force sensing",
+    "no_arm_passes": "reconsider whether commitment delta-BIC is predictable from available pre-rollout observations",
+    "joint_validation_dev_test": "remain unread"
+  }
+}

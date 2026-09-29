@@ -1,0 +1,505 @@
+{
+  "protocol": {
+    "name": "D6 direct set-conditioned action-response pilot",
+    "status": "frozen before substantive training",
+    "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+    "data": {
+      "neighborhoods": "results/jenga/d4_neighborhood_data_large.npz",
+      "nested_paths": "results/jenga/d3_data",
+      "split": "same episode-held-out 220 TRAIN / 36 validation states as D4",
+      "nested_validation": "groups from the same six held-out episodes",
+      "task_failure_or_object_role_labels": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "arms": {
+      "independent_direct": "state plus each action independently to one non-autoregressive 38-step response",
+      "set_conditioned": "same encoders/decoder with two permutation-equivariant self-attention blocks over all action queries"
+    },
+    "architecture": {
+      "hidden": 128,
+      "attention_heads": 4,
+      "attention_layers": 2,
+      "output": "normalized 38 x 45 anonymous pose/velocity response relative to the common start",
+      "probe_order": "randomly permuted during training",
+      "probe_count": "uniform random integer from 32 through 64 per neighborhood batch",
+      "positional_probe_encoding": false
+    },
+    "training": {
+      "seed": 1,
+      "epochs": 12,
+      "learning_rate": 0.0003,
+      "states_per_batch": 4,
+      "optimizer": "AdamW",
+      "gradient_clip": 1.0,
+      "losses": [
+        "normalized response",
+        "complete pairwise phase topology",
+        "nearest-action dense commitment",
+        "nested-width response/effect/global/local boundary scaling"
+      ],
+      "loss_weighting": "non-response terms scale-matched to response on the first independent-direct batch and then frozen identically for both arms",
+      "checkpoint_selection": "fixed final epoch only"
+    },
+    "pilot_gate": {
+      "reference": "matched independent_direct arm on the same held-out TRAIN states",
+      "candidate_recall": "set_conditioned at least +0.10",
+      "candidate_agreement": "set_conditioned at least +0.10",
+      "candidate_added_positive_rate": "set_conditioned no higher",
+      "partition_agreement": "set_conditioned at least +0.05",
+      "nested_final_recall": "set_conditioned at least +0.15",
+      "nested_final_added_positive_rate": "set_conditioned no more than +0.05",
+      "permutation_equivariance_max_abs": "at most 0.00001",
+      "decision": "all gates must pass"
+    },
+    "if_pass": "replicate fixed seeds 1-5 on TRAIN before freezing one DEV comparison",
+    "if_fail": "stop D6; do not tune on validation or open DEV/TEST"
+  },
+  "created": "2026-09-28T14:09:19+00:00",
+  "protocol_sha256": "7440f092a1851b4de8018e07671d9b6891612d52ce955219d677d442a56f79fb",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "heldout_episodes": [
+    "0",
+    "1",
+    "5",
+    "7",
+    "12",
+    "13"
+  ],
+  "train_states": 220,
+  "validation_states": 36,
+  "nested_train_groups": 218,
+  "nested_validation_groups": 38,
+  "loss_weights": {
+    "response": 1.0,
+    "topology": 0.6457651484434727,
+    "commitment": 1.0256487504115952,
+    "nested": 0.04642875248371264
+  },
+  "arms": {
+    "independent_direct": {
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 1.1817963123321533,
+          "losses": {
+            "response": 0.9315264156977223,
+            "topology": 0.3639617374399677,
+            "commitment": 0.199947133296254,
+            "nested": 6.593688798492605
+          }
+        },
+        {
+          "epoch": 2,
+          "seconds": 1.0679569244384766,
+          "losses": {
+            "response": 0.9007249437949875,
+            "topology": 0.36210130507295785,
+            "commitment": 0.1980180597440763,
+            "nested": 7.066845743764531
+          }
+        },
+        {
+          "epoch": 3,
+          "seconds": 1.0790677070617676,
+          "losses": {
+            "response": 0.897502119161866,
+            "topology": 0.34383261528882114,
+            "commitment": 0.19471342556855895,
+            "nested": 7.984245249899951
+          }
+        },
+        {
+          "epoch": 4,
+          "seconds": 1.0767805576324463,
+          "losses": {
+            "response": 0.8513681383380158,
+            "topology": 0.3149004128973254,
+            "commitment": 0.18610321579670364,
+            "nested": 5.969424250992861
+          }
+        },
+        {
+          "epoch": 5,
+          "seconds": 1.0767481327056885,
+          "losses": {
+            "response": 0.8162997612137008,
+            "topology": 0.2758022997189652,
+            "commitment": 0.17372207755900243,
+            "nested": 4.3200816246596245
+          }
+        },
+        {
+          "epoch": 6,
+          "seconds": 1.0849671363830566,
+          "losses": {
+            "response": 0.8223695694638247,
+            "topology": 0.22458135424478148,
+            "commitment": 0.15202031173235314,
+            "nested": 6.703312965956601
+          }
+        },
+        {
+          "epoch": 7,
+          "seconds": 1.0816757678985596,
+          "losses": {
+            "response": 0.8161415152929046,
+            "topology": 0.22649455869739707,
+            "commitment": 0.15534983649849893,
+            "nested": 5.507852452451533
+          }
+        },
+        {
+          "epoch": 8,
+          "seconds": 1.0872859954833984,
+          "losses": {
+            "response": 0.8118468146093867,
+            "topology": 0.3558341620659286,
+            "commitment": 0.2195300851525231,
+            "nested": 8.241435192931782
+          }
+        },
+        {
+          "epoch": 9,
+          "seconds": 1.0687642097473145,
+          "losses": {
+            "response": 0.8115243521603671,
+            "topology": 0.4120376423678615,
+            "commitment": 0.27244900522584264,
+            "nested": 6.946669818054546
+          }
+        },
+        {
+          "epoch": 10,
+          "seconds": 1.070403814315796,
+          "losses": {
+            "response": 0.7882615013471381,
+            "topology": 0.19247282766612195,
+            "commitment": 0.13729718966283558,
+            "nested": 9.046037905324589
+          }
+        },
+        {
+          "epoch": 11,
+          "seconds": 1.0444273948669434,
+          "losses": {
+            "response": 0.8005197804421187,
+            "topology": 0.16840857975184917,
+            "commitment": 0.12663506022231144,
+            "nested": 8.954153833064167
+          }
+        },
+        {
+          "epoch": 12,
+          "seconds": 1.0423762798309326,
+          "losses": {
+            "response": 0.7886856329373338,
+            "topology": 0.2793355917388743,
+            "commitment": 0.1636390121145682,
+            "nested": 12.876674420996146
+          }
+        }
+      ],
+      "evaluation": {
+        "candidate": {
+          "states": 36,
+          "reference_positive": 24,
+          "predicted_positive": 7,
+          "tp": 4,
+          "fn": 20,
+          "fp": 3,
+          "tn": 9,
+          "agreement": 0.3611111111111111,
+          "recall": 0.16666666666666666,
+          "added_positive_rate": 0.25,
+          "valid_states": 36,
+          "mean_partition_agreement": 0.6753472222222222
+        },
+        "continuous": {
+          "response": 0.17137865722179413,
+          "topology": 0.16542118787765503,
+          "commitment": 0.1139611303806305
+        },
+        "nested": {
+          "boundary": {
+            "states": 38,
+            "reference_positive": 24,
+            "predicted_positive": 9,
+            "tp": 2,
+            "fn": 22,
+            "fp": 7,
+            "tn": 7,
+            "agreement": 0.23684210526315788,
+            "recall": 0.08333333333333333,
+            "added_positive_rate": 0.5
+          },
+          "commitment": {
+            "states": 38,
+            "reference_positive": 12,
+            "predicted_positive": 13,
+            "tp": 4,
+            "fn": 8,
+            "fp": 9,
+            "tn": 17,
+            "agreement": 0.5526315789473685,
+            "recall": 0.3333333333333333,
+            "added_positive_rate": 0.34615384615384615
+          },
+          "persistence": {
+            "states": 38,
+            "reference_positive": 28,
+            "predicted_positive": 35,
+            "tp": 28,
+            "fn": 0,
+            "fp": 7,
+            "tn": 3,
+            "agreement": 0.8157894736842105,
+            "recall": 1.0,
+            "added_positive_rate": 0.7
+          },
+          "alarm": {
+            "states": 38,
+            "reference_positive": 9,
+            "predicted_positive": 3,
+            "tp": 0,
+            "fn": 9,
+            "fp": 3,
+            "tn": 26,
+            "agreement": 0.6842105263157895,
+            "recall": 0.0,
+            "added_positive_rate": 0.10344827586206896
+          }
+        },
+        "checks": {
+          "permutation_max_abs": 2.384185791015625e-07,
+          "subset_response_rms": 0.0
+        }
+      },
+      "checkpoint": "results/jenga/d6_set_response/independent_direct_s1.pt",
+      "checkpoint_sha256": "ea578aa858801d46e3d62519ee1502a1575e3ef45ca3f2b9178b1cd08da7225c"
+    },
+    "set_conditioned": {
+      "history": [
+        {
+          "epoch": 1,
+          "seconds": 1.187690019607544,
+          "losses": {
+            "response": 0.931063515316187,
+            "topology": 0.36383283509154374,
+            "commitment": 0.1994092345245752,
+            "nested": 6.60742936892943
+          }
+        },
+        {
+          "epoch": 2,
+          "seconds": 1.1820688247680664,
+          "losses": {
+            "response": 0.8845978021621704,
+            "topology": 0.3620824320749803,
+            "commitment": 0.1976196512579918,
+            "nested": 7.0876369644295085
+          }
+        },
+        {
+          "epoch": 3,
+          "seconds": 1.1766579151153564,
+          "losses": {
+            "response": 0.8370757885954597,
+            "topology": 0.3634192695671862,
+            "commitment": 0.19952787018635057,
+            "nested": 8.041820515285838
+          }
+        },
+        {
+          "epoch": 4,
+          "seconds": 1.16298508644104,
+          "losses": {
+            "response": 0.7993823733265427,
+            "topology": 0.36592249823739126,
+            "commitment": 0.20120397472494667,
+            "nested": 6.02198952273889
+          }
+        },
+        {
+          "epoch": 5,
+          "seconds": 1.1643342971801758,
+          "losses": {
+            "response": 0.7871557348238474,
+            "topology": 0.3644199583158876,
+            "commitment": 0.20019003522135212,
+            "nested": 4.424696233597669
+          }
+        },
+        {
+          "epoch": 6,
+          "seconds": 1.161586046218872,
+          "losses": {
+            "response": 0.7801889099815691,
+            "topology": 0.3645140103564865,
+            "commitment": 0.2005882412831852,
+            "nested": 6.734176662835208
+          }
+        },
+        {
+          "epoch": 7,
+          "seconds": 1.156198501586914,
+          "losses": {
+            "response": 0.7731884814798832,
+            "topology": 0.37987398369745773,
+            "commitment": 0.2104739804159511,
+            "nested": 5.51601020693779
+          }
+        },
+        {
+          "epoch": 8,
+          "seconds": 1.1652438640594482,
+          "losses": {
+            "response": 0.7587586943398822,
+            "topology": 0.36424131406979127,
+            "commitment": 0.19992939416657796,
+            "nested": 8.155305314064027
+          }
+        },
+        {
+          "epoch": 9,
+          "seconds": 1.1663568019866943,
+          "losses": {
+            "response": 0.7470959586853331,
+            "topology": 0.3605084157802842,
+            "commitment": 0.19857604788108305,
+            "nested": 6.76547199270942
+          }
+        },
+        {
+          "epoch": 10,
+          "seconds": 1.163956880569458,
+          "losses": {
+            "response": 0.7464402274143966,
+            "topology": 0.4786800329430579,
+            "commitment": 0.26574437495119957,
+            "nested": 9.02439843416214
+          }
+        },
+        {
+          "epoch": 11,
+          "seconds": 1.162142038345337,
+          "losses": {
+            "response": 0.7768709524111315,
+            "topology": 0.4484879350120371,
+            "commitment": 0.2551750983026895,
+            "nested": 8.888819160244681
+          }
+        },
+        {
+          "epoch": 12,
+          "seconds": 1.1621501445770264,
+          "losses": {
+            "response": 0.7724816204472021,
+            "topology": 0.48100114329294724,
+            "commitment": 0.2743329152464867,
+            "nested": 12.6855546225201
+          }
+        }
+      ],
+      "evaluation": {
+        "candidate": {
+          "states": 36,
+          "reference_positive": 24,
+          "predicted_positive": 1,
+          "tp": 1,
+          "fn": 23,
+          "fp": 0,
+          "tn": 12,
+          "agreement": 0.3611111111111111,
+          "recall": 0.041666666666666664,
+          "added_positive_rate": 0.0,
+          "valid_states": 36,
+          "mean_partition_agreement": 0.6484375
+        },
+        "continuous": {
+          "response": 0.16702723503112793,
+          "topology": 0.31646695733070374,
+          "commitment": 0.1734674572944641
+        },
+        "nested": {
+          "boundary": {
+            "states": 38,
+            "reference_positive": 24,
+            "predicted_positive": 15,
+            "tp": 4,
+            "fn": 20,
+            "fp": 11,
+            "tn": 3,
+            "agreement": 0.18421052631578946,
+            "recall": 0.16666666666666666,
+            "added_positive_rate": 0.7857142857142857
+          },
+          "commitment": {
+            "states": 38,
+            "reference_positive": 12,
+            "predicted_positive": 7,
+            "tp": 2,
+            "fn": 10,
+            "fp": 5,
+            "tn": 21,
+            "agreement": 0.6052631578947368,
+            "recall": 0.16666666666666666,
+            "added_positive_rate": 0.19230769230769232
+          },
+          "persistence": {
+            "states": 38,
+            "reference_positive": 28,
+            "predicted_positive": 34,
+            "tp": 24,
+            "fn": 4,
+            "fp": 10,
+            "tn": 0,
+            "agreement": 0.631578947368421,
+            "recall": 0.8571428571428571,
+            "added_positive_rate": 1.0
+          },
+          "alarm": {
+            "states": 38,
+            "reference_positive": 9,
+            "predicted_positive": 1,
+            "tp": 0,
+            "fn": 9,
+            "fp": 1,
+            "tn": 28,
+            "agreement": 0.7368421052631579,
+            "recall": 0.0,
+            "added_positive_rate": 0.034482758620689655
+          }
+        },
+        "checks": {
+          "permutation_max_abs": 5.364418029785156e-07,
+          "subset_response_rms": 0.00027153981500305235
+        }
+      },
+      "checkpoint": "results/jenga/d6_set_response/set_conditioned_s1.pt",
+      "checkpoint_sha256": "804740c1974a50ca7d8c0387c995d1c18f90ddf393c4a8cd5e74a2df4500d501"
+    }
+  },
+  "decision": {
+    "comparisons": {
+      "candidate_recall_gain": -0.125,
+      "candidate_agreement_gain": 0.0,
+      "candidate_added_positive_change": -0.25,
+      "partition_agreement_gain": -0.02690972222222221,
+      "nested_final_recall_gain": 0.0,
+      "nested_final_added_positive_change": -0.06896551724137931,
+      "permutation_max_abs": 5.364418029785156e-07
+    },
+    "checks": {
+      "candidate_recall": false,
+      "candidate_agreement": false,
+      "candidate_added_positive": true,
+      "partition_agreement": false,
+      "nested_final_recall": false,
+      "nested_final_added_positive": true,
+      "permutation_equivariance": true
+    },
+    "passes": false,
+    "decision": "stop D6; do not tune on validation or open DEV/TEST"
+  }
+}

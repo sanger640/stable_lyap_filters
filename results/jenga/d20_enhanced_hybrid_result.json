@@ -1,0 +1,267 @@
+{
+  "protocol": {
+    "name": "D20 enhanced-Markov supervised-contact hybrid world model",
+    "status": "frozen before trajectory replay or model fitting",
+    "purpose": "test whether richer Markov observations plus explicitly supervised contact transitions repair the deployable world-model bottleneck while physical monitor v0 remains unchanged",
+    "scope": "D3+D12 TRAIN folds only; joint validation, DEV, physical TEST and task labels remain closed unless every preceding gate passes",
+    "inputs": {
+      "manifest": "results/jenga/d12_combined_manifest.json",
+      "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+      "d3_directory": "results/jenga/d3_data",
+      "d3_meta_sha256": "a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22",
+      "d12_directory": "results/jenga/d12_coverage_data",
+      "d12_meta_sha256": "b95d81a13d91bf6607cd4b0b882f50314118028a831511ffd0d67d613be4e861",
+      "trace_directory": "results/jenga/trace_data",
+      "trace_meta_sha256": "e849bdd205230137c206489bc96e0a48284c5cbd0778fe4a7d248a99295400e9",
+      "simulator": "vendor/panda_express_sim.tar",
+      "simulator_sha256": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f",
+      "d17_start_state": "results/jenga/d17_enhanced_state_data.npz",
+      "d17_start_state_sha256": "d750dd51cf9430187990df6a814f10161503559be8e65e03bc4bb2f708e8706d",
+      "d2_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+      "d2_checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+      "monitor_targets": "results/jenga/d13_monitor_evidence_targets.npz",
+      "monitor_targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f"
+    },
+    "trajectory_collection": {
+      "workers": 1,
+      "groups": 832,
+      "paths_per_group": 12,
+      "steps_per_path": 38,
+      "channels": {
+        "base_state": 61,
+        "robot_proprioception": 24,
+        "instant_contact_force_geometry": 60,
+        "recent_contact_impulse": 36,
+        "total": 181
+      },
+      "integrity": "every replayed 61-D trajectory sample and every D17 start channel must reproduce exactly"
+    },
+    "model": {
+      "type": "action-conditioned graph dynamics with enhanced-state context and supervised four-way contact-transition modes",
+      "contact_modes": [
+        "absent",
+        "persistent",
+        "created",
+        "lost"
+      ],
+      "task_or_failure_labels": false,
+      "hidden": 192,
+      "graph_rounds": 3,
+      "seed": 1
+    },
+    "stages": {
+      "one_step": {
+        "train_epochs": 12,
+        "batch_transitions": 2048,
+        "learning_rate": 0.0003,
+        "loss_weights": {
+          "continuous_base_delta": 1.0,
+          "proprioception_delta": 0.5,
+          "supervised_contact_mode": 1.0,
+          "force_and_impulse_next_state": 0.2
+        },
+        "checkpoint_selection": "fixed final epoch",
+        "gate_on_both_primary_axes": {
+          "maximum_continuous_nrmse_ratio_to_d2": 0.9,
+          "minimum_contact_event_macro_f1_gain_over_d2": 0.05
+        }
+      },
+      "h8": {
+        "authorized_only_if_one_step_passes": true,
+        "rollout_finetune_epochs": 6,
+        "batch_groups": 16,
+        "learning_rate": 0.0001,
+        "loss_weights": {
+          "base_state_trajectory": 1.0,
+          "proprioception_trajectory": 0.25,
+          "supervised_contact_mode": 0.5,
+          "force_and_impulse_trajectory": 0.1,
+          "pairwise_action_response_geometry": 1.0
+        },
+        "checkpoint_selection": "fixed final epoch",
+        "maximum_h8_pose_nrmse_ratio_to_d2": 0.9,
+        "minimum_pair_distance_correlation_gain_over_d2": 0.05
+      },
+      "curves": {
+        "authorized_only_if_h8_passes": true,
+        "requirements": "improve physical separation-curve MSE and boundary/commitment sign agreement over frozen D2 on both primary TRAIN axes"
+      },
+      "monitor": {
+        "authorized_only_if_curves_pass": true,
+        "requirements": "improve frozen-v0 final decision agreement over D2 on both primary TRAIN axes before any DEV or TEST evaluation"
+      }
+    },
+    "stop_rules": {
+      "one_step_failure": "stop; richer observation plus supervised contact modes does not repair basic dynamics under this model",
+      "h8_failure": "stop; compounding rollout error remains the bottleneck",
+      "curve_failure": "stop; ordinary dynamics accuracy does not preserve local counterfactual geometry",
+      "monitor_pass": "only then freeze a prospective DEV protocol",
+      "threshold_or_task_metric_tuning": false
+    }
+  },
+  "protocol_sha256": "d7ef8f7d14daac87134ec76afeb405ab1f9bf46a46934e9fc40215d9fd387597",
+  "created": "2026-09-29T18:55:13.088268+00:00",
+  "device": "cuda",
+  "parameter_count": 1936144,
+  "trajectory_data_sha256": "bafb8cda9c1ec23d0ac9f40e2a65f628914669d5ec85ca59c54ee2076b4cea8c",
+  "stage1": {
+    "training_seconds": 32.48895812034607,
+    "history": [
+      {
+        "epoch": 1,
+        "continuous": 1.312644040636849,
+        "proprio": 0.38863003214723185,
+        "contact_mode": 0.5194900843657946,
+        "force": 0.08410706433157127,
+        "total": 2.3048712214814464
+      },
+      {
+        "epoch": 2,
+        "continuous": 0.8017515717891225,
+        "proprio": 0.2290259395775042,
+        "contact_mode": 0.2783348836135446,
+        "force": 0.06149454722017573,
+        "total": 1.370606942200347
+      },
+      {
+        "epoch": 3,
+        "continuous": 0.5992849652181592,
+        "proprio": 0.1513209969066737,
+        "contact_mode": 0.15410274273732252,
+        "force": 0.05438848243405422,
+        "total": 0.9590971872962096
+      },
+      {
+        "epoch": 4,
+        "continuous": 0.4813441845931505,
+        "proprio": 0.11455831745345342,
+        "contact_mode": 0.11009270233804719,
+        "force": 0.05085111999263366,
+        "total": 0.7568463243772848
+      },
+      {
+        "epoch": 5,
+        "continuous": 0.3934360547808179,
+        "proprio": 0.09615759188799482,
+        "contact_mode": 0.09498686938170801,
+        "force": 0.04738186379044987,
+        "total": 0.6319623798409706
+      },
+      {
+        "epoch": 6,
+        "continuous": 0.339202462711878,
+        "proprio": 0.08362136617825743,
+        "contact_mode": 0.08591719952068831,
+        "force": 0.045271867101914005,
+        "total": 0.5540128955127377
+      },
+      {
+        "epoch": 7,
+        "continuous": 0.2916960226731342,
+        "proprio": 0.07742964061336559,
+        "contact_mode": 0.07865334125725847,
+        "force": 0.042836084193958526,
+        "total": 0.4906150887377168
+      },
+      {
+        "epoch": 8,
+        "continuous": 0.2556256263663894,
+        "proprio": 0.07224906320896066,
+        "contact_mode": 0.073224350744695,
+        "force": 0.041028135840111134,
+        "total": 0.4421271761601562
+      },
+      {
+        "epoch": 9,
+        "continuous": 0.23108080330125072,
+        "proprio": 0.06826042400248218,
+        "contact_mode": 0.06987419397684566,
+        "force": 0.03879949007706161,
+        "total": 0.40801491135764023
+      },
+      {
+        "epoch": 10,
+        "continuous": 0.20227254809517609,
+        "proprio": 0.06282364251909026,
+        "contact_mode": 0.06507498117392524,
+        "force": 0.0364273170891561,
+        "total": 0.3665984888773477
+      },
+      {
+        "epoch": 11,
+        "continuous": 0.18220362773067073,
+        "proprio": 0.05633403004653621,
+        "contact_mode": 0.06264166622177551,
+        "force": 0.03373963665217161,
+        "total": 0.33491896065115406
+      },
+      {
+        "epoch": 12,
+        "continuous": 0.16841725541049973,
+        "proprio": 0.050763630994448534,
+        "contact_mode": 0.05960417672861041,
+        "force": 0.030651604364577093,
+        "total": 0.30943666749813575
+      }
+    ],
+    "evaluations": {
+      "episode_validation": {
+        "transitions": 63384,
+        "continuous_nrmse": 0.5825206931382818,
+        "d2_continuous_nrmse": 0.46162465462858554,
+        "continuous_nrmse_ratio_to_d2": 1.2618925079011798,
+        "contact_event_macro_f1": 0.47180638661884844,
+        "d2_contact_event_macro_f1": 0.4261953380551763,
+        "contact_event_macro_f1_gain_over_d2": 0.04561104856367215,
+        "contact_event_f1": {
+          "created": 0.4864184205792409,
+          "lost": 0.457194352658456
+        },
+        "d2_contact_event_f1": {
+          "created": 0.5425576519916142,
+          "lost": 0.3098330241187384
+        }
+      },
+      "configuration_validation": {
+        "transitions": 60192,
+        "continuous_nrmse": 0.5614003214037101,
+        "d2_continuous_nrmse": 0.4657756089578976,
+        "continuous_nrmse_ratio_to_d2": 1.2053021038601792,
+        "contact_event_macro_f1": 0.5352844451601283,
+        "d2_contact_event_macro_f1": 0.4311173187953762,
+        "contact_event_macro_f1_gain_over_d2": 0.10416712636475212,
+        "contact_event_f1": {
+          "created": 0.5757095011457782,
+          "lost": 0.49485938917447836
+        },
+        "d2_contact_event_f1": {
+          "created": 0.5613562970936491,
+          "lost": 0.3008783404971033
+        }
+      }
+    },
+    "gates": {
+      "episode_validation": {
+        "checks": {
+          "continuous": false,
+          "contact_events": false
+        },
+        "passes": false
+      },
+      "configuration_validation": {
+        "checks": {
+          "continuous": false,
+          "contact_events": true
+        },
+        "passes": false
+      }
+    },
+    "passes": false
+  },
+  "later_stages_executed": false,
+  "decision": "stop_at_one_step",
+  "checkpoint": "results/jenga/d20_enhanced_hybrid/one_step_seed1.pt",
+  "checkpoint_sha256": "aea985d9068806ac8a17f226eda17ef7fa4878173b91e2412069c8c0fd0b323f",
+  "dev_or_test_read": false,
+  "task_labels_used": false
+}

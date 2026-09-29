@@ -1,0 +1,312 @@
+{
+  "protocol": {
+    "name": "D17 prospective enhanced-state separability experiment",
+    "status": "frozen before enhanced-state replay",
+    "purpose": "identify whether deployable robot proprioception or simulator contact dynamics resolve D15-D16 commitment aliases before fitting another model",
+    "scope": "the same 832 D3+D12 TRAIN groups and frozen primary folds; joint validation, DEV, and TEST remain unread",
+    "sources": {
+      "manifest": "results/jenga/d12_combined_manifest.json",
+      "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+      "trace_directory": "results/jenga/trace_data",
+      "trace_meta_sha256": "e849bdd205230137c206489bc96e0a48284c5cbd0778fe4a7d248a99295400e9",
+      "d3_directory": "results/jenga/d3_data",
+      "d3_meta_sha256": "a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22",
+      "d12_directory": "results/jenga/d12_coverage_data",
+      "d12_meta_sha256": "b95d81a13d91bf6607cd4b0b882f50314118028a831511ffd0d67d613be4e861",
+      "simulator": "vendor/panda_express_sim.tar",
+      "simulator_sha256": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f",
+      "d16_result": "results/jenga/d16_history_separability_result.json",
+      "d16_result_sha256": "68004199ef78efa99a72fbe2a0d56368063674921d1c75ea80aefda88826d749",
+      "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+      "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f"
+    },
+    "collection": {
+      "workers": 1,
+      "groups": 832,
+      "alignment": "warm-start-safe replay to each source snapshot and source contact step; existing 61-D state must match exactly",
+      "proprioception_channels": {
+        "arm_joint_position": 7,
+        "finger_joint_position": 2,
+        "arm_joint_velocity": 7,
+        "finger_joint_velocity": 2,
+        "end_effector_linear_angular_velocity": 6,
+        "total": 24,
+        "deployment_class": "robot proprioception"
+      },
+      "contact_channels": {
+        "categories": 12,
+        "instant_per_category": [
+          "normal_force",
+          "tangential_force_norm",
+          "torque_norm",
+          "penetration",
+          "contact_count"
+        ],
+        "recent_per_category": [
+          "normal_impulse",
+          "tangential_impulse_norm",
+          "torque_impulse_norm"
+        ],
+        "total": 96,
+        "deployment_class": "privileged simulator diagnostic unless supplied by force sensing/estimation"
+      },
+      "task_failure_alarm_or_object_role_labels": false
+    },
+    "separability_arms": {
+      "snapshot": "unchanged D15 anonymous graph and action distance",
+      "snapshot_plus_proprioception": "equal-weight scene, future-action, and fit-normalized proprioception distances",
+      "snapshot_plus_contact": "equal-weight scene, future-action, and fit-normalized contact-force/impulse distances with consistent object relabeling",
+      "all_enhanced": "equal-weight scene, future-action, proprioception, and contact distances"
+    },
+    "primary_subset": "the exact D15 reference-positive, D14-predicted-nonpositive commitment groups",
+    "gate_on_each_primary_axis": {
+      "minimum_primary_error_same_sign_purity_gain": 0.2,
+      "minimum_primary_error_opposite_to_same_ratio": 1.05,
+      "maximum_overall_five_neighbor_accuracy_loss": 0.02,
+      "neighbors": 5
+    },
+    "decision": {
+      "arm_passes_both_axes": "authorize one relational model using only the channels in the simplest passing arm",
+      "only_privileged_contact_passes": "record the observability limitation and do not call the resulting model deployable without force sensing",
+      "no_arm_passes": "reconsider whether commitment delta-BIC is predictable from available pre-rollout observations",
+      "joint_validation_dev_test": "remain unread"
+    }
+  },
+  "created": "2026-09-29T15:11:42+00:00",
+  "protocol_sha256": "20a004b7352c4e4056fa18f98720acffc22924ac89992c9fed65ef0e822e8ba1",
+  "data_sha256": "d750dd51cf9430187990df6a814f10161503559be8e65e03bc4bb2f708e8706d",
+  "integrity_sha256": "d0a59e9a6e1d706d20bd39129979ec042a1a8706a6c53fc38ecec909876201a6",
+  "device": "cuda",
+  "axes": {
+    "episode_validation": {
+      "groups": 139,
+      "primary_errors": 39,
+      "snapshot_control_matches_d15": true,
+      "arms": {
+        "snapshot": {
+          "primary_errors": {
+            "count": 39,
+            "nearest_distance_median": 0.23554915306077384,
+            "same_sign_purity_median": 0.2,
+            "opposite_to_same_ratio_median": 0.9173520780127137,
+            "five_neighbor_accuracy": 0.15384615384615385
+          },
+          "all": {
+            "count": 139,
+            "nearest_distance_median": 0.23554915306077384,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.0163168352466805,
+            "five_neighbor_accuracy": 0.6258992805755396
+          }
+        },
+        "snapshot_plus_proprioception": {
+          "primary_errors": {
+            "count": 39,
+            "nearest_distance_median": 0.3842919757072897,
+            "same_sign_purity_median": 0.4,
+            "opposite_to_same_ratio_median": 0.9110934106166252,
+            "five_neighbor_accuracy": 0.2564102564102564
+          },
+          "all": {
+            "count": 139,
+            "nearest_distance_median": 0.3938875901656538,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.0366870641739747,
+            "five_neighbor_accuracy": 0.6330935251798561
+          }
+        },
+        "snapshot_plus_contact": {
+          "primary_errors": {
+            "count": 39,
+            "nearest_distance_median": 0.22962836235653003,
+            "same_sign_purity_median": 0.2,
+            "opposite_to_same_ratio_median": 0.931545622997191,
+            "five_neighbor_accuracy": 0.07692307692307693
+          },
+          "all": {
+            "count": 139,
+            "nearest_distance_median": 0.22962836235653003,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.0443611142337776,
+            "five_neighbor_accuracy": 0.5827338129496403
+          }
+        },
+        "all_enhanced": {
+          "primary_errors": {
+            "count": 39,
+            "nearest_distance_median": 0.37132867814979015,
+            "same_sign_purity_median": 0.2,
+            "opposite_to_same_ratio_median": 0.9055065140675658,
+            "five_neighbor_accuracy": 0.1794871794871795
+          },
+          "all": {
+            "count": 139,
+            "nearest_distance_median": 0.37592286254332913,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.037278602218773,
+            "five_neighbor_accuracy": 0.6258992805755396
+          }
+        }
+      },
+      "gates": {
+        "snapshot_plus_proprioception": {
+          "comparisons": {
+            "primary_error_same_sign_purity_gain": 0.2,
+            "primary_error_opposite_to_same_ratio": 0.9110934106166252,
+            "overall_five_neighbor_accuracy_change": 0.007194244604316502
+          },
+          "checks": {
+            "purity_gain": true,
+            "opposite_separation": false,
+            "overall_accuracy": true
+          },
+          "passes": false
+        },
+        "snapshot_plus_contact": {
+          "comparisons": {
+            "primary_error_same_sign_purity_gain": 0.0,
+            "primary_error_opposite_to_same_ratio": 0.931545622997191,
+            "overall_five_neighbor_accuracy_change": -0.043165467625899234
+          },
+          "checks": {
+            "purity_gain": false,
+            "opposite_separation": false,
+            "overall_accuracy": false
+          },
+          "passes": false
+        },
+        "all_enhanced": {
+          "comparisons": {
+            "primary_error_same_sign_purity_gain": 0.0,
+            "primary_error_opposite_to_same_ratio": 0.9055065140675658,
+            "overall_five_neighbor_accuracy_change": 0.0
+          },
+          "checks": {
+            "purity_gain": false,
+            "opposite_separation": false,
+            "overall_accuracy": true
+          },
+          "passes": false
+        }
+      }
+    },
+    "configuration_validation": {
+      "groups": 132,
+      "primary_errors": 26,
+      "snapshot_control_matches_d15": true,
+      "arms": {
+        "snapshot": {
+          "primary_errors": {
+            "count": 26,
+            "nearest_distance_median": 0.16763761417292122,
+            "same_sign_purity_median": 0.2,
+            "opposite_to_same_ratio_median": 0.9485597591269825,
+            "five_neighbor_accuracy": 0.19230769230769232
+          },
+          "all": {
+            "count": 132,
+            "nearest_distance_median": 0.1734185325972742,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.0428093766320083,
+            "five_neighbor_accuracy": 0.6287878787878788
+          }
+        },
+        "snapshot_plus_proprioception": {
+          "primary_errors": {
+            "count": 26,
+            "nearest_distance_median": 0.3099679179659093,
+            "same_sign_purity_median": 0.4,
+            "opposite_to_same_ratio_median": 0.9870743218259749,
+            "five_neighbor_accuracy": 0.2692307692307692
+          },
+          "all": {
+            "count": 132,
+            "nearest_distance_median": 0.3292000253770714,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.077186616142055,
+            "five_neighbor_accuracy": 0.696969696969697
+          }
+        },
+        "snapshot_plus_contact": {
+          "primary_errors": {
+            "count": 26,
+            "nearest_distance_median": 0.15763172073733464,
+            "same_sign_purity_median": 0.2,
+            "opposite_to_same_ratio_median": 0.8990356153772439,
+            "five_neighbor_accuracy": 0.19230769230769232
+          },
+          "all": {
+            "count": 132,
+            "nearest_distance_median": 0.1725343886461802,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.054481132761455,
+            "five_neighbor_accuracy": 0.6212121212121212
+          }
+        },
+        "all_enhanced": {
+          "primary_errors": {
+            "count": 26,
+            "nearest_distance_median": 0.2874461428788784,
+            "same_sign_purity_median": 0.4,
+            "opposite_to_same_ratio_median": 0.9736300893095751,
+            "five_neighbor_accuracy": 0.2692307692307692
+          },
+          "all": {
+            "count": 132,
+            "nearest_distance_median": 0.3152509249390114,
+            "same_sign_purity_median": 0.6,
+            "opposite_to_same_ratio_median": 1.054539421617667,
+            "five_neighbor_accuracy": 0.6742424242424242
+          }
+        }
+      },
+      "gates": {
+        "snapshot_plus_proprioception": {
+          "comparisons": {
+            "primary_error_same_sign_purity_gain": 0.2,
+            "primary_error_opposite_to_same_ratio": 0.9870743218259749,
+            "overall_five_neighbor_accuracy_change": 0.06818181818181823
+          },
+          "checks": {
+            "purity_gain": true,
+            "opposite_separation": false,
+            "overall_accuracy": true
+          },
+          "passes": false
+        },
+        "snapshot_plus_contact": {
+          "comparisons": {
+            "primary_error_same_sign_purity_gain": 0.0,
+            "primary_error_opposite_to_same_ratio": 0.8990356153772439,
+            "overall_five_neighbor_accuracy_change": -0.007575757575757569
+          },
+          "checks": {
+            "purity_gain": false,
+            "opposite_separation": false,
+            "overall_accuracy": true
+          },
+          "passes": false
+        },
+        "all_enhanced": {
+          "comparisons": {
+            "primary_error_same_sign_purity_gain": 0.2,
+            "primary_error_opposite_to_same_ratio": 0.9736300893095751,
+            "overall_five_neighbor_accuracy_change": 0.045454545454545414
+          },
+          "checks": {
+            "purity_gain": true,
+            "opposite_separation": false,
+            "overall_accuracy": true
+          },
+          "passes": false
+        }
+      }
+    }
+  },
+  "passing_arms": [],
+  "simplest_passing_arm": null,
+  "model_training_authorized": false,
+  "interpretation": "no_enhanced_arm_passes_reconsider_commitment_observability",
+  "model_training_or_threshold_selection": false,
+  "joint_dev_or_test_read": false
+}

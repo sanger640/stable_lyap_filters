@@ -1,0 +1,2936 @@
+{
+  "protocol": {
+    "name": "D9b episode-held-out TRAIN comparison",
+    "status": "frozen before execution",
+    "purpose": "test whether the shared-amplitude direct response model generalizes beyond its training episodes and improves on D2 learned futures",
+    "scope": "TRAIN partition only; DEV and TEST remain closed",
+    "data": {
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+      "nested_source": "results/jenga/d3_data",
+      "split_rule": "same deterministic first-12-percent episode split used by D2 and D6",
+      "fit_episodes": 37,
+      "fit_groups": 218,
+      "heldout_episode_ids": [
+        "0",
+        "1",
+        "5",
+        "7",
+        "12",
+        "13"
+      ],
+      "heldout_groups": 38,
+      "heldout_physical_boundary_positive": 24,
+      "heldout_physical_final_positive": 9,
+      "heldout_exact_zero_groups": 9,
+      "task_failure_or_object_role_labels_used_for_training": false,
+      "heldout_used_for_epoch_or_model_selection": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "model": {
+      "architecture": "unchanged D9b raw temporal pair encoder, six-level context, shared ReLU group amplitude and per-level softplus shapes",
+      "amplitude_target": "RMS magnitude over all six levels and all 41 continuous log1p response values",
+      "shape_target": "per-level continuous target divided by shared amplitude for nonzero groups",
+      "external_amplitude_threshold": false,
+      "hidden": 128,
+      "heads": 4,
+      "layers": 2
+    },
+    "optimization": {
+      "seeds": [
+        1,
+        2,
+        3
+      ],
+      "steps": 5000,
+      "group_batch_size": 32,
+      "sampling": "deterministic uniform group sampling without replacement within each step; no class balancing",
+      "optimizer": "AdamW",
+      "initial_learning_rate": 0.001,
+      "schedule": "CosineAnnealingLR",
+      "final_learning_rate": 1e-05,
+      "gradient_clip": 1.0,
+      "loss": "shared group amplitude MSE plus five equally weighted shape MSE terms masked only for exact-zero groups",
+      "checkpoint_selection": "fixed final step for every seed"
+    },
+    "d2_reference": {
+      "source": "results/jenga/reobservation_interface_result.json",
+      "source_sha256": "601e8c2e8423ce42bcc5d06a85a8e8b361719fce94a2b740025c8ba58d52ecaa",
+      "arm": "unchanged open-loop interval-38 summary over ten D2 seeds",
+      "median_boundary_recall": 0.25,
+      "median_boundary_added_positive_rate": 0.14285714285714285,
+      "median_final_recall": 0.05555555555555555,
+      "median_final_added_positive_rate": 0.08620689655172414
+    },
+    "frozen_success_gate_on_three_seed_medians": {
+      "boundary_recall_gain_over_d2_at_least": 0.1,
+      "boundary_added_positive_increase_over_d2_at_most": 0.05,
+      "final_recall_gain_over_d2_at_least": 0.15,
+      "final_added_positive_increase_over_d2_at_most": 0.05,
+      "endpoint_swap_max_abs_each_seed": 1e-05,
+      "level_permutation_max_abs_each_seed": 1e-05
+    },
+    "reporting": "all seed metrics, medians, continuous errors, exact-zero confusion counts, per-episode monitor decisions and D2 comparison",
+    "decision": {
+      "pass": "freeze D9b state-space formulation and preregister a separate DEV evaluation",
+      "fail": "keep DEV and TEST closed; diagnose generalization and data coverage without tuning on these held-out outcomes"
+    }
+  },
+  "created": "2026-09-28T20:04:04+00:00",
+  "protocol_sha256": "28c14310d6bc1e5d89233f1b16bcbd58d6bc7ab530ec62c9481bf3f18ce0d5ed",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "heldout_episodes": [
+    "0",
+    "1",
+    "5",
+    "7",
+    "12",
+    "13"
+  ],
+  "fit_groups": 218,
+  "heldout_groups": 38,
+  "seeds": [
+    {
+      "curve_errors": {
+        "early_gap": 0.069319948554039,
+        "full_gap": 0.07034431397914886,
+        "curve_action": 0.8351592421531677,
+        "curve_early_hold": 0.1711089164018631,
+        "curve_late_hold": 0.1583937555551529
+      },
+      "nested": {
+        "boundary": {
+          "states": 38,
+          "reference_positive": 24,
+          "predicted_positive": 29,
+          "tp": 24,
+          "fn": 0,
+          "fp": 5,
+          "tn": 9,
+          "agreement": 0.868421052631579,
+          "recall": 1.0,
+          "added_positive_rate": 0.35714285714285715
+        },
+        "commitment": {
+          "states": 38,
+          "reference_positive": 12,
+          "predicted_positive": 7,
+          "tp": 4,
+          "fn": 8,
+          "fp": 3,
+          "tn": 23,
+          "agreement": 0.7105263157894737,
+          "recall": 0.3333333333333333,
+          "added_positive_rate": 0.11538461538461539
+        },
+        "persistence": {
+          "states": 38,
+          "reference_positive": 28,
+          "predicted_positive": 29,
+          "tp": 28,
+          "fn": 0,
+          "fp": 1,
+          "tn": 9,
+          "agreement": 0.9736842105263158,
+          "recall": 1.0,
+          "added_positive_rate": 0.1
+        },
+        "alarm": {
+          "states": 38,
+          "reference_positive": 9,
+          "predicted_positive": 7,
+          "tp": 3,
+          "fn": 6,
+          "fp": 4,
+          "tn": 25,
+          "agreement": 0.7368421052631579,
+          "recall": 0.3333333333333333,
+          "added_positive_rate": 0.13793103448275862
+        }
+      },
+      "zero": {
+        "groups": 38,
+        "reference_zero": 9,
+        "predicted_zero": 9,
+        "tp": 9,
+        "fn": 0,
+        "fp": 0,
+        "tn": 29,
+        "recall": 1.0,
+        "false_zero_rate": 0.0
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 1.1920928955078125e-06
+      },
+      "evidence": [
+        {
+          "index": 0,
+          "source": "ep0_seed102",
+          "episode": "0",
+          "target_amplitude": 1.7090141773223877,
+          "predicted_amplitude": 1.7867530584335327,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 1,
+          "source": "ep0_seed105",
+          "episode": "0",
+          "target_amplitude": 1.758678674697876,
+          "predicted_amplitude": 1.7091394662857056,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 2,
+          "source": "ep0_seed107",
+          "episode": "0",
+          "target_amplitude": 1.7358355522155762,
+          "predicted_amplitude": 1.5326571464538574,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 3,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 4,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 1.8008689880371094,
+          "predicted_amplitude": 1.48638117313385,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 5,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 1.565915584564209,
+          "predicted_amplitude": 1.5814224481582642,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 6,
+          "source": "ep12_seed103",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 7,
+          "source": "ep12_seed106",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 8,
+          "source": "ep12_seed109",
+          "episode": "12",
+          "target_amplitude": 1.8942234516143799,
+          "predicted_amplitude": 1.8849648237228394,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 9,
+          "source": "ep12_seed109",
+          "episode": "12",
+          "target_amplitude": 1.8761961460113525,
+          "predicted_amplitude": 1.847702145576477,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 10,
+          "source": "ep13_seed101",
+          "episode": "13",
+          "target_amplitude": 1.636845350265503,
+          "predicted_amplitude": 1.445838212966919,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 11,
+          "source": "ep13_seed105",
+          "episode": "13",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 12,
+          "source": "ep13_seed105",
+          "episode": "13",
+          "target_amplitude": 1.7068394422531128,
+          "predicted_amplitude": 1.6894484758377075,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 13,
+          "source": "ep13_seed108",
+          "episode": "13",
+          "target_amplitude": 1.7778478860855103,
+          "predicted_amplitude": 1.8413065671920776,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 14,
+          "source": "ep13_seed108",
+          "episode": "13",
+          "target_amplitude": 1.843737006187439,
+          "predicted_amplitude": 1.8615895509719849,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 15,
+          "source": "ep13_seed109",
+          "episode": "13",
+          "target_amplitude": 1.9140878915786743,
+          "predicted_amplitude": 1.8846632242202759,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 16,
+          "source": "ep1_seed100",
+          "episode": "1",
+          "target_amplitude": 1.8275907039642334,
+          "predicted_amplitude": 1.8886841535568237,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 17,
+          "source": "ep1_seed101",
+          "episode": "1",
+          "target_amplitude": 1.6686235666275024,
+          "predicted_amplitude": 1.7267369031906128,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 18,
+          "source": "ep1_seed102",
+          "episode": "1",
+          "target_amplitude": 1.8408598899841309,
+          "predicted_amplitude": 1.5503026247024536,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 19,
+          "source": "ep1_seed102",
+          "episode": "1",
+          "target_amplitude": 1.8891806602478027,
+          "predicted_amplitude": 1.8776355981826782,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 20,
+          "source": "ep1_seed103",
+          "episode": "1",
+          "target_amplitude": 1.778965950012207,
+          "predicted_amplitude": 1.796310305595398,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 21,
+          "source": "ep1_seed103",
+          "episode": "1",
+          "target_amplitude": 1.7333019971847534,
+          "predicted_amplitude": 1.3952957391738892,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 22,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 23,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 1.8795819282531738,
+          "predicted_amplitude": 1.7863167524337769,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 24,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 1.9041231870651245,
+          "predicted_amplitude": 1.8480030298233032,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 25,
+          "source": "ep5_seed102",
+          "episode": "5",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 26,
+          "source": "ep5_seed103",
+          "episode": "5",
+          "target_amplitude": 1.5362439155578613,
+          "predicted_amplitude": 1.6162859201431274,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 27,
+          "source": "ep5_seed105",
+          "episode": "5",
+          "target_amplitude": 1.4727449417114258,
+          "predicted_amplitude": 1.5946563482284546,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 28,
+          "source": "ep5_seed109",
+          "episode": "5",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 29,
+          "source": "ep7_seed102",
+          "episode": "7",
+          "target_amplitude": 1.8570929765701294,
+          "predicted_amplitude": 1.8468859195709229,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 30,
+          "source": "ep7_seed103",
+          "episode": "7",
+          "target_amplitude": 1.7290915250778198,
+          "predicted_amplitude": 1.5812286138534546,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 31,
+          "source": "ep7_seed104",
+          "episode": "7",
+          "target_amplitude": 1.8131760358810425,
+          "predicted_amplitude": 1.4864871501922607,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 32,
+          "source": "ep7_seed106",
+          "episode": "7",
+          "target_amplitude": 1.8167294263839722,
+          "predicted_amplitude": 1.4036927223205566,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 33,
+          "source": "ep7_seed107",
+          "episode": "7",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 34,
+          "source": "ep7_seed108",
+          "episode": "7",
+          "target_amplitude": 1.8365870714187622,
+          "predicted_amplitude": 1.83368718624115,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 35,
+          "source": "ep7_seed108",
+          "episode": "7",
+          "target_amplitude": 1.8956018686294556,
+          "predicted_amplitude": 1.7963201999664307,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 36,
+          "source": "ep7_seed109",
+          "episode": "7",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 37,
+          "source": "ep7_seed109",
+          "episode": "7",
+          "target_amplitude": 1.6657625436782837,
+          "predicted_amplitude": 1.5478484630584717,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        }
+      ],
+      "seed": 1,
+      "seconds": 38.04851841926575,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.760560989379883,
+          "amplitude": 1.4666372537612915,
+          "shape_early_gap": 0.346535325050354,
+          "shape_full_gap": 0.34429702162742615,
+          "shape_action": 0.32032525539398193,
+          "shape_early_hold": 0.17450746893882751,
+          "shape_late_hold": 0.10825894773006439
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.22156254947185516,
+          "amplitude": 0.0036650286056101322,
+          "shape_early_gap": 0.01225224044173956,
+          "shape_full_gap": 0.009576192125678062,
+          "shape_action": 0.14889292418956757,
+          "shape_early_hold": 0.030457161366939545,
+          "shape_late_hold": 0.016719002276659012
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.12981361150741577,
+          "amplitude": 0.002081862883642316,
+          "shape_early_gap": 0.003292141715064645,
+          "shape_full_gap": 0.0034253704361617565,
+          "shape_action": 0.08433574438095093,
+          "shape_early_hold": 0.025721635669469833,
+          "shape_late_hold": 0.010956856422126293
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.06815013289451599,
+          "amplitude": 0.0003454089746810496,
+          "shape_early_gap": 0.001922566327266395,
+          "shape_full_gap": 0.0018978094449266791,
+          "shape_action": 0.043375927954912186,
+          "shape_early_hold": 0.014084544032812119,
+          "shape_late_hold": 0.006523875053972006
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 0.06135724484920502,
+          "amplitude": 0.0001460416242480278,
+          "shape_early_gap": 0.00210362346842885,
+          "shape_full_gap": 0.001764629501849413,
+          "shape_action": 0.037711482495069504,
+          "shape_early_hold": 0.011941052041947842,
+          "shape_late_hold": 0.007690416648983955
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 0.054556120187044144,
+          "amplitude": 0.00012343551497906446,
+          "shape_early_gap": 0.002140705706551671,
+          "shape_full_gap": 0.001641125651076436,
+          "shape_action": 0.034344885498285294,
+          "shape_early_hold": 0.010667165741324425,
+          "shape_late_hold": 0.0056388042867183685
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 0.03997023031115532,
+          "amplitude": 2.8168835342512466e-05,
+          "shape_early_gap": 0.0008485098369419575,
+          "shape_full_gap": 0.0007269062916748226,
+          "shape_action": 0.023375479504466057,
+          "shape_early_hold": 0.008299408480525017,
+          "shape_late_hold": 0.0066917589865624905
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 0.024880969896912575,
+          "amplitude": 2.1396159354480915e-05,
+          "shape_early_gap": 0.0004168767773080617,
+          "shape_full_gap": 0.0003207325062248856,
+          "shape_action": 0.014232705347239971,
+          "shape_early_hold": 0.0052161067724227905,
+          "shape_late_hold": 0.0046731517650187016
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 0.02643340639770031,
+          "amplitude": 4.530066235020058e-06,
+          "shape_early_gap": 0.0005007768049836159,
+          "shape_full_gap": 0.00039588677464053035,
+          "shape_action": 0.016782447695732117,
+          "shape_early_hold": 0.0043776449747383595,
+          "shape_late_hold": 0.004372119903564453
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 0.027105135843157768,
+          "amplitude": 1.2993892596568912e-05,
+          "shape_early_gap": 0.0005849889712408185,
+          "shape_full_gap": 0.0005456953076645732,
+          "shape_action": 0.018411986529827118,
+          "shape_early_hold": 0.004393523093312979,
+          "shape_late_hold": 0.0031559469643980265
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 0.028107233345508575,
+          "amplitude": 1.4259269391914131e-06,
+          "shape_early_gap": 0.0006117433658801019,
+          "shape_full_gap": 0.0004514300962910056,
+          "shape_action": 0.015140209347009659,
+          "shape_early_hold": 0.005918466951698065,
+          "shape_late_hold": 0.005983958952128887
+        }
+      ],
+      "checkpoint": "results/jenga/d9b_heldout_train/seed1.pt",
+      "checkpoint_sha256": "0261706622dfdd2ef1e76154e763fdfb7492ed7780c566739b208f3d42bc28c9"
+    },
+    {
+      "curve_errors": {
+        "early_gap": 0.1045212671160698,
+        "full_gap": 0.11404944211244583,
+        "curve_action": 0.7594792246818542,
+        "curve_early_hold": 0.23078423738479614,
+        "curve_late_hold": 0.2816687524318695
+      },
+      "nested": {
+        "boundary": {
+          "states": 38,
+          "reference_positive": 24,
+          "predicted_positive": 28,
+          "tp": 23,
+          "fn": 1,
+          "fp": 5,
+          "tn": 9,
+          "agreement": 0.8421052631578947,
+          "recall": 0.9583333333333334,
+          "added_positive_rate": 0.35714285714285715
+        },
+        "commitment": {
+          "states": 38,
+          "reference_positive": 12,
+          "predicted_positive": 8,
+          "tp": 4,
+          "fn": 8,
+          "fp": 4,
+          "tn": 22,
+          "agreement": 0.6842105263157895,
+          "recall": 0.3333333333333333,
+          "added_positive_rate": 0.15384615384615385
+        },
+        "persistence": {
+          "states": 38,
+          "reference_positive": 28,
+          "predicted_positive": 25,
+          "tp": 24,
+          "fn": 4,
+          "fp": 1,
+          "tn": 9,
+          "agreement": 0.868421052631579,
+          "recall": 0.8571428571428571,
+          "added_positive_rate": 0.1
+        },
+        "alarm": {
+          "states": 38,
+          "reference_positive": 9,
+          "predicted_positive": 7,
+          "tp": 4,
+          "fn": 5,
+          "fp": 3,
+          "tn": 26,
+          "agreement": 0.7894736842105263,
+          "recall": 0.4444444444444444,
+          "added_positive_rate": 0.10344827586206896
+        }
+      },
+      "zero": {
+        "groups": 38,
+        "reference_zero": 9,
+        "predicted_zero": 10,
+        "tp": 9,
+        "fn": 0,
+        "fp": 1,
+        "tn": 28,
+        "recall": 1.0,
+        "false_zero_rate": 0.034482758620689655
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 7.152557373046875e-07
+      },
+      "evidence": [
+        {
+          "index": 0,
+          "source": "ep0_seed102",
+          "episode": "0",
+          "target_amplitude": 1.7090141773223877,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 1,
+          "source": "ep0_seed105",
+          "episode": "0",
+          "target_amplitude": 1.758678674697876,
+          "predicted_amplitude": 1.5257484912872314,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 2,
+          "source": "ep0_seed107",
+          "episode": "0",
+          "target_amplitude": 1.7358355522155762,
+          "predicted_amplitude": 1.548795461654663,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 3,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 4,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 1.8008689880371094,
+          "predicted_amplitude": 1.5310816764831543,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 5,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 1.565915584564209,
+          "predicted_amplitude": 1.530317783355713,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 6,
+          "source": "ep12_seed103",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 7,
+          "source": "ep12_seed106",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 8,
+          "source": "ep12_seed109",
+          "episode": "12",
+          "target_amplitude": 1.8942234516143799,
+          "predicted_amplitude": 1.8365919589996338,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 9,
+          "source": "ep12_seed109",
+          "episode": "12",
+          "target_amplitude": 1.8761961460113525,
+          "predicted_amplitude": 1.7590970993041992,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 10,
+          "source": "ep13_seed101",
+          "episode": "13",
+          "target_amplitude": 1.636845350265503,
+          "predicted_amplitude": 1.448723316192627,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 11,
+          "source": "ep13_seed105",
+          "episode": "13",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 12,
+          "source": "ep13_seed105",
+          "episode": "13",
+          "target_amplitude": 1.7068394422531128,
+          "predicted_amplitude": 1.6689321994781494,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 13,
+          "source": "ep13_seed108",
+          "episode": "13",
+          "target_amplitude": 1.7778478860855103,
+          "predicted_amplitude": 1.8357923030853271,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 14,
+          "source": "ep13_seed108",
+          "episode": "13",
+          "target_amplitude": 1.843737006187439,
+          "predicted_amplitude": 1.8593709468841553,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 15,
+          "source": "ep13_seed109",
+          "episode": "13",
+          "target_amplitude": 1.9140878915786743,
+          "predicted_amplitude": 1.8846039772033691,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 16,
+          "source": "ep1_seed100",
+          "episode": "1",
+          "target_amplitude": 1.8275907039642334,
+          "predicted_amplitude": 1.9189784526824951,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 17,
+          "source": "ep1_seed101",
+          "episode": "1",
+          "target_amplitude": 1.6686235666275024,
+          "predicted_amplitude": 1.5467729568481445,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 18,
+          "source": "ep1_seed102",
+          "episode": "1",
+          "target_amplitude": 1.8408598899841309,
+          "predicted_amplitude": 1.5106937885284424,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 19,
+          "source": "ep1_seed102",
+          "episode": "1",
+          "target_amplitude": 1.8891806602478027,
+          "predicted_amplitude": 1.7957398891448975,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 20,
+          "source": "ep1_seed103",
+          "episode": "1",
+          "target_amplitude": 1.778965950012207,
+          "predicted_amplitude": 1.7965795993804932,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 21,
+          "source": "ep1_seed103",
+          "episode": "1",
+          "target_amplitude": 1.7333019971847534,
+          "predicted_amplitude": 1.4930408000946045,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 22,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 23,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 1.8795819282531738,
+          "predicted_amplitude": 1.813601016998291,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 24,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 1.9041231870651245,
+          "predicted_amplitude": 1.6608996391296387,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 25,
+          "source": "ep5_seed102",
+          "episode": "5",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 26,
+          "source": "ep5_seed103",
+          "episode": "5",
+          "target_amplitude": 1.5362439155578613,
+          "predicted_amplitude": 1.5262954235076904,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 27,
+          "source": "ep5_seed105",
+          "episode": "5",
+          "target_amplitude": 1.4727449417114258,
+          "predicted_amplitude": 1.5124874114990234,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 28,
+          "source": "ep5_seed109",
+          "episode": "5",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 29,
+          "source": "ep7_seed102",
+          "episode": "7",
+          "target_amplitude": 1.8570929765701294,
+          "predicted_amplitude": 1.8308658599853516,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 30,
+          "source": "ep7_seed103",
+          "episode": "7",
+          "target_amplitude": 1.7290915250778198,
+          "predicted_amplitude": 1.824976921081543,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 31,
+          "source": "ep7_seed104",
+          "episode": "7",
+          "target_amplitude": 1.8131760358810425,
+          "predicted_amplitude": 1.8578011989593506,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 32,
+          "source": "ep7_seed106",
+          "episode": "7",
+          "target_amplitude": 1.8167294263839722,
+          "predicted_amplitude": 1.874420404434204,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 33,
+          "source": "ep7_seed107",
+          "episode": "7",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 34,
+          "source": "ep7_seed108",
+          "episode": "7",
+          "target_amplitude": 1.8365870714187622,
+          "predicted_amplitude": 1.7834417819976807,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 35,
+          "source": "ep7_seed108",
+          "episode": "7",
+          "target_amplitude": 1.8956018686294556,
+          "predicted_amplitude": 1.7543351650238037,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 36,
+          "source": "ep7_seed109",
+          "episode": "7",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 37,
+          "source": "ep7_seed109",
+          "episode": "7",
+          "target_amplitude": 1.6657625436782837,
+          "predicted_amplitude": 1.8401243686676025,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        }
+      ],
+      "seed": 2,
+      "seconds": 37.10005164146423,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.8373756408691406,
+          "amplitude": 1.6408238410949707,
+          "shape_early_gap": 0.2835078537464142,
+          "shape_full_gap": 0.2644559442996979,
+          "shape_action": 0.32922667264938354,
+          "shape_early_hold": 0.20918291807174683,
+          "shape_late_hold": 0.11017818003892899
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.21769441664218903,
+          "amplitude": 0.010886843316257,
+          "shape_early_gap": 0.012553944252431393,
+          "shape_full_gap": 0.013482531532645226,
+          "shape_action": 0.12430501729249954,
+          "shape_early_hold": 0.04180825501680374,
+          "shape_late_hold": 0.014657845720648766
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.13921767473220825,
+          "amplitude": 0.0009450929355807602,
+          "shape_early_gap": 0.0029382784850895405,
+          "shape_full_gap": 0.0037832208909094334,
+          "shape_action": 0.0839986801147461,
+          "shape_early_hold": 0.030999664217233658,
+          "shape_late_hold": 0.016552729532122612
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.10810697078704834,
+          "amplitude": 0.000438090501120314,
+          "shape_early_gap": 0.0032445278484374285,
+          "shape_full_gap": 0.0035299155861139297,
+          "shape_action": 0.05310731381177902,
+          "shape_early_hold": 0.023695018142461777,
+          "shape_late_hold": 0.02409210428595543
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 0.06256526708602905,
+          "amplitude": 0.0006758232484571636,
+          "shape_early_gap": 0.003345443168655038,
+          "shape_full_gap": 0.0035260915756225586,
+          "shape_action": 0.038452282547950745,
+          "shape_early_hold": 0.010524091310799122,
+          "shape_late_hold": 0.006041538901627064
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 0.050878606736660004,
+          "amplitude": 0.0001131923490902409,
+          "shape_early_gap": 0.0017357029719278216,
+          "shape_full_gap": 0.0009690762963145971,
+          "shape_action": 0.030475635081529617,
+          "shape_early_hold": 0.011235235258936882,
+          "shape_late_hold": 0.006349765229970217
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 0.04562058672308922,
+          "amplitude": 4.2644343920983374e-05,
+          "shape_early_gap": 0.0009616481838747859,
+          "shape_full_gap": 0.0006249075522646308,
+          "shape_action": 0.02940802276134491,
+          "shape_early_hold": 0.008460594341158867,
+          "shape_late_hold": 0.00612277165055275
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 0.03158384561538696,
+          "amplitude": 2.2395222913473845e-05,
+          "shape_early_gap": 0.0023426241241395473,
+          "shape_full_gap": 0.0013342989841476083,
+          "shape_action": 0.016737129539251328,
+          "shape_early_hold": 0.007911944761872292,
+          "shape_late_hold": 0.0032354542054235935
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 0.029127907007932663,
+          "amplitude": 6.155752544145798e-06,
+          "shape_early_gap": 0.0003588597755879164,
+          "shape_full_gap": 0.0003249205183237791,
+          "shape_action": 0.0194344911724329,
+          "shape_early_hold": 0.005537271499633789,
+          "shape_late_hold": 0.0034662073012441397
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 0.0839325338602066,
+          "amplitude": 0.048787474632263184,
+          "shape_early_gap": 0.0009092810214497149,
+          "shape_full_gap": 0.0005885352729819715,
+          "shape_action": 0.021364614367485046,
+          "shape_early_hold": 0.008313224650919437,
+          "shape_late_hold": 0.003969401586800814
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 0.027295544743537903,
+          "amplitude": 2.3481229618482757e-06,
+          "shape_early_gap": 0.0006898449501022696,
+          "shape_full_gap": 0.0007696727989241481,
+          "shape_action": 0.01845209300518036,
+          "shape_early_hold": 0.004929210525006056,
+          "shape_late_hold": 0.00245237466879189
+        }
+      ],
+      "checkpoint": "results/jenga/d9b_heldout_train/seed2.pt",
+      "checkpoint_sha256": "f0365c18b2c500400c4f3b8217d86befc081b7587484583c25a47fb0a154bfca"
+    },
+    {
+      "curve_errors": {
+        "early_gap": 0.13994447886943817,
+        "full_gap": 0.1493348479270935,
+        "curve_action": 0.7895058393478394,
+        "curve_early_hold": 0.33701711893081665,
+        "curve_late_hold": 0.40373164415359497
+      },
+      "nested": {
+        "boundary": {
+          "states": 38,
+          "reference_positive": 24,
+          "predicted_positive": 27,
+          "tp": 22,
+          "fn": 2,
+          "fp": 5,
+          "tn": 9,
+          "agreement": 0.8157894736842105,
+          "recall": 0.9166666666666666,
+          "added_positive_rate": 0.35714285714285715
+        },
+        "commitment": {
+          "states": 38,
+          "reference_positive": 12,
+          "predicted_positive": 8,
+          "tp": 4,
+          "fn": 8,
+          "fp": 4,
+          "tn": 22,
+          "agreement": 0.6842105263157895,
+          "recall": 0.3333333333333333,
+          "added_positive_rate": 0.15384615384615385
+        },
+        "persistence": {
+          "states": 38,
+          "reference_positive": 28,
+          "predicted_positive": 24,
+          "tp": 24,
+          "fn": 4,
+          "fp": 0,
+          "tn": 10,
+          "agreement": 0.8947368421052632,
+          "recall": 0.8571428571428571,
+          "added_positive_rate": 0.0
+        },
+        "alarm": {
+          "states": 38,
+          "reference_positive": 9,
+          "predicted_positive": 8,
+          "tp": 3,
+          "fn": 6,
+          "fp": 5,
+          "tn": 24,
+          "agreement": 0.7105263157894737,
+          "recall": 0.3333333333333333,
+          "added_positive_rate": 0.1724137931034483
+        }
+      },
+      "zero": {
+        "groups": 38,
+        "reference_zero": 9,
+        "predicted_zero": 11,
+        "tp": 9,
+        "fn": 0,
+        "fp": 2,
+        "tn": 27,
+        "recall": 1.0,
+        "false_zero_rate": 0.06896551724137931
+      },
+      "invariance": {
+        "endpoint_swap_max_abs": 0.0,
+        "level_permutation_max_abs": 0.0
+      },
+      "evidence": [
+        {
+          "index": 0,
+          "source": "ep0_seed102",
+          "episode": "0",
+          "target_amplitude": 1.7090141773223877,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 1,
+          "source": "ep0_seed105",
+          "episode": "0",
+          "target_amplitude": 1.758678674697876,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 2,
+          "source": "ep0_seed107",
+          "episode": "0",
+          "target_amplitude": 1.7358355522155762,
+          "predicted_amplitude": 1.6000547409057617,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 3,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 4,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 1.8008689880371094,
+          "predicted_amplitude": 1.7294270992279053,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 5,
+          "source": "ep12_seed102",
+          "episode": "12",
+          "target_amplitude": 1.565915584564209,
+          "predicted_amplitude": 1.5351158380508423,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 6,
+          "source": "ep12_seed103",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 7,
+          "source": "ep12_seed106",
+          "episode": "12",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 8,
+          "source": "ep12_seed109",
+          "episode": "12",
+          "target_amplitude": 1.8942234516143799,
+          "predicted_amplitude": 1.8950566053390503,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 9,
+          "source": "ep12_seed109",
+          "episode": "12",
+          "target_amplitude": 1.8761961460113525,
+          "predicted_amplitude": 1.8195791244506836,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 10,
+          "source": "ep13_seed101",
+          "episode": "13",
+          "target_amplitude": 1.636845350265503,
+          "predicted_amplitude": 1.4954358339309692,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 11,
+          "source": "ep13_seed105",
+          "episode": "13",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 12,
+          "source": "ep13_seed105",
+          "episode": "13",
+          "target_amplitude": 1.7068394422531128,
+          "predicted_amplitude": 1.7089834213256836,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 13,
+          "source": "ep13_seed108",
+          "episode": "13",
+          "target_amplitude": 1.7778478860855103,
+          "predicted_amplitude": 1.85806405544281,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 14,
+          "source": "ep13_seed108",
+          "episode": "13",
+          "target_amplitude": 1.843737006187439,
+          "predicted_amplitude": 1.850928783416748,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 15,
+          "source": "ep13_seed109",
+          "episode": "13",
+          "target_amplitude": 1.9140878915786743,
+          "predicted_amplitude": 1.870635986328125,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 16,
+          "source": "ep1_seed100",
+          "episode": "1",
+          "target_amplitude": 1.8275907039642334,
+          "predicted_amplitude": 1.753639817237854,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 17,
+          "source": "ep1_seed101",
+          "episode": "1",
+          "target_amplitude": 1.6686235666275024,
+          "predicted_amplitude": 1.5427825450897217,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 18,
+          "source": "ep1_seed102",
+          "episode": "1",
+          "target_amplitude": 1.8408598899841309,
+          "predicted_amplitude": 1.632972002029419,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 19,
+          "source": "ep1_seed102",
+          "episode": "1",
+          "target_amplitude": 1.8891806602478027,
+          "predicted_amplitude": 1.5953636169433594,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 20,
+          "source": "ep1_seed103",
+          "episode": "1",
+          "target_amplitude": 1.778965950012207,
+          "predicted_amplitude": 1.8522199392318726,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 21,
+          "source": "ep1_seed103",
+          "episode": "1",
+          "target_amplitude": 1.7333019971847534,
+          "predicted_amplitude": 1.384906530380249,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 22,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 23,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 1.8795819282531738,
+          "predicted_amplitude": 1.7192171812057495,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 24,
+          "source": "ep1_seed106",
+          "episode": "1",
+          "target_amplitude": 1.9041231870651245,
+          "predicted_amplitude": 1.554685115814209,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 25,
+          "source": "ep5_seed102",
+          "episode": "5",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 26,
+          "source": "ep5_seed103",
+          "episode": "5",
+          "target_amplitude": 1.5362439155578613,
+          "predicted_amplitude": 1.654863953590393,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 27,
+          "source": "ep5_seed105",
+          "episode": "5",
+          "target_amplitude": 1.4727449417114258,
+          "predicted_amplitude": 1.1181612014770508,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 28,
+          "source": "ep5_seed109",
+          "episode": "5",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 29,
+          "source": "ep7_seed102",
+          "episode": "7",
+          "target_amplitude": 1.8570929765701294,
+          "predicted_amplitude": 1.8639342784881592,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 30,
+          "source": "ep7_seed103",
+          "episode": "7",
+          "target_amplitude": 1.7290915250778198,
+          "predicted_amplitude": 1.88224458694458,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 31,
+          "source": "ep7_seed104",
+          "episode": "7",
+          "target_amplitude": 1.8131760358810425,
+          "predicted_amplitude": 1.8981666564941406,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 32,
+          "source": "ep7_seed106",
+          "episode": "7",
+          "target_amplitude": 1.8167294263839722,
+          "predicted_amplitude": 1.6190307140350342,
+          "reference": {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 33,
+          "source": "ep7_seed107",
+          "episode": "7",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 34,
+          "source": "ep7_seed108",
+          "episode": "7",
+          "target_amplitude": 1.8365870714187622,
+          "predicted_amplitude": 1.8758575916290283,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        },
+        {
+          "index": 35,
+          "source": "ep7_seed108",
+          "episode": "7",
+          "target_amplitude": 1.8956018686294556,
+          "predicted_amplitude": 1.877012014389038,
+          "reference": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        },
+        {
+          "index": 36,
+          "source": "ep7_seed109",
+          "episode": "7",
+          "target_amplitude": 0.0,
+          "predicted_amplitude": 0.0,
+          "reference": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        },
+        {
+          "index": 37,
+          "source": "ep7_seed109",
+          "episode": "7",
+          "target_amplitude": 1.6657625436782837,
+          "predicted_amplitude": 1.8831864595413208,
+          "reference": {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          "predicted": {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        }
+      ],
+      "seed": 3,
+      "seconds": 36.759790897369385,
+      "history": [
+        {
+          "step": 1,
+          "learning_rate": 0.0009999999022909196,
+          "total": 2.8254756927490234,
+          "amplitude": 1.6116268634796143,
+          "shape_early_gap": 0.2908227741718292,
+          "shape_full_gap": 0.236533060669899,
+          "shape_action": 0.3561049699783325,
+          "shape_early_hold": 0.21337789297103882,
+          "shape_late_hold": 0.11700999736785889
+        },
+        {
+          "step": 500,
+          "learning_rate": 0.0009757729755660927,
+          "total": 0.25275135040283203,
+          "amplitude": 0.006945824716240168,
+          "shape_early_gap": 0.016796179115772247,
+          "shape_full_gap": 0.023752892389893532,
+          "shape_action": 0.12595880031585693,
+          "shape_early_hold": 0.051541365683078766,
+          "shape_late_hold": 0.027756307274103165
+        },
+        {
+          "step": 1000,
+          "learning_rate": 0.0009054634122155905,
+          "total": 0.23281976580619812,
+          "amplitude": 0.08998039364814758,
+          "shape_early_gap": 0.005424490664154291,
+          "shape_full_gap": 0.005374467931687832,
+          "shape_action": 0.08770528435707092,
+          "shape_early_hold": 0.025208020582795143,
+          "shape_late_hold": 0.019127102568745613
+        },
+        {
+          "step": 1500,
+          "learning_rate": 0.0007959536998847674,
+          "total": 0.06926742941141129,
+          "amplitude": 0.0006693747127428651,
+          "shape_early_gap": 0.002480030059814453,
+          "shape_full_gap": 0.00175455620046705,
+          "shape_action": 0.041559599339962006,
+          "shape_early_hold": 0.013584710657596588,
+          "shape_late_hold": 0.009219156578183174
+        },
+        {
+          "step": 2000,
+          "learning_rate": 0.000657963412215593,
+          "total": 0.06789057701826096,
+          "amplitude": 0.0007155928760766983,
+          "shape_early_gap": 0.0017476072534918785,
+          "shape_full_gap": 0.0017474803607910872,
+          "shape_action": 0.037837885320186615,
+          "shape_early_hold": 0.01598002389073372,
+          "shape_late_hold": 0.009861988015472889
+        },
+        {
+          "step": 2500,
+          "learning_rate": 0.0005049999999999951,
+          "total": 0.04619956016540527,
+          "amplitude": 0.00015918856661301106,
+          "shape_early_gap": 0.0009975545108318329,
+          "shape_full_gap": 0.0006936754798516631,
+          "shape_action": 0.02743222750723362,
+          "shape_early_hold": 0.012326599098742008,
+          "shape_late_hold": 0.004590312484651804
+        },
+        {
+          "step": 3000,
+          "learning_rate": 0.00035203658778439734,
+          "total": 0.1308731585741043,
+          "amplitude": 0.0869549959897995,
+          "shape_early_gap": 0.0006736689829267561,
+          "shape_full_gap": 0.0006031093071214855,
+          "shape_action": 0.02749127522110939,
+          "shape_early_hold": 0.012106097303330898,
+          "shape_late_hold": 0.0030440231785178185
+        },
+        {
+          "step": 3500,
+          "learning_rate": 0.00021404630011522403,
+          "total": 0.11823348701000214,
+          "amplitude": 0.08672379702329636,
+          "shape_early_gap": 0.000739879731554538,
+          "shape_full_gap": 0.0010298913111910224,
+          "shape_action": 0.021896442398428917,
+          "shape_early_hold": 0.004833029583096504,
+          "shape_late_hold": 0.0030104422476142645
+        },
+        {
+          "step": 4000,
+          "learning_rate": 0.00010453658778440053,
+          "total": 0.03219062089920044,
+          "amplitude": 3.5154748729837593e-06,
+          "shape_early_gap": 0.00044344752677716315,
+          "shape_full_gap": 0.0003757090598810464,
+          "shape_action": 0.01672944240272045,
+          "shape_early_hold": 0.006476986687630415,
+          "shape_late_hold": 0.008161516860127449
+        },
+        {
+          "step": 4500,
+          "learning_rate": 3.422702443389913e-05,
+          "total": 0.03416280075907707,
+          "amplitude": 9.00411032489501e-06,
+          "shape_early_gap": 0.0007213908829726279,
+          "shape_full_gap": 0.0009767396841198206,
+          "shape_action": 0.017436785623431206,
+          "shape_early_hold": 0.0054954164661467075,
+          "shape_late_hold": 0.009523465298116207
+        },
+        {
+          "step": 5000,
+          "learning_rate": 1e-05,
+          "total": 0.04012381285429001,
+          "amplitude": 3.0213827812985983e-06,
+          "shape_early_gap": 0.0022282141726464033,
+          "shape_full_gap": 0.0014191261725500226,
+          "shape_action": 0.02253701724112034,
+          "shape_early_hold": 0.005126636475324631,
+          "shape_late_hold": 0.008809799328446388
+        }
+      ],
+      "checkpoint": "results/jenga/d9b_heldout_train/seed3.pt",
+      "checkpoint_sha256": "e19de6dcd10e6f993e5d2192aaa76a73bf2793bc4426f60a74fbe4e66076c67f"
+    }
+  ],
+  "median": {
+    "boundary": {
+      "agreement": 0.8421052631578947,
+      "recall": 0.9583333333333334,
+      "added_positive_rate": 0.35714285714285715
+    },
+    "commitment": {
+      "agreement": 0.6842105263157895,
+      "recall": 0.3333333333333333,
+      "added_positive_rate": 0.15384615384615385
+    },
+    "persistence": {
+      "agreement": 0.8947368421052632,
+      "recall": 0.8571428571428571,
+      "added_positive_rate": 0.1
+    },
+    "alarm": {
+      "agreement": 0.7368421052631579,
+      "recall": 0.3333333333333333,
+      "added_positive_rate": 0.13793103448275862
+    },
+    "zero": {
+      "recall": 1.0,
+      "false_zero_rate": 0.034482758620689655
+    }
+  },
+  "d2_median": {
+    "boundary": {
+      "agreement": 0.4605263157894737,
+      "recall": 0.25,
+      "added_positive_rate": 0.14285714285714285
+    },
+    "commitment": {
+      "agreement": 0.5789473684210527,
+      "recall": 0.5,
+      "added_positive_rate": 0.4230769230769231
+    },
+    "persistence": {
+      "agreement": 0.7368421052631579,
+      "recall": 1.0,
+      "added_positive_rate": 1.0
+    },
+    "alarm": {
+      "agreement": 0.7105263157894737,
+      "recall": 0.05555555555555555,
+      "added_positive_rate": 0.08620689655172414
+    }
+  },
+  "success_gate": {
+    "comparisons": {
+      "boundary_recall_gain": 0.7083333333333334,
+      "boundary_added_positive_increase": 0.2142857142857143,
+      "final_recall_gain": 0.2777777777777778,
+      "final_added_positive_increase": 0.051724137931034475
+    },
+    "checks": {
+      "boundary_recall": true,
+      "boundary_added_positive": false,
+      "final_recall": true,
+      "final_added_positive": false,
+      "endpoint_swap": true,
+      "level_permutation": true
+    },
+    "passes": false
+  },
+  "interpretation": "fail_keep_dev_test_closed"
+}

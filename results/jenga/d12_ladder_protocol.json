@@ -1,0 +1,72 @@
+{
+  "name": "D12 coverage-controlled deterministic/multimodal/router ladder",
+  "status": "frozen before D12 history replay or model fitting",
+  "purpose": "test whether broader generic interaction coverage repairs response-curve generalization without changing the existing model families",
+  "scope": "combined D3+D12 TRAIN corpus only; DEV and TEST remain closed",
+  "data": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d3_meta_sha256": "a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "d12_meta_sha256": "b95d81a13d91bf6607cd4b0b882f50314118028a831511ffd0d67d613be4e861",
+    "d3_history": "results/jenga/d9b_history_data.npz",
+    "d3_history_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502",
+    "d12_history": "results/jenga/d12_history_data.npz",
+    "groups": {"fit": 511, "episode_validation": 139, "configuration_validation": 132, "joint_validation": 50},
+    "normalization": "fit groups only; nested endpoints flattened only for state/action/response statistics",
+    "task_failure_or_alarm_labels_used": false
+  },
+  "history_replay": {
+    "d12_groups": 576,
+    "states": 4,
+    "actions": 3,
+    "construction": "warm-start-safe replay from the original episode chunk through the selected source path and event step",
+    "maximum_absolute_current_state_error": 0.000001,
+    "maximum_rms_current_state_error": 0.000001,
+    "contact_signature_exact_for_every_group": true,
+    "simulator_instances": 1
+  },
+  "models": {
+    "deterministic": "unchanged D9b shared exact-zero amplitude times six level-specific nonnegative shapes",
+    "multimodal": "unchanged D10 three-component complete-curve mixture with MAP deployment and oracle-best diagnostic",
+    "router": "unchanged D11 event router over frozen D10 experts; labels are minimum curve error inside fit only",
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2,
+    "action_horizon": 8,
+    "curve_steps": 39,
+    "modes": 3,
+    "fixed_sigma": 0.5
+  },
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_complete_gate_passes": [2, 3],
+    "curve_steps": 5000,
+    "router_steps": 2000,
+    "group_batch_size": 32,
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "final_learning_rate": 0.00001,
+    "schedule": "CosineAnnealingLR",
+    "gradient_clip": 1.0,
+    "checkpoint_selection": "fixed final step only",
+    "execution": "one sequential GPU model at a time"
+  },
+  "primary_validation_axes": ["episode_validation", "configuration_validation"],
+  "gate_on_each_primary_axis": {
+    "mean_mse_no_worse_than_deterministic": true,
+    "boundary_added_positive_reduction": 0.10,
+    "final_added_positive_reduction": 0.10,
+    "maximum_boundary_recall_loss": 0.05,
+    "maximum_final_recall_loss": 0.05,
+    "router_minimum_fraction_of_map_to_oracle_mse_gap_closed": 0.25,
+    "endpoint_and_level_symmetry_max_abs": 0.00001
+  },
+  "decision": {
+    "pass_both_axes": "replicate fixed seeds 2 and 3 before any DEV run",
+    "otherwise": "do not tune on validation; report whether failure is fidelity, specificity, recall, or routing and reconsider the privileged model/monitor interface",
+    "joint_validation": "diagnostic only and never used for model or checkpoint selection",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

@@ -1,5 +1,10 @@
 # The toy experiment, explained simply
 
+> **Current-project note (2026-09-29):** the toy establishes that the idea can work when a learned
+> model preserves the relevant branches. The later Jenga D2–D21 program did not obtain that
+> fidelity at held-out scale. See [`WORLD_MODEL.md`](WORLD_MODEL.md); do not generalize the toy's
+> positive model result into a claim that the current Jenga world model is deployable.
+
 **What we were trying to find out:** does our safety monitor still work when the world model only
 gets to look at *camera images*, instead of being handed the exact state of the world?
 
@@ -414,5 +419,5 @@ Prediction to No-Regret Online Learning.* AISTATS. — the O(T²) compounding re
 ---
 
 *Full detail in [`NOTES.md`](NOTES.md) (append-only log), method spec in [`MONITOR.md`](MONITOR.md),
-per-phase results in [`PLAN_DINOWM.md`](PLAN_DINOWM.md), handover brief in
+per-phase results in the [archived DINO-WM plan](docs/archive/PLAN_DINOWM.md), handover brief in
 [`HANDOFF.md`](HANDOFF.md).*

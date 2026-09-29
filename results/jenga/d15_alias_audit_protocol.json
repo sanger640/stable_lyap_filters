@@ -1,0 +1,55 @@
+{
+  "name": "D15 read-only D14 held-out commitment alias audit",
+  "status": "frozen before distance computation",
+  "purpose": "distinguish snapshot-input ambiguity, learned-representation collapse, and mapping failure for D14 held-out commitment misses",
+  "scope": "D3+D12 TRAIN fit and validation folds only; no model fitting, DEV, or TEST",
+  "inputs": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+    "d14_result": "results/jenga/d14_object_graph_result.json",
+    "d14_result_sha256": "432f86b793cee03a4bf0135e804567fcd0ff3b963cfe22efdf43b86c0dc17796",
+    "d14_checkpoint": "results/jenga/d14_object_graph/graph_joint_seed1.pt",
+    "d14_checkpoint_sha256": "0633c626797278597c1472f09bb0140a7bef5376e7e509d9921ea0ce2972877f",
+    "fit_groups": 511,
+    "episode_validation_groups": 139,
+    "configuration_validation_groups": 132
+  },
+  "distances": {
+    "raw_scene": "RMS over D14 graph node/edge/gripper inputs, minimized over all six anonymous object permutations",
+    "raw_action": "RMS over endpoint-symmetric eight-step gripper-relative controls at all six levels",
+    "raw_joint": "equal-weight RMS combination of raw_scene and raw_action",
+    "learned": "RMS over fit-standardized mean/max pooled D14 pair embeddings",
+    "neighbors": 5,
+    "zero_sign_rule": "positive iff unchanged physical commitment delta-BIC is greater than zero"
+  },
+  "subsets": {
+    "primary_errors": "reference commitment positive and D14 predicted commitment non-positive",
+    "positive_correct": "reference and predicted commitment positive",
+    "negative_added": "reference commitment non-positive and D14 predicted commitment positive",
+    "generic_strata": [
+      "d3_original",
+      "contact_create",
+      "contact_loss",
+      "velocity_impulse",
+      "pose_motion",
+      "persistent_motion",
+      "quiet"
+    ]
+  },
+  "predeclared_markers": {
+    "raw_snapshot_alias_pressure": "primary-error median raw 5-neighbor same-sign purity below 0.60 and median nearest-opposite/nearest-same ratio at most 1.25",
+    "learned_representation_collapse": "primary-error median raw purity at least 0.80 but learned purity below 0.60",
+    "mapping_or_coverage_failure": "primary-error median raw purity at least 0.80 and learned purity at least 0.60",
+    "mixed": "none of the above"
+  },
+  "restrictions": {
+    "no_training_or_hyperparameter_selection": true,
+    "no_task_success_failure_or_alarm_labels": true,
+    "joint_validation": "not read",
+    "dev_and_test": "not read"
+  }
+}

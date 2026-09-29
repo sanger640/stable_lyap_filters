@@ -1,0 +1,56 @@
+{
+  "name": "D6 direct set-conditioned action-response pilot",
+  "status": "frozen before substantive training",
+  "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+  "data": {
+    "neighborhoods": "results/jenga/d4_neighborhood_data_large.npz",
+    "nested_paths": "results/jenga/d3_data",
+    "split": "same episode-held-out 220 TRAIN / 36 validation states as D4",
+    "nested_validation": "groups from the same six held-out episodes",
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "arms": {
+    "independent_direct": "state plus each action independently to one non-autoregressive 38-step response",
+    "set_conditioned": "same encoders/decoder with two permutation-equivariant self-attention blocks over all action queries"
+  },
+  "architecture": {
+    "hidden": 128,
+    "attention_heads": 4,
+    "attention_layers": 2,
+    "output": "normalized 38 x 45 anonymous pose/velocity response relative to the common start",
+    "probe_order": "randomly permuted during training",
+    "probe_count": "uniform random integer from 32 through 64 per neighborhood batch",
+    "positional_probe_encoding": false
+  },
+  "training": {
+    "seed": 1,
+    "epochs": 12,
+    "learning_rate": 0.0003,
+    "states_per_batch": 4,
+    "optimizer": "AdamW",
+    "gradient_clip": 1.0,
+    "losses": [
+      "normalized response",
+      "complete pairwise phase topology",
+      "nearest-action dense commitment",
+      "nested-width response/effect/global/local boundary scaling"
+    ],
+    "loss_weighting": "non-response terms scale-matched to response on the first independent-direct batch and then frozen identically for both arms",
+    "checkpoint_selection": "fixed final epoch only"
+  },
+  "pilot_gate": {
+    "reference": "matched independent_direct arm on the same held-out TRAIN states",
+    "candidate_recall": "set_conditioned at least +0.10",
+    "candidate_agreement": "set_conditioned at least +0.10",
+    "candidate_added_positive_rate": "set_conditioned no higher",
+    "partition_agreement": "set_conditioned at least +0.05",
+    "nested_final_recall": "set_conditioned at least +0.15",
+    "nested_final_added_positive_rate": "set_conditioned no more than +0.05",
+    "permutation_equivariance_max_abs": "at most 0.00001",
+    "decision": "all gates must pass"
+  },
+  "if_pass": "replicate fixed seeds 1-5 on TRAIN before freezing one DEV comparison",
+  "if_fail": "stop D6; do not tune on validation or open DEV/TEST"
+}

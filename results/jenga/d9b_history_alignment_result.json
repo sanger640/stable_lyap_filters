@@ -1,0 +1,58 @@
+{
+  "protocol": {
+    "name": "D9b generic pre-probe history reconstruction",
+    "status": "frozen before replay",
+    "purpose": "construct causally aligned temporal input for the D9b history factorial",
+    "scope": "all 256 TRAIN nested groups; no task labels, alarm labels, DEV, or TEST",
+    "sources": {
+      "nested": "results/jenga/d3_data",
+      "trace": "results/jenga/trace_data",
+      "episode_actions": "JengaReplay training episodes",
+      "simulator": "vendor/panda_express_sim.tar"
+    },
+    "history": {
+      "states": 4,
+      "actions": 3,
+      "state_dimension": 61,
+      "action_dimension": 4,
+      "construction": "warm-start-safe replay to the original chunk snapshot, then execute the D3 source path through its contact_step; retain the final four states and three transitions",
+      "causal": true,
+      "current_state_is_last_history_state": true,
+      "generic_channels_only": "block pose and velocity, contact signature, gripper proprioception, and executed controls"
+    },
+    "alignment_gate": {
+      "groups": 256,
+      "maximum_absolute_current_state_error": 1e-06,
+      "maximum_rms_current_state_error": 1e-06,
+      "contact_signature_exact_for_every_group": true,
+      "action_transition_alignment_exact": true,
+      "all_groups_must_pass": true
+    },
+    "execution": {
+      "simulator_instances": 1,
+      "reason": "avoid desktop resource exhaustion and reproduce D3 deterministically"
+    },
+    "decision": {
+      "pass": "freeze history cache and authorize the fit-only 2-by-2 temporal factorial",
+      "fail": "do not train; diagnose simulator/version or source-index mismatch"
+    }
+  },
+  "created": "2026-09-28T20:43:34+00:00",
+  "protocol_sha256": "8e3b55e18f92b0c9ab2ec995c943a18977cc30ff649bacd89ca5a6746afc4bb4",
+  "gate": {
+    "checks": {
+      "group_count": true,
+      "max_abs": true,
+      "max_rms": true,
+      "contacts": true,
+      "last_state_exactly_cached": true,
+      "shapes": true
+    },
+    "passes": true,
+    "maximum_absolute_error": 0.0,
+    "maximum_rms_error": 0.0,
+    "contact_mismatch_groups": 0
+  },
+  "output": "results/jenga/d9b_history_data.npz",
+  "output_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502"
+}

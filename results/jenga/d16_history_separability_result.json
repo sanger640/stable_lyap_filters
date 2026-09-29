@@ -1,0 +1,158 @@
+{
+  "protocol": {
+    "name": "D16 read-only causal-history commitment separability audit",
+    "status": "frozen before distance computation",
+    "purpose": "test whether physically structured recent history resolves the exact D15 snapshot commitment aliases before training a temporal graph",
+    "scope": "D3+D12 TRAIN fit and primary validation folds only; no model fitting, joint validation, DEV, or TEST",
+    "inputs": {
+      "manifest": "results/jenga/d12_combined_manifest.json",
+      "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+      "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+      "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+      "d15_result": "results/jenga/d15_alias_audit_result.json",
+      "d15_result_sha256": "401d3156da7426ea2501acb73028666a5497c35181daca278318eed2dabdf337",
+      "d3_history": "results/jenga/d9b_history_data.npz",
+      "d3_history_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502",
+      "d12_history": "results/jenga/d12_history_data.npz",
+      "d12_history_sha256": "ae5e39708f29cd3880c93a59c14f981f926e4eed2291521c7f7cc6734238f481",
+      "d3_alignment_result": "results/jenga/d9b_history_alignment_result.json",
+      "d3_alignment_result_sha256": "f108f2caa64846f617d57044f0a0598b3b86637ce6c4eb797c492c35141fa9c4",
+      "d12_alignment_result": "results/jenga/d12_history_alignment_result.json",
+      "d12_alignment_result_sha256": "ee3bed5cd25d01c942e0477ad2d5b36b6929e19d1c3152f94a69548075cfdb82",
+      "fit_groups": 511,
+      "episode_validation_groups": 139,
+      "configuration_validation_groups": 132
+    },
+    "history_representation": {
+      "states": 4,
+      "executed_controls": 3,
+      "state_features": "unchanged D14 anonymous graph inputs at each state",
+      "transition_features": "three signed differences of consecutive graph node/edge/gripper features",
+      "control_features": "executed Cartesian targets relative to the source-state gripper, scaled by D13 fit-only action scales, plus gripper command",
+      "object_symmetry": "one consistent object permutation across the complete four-state history; minimize over all six permutations",
+      "snapshot_distance": "unchanged D15 equal-weight raw scene/action distance",
+      "history_context_distance": "RMS over graph transition and executed-control features",
+      "augmented_distance": "equal-weight RMS combination of snapshot and history-context distances",
+      "neighbors": 5
+    },
+    "primary_subset": "the exact D15 reference-positive, D14-predicted-nonpositive commitment groups",
+    "gate_on_each_primary_axis": {
+      "minimum_primary_error_same_sign_purity_gain": 0.2,
+      "minimum_primary_error_opposite_to_same_ratio": 1.05,
+      "maximum_overall_five_neighbor_accuracy_loss": 0.02
+    },
+    "decision": {
+      "pass_both_axes": "freeze one structured temporal object-graph training experiment with unchanged D14 outputs, losses, split, and budget",
+      "otherwise": "do not train another history model; prospectively collect richer generic robot joint/velocity, end-effector twist, and contact force/impulse state",
+      "joint_validation_dev_test": "remain unread"
+    }
+  },
+  "created": "2026-09-29T15:01:01+00:00",
+  "protocol_sha256": "6e44b988bcd6645b2c6806c8b22e9281d6ac4bb9ee3143336af081f52362e165",
+  "device": "cuda",
+  "history_alignment_exact": true,
+  "axes": {
+    "episode_validation": {
+      "primary_errors": 39,
+      "snapshot_primary": {
+        "count": 39,
+        "nearest_distance_median": 0.23554915306077384,
+        "same_sign_purity_median": 0.2,
+        "opposite_to_same_ratio_median": 0.9173520780127137,
+        "five_neighbor_accuracy": 0.15384615384615385
+      },
+      "history_context_primary": {
+        "count": 39,
+        "nearest_distance_median": 0.2895800201942193,
+        "same_sign_purity_median": 0.4,
+        "opposite_to_same_ratio_median": 0.909104820699507,
+        "five_neighbor_accuracy": 0.1282051282051282
+      },
+      "augmented_primary": {
+        "count": 39,
+        "nearest_distance_median": 0.3000338027344141,
+        "same_sign_purity_median": 0.2,
+        "opposite_to_same_ratio_median": 0.9461945166041722,
+        "five_neighbor_accuracy": 0.15384615384615385
+      },
+      "snapshot_all": {
+        "count": 139,
+        "nearest_distance_median": 0.23554915306077384,
+        "same_sign_purity_median": 0.6,
+        "opposite_to_same_ratio_median": 1.0163168352466805,
+        "five_neighbor_accuracy": 0.6258992805755396
+      },
+      "augmented_all": {
+        "count": 139,
+        "nearest_distance_median": 0.30253300482468326,
+        "same_sign_purity_median": 0.6,
+        "opposite_to_same_ratio_median": 1.0144063855232468,
+        "five_neighbor_accuracy": 0.5683453237410072
+      },
+      "comparisons": {
+        "primary_error_same_sign_purity_gain": 0.0,
+        "primary_error_opposite_to_same_ratio": 0.9461945166041722,
+        "overall_five_neighbor_accuracy_change": -0.05755395683453235
+      },
+      "checks": {
+        "purity_gain": false,
+        "opposite_separation": false,
+        "overall_accuracy": false
+      },
+      "passes": false
+    },
+    "configuration_validation": {
+      "primary_errors": 26,
+      "snapshot_primary": {
+        "count": 26,
+        "nearest_distance_median": 0.16763761417292122,
+        "same_sign_purity_median": 0.2,
+        "opposite_to_same_ratio_median": 0.9485597591269825,
+        "five_neighbor_accuracy": 0.19230769230769232
+      },
+      "history_context_primary": {
+        "count": 26,
+        "nearest_distance_median": 0.2743034287817476,
+        "same_sign_purity_median": 0.2,
+        "opposite_to_same_ratio_median": 0.8772886043169834,
+        "five_neighbor_accuracy": 0.15384615384615385
+      },
+      "augmented_primary": {
+        "count": 26,
+        "nearest_distance_median": 0.2802055994229682,
+        "same_sign_purity_median": 0.2,
+        "opposite_to_same_ratio_median": 0.9245448136267145,
+        "five_neighbor_accuracy": 0.038461538461538464
+      },
+      "snapshot_all": {
+        "count": 132,
+        "nearest_distance_median": 0.1734185325972742,
+        "same_sign_purity_median": 0.6,
+        "opposite_to_same_ratio_median": 1.0428093766320083,
+        "five_neighbor_accuracy": 0.6287878787878788
+      },
+      "augmented_all": {
+        "count": 132,
+        "nearest_distance_median": 0.260859955450536,
+        "same_sign_purity_median": 0.6,
+        "opposite_to_same_ratio_median": 1.0353598090582992,
+        "five_neighbor_accuracy": 0.6212121212121212
+      },
+      "comparisons": {
+        "primary_error_same_sign_purity_gain": 0.0,
+        "primary_error_opposite_to_same_ratio": 0.9245448136267145,
+        "overall_five_neighbor_accuracy_change": -0.007575757575757569
+      },
+      "checks": {
+        "purity_gain": false,
+        "opposite_separation": false,
+        "overall_accuracy": true
+      },
+      "passes": false
+    }
+  },
+  "temporal_graph_training_authorized": false,
+  "decision": "history_does_not_resolve_aliases_collect_richer_state",
+  "model_training_or_threshold_selection": false,
+  "joint_dev_or_test_read": false
+}

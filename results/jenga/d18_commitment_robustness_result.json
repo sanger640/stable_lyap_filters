@@ -1,0 +1,256 @@
+{
+  "protocol": {
+    "name": "D18 physical commitment delta-BIC robustness audit",
+    "status": "frozen before robustness computation",
+    "purpose": "determine whether D14 commitment misses are caused primarily by a brittle physical supervision target or by robust nonlinear boundary geometry",
+    "scope": "D3+D12 TRAIN fit and primary validation physical curves only; no learned-model fitting, joint validation, DEV, or TEST",
+    "inputs": {
+      "manifest": "results/jenga/d12_combined_manifest.json",
+      "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+      "d3_directory": "results/jenga/d3_data",
+      "d12_directory": "results/jenga/d12_coverage_data",
+      "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+      "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+      "d15_result": "results/jenga/d15_alias_audit_result.json",
+      "d15_result_sha256": "401d3156da7426ea2501acb73028666a5497c35181daca278318eed2dabdf337",
+      "groups": {
+        "fit": 511,
+        "episode_validation": 139,
+        "configuration_validation": 132
+      }
+    },
+    "unchanged_target": {
+      "pair": "narrowest of six nested action pairs",
+      "curve": "whole-trajectory generic physical separation over H8 plus 30 held steps",
+      "statistic": "unchanged commitment_delta_bic with horizon 8 and immediate_hold 5",
+      "decision": "positive iff delta-BIC is greater than zero",
+      "fitted_threshold": false
+    },
+    "predeclared_variants": {
+      "baseline_full_hold30": "all 39 samples",
+      "causal_prefixes": [
+        "hold15",
+        "hold20",
+        "hold25"
+      ],
+      "late_half_rate_reconstruction": [
+        "even_phase",
+        "odd_phase"
+      ],
+      "late_three_step_dropout_reconstruction": [
+        "steps_14_to_16",
+        "steps_19_to_21",
+        "steps_24_to_26",
+        "steps_29_to_31"
+      ],
+      "reconstruction": "linear interpolation at original timestamps; action and first five immediate-response samples are never removed"
+    },
+    "diagnostics": {
+      "sign_stable": "all nine non-baseline variants have the same greater-than-zero decision as baseline",
+      "agreement_fraction": "fraction of nine variants agreeing with baseline",
+      "margin": "absolute baseline delta-BIC; report fit-distribution percentile without changing the decision",
+      "primary_subset": "exact D15 reference-positive, D14-predicted-nonpositive commitment groups",
+      "control_subset": "reference-positive, D14-predicted-positive commitment groups"
+    },
+    "predeclared_interpretation": {
+      "brittle_target": "on both axes at least 50 percent of primary misses are sign-unstable and instability is at least 20 percentage points higher than the positive-correct control",
+      "robust_nonlinear_geometry": "on both axes at least 80 percent of primary misses are sign-stable",
+      "mixed": "neither condition holds"
+    },
+    "decision": {
+      "brittle_target": "freeze a revised universal commitment statistic before any further world-model training",
+      "robust_nonlinear_geometry": "retain the physical monitor and design a learner for explicit local boundary geometry, using D17 proprioception as an input",
+      "mixed": "localize instability by generic mechanism and evidence margin before choosing one intervention",
+      "joint_validation_dev_test": "remain unread"
+    }
+  },
+  "created": "2026-09-29T15:32:58+00:00",
+  "protocol_sha256": "b4b046df06bd4716afaba30dc4f069c6915639d92ec2afccd9d67c0ef8eb474c",
+  "variant_names": [
+    "prefix_hold15",
+    "prefix_hold20",
+    "prefix_hold25",
+    "half_rate_even",
+    "half_rate_odd",
+    "dropout_14_16",
+    "dropout_19_21",
+    "dropout_24_26",
+    "dropout_29_31"
+  ],
+  "baseline_reproduces_d13_targets": true,
+  "axes": {
+    "episode_validation": {
+      "groups": 139,
+      "subsets": {
+        "primary_misses": {
+          "count": 39,
+          "sign_stable_fraction": 0.5384615384615384,
+          "sign_unstable_fraction": 0.46153846153846156,
+          "variant_agreement_fraction_median": 1.0,
+          "absolute_baseline_delta_bic_median": 5.070598244090611,
+          "fit_margin_percentile_median": 0.3972602739726027,
+          "minimum_variant_delta_bic_median": 0.8085737473967782,
+          "maximum_variant_delta_bic_median": 6.815963099959987
+        },
+        "positive_correct": {
+          "count": 16,
+          "sign_stable_fraction": 0.375,
+          "sign_unstable_fraction": 0.625,
+          "variant_agreement_fraction_median": 0.8333333333333333,
+          "absolute_baseline_delta_bic_median": 3.6604958272392096,
+          "fit_margin_percentile_median": 0.3013698630136986,
+          "minimum_variant_delta_bic_median": -1.828352208250415,
+          "maximum_variant_delta_bic_median": 3.665617384274313
+        },
+        "all_positive": {
+          "count": 55,
+          "sign_stable_fraction": 0.4909090909090909,
+          "sign_unstable_fraction": 0.509090909090909,
+          "variant_agreement_fraction_median": 0.8888888888888888,
+          "absolute_baseline_delta_bic_median": 4.942349474381928,
+          "fit_margin_percentile_median": 0.38551859099804303,
+          "minimum_variant_delta_bic_median": -0.2104836684047342,
+          "maximum_variant_delta_bic_median": 6.433758063445623
+        },
+        "all_groups": {
+          "count": 139,
+          "sign_stable_fraction": 0.762589928057554,
+          "sign_unstable_fraction": 0.23741007194244604,
+          "variant_agreement_fraction_median": 1.0,
+          "absolute_baseline_delta_bic_median": 6.7082581572403654,
+          "fit_margin_percentile_median": 0.5185909980430529,
+          "minimum_variant_delta_bic_median": -4.908655907963642,
+          "maximum_variant_delta_bic_median": -1.530221138876982
+        }
+      },
+      "primary_instability_minus_control": -0.16346153846153844,
+      "mechanisms": {
+        "contact_create": {
+          "primary_misses": 4,
+          "sign_stable_fraction": 0.25
+        },
+        "contact_loss": {
+          "primary_misses": 5,
+          "sign_stable_fraction": 0.8
+        },
+        "d3_original": {
+          "primary_misses": 14,
+          "sign_stable_fraction": 0.6428571428571429
+        },
+        "persistent_motion": {
+          "primary_misses": 5,
+          "sign_stable_fraction": 0.6
+        },
+        "quiet": {
+          "primary_misses": 2,
+          "sign_stable_fraction": 0.0
+        },
+        "velocity_impulse": {
+          "primary_misses": 9,
+          "sign_stable_fraction": 0.4444444444444444
+        }
+      },
+      "variant_positive_fraction": {
+        "prefix_hold15": 0.2158273381294964,
+        "prefix_hold20": 0.2733812949640288,
+        "prefix_hold25": 0.33093525179856115,
+        "half_rate_even": 0.4028776978417266,
+        "half_rate_odd": 0.41007194244604317,
+        "dropout_14_16": 0.41007194244604317,
+        "dropout_19_21": 0.39568345323741005,
+        "dropout_24_26": 0.4028776978417266,
+        "dropout_29_31": 0.39568345323741005
+      }
+    },
+    "configuration_validation": {
+      "groups": 132,
+      "subsets": {
+        "primary_misses": {
+          "count": 26,
+          "sign_stable_fraction": 0.4230769230769231,
+          "sign_unstable_fraction": 0.5769230769230769,
+          "variant_agreement_fraction_median": 0.8888888888888888,
+          "absolute_baseline_delta_bic_median": 4.986055203462541,
+          "fit_margin_percentile_median": 0.3904109589041096,
+          "minimum_variant_delta_bic_median": -0.6401162783197236,
+          "maximum_variant_delta_bic_median": 7.419760699282392
+        },
+        "positive_correct": {
+          "count": 12,
+          "sign_stable_fraction": 0.4166666666666667,
+          "sign_unstable_fraction": 0.5833333333333334,
+          "variant_agreement_fraction_median": 0.8888888888888888,
+          "absolute_baseline_delta_bic_median": 4.564831290419701,
+          "fit_margin_percentile_median": 0.3669275929549902,
+          "minimum_variant_delta_bic_median": -0.7964058091557575,
+          "maximum_variant_delta_bic_median": 4.626565330379368
+        },
+        "all_positive": {
+          "count": 38,
+          "sign_stable_fraction": 0.42105263157894735,
+          "sign_unstable_fraction": 0.5789473684210527,
+          "variant_agreement_fraction_median": 0.8888888888888888,
+          "absolute_baseline_delta_bic_median": 4.8850955550254405,
+          "fit_margin_percentile_median": 0.38649706457925637,
+          "minimum_variant_delta_bic_median": -0.6967627166382613,
+          "maximum_variant_delta_bic_median": 6.943121961763211
+        },
+        "all_groups": {
+          "count": 132,
+          "sign_stable_fraction": 0.7803030303030303,
+          "sign_unstable_fraction": 0.2196969696969697,
+          "variant_agreement_fraction_median": 1.0,
+          "absolute_baseline_delta_bic_median": 6.803071432633999,
+          "fit_margin_percentile_median": 0.5273972602739726,
+          "minimum_variant_delta_bic_median": -6.047157428711255,
+          "maximum_variant_delta_bic_median": -3.2072954422581788
+        }
+      },
+      "primary_instability_minus_control": -0.0064102564102564985,
+      "mechanisms": {
+        "contact_create": {
+          "primary_misses": 6,
+          "sign_stable_fraction": 0.3333333333333333
+        },
+        "contact_loss": {
+          "primary_misses": 3,
+          "sign_stable_fraction": 0.6666666666666666
+        },
+        "d3_original": {
+          "primary_misses": 7,
+          "sign_stable_fraction": 0.2857142857142857
+        },
+        "persistent_motion": {
+          "primary_misses": 2,
+          "sign_stable_fraction": 1.0
+        },
+        "pose_motion": {
+          "primary_misses": 5,
+          "sign_stable_fraction": 0.4
+        },
+        "quiet": {
+          "primary_misses": 1,
+          "sign_stable_fraction": 0.0
+        },
+        "velocity_impulse": {
+          "primary_misses": 2,
+          "sign_stable_fraction": 0.5
+        }
+      },
+      "variant_positive_fraction": {
+        "prefix_hold15": 0.13636363636363635,
+        "prefix_hold20": 0.16666666666666666,
+        "prefix_hold25": 0.19696969696969696,
+        "half_rate_even": 0.30303030303030304,
+        "half_rate_odd": 0.30303030303030304,
+        "dropout_14_16": 0.3106060606060606,
+        "dropout_19_21": 0.2878787878787879,
+        "dropout_24_26": 0.29545454545454547,
+        "dropout_29_31": 0.2878787878787879
+      }
+    }
+  },
+  "interpretation": "mixed",
+  "model_training_or_threshold_selection": false,
+  "joint_dev_or_test_read": false
+}

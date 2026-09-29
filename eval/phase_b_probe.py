@@ -1,4 +1,4 @@
-"""Phase B of PLAN_DINOWM.md: can (theta, omega) be linearly decoded from DINOv2 patch features?
+"""Phase B of docs/archive/PLAN_DINOWM.md: can (theta, omega) be linearly decoded from DINOv2 patch features?
 
 THE KILL TEST. A single frame shows theta but NOT omega -- angular velocity is invisible in a
 static image -- so the model must infer it from `num_hist` frames. If a LINEAR probe cannot

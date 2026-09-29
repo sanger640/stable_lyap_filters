@@ -1,6 +1,6 @@
 """Contact-window counterfactual branches for training (PLAN_NEXT.md Phase 3, revised step 7).
 
-`blind_fork_analysis.md` located the dynamics failure inside the contact window: while the gripper
+`docs/archive/BLIND_FORK_ANALYSIS.md` located the dynamics failure inside the contact window: while the gripper
 is pushing a block, the model under-delivers the rotation, and the only same-state /
 different-action pairs in the training data sit at the chunk start, before that window. This
 generates branches FROM TRUE STATES INSIDE THE WINDOW:

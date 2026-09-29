@@ -1,0 +1,54 @@
+{
+  "name": "D6 small-subset memorization/capacity audit",
+  "status": "frozen before execution",
+  "purpose": "distinguish inadequate architecture/objective from held-out data generalization",
+  "scope": "diagnostic only; cannot authorize DEV, TEST, or deployment",
+  "data": {
+    "source": "results/jenga/d4_neighborhood_data_large.npz",
+    "excluded_episode_holdout": ["0", "1", "5", "7", "12", "13"],
+    "selection": "first state from each of the first eight numerically sorted remaining episodes",
+    "selected_episodes": ["16", "21", "25", "30", "31", "33", "34", "35"],
+    "states": 8,
+    "probes_per_state": 64,
+    "nested_source": "results/jenga/d3_data",
+    "nested_selection": "first deterministic group from each selected episode",
+    "nested_groups": 8,
+    "evaluation": "the exact same selected examples used for optimization",
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "models": {
+    "arms": ["independent_direct", "set_conditioned"],
+    "architecture": "unchanged D6",
+    "initialization_seed": 1,
+    "loss_weights": "unchanged frozen D6 pilot weights"
+  },
+  "optimization": {
+    "steps": 2000,
+    "states_per_step": 4,
+    "learning_rate": 0.0003,
+    "optimizer": "AdamW",
+    "gradient_clip": 1.0,
+    "probe_use": "all 64 with independently randomized order per selected state",
+    "checkpoint_selection": "fixed final step only"
+  },
+  "capacity_gate_per_arm": {
+    "response_error": "at most 0.02",
+    "topology_error": "at most 0.01",
+    "commitment_error": "at most 0.01",
+    "candidate_decision_agreement": "1.0",
+    "partition_agreement": "at least 0.90",
+    "nested_boundary_agreement": "at least 0.90",
+    "nested_final_agreement": "at least 0.90",
+    "response_spread": "median predicted/physical ratio in every phase between 0.5 and 1.5",
+    "permutation_equivariance_max_abs": "at most 0.00001",
+    "decision": "all conditions must pass"
+  },
+  "interpretation": {
+    "any_arm_passes": "mapping is representable; held-out failure primarily implicates data diversity/generalization",
+    "neither_arm_passes": "current output parameterization/objective/optimization is inadequate before data collection",
+    "independent_only": "set-conditioning mechanism specifically causes collapse",
+    "set_only": "joint neighborhood context is necessary and representable"
+  }
+}

@@ -8,7 +8,7 @@ Two-stage validation, deliberately separable:
            Right in stage 1 but wrong here => the model's Jacobians are wrong, which is
            exactly the failure the separation loss exists to fix.
 
-Acceptance (stated before running, per PLAN.md §4.3):
+Acceptance (stated before running, per docs/archive/PLAN_ORIGINAL_FTLE.md §4.3):
   * all THREE exponents within 5% of ground truth, over 5 seeds
   * the NEGATIVE exponent recovered, not just lambda_max -- recovering only lambda_max is the
     standard signature of a model whose trajectories look fine and whose derivatives do not

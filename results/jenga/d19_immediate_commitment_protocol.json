@@ -1,0 +1,57 @@
+{
+  "name": "D19 immediate-commitment versus full-trajectory formulation",
+  "status": "frozen and executed without threshold fitting",
+  "purpose": "separate early regime commitment from long-tail persistence while retaining a calibration-free universal monitor",
+  "scope": "structural selection on D3+D12 TRAIN primary folds, followed only on pass by read-only evaluation of existing Jenga and upright-push physical panels",
+  "train_inputs": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+    "d18_result": "results/jenga/d18_commitment_robustness_result.json",
+    "d18_result_sha256": "a27d89cc398e2471ef82eec5a5d3b37fabe5701e7c76082c71080a3177294587",
+    "groups": {
+      "fit": 511,
+      "episode_validation": 139,
+      "configuration_validation": 132
+    }
+  },
+  "formulations": {
+    "full_commitment": "unchanged commitment_delta_bic over common zero + H8 action + hold30",
+    "immediate_commitment": "unchanged commitment_delta_bic over common zero + H8 action + exactly five immediate held samples",
+    "boundary": "unchanged",
+    "persistence": "unchanged hold-tail evidence",
+    "decision": "unchanged zero delta-BIC sign and same-pair conjunction; no fitted threshold"
+  },
+  "stage1_gate_on_each_primary_axis": {
+    "minimum_full_positive_retention": 0.50,
+    "maximum_added_positive_rate_among_full_negatives": 0.10,
+    "late_sampling_invariance_required": true
+  },
+  "stage2_inputs_if_stage1_passes": {
+    "jenga_result": "results/jenga/regime_monitor_v0/test_ground_truth.json",
+    "jenga_result_sha256": "9a7b4004647f09a165bd52d2ea959dc0ef81e93cadd760eb256327917cadf0f5",
+    "jenga_snippets": "results/jenga/holdout3_stage0_cache.npz",
+    "jenga_snippets_sha256": "39e493d06b460344547b5c451194710047cd66165cb2feeeb4ee93ce4a47fe4b",
+    "push_result": "results/panda_block_push/fresh_test/ground_truth_monitor.json",
+    "push_result_sha256": "dd406d053e1789a01b1b1574a083276ea3da995d85c64fa8b85ea8d2fd47c238",
+    "push_cache": "results/panda_block_push/fresh_test/panel_cache.npz",
+    "push_cache_sha256": "a351263061ff52936e8b3717e7d9eaf218f8f749f00ab38c99cabf678dea41f2"
+  },
+  "stage2_gate": {
+    "jenga_topple_fork_minimum_alarms": 50,
+    "jenga_quiet_maximum_alarms": 4,
+    "push_mixed_topple_minimum_alarms": 12,
+    "push_stable_centered_maximum_alarms": 0,
+    "push_overshoot_maximum_alarms": 0
+  },
+  "decision": {
+    "stage1_fail": "retain v0 and do not inspect stage2 panels for the new formulation",
+    "stage1_pass_stage2_fail": "retain v0; immediate commitment is structurally cleaner but loses physical-oracle validity",
+    "both_pass": "promote immediate commitment as the next physical reference before regenerating learned targets",
+    "model_training": "never authorized directly by D19",
+    "new_simulation_or_threshold_tuning": false
+  }
+}

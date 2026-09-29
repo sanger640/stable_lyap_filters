@@ -1,0 +1,66 @@
+{
+  "name": "D9b generic temporal-history factorial",
+  "status": "frozen before model fitting",
+  "purpose": "test whether short generic physical history resolves response-regime ambiguity that additional snapshot data did not",
+  "scope": "the same 218 fit groups and five episode-blocked folds as D9b scaling; prior inspected TRAIN, DEV, and TEST remain closed",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+    "nested_source": "results/jenga/d3_data",
+    "history_source": "results/jenga/d9b_history_data.npz",
+    "history_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502",
+    "history_alignment_result": "results/jenga/d9b_history_alignment_result.json",
+    "history_alignment_result_sha256": "f108f2caa64846f617d57044f0a0598b3b86637ce6c4eb797c492c35141fa9c4",
+    "history_states": 4,
+    "history_actions": 3,
+    "eligible_episodes": 37,
+    "eligible_groups": 218,
+    "excluded_inspected_episode_ids": ["0", "1", "5", "7", "12", "13"],
+    "folds": 5,
+    "validation_episode_ids": [
+      ["16", "33", "40", "46", "51", "67", "82", "97"],
+      ["21", "34", "41", "47", "54", "68", "88", "99"],
+      ["25", "35", "42", "48", "59", "72", "89"],
+      ["30", "36", "43", "49", "62", "74", "93"],
+      ["31", "37", "45", "50", "63", "78", "94"]
+    ],
+    "training_fractions": [0.25, 1.0],
+    "subset_rule": "reuse the exact deterministic nested episode subsets from D9b scaling",
+    "normalization": "future-action and response normalizers reuse each D9b fold; temporal state/action input normalizers use all non-validation history inputs and remain fixed across fractions",
+    "task_failure_or_alarm_labels_used": false
+  },
+  "arms": {
+    "snapshot": "reuse the exact seed-1 D9b scaling checkpoints and evaluations at 25 and 100 percent",
+    "temporal": "replace only the snapshot state MLP with a GRU over four generic states and the three executed controls that connect them; retain D9b future-control encoder, six-level context, shared ReLU amplitude, and softplus shape heads",
+    "snapshot_scaling_result": "results/jenga/d9b_scaling_result.json",
+    "snapshot_scaling_result_sha256": "fc1d392c490271ee188eaccb3a35e437d884c524214e12b4a68324d2060736a1"
+  },
+  "model": {"hidden": 128, "heads": 4, "layers": 2, "action_horizon": 8, "curve_steps": 39},
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_pilot_passes": [2, 3],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "sampling": "deterministic uniform group sampling without replacement; no class balancing",
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "checkpoint_selection": "fixed final step only",
+    "execution": "one sequential GPU run at a time"
+  },
+  "pilot_gate_at_full_data": {
+    "boundary_added_positive_reduction": 0.10,
+    "final_added_positive_reduction": 0.10,
+    "maximum_boundary_recall_loss": 0.05,
+    "maximum_final_recall_loss": 0.05,
+    "temporal_mean_mse_no_worse_than_snapshot": true,
+    "endpoint_and_level_symmetry_max_abs": 0.00001
+  },
+  "decision": {
+    "pass": "replicate the temporal arm with seeds 2 and 3 before any untouched split is opened",
+    "fail": "short generic history is insufficient; do not tune on these folds or open DEV/TEST, and test a representation with explicit interaction/contact-mode memory",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

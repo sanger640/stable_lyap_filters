@@ -1,0 +1,65 @@
+{
+  "name": "D18 physical commitment delta-BIC robustness audit",
+  "status": "frozen before robustness computation",
+  "purpose": "determine whether D14 commitment misses are caused primarily by a brittle physical supervision target or by robust nonlinear boundary geometry",
+  "scope": "D3+D12 TRAIN fit and primary validation physical curves only; no learned-model fitting, joint validation, DEV, or TEST",
+  "inputs": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+    "d15_result": "results/jenga/d15_alias_audit_result.json",
+    "d15_result_sha256": "401d3156da7426ea2501acb73028666a5497c35181daca278318eed2dabdf337",
+    "groups": {
+      "fit": 511,
+      "episode_validation": 139,
+      "configuration_validation": 132
+    }
+  },
+  "unchanged_target": {
+    "pair": "narrowest of six nested action pairs",
+    "curve": "whole-trajectory generic physical separation over H8 plus 30 held steps",
+    "statistic": "unchanged commitment_delta_bic with horizon 8 and immediate_hold 5",
+    "decision": "positive iff delta-BIC is greater than zero",
+    "fitted_threshold": false
+  },
+  "predeclared_variants": {
+    "baseline_full_hold30": "all 39 samples",
+    "causal_prefixes": [
+      "hold15",
+      "hold20",
+      "hold25"
+    ],
+    "late_half_rate_reconstruction": [
+      "even_phase",
+      "odd_phase"
+    ],
+    "late_three_step_dropout_reconstruction": [
+      "steps_14_to_16",
+      "steps_19_to_21",
+      "steps_24_to_26",
+      "steps_29_to_31"
+    ],
+    "reconstruction": "linear interpolation at original timestamps; action and first five immediate-response samples are never removed"
+  },
+  "diagnostics": {
+    "sign_stable": "all nine non-baseline variants have the same greater-than-zero decision as baseline",
+    "agreement_fraction": "fraction of nine variants agreeing with baseline",
+    "margin": "absolute baseline delta-BIC; report fit-distribution percentile without changing the decision",
+    "primary_subset": "exact D15 reference-positive, D14-predicted-nonpositive commitment groups",
+    "control_subset": "reference-positive, D14-predicted-positive commitment groups"
+  },
+  "predeclared_interpretation": {
+    "brittle_target": "on both axes at least 50 percent of primary misses are sign-unstable and instability is at least 20 percentage points higher than the positive-correct control",
+    "robust_nonlinear_geometry": "on both axes at least 80 percent of primary misses are sign-stable",
+    "mixed": "neither condition holds"
+  },
+  "decision": {
+    "brittle_target": "freeze a revised universal commitment statistic before any further world-model training",
+    "robust_nonlinear_geometry": "retain the physical monitor and design a learner for explicit local boundary geometry, using D17 proprioception as an input",
+    "mixed": "localize instability by generic mechanism and evidence margin before choosing one intervention",
+    "joint_validation_dev_test": "remain unread"
+  }
+}

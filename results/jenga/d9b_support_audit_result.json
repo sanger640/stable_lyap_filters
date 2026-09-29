@@ -1,0 +1,1206 @@
+{
+  "protocol": {
+    "name": "D9b held-out support-versus-mapping audit",
+    "status": "read-only diagnostic specification fixed before distance computation",
+    "purpose": "distinguish missing input coverage, input-response ambiguity, and learned mapping error behind D9b held-out failures",
+    "scope": "existing TRAIN fit/held-out groups and fixed D9b checkpoints only; no retraining, seed selection, thresholds, DEV, or TEST",
+    "inputs": {
+      "heldout_result": "results/jenga/d9b_heldout_train_result.json",
+      "heldout_result_sha256": "1049240894f9d6984c2f4fd4fba034d3a244bd405634a85c177b7c180afe35a3",
+      "checkpoints": [
+        [
+          "results/jenga/d9b_heldout_train/seed1.pt",
+          "0261706622dfdd2ef1e76154e763fdfb7492ed7780c566739b208f3d42bc28c9"
+        ],
+        [
+          "results/jenga/d9b_heldout_train/seed2.pt",
+          "f0365c18b2c500400c4f3b8217d86befc081b7587484583c25a47fb0a154bfca"
+        ],
+        [
+          "results/jenga/d9b_heldout_train/seed3.pt",
+          "e19de6dcd10e6f993e5d2192aaa76a73bf2793bc4426f60a74fbe4e66076c67f"
+        ]
+      ],
+      "fit_groups": 218,
+      "heldout_groups": 38,
+      "heldout_episode_ids": [
+        "0",
+        "1",
+        "5",
+        "7",
+        "12",
+        "13"
+      ]
+    },
+    "distances": {
+      "state": "RMS Euclidean distance between 61D initial states after fit-only normalization",
+      "action": "RMS Euclidean distance over the model-visible first eight action steps using endpoint-symmetric pair mean and absolute difference at all six levels after fit-only normalization",
+      "joint_input": "root mean square of state distance and action distance, giving the two blocks equal weight",
+      "nearest_response": "minimum RMS distance between the held-out and fit physical 6-by-41 log-response curves",
+      "nearest_input_response_mismatch": "physical response-curve RMS distance to the fit group selected solely by joint input distance",
+      "prediction_error": "per-group curve RMS for each fixed seed and the cross-seed median"
+    },
+    "error_subsets": {
+      "unanimous_false_boundary": "reference boundary false and predicted boundary true for all three seeds",
+      "repeated_false_zero": "nonzero physical amplitude but exact-zero predicted amplitude for at least two seeds"
+    },
+    "reporting": "all per-group nearest neighbors and distances, subset percentile ranks, Spearman correlations, and seed prediction errors",
+    "diagnostic_markers": {
+      "coverage_pressure": "error-subset median joint-input percentile at least 0.75 or Spearman joint-input distance versus prediction error at least 0.4",
+      "representation_ambiguity": "error-subset median joint-input percentile below 0.75 while nearest-input response-mismatch percentile is at least 0.75",
+      "mapping_error": "error-subset median joint-input and nearest-input response-mismatch percentiles below 0.75 while prediction-error percentile is at least 0.75"
+    },
+    "restrictions": {
+      "task_labels_used_as_features": false,
+      "alarm_outcomes_used_to_fit_distance": false,
+      "new_model_fit": false,
+      "dev_opened": false,
+      "test_opened": false
+    }
+  },
+  "created": "2026-09-28T20:09:09+00:00",
+  "protocol_sha256": "72be38b68ffc724dffa14374b115ea4ec57a9c38b12a177abcddfe62e6dbc1dd",
+  "heldout_result_sha256": "1049240894f9d6984c2f4fd4fba034d3a244bd405634a85c177b7c180afe35a3",
+  "correlations": {
+    "state_distance_vs_prediction_error": 0.17744632457790466,
+    "action_distance_vs_prediction_error": -0.3783538950497222,
+    "joint_input_distance_vs_prediction_error": 0.10849449392255499,
+    "nearest_response_distance_vs_prediction_error": 0.7436522896108216,
+    "nearest_input_response_mismatch_vs_prediction_error": 0.4097600661525169
+  },
+  "subsets": {
+    "unanimous_false_boundary": {
+      "count": 5,
+      "indices": [
+        5,
+        10,
+        21,
+        27,
+        32
+      ],
+      "state_distance": {
+        "median": 0.3949672383517428,
+        "median_percentile": 0.5789473684210527
+      },
+      "action_distance": {
+        "median": 0.13676839616753586,
+        "median_percentile": 0.5789473684210527
+      },
+      "joint_input_distance": {
+        "median": 0.4790557366761874,
+        "median_percentile": 0.6842105263157895
+      },
+      "nearest_response_distance": {
+        "median": 0.35389733068928175,
+        "median_percentile": 0.7894736842105263
+      },
+      "nearest_input_response_mismatch": {
+        "median": 0.7587753354665085,
+        "median_percentile": 0.5789473684210527
+      },
+      "prediction_error": {
+        "median": 0.529085099697113,
+        "median_percentile": 0.6052631578947368
+      }
+    },
+    "repeated_false_zero": {
+      "count": 1,
+      "indices": [
+        0
+      ],
+      "state_distance": {
+        "median": 0.273777507529598,
+        "median_percentile": 0.47368421052631576
+      },
+      "action_distance": {
+        "median": 0.31593623854430103,
+        "median_percentile": 0.9736842105263158
+      },
+      "joint_input_distance": {
+        "median": 0.30120751644388677,
+        "median_percentile": 0.4473684210526316
+      },
+      "nearest_response_distance": {
+        "median": 0.4098080899329532,
+        "median_percentile": 0.8421052631578947
+      },
+      "nearest_input_response_mismatch": {
+        "median": 1.709014250383457,
+        "median_percentile": 0.9210526315789473
+      },
+      "prediction_error": {
+        "median": 1.7090141773223877,
+        "median_percentile": 1.0
+      }
+    },
+    "union": {
+      "count": 6,
+      "indices": [
+        0,
+        5,
+        10,
+        21,
+        27,
+        32
+      ],
+      "state_distance": {
+        "median": 0.3393181436019911,
+        "median_percentile": 0.5526315789473684
+      },
+      "action_distance": {
+        "median": 0.18721397511085722,
+        "median_percentile": 0.7105263157894737
+      },
+      "joint_input_distance": {
+        "median": 0.42757948971277415,
+        "median_percentile": 0.6052631578947368
+      },
+      "nearest_response_distance": {
+        "median": 0.38185271031111745,
+        "median_percentile": 0.8157894736842105
+      },
+      "nearest_input_response_mismatch": {
+        "median": 0.8802598422612867,
+        "median_percentile": 0.6842105263157895
+      },
+      "prediction_error": {
+        "median": 0.6287856101989746,
+        "median_percentile": 0.6973684210526316
+      }
+    }
+  },
+  "diagnostic_markers": {
+    "coverage_pressure": false,
+    "representation_ambiguity": false,
+    "mapping_error": false
+  },
+  "conclusion": "mixed_or_inconclusive",
+  "groups": [
+    {
+      "index": 0,
+      "source": "ep0_seed102",
+      "episode": "0",
+      "nearest_fit_source": "ep31_seed105",
+      "state_distance": 0.273777507529598,
+      "action_distance": 0.31593623854430103,
+      "joint_input_distance": 0.30120751644388677,
+      "nearest_response_distance": 0.4098080899329532,
+      "nearest_input_response_mismatch": 1.709014250383457,
+      "prediction_error": 1.7090141773223877,
+      "percentiles": {
+        "state_distance": 0.47368421052631576,
+        "action_distance": 0.9736842105263158,
+        "joint_input_distance": 0.4473684210526316,
+        "nearest_response_distance": 0.8421052631578947,
+        "nearest_input_response_mismatch": 0.9210526315789473,
+        "prediction_error": 1.0
+      },
+      "seed_prediction_errors": [
+        0.7327932119369507,
+        1.7090141773223877,
+        1.7090141773223877
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": true
+    },
+    {
+      "index": 1,
+      "source": "ep0_seed105",
+      "episode": "0",
+      "nearest_fit_source": "ep31_seed105",
+      "state_distance": 0.26455484284662756,
+      "action_distance": 0.12675583809292784,
+      "joint_input_distance": 0.20968888943937028,
+      "nearest_response_distance": 0.13843770986838225,
+      "nearest_input_response_mismatch": 1.7586787540788749,
+      "prediction_error": 0.8149155974388123,
+      "percentiles": {
+        "state_distance": 0.4473684210526316,
+        "action_distance": 0.47368421052631576,
+        "joint_input_distance": 0.34210526315789475,
+        "nearest_response_distance": 0.2631578947368421,
+        "nearest_input_response_mismatch": 0.9736842105263158,
+        "prediction_error": 0.868421052631579
+      },
+      "seed_prediction_errors": [
+        0.6979594230651855,
+        0.8149155974388123,
+        1.7586787939071655
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 2,
+      "source": "ep0_seed107",
+      "episode": "0",
+      "nearest_fit_source": "ep93_seed107",
+      "state_distance": 0.27895158871214065,
+      "action_distance": 0.10385378003213609,
+      "joint_input_distance": 0.3687331471319479,
+      "nearest_response_distance": 0.3333510247445045,
+      "nearest_input_response_mismatch": 0.97148099047957,
+      "prediction_error": 1.151233196258545,
+      "percentiles": {
+        "state_distance": 0.5,
+        "action_distance": 0.21052631578947367,
+        "joint_input_distance": 0.5,
+        "nearest_response_distance": 0.7105263157894737,
+        "nearest_input_response_mismatch": 0.7631578947368421,
+        "prediction_error": 0.9736842105263158
+      },
+      "seed_prediction_errors": [
+        1.151233196258545,
+        0.8717028498649597,
+        1.2891204357147217
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 3,
+      "source": "ep12_seed102",
+      "episode": "12",
+      "nearest_fit_source": "ep88_seed102",
+      "state_distance": 0.11813019127596569,
+      "action_distance": 0.09816854952997284,
+      "joint_input_distance": 0.19704381352289058,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 1.831125883943432,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.23684210526315788,
+        "action_distance": 0.15789473684210525,
+        "joint_input_distance": 0.3157894736842105,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 1.0,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 4,
+      "source": "ep12_seed102",
+      "episode": "12",
+      "nearest_fit_source": "ep72_seed102",
+      "state_distance": 1.3083649005630682,
+      "action_distance": 0.12497894241569232,
+      "joint_input_distance": 1.0640465145586868,
+      "nearest_response_distance": 0.17104561589846476,
+      "nearest_input_response_mismatch": 0.6769829153795397,
+      "prediction_error": 0.41158854961395264,
+      "percentiles": {
+        "state_distance": 0.9736842105263158,
+        "action_distance": 0.39473684210526316,
+        "joint_input_distance": 0.9736842105263158,
+        "nearest_response_distance": 0.2894736842105263,
+        "nearest_input_response_mismatch": 0.5,
+        "prediction_error": 0.39473684210526316
+      },
+      "seed_prediction_errors": [
+        0.41158854961395264,
+        0.6482609510421753,
+        0.3878503143787384
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 5,
+      "source": "ep12_seed102",
+      "episode": "12",
+      "nearest_fit_source": "ep41_seed105",
+      "state_distance": 0.6559487761767303,
+      "action_distance": 0.3148273646554605,
+      "joint_input_distance": 0.6108167402841581,
+      "nearest_response_distance": 0.19609816489613252,
+      "nearest_input_response_mismatch": 1.5659156182293532,
+      "prediction_error": 0.2935144305229187,
+      "percentiles": {
+        "state_distance": 0.8157894736842105,
+        "action_distance": 0.9473684210526315,
+        "joint_input_distance": 0.8157894736842105,
+        "nearest_response_distance": 0.3684210526315789,
+        "nearest_input_response_mismatch": 0.868421052631579,
+        "prediction_error": 0.2894736842105263
+      },
+      "seed_prediction_errors": [
+        0.2935144305229187,
+        0.2442053258419037,
+        0.3228483200073242
+      ],
+      "unanimous_false_boundary": true,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 6,
+      "source": "ep12_seed103",
+      "episode": "12",
+      "nearest_fit_source": "ep74_seed106",
+      "state_distance": 0.10537714285003472,
+      "action_distance": 0.1655128472226968,
+      "joint_input_distance": 0.13874228776944755,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 0.0,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.18421052631578946,
+        "action_distance": 0.7105263157894737,
+        "joint_input_distance": 0.10526315789473684,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.09210526315789473,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 7,
+      "source": "ep12_seed106",
+      "episode": "12",
+      "nearest_fit_source": "ep74_seed106",
+      "state_distance": 0.07427042223013701,
+      "action_distance": 0.13806682377553012,
+      "joint_input_distance": 0.15188339103740936,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 0.0,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.10526315789473684,
+        "action_distance": 0.6052631578947368,
+        "joint_input_distance": 0.21052631578947367,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.09210526315789473,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 8,
+      "source": "ep12_seed109",
+      "episode": "12",
+      "nearest_fit_source": "ep63_seed109",
+      "state_distance": 0.102660191539268,
+      "action_distance": 0.13474230699133286,
+      "joint_input_distance": 0.12232706259658772,
+      "nearest_response_distance": 0.3120494121746158,
+      "nearest_input_response_mismatch": 0.508371383456209,
+      "prediction_error": 0.43325284123420715,
+      "percentiles": {
+        "state_distance": 0.15789473684210525,
+        "action_distance": 0.5526315789473685,
+        "joint_input_distance": 0.07894736842105263,
+        "nearest_response_distance": 0.5789473684210527,
+        "nearest_input_response_mismatch": 0.2631578947368421,
+        "prediction_error": 0.4473684210526316
+      },
+      "seed_prediction_errors": [
+        0.48014044761657715,
+        0.4190991222858429,
+        0.43325284123420715
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 9,
+      "source": "ep12_seed109",
+      "episode": "12",
+      "nearest_fit_source": "ep93_seed106",
+      "state_distance": 0.6188242446985384,
+      "action_distance": 0.1251425617323122,
+      "joint_input_distance": 0.4544384007846595,
+      "nearest_response_distance": 0.3524052563443095,
+      "nearest_input_response_mismatch": 1.1209418262975852,
+      "prediction_error": 0.44377872347831726,
+      "percentiles": {
+        "state_distance": 0.7368421052631579,
+        "action_distance": 0.42105263157894735,
+        "joint_input_distance": 0.6578947368421053,
+        "nearest_response_distance": 0.7631578947368421,
+        "nearest_input_response_mismatch": 0.8421052631578947,
+        "prediction_error": 0.47368421052631576
+      },
+      "seed_prediction_errors": [
+        0.3987449109554291,
+        0.550230085849762,
+        0.44377872347831726
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 10,
+      "source": "ep13_seed101",
+      "episode": "13",
+      "nearest_fit_source": "ep42_seed104",
+      "state_distance": 0.3949672383517428,
+      "action_distance": 0.23765955405417857,
+      "joint_input_distance": 0.527068083413911,
+      "nearest_response_distance": 0.41819360194434824,
+      "nearest_input_response_mismatch": 0.5251846241709792,
+      "prediction_error": 0.529085099697113,
+      "percentiles": {
+        "state_distance": 0.5789473684210527,
+        "action_distance": 0.8421052631578947,
+        "joint_input_distance": 0.7368421052631579,
+        "nearest_response_distance": 0.868421052631579,
+        "nearest_input_response_mismatch": 0.3684210526315789,
+        "prediction_error": 0.6052631578947368
+      },
+      "seed_prediction_errors": [
+        0.529085099697113,
+        0.5601587295532227,
+        0.46317723393440247
+      ],
+      "unanimous_false_boundary": true,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 11,
+      "source": "ep13_seed105",
+      "episode": "13",
+      "nearest_fit_source": "ep93_seed105",
+      "state_distance": 0.05563784293505235,
+      "action_distance": 0.12200750418546379,
+      "joint_input_distance": 0.10900566962694641,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 1.7197538961074728,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.05263157894736842,
+        "action_distance": 0.34210526315789475,
+        "joint_input_distance": 0.05263157894736842,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.9473684210526315,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 12,
+      "source": "ep13_seed105",
+      "episode": "13",
+      "nearest_fit_source": "ep93_seed105",
+      "state_distance": 0.026391886650997343,
+      "action_distance": 0.08470034849234491,
+      "joint_input_distance": 0.06273229118932197,
+      "nearest_response_distance": 0.3499046957255435,
+      "nearest_input_response_mismatch": 0.6293478206457319,
+      "prediction_error": 0.5838463306427002,
+      "percentiles": {
+        "state_distance": 0.02631578947368421,
+        "action_distance": 0.05263157894736842,
+        "joint_input_distance": 0.02631578947368421,
+        "nearest_response_distance": 0.7368421052631579,
+        "nearest_input_response_mismatch": 0.47368421052631576,
+        "prediction_error": 0.6842105263157895
+      },
+      "seed_prediction_errors": [
+        0.5993006229400635,
+        0.5838463306427002,
+        0.511398196220398
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 13,
+      "source": "ep13_seed108",
+      "episode": "13",
+      "nearest_fit_source": "ep67_seed105",
+      "state_distance": 0.11866379629393224,
+      "action_distance": 0.07926999297206812,
+      "joint_input_distance": 0.14762164578885287,
+      "nearest_response_distance": 0.32445044815735574,
+      "nearest_input_response_mismatch": 0.5542403816894118,
+      "prediction_error": 0.6471362113952637,
+      "percentiles": {
+        "state_distance": 0.2631578947368421,
+        "action_distance": 0.02631578947368421,
+        "joint_input_distance": 0.18421052631578946,
+        "nearest_response_distance": 0.631578947368421,
+        "nearest_input_response_mismatch": 0.39473684210526316,
+        "prediction_error": 0.7368421052631579
+      },
+      "seed_prediction_errors": [
+        0.6471362113952637,
+        0.5670627355575562,
+        0.6989859342575073
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 14,
+      "source": "ep13_seed108",
+      "episode": "13",
+      "nearest_fit_source": "ep67_seed105",
+      "state_distance": 0.11259003879513155,
+      "action_distance": 0.08943279835220361,
+      "joint_input_distance": 0.1589882416342171,
+      "nearest_response_distance": 0.20452607741705844,
+      "nearest_input_response_mismatch": 0.6142886760593568,
+      "prediction_error": 0.6149575114250183,
+      "percentiles": {
+        "state_distance": 0.21052631578947367,
+        "action_distance": 0.07894736842105263,
+        "joint_input_distance": 0.23684210526315788,
+        "nearest_response_distance": 0.39473684210526316,
+        "nearest_input_response_mismatch": 0.4473684210526316,
+        "prediction_error": 0.7105263157894737
+      },
+      "seed_prediction_errors": [
+        0.562606930732727,
+        0.6149575114250183,
+        0.6588307619094849
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 15,
+      "source": "ep13_seed109",
+      "episode": "13",
+      "nearest_fit_source": "ep99_seed107",
+      "state_distance": 0.6229279010229559,
+      "action_distance": 0.10097165299833831,
+      "joint_input_distance": 0.48749125497414975,
+      "nearest_response_distance": 0.2626485427401424,
+      "nearest_input_response_mismatch": 0.5212632525995132,
+      "prediction_error": 0.30391356348991394,
+      "percentiles": {
+        "state_distance": 0.7631578947368421,
+        "action_distance": 0.18421052631578946,
+        "joint_input_distance": 0.7105263157894737,
+        "nearest_response_distance": 0.4473684210526316,
+        "nearest_input_response_mismatch": 0.3157894736842105,
+        "prediction_error": 0.3157894736842105
+      },
+      "seed_prediction_errors": [
+        0.30391356348991394,
+        0.24649609625339508,
+        0.5880727171897888
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 16,
+      "source": "ep1_seed100",
+      "episode": "1",
+      "nearest_fit_source": "ep67_seed106",
+      "state_distance": 1.6523404223603686,
+      "action_distance": 0.3044470871448646,
+      "joint_input_distance": 1.2885834377185637,
+      "nearest_response_distance": 0.25141902513947806,
+      "nearest_input_response_mismatch": 0.6862401174385976,
+      "prediction_error": 0.545168936252594,
+      "percentiles": {
+        "state_distance": 1.0,
+        "action_distance": 0.9210526315789473,
+        "joint_input_distance": 1.0,
+        "nearest_response_distance": 0.42105263157894735,
+        "nearest_input_response_mismatch": 0.5263157894736842,
+        "prediction_error": 0.631578947368421
+      },
+      "seed_prediction_errors": [
+        0.28081661462783813,
+        0.545168936252594,
+        0.6371367573738098
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 17,
+      "source": "ep1_seed101",
+      "episode": "1",
+      "nearest_fit_source": "ep54_seed108",
+      "state_distance": 0.4917880230328594,
+      "action_distance": 0.13189785181924954,
+      "joint_input_distance": 0.5901177451495541,
+      "nearest_response_distance": 0.624136345862415,
+      "nearest_input_response_mismatch": 0.9697887535975357,
+      "prediction_error": 0.9418301582336426,
+      "percentiles": {
+        "state_distance": 0.631578947368421,
+        "action_distance": 0.5263157894736842,
+        "joint_input_distance": 0.7894736842105263,
+        "nearest_response_distance": 1.0,
+        "nearest_input_response_mismatch": 0.7368421052631579,
+        "prediction_error": 0.9210526315789473
+      },
+      "seed_prediction_errors": [
+        0.8052502274513245,
+        1.1205850839614868,
+        0.9418301582336426
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 18,
+      "source": "ep1_seed102",
+      "episode": "1",
+      "nearest_fit_source": "ep37_seed101",
+      "state_distance": 0.15065525433020327,
+      "action_distance": 0.12199054309465594,
+      "joint_input_distance": 0.1625355629891644,
+      "nearest_response_distance": 0.5058265285739133,
+      "nearest_input_response_mismatch": 0.7157477952469694,
+      "prediction_error": 0.884128987789154,
+      "percentiles": {
+        "state_distance": 0.3684210526315789,
+        "action_distance": 0.3157894736842105,
+        "joint_input_distance": 0.2631578947368421,
+        "nearest_response_distance": 0.9736842105263158,
+        "nearest_input_response_mismatch": 0.5526315789473685,
+        "prediction_error": 0.8947368421052632
+      },
+      "seed_prediction_errors": [
+        0.9984761476516724,
+        0.884128987789154,
+        0.7488999366760254
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 19,
+      "source": "ep1_seed102",
+      "episode": "1",
+      "nearest_fit_source": "ep54_seed102",
+      "state_distance": 0.5345719570692649,
+      "action_distance": 0.11947231248900125,
+      "joint_input_distance": 0.38732467694192524,
+      "nearest_response_distance": 0.3278104272956193,
+      "nearest_input_response_mismatch": 0.4685683891060936,
+      "prediction_error": 0.5795660018920898,
+      "percentiles": {
+        "state_distance": 0.6842105263157895,
+        "action_distance": 0.2894736842105263,
+        "joint_input_distance": 0.5789473684210527,
+        "nearest_response_distance": 0.6842105263157895,
+        "nearest_input_response_mismatch": 0.21052631578947367,
+        "prediction_error": 0.6578947368421053
+      },
+      "seed_prediction_errors": [
+        0.4602825343608856,
+        0.5795660018920898,
+        0.7388752698898315
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 20,
+      "source": "ep1_seed103",
+      "episode": "1",
+      "nearest_fit_source": "ep62_seed101",
+      "state_distance": 0.44850497122376637,
+      "action_distance": 0.09599669057328028,
+      "joint_input_distance": 0.38652836776680477,
+      "nearest_response_distance": 0.3078101658053974,
+      "nearest_input_response_mismatch": 0.7707162890714429,
+      "prediction_error": 0.7492390871047974,
+      "percentiles": {
+        "state_distance": 0.6052631578947368,
+        "action_distance": 0.13157894736842105,
+        "joint_input_distance": 0.5526315789473685,
+        "nearest_response_distance": 0.5526315789473685,
+        "nearest_input_response_mismatch": 0.6578947368421053,
+        "prediction_error": 0.8157894736842105
+      },
+      "seed_prediction_errors": [
+        0.7492390871047974,
+        0.7675454616546631,
+        0.557373583316803
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 21,
+      "source": "ep1_seed103",
+      "episode": "1",
+      "nearest_fit_source": "ep99_seed106",
+      "state_distance": 0.5333970402462538,
+      "action_distance": 0.09489653262722404,
+      "joint_input_distance": 0.4790557366761874,
+      "nearest_response_distance": 0.2671547040444032,
+      "nearest_input_response_mismatch": 0.7587753354665085,
+      "prediction_error": 0.7284860610961914,
+      "percentiles": {
+        "state_distance": 0.6578947368421053,
+        "action_distance": 0.10526315789473684,
+        "joint_input_distance": 0.6842105263157895,
+        "nearest_response_distance": 0.47368421052631576,
+        "nearest_input_response_mismatch": 0.5789473684210527,
+        "prediction_error": 0.7894736842105263
+      },
+      "seed_prediction_errors": [
+        0.7938852906227112,
+        0.5882866382598877,
+        0.7284860610961914
+      ],
+      "unanimous_false_boundary": true,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 22,
+      "source": "ep1_seed106",
+      "episode": "1",
+      "nearest_fit_source": "ep67_seed106",
+      "state_distance": 0.07144009848638605,
+      "action_distance": 0.16632812191449098,
+      "joint_input_distance": 0.14559924710039598,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 1.6526126622816328,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.07894736842105263,
+        "action_distance": 0.7631578947368421,
+        "joint_input_distance": 0.15789473684210525,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.8947368421052632,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 23,
+      "source": "ep1_seed106",
+      "episode": "1",
+      "nearest_fit_source": "ep54_seed102",
+      "state_distance": 0.5438800477276696,
+      "action_distance": 0.10924484512198052,
+      "joint_input_distance": 0.4089951594816884,
+      "nearest_response_distance": 0.4501175931943632,
+      "nearest_input_response_mismatch": 0.517988400751701,
+      "prediction_error": 0.4896063506603241,
+      "percentiles": {
+        "state_distance": 0.7105263157894737,
+        "action_distance": 0.2631578947368421,
+        "joint_input_distance": 0.631578947368421,
+        "nearest_response_distance": 0.9210526315789473,
+        "nearest_input_response_mismatch": 0.2894736842105263,
+        "prediction_error": 0.5526315789473685
+      },
+      "seed_prediction_errors": [
+        0.4896063506603241,
+        0.45634421706199646,
+        0.7835679054260254
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 24,
+      "source": "ep1_seed106",
+      "episode": "1",
+      "nearest_fit_source": "ep54_seed108",
+      "state_distance": 0.6244422347045854,
+      "action_distance": 0.12795052659827194,
+      "joint_input_distance": 0.55124807600634,
+      "nearest_response_distance": 0.29900606743391095,
+      "nearest_input_response_mismatch": 1.0542658092590513,
+      "prediction_error": 0.7988534569740295,
+      "percentiles": {
+        "state_distance": 0.7894736842105263,
+        "action_distance": 0.5,
+        "joint_input_distance": 0.7631578947368421,
+        "nearest_response_distance": 0.5263157894736842,
+        "nearest_input_response_mismatch": 0.8157894736842105,
+        "prediction_error": 0.8421052631578947
+      },
+      "seed_prediction_errors": [
+        0.5745593309402466,
+        0.7988534569740295,
+        0.8064088821411133
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 25,
+      "source": "ep5_seed102",
+      "episode": "5",
+      "nearest_fit_source": "ep25_seed104",
+      "state_distance": 0.13153050653231865,
+      "action_distance": 0.252056193890898,
+      "joint_input_distance": 0.2653785866657861,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 0.0,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.3157894736842105,
+        "action_distance": 0.868421052631579,
+        "joint_input_distance": 0.42105263157894735,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.09210526315789473,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 26,
+      "source": "ep5_seed103",
+      "episode": "5",
+      "nearest_fit_source": "ep93_seed107",
+      "state_distance": 0.3403395367141418,
+      "action_distance": 0.12452913891277947,
+      "joint_input_distance": 0.39858806255958323,
+      "nearest_response_distance": 0.3569926363657009,
+      "nearest_input_response_mismatch": 0.7662028175646715,
+      "prediction_error": 0.4551866948604584,
+      "percentiles": {
+        "state_distance": 0.5526315789473685,
+        "action_distance": 0.3684210526315789,
+        "joint_input_distance": 0.6052631578947368,
+        "nearest_response_distance": 0.8157894736842105,
+        "nearest_input_response_mismatch": 0.6052631578947368,
+        "prediction_error": 0.5
+      },
+      "seed_prediction_errors": [
+        0.4551866948604584,
+        0.7737252712249756,
+        0.385384202003479
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 27,
+      "source": "ep5_seed105",
+      "episode": "5",
+      "nearest_fit_source": "ep93_seed107",
+      "state_distance": 0.2836690488522394,
+      "action_distance": 0.13676839616753586,
+      "joint_input_distance": 0.37610324274936086,
+      "nearest_response_distance": 0.5041743718365593,
+      "nearest_input_response_mismatch": 1.001744349056065,
+      "prediction_error": 0.9897046685218811,
+      "percentiles": {
+        "state_distance": 0.5263157894736842,
+        "action_distance": 0.5789473684210527,
+        "joint_input_distance": 0.5263157894736842,
+        "nearest_response_distance": 0.9473684210526315,
+        "nearest_input_response_mismatch": 0.7894736842105263,
+        "prediction_error": 0.9473684210526315
+      },
+      "seed_prediction_errors": [
+        1.0258641242980957,
+        0.7899530529975891,
+        0.9897046685218811
+      ],
+      "unanimous_false_boundary": true,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 28,
+      "source": "ep5_seed109",
+      "episode": "5",
+      "nearest_fit_source": "ep25_seed104",
+      "state_distance": 0.14432284864641895,
+      "action_distance": 0.2577603487054942,
+      "joint_input_distance": 0.2573881538861774,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 0.0,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.34210526315789475,
+        "action_distance": 0.8947368421052632,
+        "joint_input_distance": 0.39473684210526316,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.09210526315789473,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 29,
+      "source": "ep7_seed102",
+      "episode": "7",
+      "nearest_fit_source": "ep43_seed109",
+      "state_distance": 0.2188473095159933,
+      "action_distance": 0.1267478283896971,
+      "joint_input_distance": 0.21310936970625186,
+      "nearest_response_distance": 0.32446559145865883,
+      "nearest_input_response_mismatch": 0.7699576446204145,
+      "prediction_error": 0.6934558749198914,
+      "percentiles": {
+        "state_distance": 0.42105263157894735,
+        "action_distance": 0.4473684210526316,
+        "joint_input_distance": 0.3684210526315789,
+        "nearest_response_distance": 0.6578947368421053,
+        "nearest_input_response_mismatch": 0.631578947368421,
+        "prediction_error": 0.7631578947368421
+      },
+      "seed_prediction_errors": [
+        0.6043522953987122,
+        0.6934558749198914,
+        0.7527878284454346
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 30,
+      "source": "ep7_seed103",
+      "episode": "7",
+      "nearest_fit_source": "ep72_seed104",
+      "state_distance": 0.9627283194991487,
+      "action_distance": 0.1479257676296991,
+      "joint_input_distance": 0.8293463164493509,
+      "nearest_response_distance": 0.3122214025521956,
+      "nearest_input_response_mismatch": 0.7871947565079254,
+      "prediction_error": 0.38619789481163025,
+      "percentiles": {
+        "state_distance": 0.9210526315789473,
+        "action_distance": 0.6842105263157895,
+        "joint_input_distance": 0.9210526315789473,
+        "nearest_response_distance": 0.6052631578947368,
+        "nearest_input_response_mismatch": 0.6842105263157895,
+        "prediction_error": 0.3684210526315789
+      },
+      "seed_prediction_errors": [
+        0.3611319959163666,
+        0.38619789481163025,
+        0.4834696054458618
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 31,
+      "source": "ep7_seed104",
+      "episode": "7",
+      "nearest_fit_source": "ep67_seed103",
+      "state_distance": 0.9463934143536569,
+      "action_distance": 0.17729231569208465,
+      "joint_input_distance": 0.906654277445641,
+      "nearest_response_distance": 0.17931826304748658,
+      "nearest_input_response_mismatch": 0.28452440536283846,
+      "prediction_error": 0.3203500211238861,
+      "percentiles": {
+        "state_distance": 0.8947368421052632,
+        "action_distance": 0.7894736842105263,
+        "joint_input_distance": 0.9473684210526315,
+        "nearest_response_distance": 0.3157894736842105,
+        "nearest_input_response_mismatch": 0.18421052631578946,
+        "prediction_error": 0.34210526315789475
+      },
+      "seed_prediction_errors": [
+        0.8702651858329773,
+        0.2887263894081116,
+        0.3203500211238861
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 32,
+      "source": "ep7_seed106",
+      "episode": "7",
+      "nearest_fit_source": "ep43_seed103",
+      "state_distance": 0.10179806894596684,
+      "action_distance": 0.10723684883299878,
+      "joint_input_distance": 0.14537147615969878,
+      "nearest_response_distance": 0.35389733068928175,
+      "nearest_input_response_mismatch": 0.5236702960503417,
+      "prediction_error": 0.5241205096244812,
+      "percentiles": {
+        "state_distance": 0.13157894736842105,
+        "action_distance": 0.23684210526315788,
+        "joint_input_distance": 0.13157894736842105,
+        "nearest_response_distance": 0.7894736842105263,
+        "nearest_input_response_mismatch": 0.34210526315789475,
+        "prediction_error": 0.5789473684210527
+      },
+      "seed_prediction_errors": [
+        0.6660099029541016,
+        0.5055726766586304,
+        0.5241205096244812
+      ],
+      "unanimous_false_boundary": true,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 33,
+      "source": "ep7_seed107",
+      "episode": "7",
+      "nearest_fit_source": "ep74_seed104",
+      "state_distance": 0.12132861777890933,
+      "action_distance": 0.20560012097773867,
+      "joint_input_distance": 0.19453848194359902,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 0.0,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.2894736842105263,
+        "action_distance": 0.8157894736842105,
+        "joint_input_distance": 0.2894736842105263,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.09210526315789473,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 34,
+      "source": "ep7_seed108",
+      "episode": "7",
+      "nearest_fit_source": "ep67_seed106",
+      "state_distance": 0.9950789141032352,
+      "action_distance": 0.1464528863515648,
+      "joint_input_distance": 0.7146999155729248,
+      "nearest_response_distance": 0.2958453612820597,
+      "nearest_input_response_mismatch": 0.499142239432624,
+      "prediction_error": 0.4327945113182068,
+      "percentiles": {
+        "state_distance": 0.9473684210526315,
+        "action_distance": 0.6578947368421053,
+        "joint_input_distance": 0.868421052631579,
+        "nearest_response_distance": 0.5,
+        "nearest_input_response_mismatch": 0.23684210526315788,
+        "prediction_error": 0.42105263157894735
+      },
+      "seed_prediction_errors": [
+        0.45885226130485535,
+        0.4124845564365387,
+        0.4327945113182068
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 35,
+      "source": "ep7_seed108",
+      "episode": "7",
+      "nearest_fit_source": "ep67_seed106",
+      "state_distance": 0.8840119586084899,
+      "action_distance": 0.14363321780127217,
+      "joint_input_distance": 0.6371895291457461,
+      "nearest_response_distance": 0.1813866832069018,
+      "nearest_input_response_mismatch": 0.5916321999735458,
+      "prediction_error": 0.27850568294525146,
+      "percentiles": {
+        "state_distance": 0.8421052631578947,
+        "action_distance": 0.631578947368421,
+        "joint_input_distance": 0.8421052631578947,
+        "nearest_response_distance": 0.34210526315789475,
+        "nearest_input_response_mismatch": 0.42105263157894735,
+        "prediction_error": 0.2631578947368421
+      },
+      "seed_prediction_errors": [
+        0.27850568294525146,
+        0.3619704842567444,
+        0.2475241720676422
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 36,
+      "source": "ep7_seed109",
+      "episode": "7",
+      "nearest_fit_source": "ep74_seed104",
+      "state_distance": 0.19150547322186906,
+      "action_distance": 0.34045840239010167,
+      "joint_input_distance": 0.3128097111911485,
+      "nearest_response_distance": 0.0,
+      "nearest_input_response_mismatch": 0.0,
+      "prediction_error": 0.0,
+      "percentiles": {
+        "state_distance": 0.39473684210526316,
+        "action_distance": 1.0,
+        "joint_input_distance": 0.47368421052631576,
+        "nearest_response_distance": 0.13157894736842105,
+        "nearest_input_response_mismatch": 0.09210526315789473,
+        "prediction_error": 0.13157894736842105
+      },
+      "seed_prediction_errors": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    },
+    {
+      "index": 37,
+      "source": "ep7_seed109",
+      "episode": "7",
+      "nearest_fit_source": "ep72_seed104",
+      "state_distance": 0.9304018551033757,
+      "action_distance": 0.165813847583221,
+      "joint_input_distance": 0.7937220375402493,
+      "nearest_response_distance": 0.42345720269896236,
+      "nearest_input_response_mismatch": 0.874383583402483,
+      "prediction_error": 0.4845907390117645,
+      "percentiles": {
+        "state_distance": 0.868421052631579,
+        "action_distance": 0.7368421052631579,
+        "joint_input_distance": 0.8947368421052632,
+        "nearest_response_distance": 0.8947368421052632,
+        "nearest_input_response_mismatch": 0.7105263157894737,
+        "prediction_error": 0.5263157894736842
+      },
+      "seed_prediction_errors": [
+        0.46335339546203613,
+        0.4845907390117645,
+        0.5848042368888855
+      ],
+      "unanimous_false_boundary": false,
+      "repeated_false_zero": false
+    }
+  ]
+}

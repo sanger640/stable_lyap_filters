@@ -1,0 +1,34 @@
+{
+  "name": "D12 prospective episode/configuration-blocked partitions",
+  "status": "frozen before any D12 model fitting",
+  "source_protocol_sha256": "feb0565783b62736ff98f9ba5bd5454e92c4a7ebe6c0173bf5188820c35eda92",
+  "purpose": "separate interpolation from generalization to unseen episodes and reset configurations without task, failure, or alarm labels",
+  "episode_axis": {
+    "selection": "first nine episode IDs under ascending SHA-256(d12-split:1201:<episode_id>)",
+    "seed": 1201,
+    "validation_episode_ids": [0, 7, 30, 45, 46, 47, 50, 68, 82]
+  },
+  "configuration_axis": {
+    "selection": "two pre-existing reset-seed families reserved in full",
+    "validation_reset_seeds": [108, 109]
+  },
+  "folds": {
+    "fit": "episode not reserved AND reset seed not reserved",
+    "episode_validation": "episode reserved AND reset seed not reserved",
+    "configuration_validation": "episode not reserved AND reset seed reserved",
+    "joint_validation": "episode reserved AND reset seed reserved"
+  },
+  "selection_labels": "generic interaction stratum and source identity only; no task, failure, alarm, or model-error labels",
+  "usage": {
+    "fit": "optimization only",
+    "episode_validation": "primary architecture comparison for episode transfer",
+    "configuration_validation": "primary architecture comparison for reset/configuration transfer",
+    "joint_validation": "small stress-test diagnostic; report uncertainty and never tune on it"
+  },
+  "restrictions": {
+    "dev_and_test": "remain closed",
+    "no_fold_reassignment": true,
+    "no_checkpoint_selection_on_joint_validation": true,
+    "no_claim_of_truly_novel_environment_family": "all partitions derive from the existing TRAIN trace corpus"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "D9b held-out support-versus-mapping audit",
+  "status": "read-only diagnostic specification fixed before distance computation",
+  "purpose": "distinguish missing input coverage, input-response ambiguity, and learned mapping error behind D9b held-out failures",
+  "scope": "existing TRAIN fit/held-out groups and fixed D9b checkpoints only; no retraining, seed selection, thresholds, DEV, or TEST",
+  "inputs": {
+    "heldout_result": "results/jenga/d9b_heldout_train_result.json",
+    "heldout_result_sha256": "1049240894f9d6984c2f4fd4fba034d3a244bd405634a85c177b7c180afe35a3",
+    "checkpoints": [
+      ["results/jenga/d9b_heldout_train/seed1.pt", "0261706622dfdd2ef1e76154e763fdfb7492ed7780c566739b208f3d42bc28c9"],
+      ["results/jenga/d9b_heldout_train/seed2.pt", "f0365c18b2c500400c4f3b8217d86befc081b7587484583c25a47fb0a154bfca"],
+      ["results/jenga/d9b_heldout_train/seed3.pt", "e19de6dcd10e6f993e5d2192aaa76a73bf2793bc4426f60a74fbe4e66076c67f"]
+    ],
+    "fit_groups": 218,
+    "heldout_groups": 38,
+    "heldout_episode_ids": ["0", "1", "5", "7", "12", "13"]
+  },
+  "distances": {
+    "state": "RMS Euclidean distance between 61D initial states after fit-only normalization",
+    "action": "RMS Euclidean distance over the model-visible first eight action steps using endpoint-symmetric pair mean and absolute difference at all six levels after fit-only normalization",
+    "joint_input": "root mean square of state distance and action distance, giving the two blocks equal weight",
+    "nearest_response": "minimum RMS distance between the held-out and fit physical 6-by-41 log-response curves",
+    "nearest_input_response_mismatch": "physical response-curve RMS distance to the fit group selected solely by joint input distance",
+    "prediction_error": "per-group curve RMS for each fixed seed and the cross-seed median"
+  },
+  "error_subsets": {
+    "unanimous_false_boundary": "reference boundary false and predicted boundary true for all three seeds",
+    "repeated_false_zero": "nonzero physical amplitude but exact-zero predicted amplitude for at least two seeds"
+  },
+  "reporting": "all per-group nearest neighbors and distances, subset percentile ranks, Spearman correlations, and seed prediction errors",
+  "diagnostic_markers": {
+    "coverage_pressure": "error-subset median joint-input percentile at least 0.75 or Spearman joint-input distance versus prediction error at least 0.4",
+    "representation_ambiguity": "error-subset median joint-input percentile below 0.75 while nearest-input response-mismatch percentile is at least 0.75",
+    "mapping_error": "error-subset median joint-input and nearest-input response-mismatch percentiles below 0.75 while prediction-error percentile is at least 0.75"
+  },
+  "restrictions": {
+    "task_labels_used_as_features": false,
+    "alarm_outcomes_used_to_fit_distance": false,
+    "new_model_fit": false,
+    "dev_opened": false,
+    "test_opened": false
+  }
+}

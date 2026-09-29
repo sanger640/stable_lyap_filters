@@ -1,0 +1,55 @@
+{
+  "name": "D7 explicit nested pair-curve memorization audit",
+  "status": "frozen before execution",
+  "purpose": "test whether explicit balanced curve reconstruction fixes the nested consequence failure of aggregate D3 supervision",
+  "scope": "TRAIN-only same-example mechanism diagnostic; cannot authorize DEV, TEST, deployment, or visual transfer",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "nested_source": "results/jenga/d3_data",
+    "selected_episodes": ["16", "21", "25", "30", "31", "33", "34", "35"],
+    "selection": "same first state and first nested group per episode as D6 audits",
+    "states": 8,
+    "nested_levels": 6,
+    "evaluation": "exact optimization examples only",
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "model": {
+    "backbone": "unchanged set-conditioned D6 at the passed add_commitment stage",
+    "backbone_checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_commitment.pt",
+    "backbone_checkpoint_sha256": "f67ff4b30795eded71127e9af44b489d6e1272a545aaba7b369140a8091f3f3b",
+    "backbone_frozen": true,
+    "head": "symmetric endpoint-pair MLP over permutation-equivariant backbone tokens",
+    "outputs": "log1p early/full normalized gaps and a 39-sample whole-trajectory separation curve per nested level",
+    "curve_monitor": "unchanged calibration-free boundary, commitment, and persistence rules applied directly to predicted curves"
+  },
+  "optimization": {
+    "seed": 1,
+    "steps": 5000,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "gradient_clip": 1.0,
+    "batching": "deterministic full batch of all eight groups and six levels",
+    "checkpoint_selection": "fixed final step only",
+    "loss": "equal sum of five group-level balanced MSE terms",
+    "terms": ["early_gap", "full_gap", "curve_action", "curve_early_hold", "curve_late_hold"]
+  },
+  "frozen_gates": {
+    "early_gap_log_mse": 0.0001,
+    "full_gap_log_mse": 0.0001,
+    "each_curve_phase_log_mse": 0.001,
+    "nested_boundary_agreement": 1.0,
+    "nested_final_agreement": 1.0,
+    "candidate_agreement_not_below_backbone": 0.875,
+    "partition_agreement_not_below_backbone": 0.875,
+    "pair_endpoint_swap_max_abs": 0.00001,
+    "level_permutation_max_abs": 0.00001,
+    "complete_same_example_gate": "all curve gates plus candidate and partition agreement equal 1.0"
+  },
+  "comparison": {
+    "aggregate_baseline": "results/jenga/d6_staged_overfit/set_conditioned_add_nested.pt",
+    "aggregate_result": "results/jenga/d6_staged_overfit_result.json",
+    "decision": "explicit curve formulation passes only if it exactly recovers nested boundary and final decisions without degrading the frozen backbone neighborhood"
+  }
+}

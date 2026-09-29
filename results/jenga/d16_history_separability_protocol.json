@@ -1,0 +1,48 @@
+{
+  "name": "D16 read-only causal-history commitment separability audit",
+  "status": "frozen before distance computation",
+  "purpose": "test whether physically structured recent history resolves the exact D15 snapshot commitment aliases before training a temporal graph",
+  "scope": "D3+D12 TRAIN fit and primary validation folds only; no model fitting, joint validation, DEV, or TEST",
+  "inputs": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+    "d15_result": "results/jenga/d15_alias_audit_result.json",
+    "d15_result_sha256": "401d3156da7426ea2501acb73028666a5497c35181daca278318eed2dabdf337",
+    "d3_history": "results/jenga/d9b_history_data.npz",
+    "d3_history_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502",
+    "d12_history": "results/jenga/d12_history_data.npz",
+    "d12_history_sha256": "ae5e39708f29cd3880c93a59c14f981f926e4eed2291521c7f7cc6734238f481",
+    "d3_alignment_result": "results/jenga/d9b_history_alignment_result.json",
+    "d3_alignment_result_sha256": "f108f2caa64846f617d57044f0a0598b3b86637ce6c4eb797c492c35141fa9c4",
+    "d12_alignment_result": "results/jenga/d12_history_alignment_result.json",
+    "d12_alignment_result_sha256": "ee3bed5cd25d01c942e0477ad2d5b36b6929e19d1c3152f94a69548075cfdb82",
+    "fit_groups": 511,
+    "episode_validation_groups": 139,
+    "configuration_validation_groups": 132
+  },
+  "history_representation": {
+    "states": 4,
+    "executed_controls": 3,
+    "state_features": "unchanged D14 anonymous graph inputs at each state",
+    "transition_features": "three signed differences of consecutive graph node/edge/gripper features",
+    "control_features": "executed Cartesian targets relative to the source-state gripper, scaled by D13 fit-only action scales, plus gripper command",
+    "object_symmetry": "one consistent object permutation across the complete four-state history; minimize over all six permutations",
+    "snapshot_distance": "unchanged D15 equal-weight raw scene/action distance",
+    "history_context_distance": "RMS over graph transition and executed-control features",
+    "augmented_distance": "equal-weight RMS combination of snapshot and history-context distances",
+    "neighbors": 5
+  },
+  "primary_subset": "the exact D15 reference-positive, D14-predicted-nonpositive commitment groups",
+  "gate_on_each_primary_axis": {
+    "minimum_primary_error_same_sign_purity_gain": 0.20,
+    "minimum_primary_error_opposite_to_same_ratio": 1.05,
+    "maximum_overall_five_neighbor_accuracy_loss": 0.02
+  },
+  "decision": {
+    "pass_both_axes": "freeze one structured temporal object-graph training experiment with unchanged D14 outputs, losses, split, and budget",
+    "otherwise": "do not train another history model; prospectively collect richer generic robot joint/velocity, end-effector twist, and contact force/impulse state",
+    "joint_validation_dev_test": "remain unread"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "name": "D14 anonymous object/contact graph monitor evidence pilot",
+  "status": "frozen before model fitting",
+  "purpose": "isolate whether object-centric relational inductive bias improves held-out continuous monitor evidence over the D13 ordered 61-D vector encoder",
+  "scope": "combined D3+D12 TRAIN corpus only; DEV and TEST remain closed",
+  "data": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "groups": {
+      "fit": 511,
+      "episode_validation": 139,
+      "configuration_validation": 132,
+      "joint_validation": 50
+    },
+    "normalizers": "unchanged D13 fit-only normalizers",
+    "targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f",
+    "task_failure_alarm_or_object_role_labels_used": false
+  },
+  "frozen_controls": {
+    "d13_result": "results/jenga/d13_monitor_evidence_result.json",
+    "d13_result_sha256": "1b9d5c52b0424eeabcde76657376889dd198a72593af9de496897a636efe1d03",
+    "ordered_vector_joint_checkpoint": "results/jenga/d13_monitor_evidence/joint_seed1.pt",
+    "ordered_vector_joint_checkpoint_sha256": "7df8c2321e865924b56c252796f8e06931753cbd30eb3f5d5ff2a3c20ef56519"
+  },
+  "representation": {
+    "objects": "three anonymous rigid-body nodes with shared weights",
+    "node_channels": "centred and gripper-relative position, vertical height, rotation6, linear/angular velocity, table/floor/robot contacts",
+    "edges": "all directed block pairs with relative position, distance, and pair-contact flag",
+    "control": "Cartesian targets relative to current gripper plus native gripper command",
+    "readout": "permutation-invariant node mean/max plus gripper token",
+    "graph_rounds": 3,
+    "causal_history": false,
+    "reason_history_excluded": "isolate representation causality",
+    "task_specific_roles": false
+  },
+  "outputs_and_loss": {
+    "head": "unchanged D13 joint amplitude/shape curves plus four direct continuous evidence values",
+    "evidence": [
+      "early_boundary_delta_bic",
+      "full_boundary_delta_bic",
+      "commitment_delta_bic",
+      "persistence_delta_bic"
+    ],
+    "decision": "inverse-transform and unchanged zero sign; no fitted threshold",
+    "loss": "evidence MSE plus the six unchanged equally weighted D9b amplitude/shape losses"
+  },
+  "model": {
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2,
+    "graph_rounds": 3,
+    "action_horizon": 8,
+    "curve_steps": 39
+  },
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_passes_both_axes": [2, 3],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "final_learning_rate": 0.00001,
+    "schedule": "CosineAnnealingLR",
+    "gradient_clip": 1.0,
+    "checkpoint_selection": "fixed final step only"
+  },
+  "primary_validation_axes": [
+    "episode_validation",
+    "configuration_validation"
+  ],
+  "gate_on_each_primary_axis": {
+    "normalized_evidence_mse_no_worse_than_curve_baseline": true,
+    "mean_channel_sign_agreement_no_worse_than_curve_baseline": true,
+    "boundary_added_positive_reduction": 0.10,
+    "final_added_positive_reduction": 0.10,
+    "maximum_boundary_recall_loss": 0.05,
+    "maximum_final_recall_loss": 0.05,
+    "endpoint_and_level_symmetry_max_abs": 0.00001,
+    "object_permutation_and_horizontal_translation_max_abs": 0.00001
+  },
+  "decision": {
+    "pass_both_axes": "replicate seeds 2 and 3 before collecting upright-push TRAIN responses",
+    "otherwise": "stop; do not collect push data or tune against validation",
+    "joint_validation": "diagnostic only",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

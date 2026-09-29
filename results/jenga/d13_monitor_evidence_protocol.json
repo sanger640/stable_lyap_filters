@@ -1,0 +1,75 @@
+{
+  "name": "D13 direct continuous monitor-evidence interface",
+  "status": "frozen before target materialization or model fitting",
+  "purpose": "test whether predicting universal monitor-sufficient statistics directly generalizes better than reconstructing curves and recomputing those statistics",
+  "scope": "combined D3+D12 TRAIN corpus only; DEV and TEST remain closed",
+  "data": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "groups": {"fit": 511, "episode_validation": 139, "configuration_validation": 132, "joint_validation": 50},
+    "normalizers": "fit groups only",
+    "task_failure_alarm_or_object_role_labels_used": false
+  },
+  "inputs": {
+    "channels": "current generic 61-D physical state and six pairs of raw 8-step action chunks",
+    "causal_history": false,
+    "reason_history_excluded": "isolate output-interface causality; exact causal event history already failed D9c/D11/D12",
+    "endpoint_symmetric": true,
+    "level_order_invariant_group_readout": true
+  },
+  "continuous_targets": {
+    "dimension": 4,
+    "order": ["early_boundary_delta_bic", "full_boundary_delta_bic", "commitment_delta_bic", "persistence_delta_bic"],
+    "boundary": "unchanged v0 scaling-law BIC difference over all six refinement levels",
+    "commitment": "unchanged v0 narrowest-pair whole-trajectory commitment BIC difference",
+    "persistence": "unchanged v0 narrowest-pair late-hold persistence BIC difference",
+    "transform": "sign(x) * log1p(abs(x)), then per-channel fit-only mean/std normalization",
+    "decision": "inverse-transform and use the unchanged zero sign; no fitted threshold",
+    "final_alarm_supervision": false
+  },
+  "arms": {
+    "curve_baseline": "frozen D12 deterministic checkpoint; recompute all four evidence values from its predicted curves",
+    "direct_evidence": "same D9b state/action pair encoder with an invariant four-value evidence head",
+    "joint": "same encoder with both D9b curve reconstruction and four-value direct evidence heads"
+  },
+  "frozen_curve_baseline": {
+    "result": "results/jenga/d12_ladder_result.json",
+    "result_sha256": "51b14e1a652adfb56bcc1f98cb938e161571222ac2c50bb96aa1210a330c5330",
+    "checkpoint": "results/jenga/d12_ladder/deterministic_seed1.pt",
+    "checkpoint_sha256": "0c0deec9720a69c35cebd350b81cf30af1714a0fb3ac69af5d1d45ed76fb6a65"
+  },
+  "model": {"hidden": 128, "heads": 4, "layers": 2, "action_horizon": 8, "curve_steps": 39},
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_an_arm_passes_both_axes": [2, 3],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "final_learning_rate": 0.00001,
+    "schedule": "CosineAnnealingLR",
+    "gradient_clip": 1.0,
+    "direct_loss": "mean normalized transformed evidence MSE",
+    "joint_loss": "evidence MSE plus the six unchanged equally weighted D9b amplitude/shape losses",
+    "checkpoint_selection": "fixed final step only",
+    "execution": "one sequential GPU arm at a time"
+  },
+  "primary_validation_axes": ["episode_validation", "configuration_validation"],
+  "gate_on_each_primary_axis": {
+    "normalized_evidence_mse_no_worse_than_curve_baseline": true,
+    "mean_channel_sign_agreement_no_worse_than_curve_baseline": true,
+    "boundary_added_positive_reduction": 0.10,
+    "final_added_positive_reduction": 0.10,
+    "maximum_boundary_recall_loss": 0.05,
+    "maximum_final_recall_loss": 0.05,
+    "endpoint_and_level_symmetry_max_abs": 0.00001
+  },
+  "decision": {
+    "pass_both_axes": "replicate the passing arm with seeds 2 and 3 before any DEV run",
+    "otherwise": "do not tune on validation; if both direct interfaces fail, stop this privileged Jenga encoder family",
+    "joint_validation": "diagnostic only",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

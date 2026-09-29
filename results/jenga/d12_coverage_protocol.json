@@ -1,0 +1,64 @@
+{
+  "name": "D12 generic interaction-response coverage expansion",
+  "status": "frozen before event audit and counterfactual simulation",
+  "purpose": "broaden reusable physical-regime coverage after D11 reached the predeclared architecture-stopping condition",
+  "scope": "unused transitions from the existing 43-episode, ten-configuration TRAIN trace corpus only; prior inspected TRAIN groups, DEV, and TEST are excluded from selection",
+  "sources": {
+    "trace_directory": "results/jenga/trace_data",
+    "trace_meta_sha256": "e849bdd205230137c206489bc96e0a48284c5cbd0778fe4a7d248a99295400e9",
+    "prior_nested_directory": "results/jenga/d3_data",
+    "prior_meta_sha256": "a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22",
+    "simulator_sha256": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f"
+  },
+  "selection": {
+    "window_steps": [3, 10],
+    "exclude_every_prior_d3_source_state_probe_step": true,
+    "event_quantile": 0.8,
+    "quiet_quantile": 0.4,
+    "groups_per_stratum": 96,
+    "total_groups": 576,
+    "strata_priority": [
+      "contact_create",
+      "contact_loss",
+      "velocity_impulse",
+      "pose_motion",
+      "persistent_motion",
+      "quiet"
+    ],
+    "definitions": {
+      "contact_create": "any of 12 anonymous contact channels changes 0 to 1",
+      "contact_loss": "any contact channel changes 1 to 0, provided no contact is created simultaneously",
+      "velocity_impulse": "RMS velocity change is at or above its global unused-transition 80th percentile",
+      "pose_motion": "RMS pose change is at or above its 80th percentile after earlier strata are removed",
+      "persistent_motion": "three-step RMS velocity is at or above its 80th percentile after earlier strata are removed",
+      "quiet": "no contact transition and all three continuous metrics are at or below their 40th percentiles"
+    },
+    "correlation_control": "at most one selected step per source-state-probe path; initially at most two groups per episode-reset configuration in each stratum",
+    "seed": 1201,
+    "task_failure_or_alarm_labels": false
+  },
+  "simulation": {
+    "action_horizon": 8,
+    "hold_steps": 30,
+    "nested_levels": 6,
+    "directions": 3,
+    "residual_windows": 512,
+    "seed": 1201,
+    "workers": 1,
+    "resource_reason": "one MuJoCo process prevents desktop resource exhaustion",
+    "selection_within_direction": "largest adjacent generic trajectory response on a nine-point scalar action sweep",
+    "refinement": "five physical midpoint bisections",
+    "task_failure_or_alarm_labels": false
+  },
+  "gates": {
+    "audit_before_simulation": "all six strata must contain at least 96 unused path-distinct candidates",
+    "completed_data": "exactly 576 groups, 96 per stratum, with finite arrays and expected nested shapes",
+    "next": "freeze new episode/configuration-blocked fit and validation partitions before any D9b/D10/D11 retraining"
+  },
+  "restrictions": {
+    "no_model_training_during_collection": true,
+    "no_monitor_or_task_labels": true,
+    "dev_and_test": "remain closed",
+    "existing_d9_to_d11_folds": "must not select architecture or collection settings"
+  }
+}

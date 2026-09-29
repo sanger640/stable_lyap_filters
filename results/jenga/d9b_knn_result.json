@@ -1,0 +1,6840 @@
+{
+  "protocol": {
+    "name": "Fit-only nonparametric response baseline",
+    "status": "frozen before cross-validation and held-out scoring",
+    "purpose": "test whether local interpolation can recover held-out physical response curves better than D9b without changing the input representation",
+    "scope": "TRAIN only; 218 fit groups for model selection and 38 previously held-out TRAIN groups for one final score; DEV and TEST closed",
+    "inputs": {
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+      "nested_source": "results/jenga/d3_data",
+      "support_audit": "results/jenga/d9b_support_audit_result.json",
+      "support_audit_sha256": "463ce570bef9b2d575654cbd60a546a604c05b4d85e7f49ed94f0cc3cc9c8ebd",
+      "d9b_result": "results/jenga/d9b_heldout_train_result.json",
+      "d9b_result_sha256": "1049240894f9d6984c2f4fd4fba034d3a244bd405634a85c177b7c180afe35a3",
+      "fit_groups": 218,
+      "heldout_groups": 38,
+      "heldout_episode_ids": [
+        "0",
+        "1",
+        "5",
+        "7",
+        "12",
+        "13"
+      ]
+    },
+    "features": {
+      "state": "fit-normalized 61D initial state",
+      "action": "fit-normalized endpoint-symmetric pair mean and absolute difference over eight visible action steps and six levels",
+      "joint_distance": "sqrt(state_weight * state_rms_squared + (1-state_weight) * action_rms_squared)",
+      "target": "complete 6-by-41 physical log-response curve",
+      "task_or_alarm_labels": false
+    },
+    "selection": {
+      "folds": 5,
+      "fold_rule": "sorted fit episode ids assigned round-robin by index modulo five; every validation fold is episode-disjoint",
+      "state_weights": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "neighbors": [
+        1,
+        3,
+        5,
+        9,
+        15
+      ],
+      "kernels": [
+        "uniform",
+        "inverse_distance"
+      ],
+      "criterion": "lowest pooled cross-validated mean squared error over every 6-by-41 log-response value",
+      "tie_break": "candidate order as listed: state weight, then neighbor count, then kernel",
+      "heldout_used_for_selection": false
+    },
+    "prediction": {
+      "uniform": "arithmetic mean of k nearest physical log-response curves",
+      "inverse_distance": "distance-inverse weighted mean; if any distance is exactly zero, average only zero-distance neighbors",
+      "amplitude_threshold": false,
+      "new_parameters_fit_after_selection": false
+    },
+    "comparison": {
+      "d9b_mean_group_mse": 0.36910591875352733,
+      "d9b_median_group_rmse": 0.46988871693611145,
+      "d9b_median_boundary_agreement": 0.8421052631578947,
+      "d9b_median_boundary_added_positive_rate": 0.35714285714285715,
+      "d9b_median_final_agreement": 0.7368421052631579,
+      "d9b_median_final_added_positive_rate": 0.13793103448275862
+    },
+    "interpretation": {
+      "local_rule_beats_d9b": "held-out mean curve MSE improves by at least 10 percent and either boundary or final agreement is no worse, with neither added-positive rate increasing by more than 0.05; prioritize neural architecture/objective repair",
+      "otherwise": "the fixed state/action metric and fit data do not locally identify held-out response; prioritize denser generic response data or generic temporal/contact history",
+      "dev_and_test": "remain closed for either outcome"
+    }
+  },
+  "created": "2026-09-28T20:14:44+00:00",
+  "protocol_sha256": "a145d962c86c8a107a2c8067ad89b9863972dba67b93c2169d063e283bfa625e",
+  "selected_index": 37,
+  "selected": {
+    "state_weight": 0.75,
+    "neighbors": 9,
+    "kernel": "inverse_distance",
+    "mean_mse": 0.39712442779118035,
+    "median_rmse": 0.4994987273812864,
+    "folds": [
+      {
+        "fold": 0,
+        "groups": 44,
+        "episodes": [
+          "16",
+          "33",
+          "40",
+          "46",
+          "51",
+          "67",
+          "82",
+          "97"
+        ],
+        "mean_mse": 0.3512569499014578,
+        "median_rmse": 0.4741192629508161
+      },
+      {
+        "fold": 1,
+        "groups": 47,
+        "episodes": [
+          "21",
+          "34",
+          "41",
+          "47",
+          "54",
+          "68",
+          "88",
+          "99"
+        ],
+        "mean_mse": 0.3928838238110005,
+        "median_rmse": 0.5069554501946133
+      },
+      {
+        "fold": 2,
+        "groups": 45,
+        "episodes": [
+          "25",
+          "35",
+          "42",
+          "48",
+          "59",
+          "72",
+          "89"
+        ],
+        "mean_mse": 0.36206079489519094,
+        "median_rmse": 0.48077725485356276
+      },
+      {
+        "fold": 3,
+        "groups": 46,
+        "episodes": [
+          "30",
+          "36",
+          "43",
+          "49",
+          "62",
+          "74",
+          "93"
+        ],
+        "mean_mse": 0.36763704784799417,
+        "median_rmse": 0.5098139481304292
+      },
+      {
+        "fold": 4,
+        "groups": 36,
+        "episodes": [
+          "31",
+          "37",
+          "45",
+          "50",
+          "63",
+          "78",
+          "94"
+        ],
+        "mean_mse": 0.5402288825668009,
+        "median_rmse": 0.5301423579308312
+      }
+    ]
+  },
+  "candidate_ranking": [
+    {
+      "state_weight": 0.75,
+      "neighbors": 9,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.39712442779118035,
+      "median_rmse": 0.4994987273812864,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3512569499014578,
+          "median_rmse": 0.4741192629508161
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.3928838238110005,
+          "median_rmse": 0.5069554501946133
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.36206079489519094,
+          "median_rmse": 0.48077725485356276
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.36763704784799417,
+          "median_rmse": 0.5098139481304292
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5402288825668009,
+          "median_rmse": 0.5301423579308312
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 9,
+      "kernel": "uniform",
+      "mean_mse": 0.40493233233673864,
+      "median_rmse": 0.5038923573523544,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3605419502115646,
+          "median_rmse": 0.4825042886218682
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.39264628111298805,
+          "median_rmse": 0.5113734547691658
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3747429538021128,
+          "median_rmse": 0.4769042045618092
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3749026473415707,
+          "median_rmse": 0.5204064608406338
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5513353535828449,
+          "median_rmse": 0.5428992832948701
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 5,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.40684284528290593,
+      "median_rmse": 0.5132697562471488,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3459051787221052,
+          "median_rmse": 0.460286400828403
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4207967063358205,
+          "median_rmse": 0.527926447278033
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.35823049616269875,
+          "median_rmse": 0.46458699427202144
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.392164200529613,
+          "median_rmse": 0.5358966451274119
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5426261571787125,
+          "median_rmse": 0.5515778946137946
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 5,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.41170861762333516,
+      "median_rmse": 0.5256619939660463,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3529314997206963,
+          "median_rmse": 0.45976748640606385
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.45796055143995945,
+          "median_rmse": 0.5487428833938229
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.37131140282558256,
+          "median_rmse": 0.5114299367270599
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3994379206857958,
+          "median_rmse": 0.5496899667911324
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.4893385904944586,
+          "median_rmse": 0.4881472255407906
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 9,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4124230979318035,
+      "median_rmse": 0.49557510355458284,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3435029316148965,
+          "median_rmse": 0.45114396690910674
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4063716473030946,
+          "median_rmse": 0.4921543832580221
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3787016109833302,
+          "median_rmse": 0.464700523144959
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3827128189495143,
+          "median_rmse": 0.4926986965187571
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5846743546917985,
+          "median_rmse": 0.5332215182284482
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 5,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4130452135809943,
+      "median_rmse": 0.49695817249157237,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3435327312186967,
+          "median_rmse": 0.46554691110456525
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4181192417161723,
+          "median_rmse": 0.5017474447071409
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.32948353998363206,
+          "median_rmse": 0.4572365878339166
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.41477198747852745,
+          "median_rmse": 0.5069733165947535
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5936261473082857,
+          "median_rmse": 0.5388310246325596
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 9,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4134598555739148,
+      "median_rmse": 0.5122010004486025,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3610098594634732,
+          "median_rmse": 0.49200719593392217
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.42350054372992907,
+          "median_rmse": 0.5117245247032526
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.43178719424876627,
+          "median_rmse": 0.47869611286565594
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3684312331603379,
+          "median_rmse": 0.5715315190043431
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.4990841299123308,
+          "median_rmse": 0.5402195489151009
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 5,
+      "kernel": "uniform",
+      "mean_mse": 0.41515858676879663,
+      "median_rmse": 0.5178671791206061,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3550039761498098,
+          "median_rmse": 0.47298275581951865
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.41971177268486276,
+          "median_rmse": 0.5182485419743271
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.36514324594199904,
+          "median_rmse": 0.4662906632704817
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4067149950263404,
+          "median_rmse": 0.5508413456838044
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5560446613948855,
+          "median_rmse": 0.5624096072710604
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 5,
+      "kernel": "uniform",
+      "mean_mse": 0.4159324644265495,
+      "median_rmse": 0.5240960888873487,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.35676267415115465,
+          "median_rmse": 0.46423207418074725
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4529443639967053,
+          "median_rmse": 0.5312848525156677
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3740945191915937,
+          "median_rmse": 0.5268445275041153
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4085213289750838,
+          "median_rmse": 0.5453438715684544
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5016972216115632,
+          "median_rmse": 0.48244649961837444
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 9,
+      "kernel": "uniform",
+      "mean_mse": 0.4202836841932632,
+      "median_rmse": 0.5145523630731346,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.36370126831873634,
+          "median_rmse": 0.49536001873291025
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.42212354005532254,
+          "median_rmse": 0.5171859277277856
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.4543155807647631,
+          "median_rmse": 0.49686670785641457
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.37397101809387345,
+          "median_rmse": 0.5895321781143428
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5036753610770636,
+          "median_rmse": 0.5450624685387739
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 5,
+      "kernel": "uniform",
+      "mean_mse": 0.42069545052667745,
+      "median_rmse": 0.5023338942984783,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.35346528559646617,
+          "median_rmse": 0.46914643312361665
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.41765266900463743,
+          "median_rmse": 0.502822113788767
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.33681702011494097,
+          "median_rmse": 0.48091978758087844
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.42116981061365305,
+          "median_rmse": 0.5068571657835892
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6110800836653566,
+          "median_rmse": 0.5541001918873174
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 9,
+      "kernel": "uniform",
+      "mean_mse": 0.4224561643170354,
+      "median_rmse": 0.5076342059814258,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.35539439616793583,
+          "median_rmse": 0.44990102162118134
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4081117198399187,
+          "median_rmse": 0.480582444099185
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3943579122157384,
+          "median_rmse": 0.484934115505091
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.39002239444261577,
+          "median_rmse": 0.5206468590903583
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5997139823105508,
+          "median_rmse": 0.5614778588587059
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 15,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4226232922287332,
+      "median_rmse": 0.5024365747948597,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3872938189433779,
+          "median_rmse": 0.49417617011876586
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4195933170010561,
+          "median_rmse": 0.5012183154155224
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.39821576731618114,
+          "median_rmse": 0.49330684951601517
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3676829541384142,
+          "median_rmse": 0.5569455484485681
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5704705098252875,
+          "median_rmse": 0.5465067460392179
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 15,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.42390844309132675,
+      "median_rmse": 0.5239707323610976,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3795910246662992,
+          "median_rmse": 0.5063972155142296
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4173346959835364,
+          "median_rmse": 0.5264845069070898
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3977976155840599,
+          "median_rmse": 0.4778765488914973
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.37994096290419854,
+          "median_rmse": 0.5554467416241483
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5754757722913895,
+          "median_rmse": 0.5566557117308568
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 3,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.42623013417332084,
+      "median_rmse": 0.5196495531364753,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3683491452620781,
+          "median_rmse": 0.4760309244720847
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4494589099645347,
+          "median_rmse": 0.5435486249944896
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3575706301262935,
+          "median_rmse": 0.4679380100098732
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3801021969308507,
+          "median_rmse": 0.5449013509031309
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6114127409838062,
+          "median_rmse": 0.5996117716307859
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 15,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.43036975501285574,
+      "median_rmse": 0.4910065416548569,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3652655736328845,
+          "median_rmse": 0.46984890058982437
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.43137061547610356,
+          "median_rmse": 0.4866376385437106
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.4307847272301809,
+          "median_rmse": 0.4992816371461052
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3677119239491484,
+          "median_rmse": 0.5141234733234294
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5881789221822162,
+          "median_rmse": 0.5030966840954209
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 3,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.43269373557904334,
+      "median_rmse": 0.5106353252252944,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.36788459365893456,
+          "median_rmse": 0.47267776616389
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.5064525653011639,
+          "median_rmse": 0.5554731104476014
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3844889791768441,
+          "median_rmse": 0.48794617714829047
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4006183205880916,
+          "median_rmse": 0.5546395281475518
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5168498571131505,
+          "median_rmse": 0.5237094595357544
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 5,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4335562300510842,
+      "median_rmse": 0.5068969965814756,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.34621645318383565,
+          "median_rmse": 0.49853472232042595
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4314400081886598,
+          "median_rmse": 0.49644314831189834
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.34967222180518975,
+          "median_rmse": 0.46939987815999124
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4371666516282913,
+          "median_rmse": 0.5334266818212172
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6433093852790455,
+          "median_rmse": 0.5485291805683931
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 3,
+      "kernel": "uniform",
+      "mean_mse": 0.43405223332573656,
+      "median_rmse": 0.5241926997779638,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3782275620356817,
+          "median_rmse": 0.47570279010179906
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4511435044854821,
+          "median_rmse": 0.5327849301627435
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3552641376669915,
+          "median_rmse": 0.4642556884801148
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3893805499772144,
+          "median_rmse": 0.5397463100531048
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6355343869626785,
+          "median_rmse": 0.6012774132644004
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 3,
+      "kernel": "uniform",
+      "mean_mse": 0.43408736884414545,
+      "median_rmse": 0.5168759230332636,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3682199569390709,
+          "median_rmse": 0.4613558039267821
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.49868489886337575,
+          "median_rmse": 0.5344266639115863
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.38017785902480655,
+          "median_rmse": 0.4757877502602465
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4115822703837875,
+          "median_rmse": 0.5735431336331054
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5263997211765387,
+          "median_rmse": 0.526349939141967
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 15,
+      "kernel": "uniform",
+      "mean_mse": 0.4368052508734797,
+      "median_rmse": 0.5204849473667522,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.4065497186000101,
+          "median_rmse": 0.4969111710023637
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4278662416505847,
+          "median_rmse": 0.5081229163788809
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.42062089996539503,
+          "median_rmse": 0.497610276549153
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.37881896659426373,
+          "median_rmse": 0.5507358943912077
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5797786320183814,
+          "median_rmse": 0.5499805062172863
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 15,
+      "kernel": "uniform",
+      "mean_mse": 0.4387726694661694,
+      "median_rmse": 0.5398949147848177,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3921007505840775,
+          "median_rmse": 0.5096342460971817
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4289074214654397,
+          "median_rmse": 0.5504150078320885
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.4175160838542982,
+          "median_rmse": 0.5074552779146535
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.39432843137361645,
+          "median_rmse": 0.5705765195225745
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5920563470116686,
+          "median_rmse": 0.5705249812944141
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 9,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4388285868589885,
+      "median_rmse": 0.4954320896529441,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3663804639162063,
+          "median_rmse": 0.4732043632272222
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4269988278166654,
+          "median_rmse": 0.49176667643810784
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3862629912932294,
+          "median_rmse": 0.5027154501877086
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.41738528036415035,
+          "median_rmse": 0.5064978545489607
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6359274752949141,
+          "median_rmse": 0.5415801872890105
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 3,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.439852888689763,
+      "median_rmse": 0.5052128141154123,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.36150046137516156,
+          "median_rmse": 0.4635459975099455
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4485552288771314,
+          "median_rmse": 0.5417162628917667
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3630989645896478,
+          "median_rmse": 0.46320797567818006
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4483116260698053,
+          "median_rmse": 0.5409760175880254
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6093895964136355,
+          "median_rmse": 0.5494282364538072
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 5,
+      "kernel": "uniform",
+      "mean_mse": 0.4429733049697112,
+      "median_rmse": 0.5048469418958232,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.35879921597159997,
+          "median_rmse": 0.49350773236702666
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.43537812936901205,
+          "median_rmse": 0.5027907180475343
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.36107399384207073,
+          "median_rmse": 0.47589613811476
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4444250537161487,
+          "median_rmse": 0.5342773144669075
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.656287797401863,
+          "median_rmse": 0.5730980545832385
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 3,
+      "kernel": "uniform",
+      "mean_mse": 0.444963871406518,
+      "median_rmse": 0.512349168190052,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3706649052223509,
+          "median_rmse": 0.4664583634549547
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.44672850772197287,
+          "median_rmse": 0.5454105722669379
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.36174789122140777,
+          "median_rmse": 0.4608737404965834
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4565506443897839,
+          "median_rmse": 0.5333182288636166
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.622684542416982,
+          "median_rmse": 0.5479382039810845
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 15,
+      "kernel": "uniform",
+      "mean_mse": 0.44609514179098636,
+      "median_rmse": 0.5043561429672427,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3827840320819377,
+          "median_rmse": 0.4777288323276305
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.44605171383096626,
+          "median_rmse": 0.48856331118582424
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.4622419218102449,
+          "median_rmse": 0.5130014242557708
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.37504589086526113,
+          "median_rmse": 0.5296572808685971
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5941337635419813,
+          "median_rmse": 0.5094874296718084
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 3,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4464761239332778,
+      "median_rmse": 0.49885118209033286,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3664724521203729,
+          "median_rmse": 0.4857916683127852
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.44815576919762773,
+          "median_rmse": 0.4968990607766916
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3622480225210645,
+          "median_rmse": 0.42354976472315675
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.45361663508148137,
+          "median_rmse": 0.524072189435816
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6382266595742667,
+          "median_rmse": 0.5554380903740617
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 15,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4468023268518638,
+      "median_rmse": 0.5555355171225633,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.40812969921065695,
+          "median_rmse": 0.53167329893465
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4354369130549104,
+          "median_rmse": 0.5537833137829312
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.48167325685857143,
+          "median_rmse": 0.5230598505892722
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3964472927574756,
+          "median_rmse": 0.624250315876301
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5296609319271398,
+          "median_rmse": 0.5692046877093262
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 3,
+      "kernel": "uniform",
+      "mean_mse": 0.4534052911507844,
+      "median_rmse": 0.5129936667103997,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.37630792944379904,
+          "median_rmse": 0.48995184166978045
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.451548926245708,
+          "median_rmse": 0.5189817511254541
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.3646083155873719,
+          "median_rmse": 0.4608737404965834
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4654726354007715,
+          "median_rmse": 0.5394839327653388
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6456358225535649,
+          "median_rmse": 0.5542480184049734
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 9,
+      "kernel": "uniform",
+      "mean_mse": 0.45351929436871496,
+      "median_rmse": 0.4994038640328261,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3813722436977585,
+          "median_rmse": 0.48206260815044233
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.43590372884305517,
+          "median_rmse": 0.4925428111909013
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.4077191858950211,
+          "median_rmse": 0.5012229130541928
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4274402254230384,
+          "median_rmse": 0.5054278819539424
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.655270512758866,
+          "median_rmse": 0.538200545358127
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 5,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4539455296207663,
+      "median_rmse": 0.5120460807321181,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.40110950250349514,
+          "median_rmse": 0.49732316506516716
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4306028479497019,
+          "median_rmse": 0.47057648496166116
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.42089195093942605,
+          "median_rmse": 0.5562487679930608
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3991296880689049,
+          "median_rmse": 0.45220898385433617
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6603575013914855,
+          "median_rmse": 0.5469039448719187
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 15,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4551861558630788,
+      "median_rmse": 0.5011576790712731,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.36455380293251155,
+          "median_rmse": 0.4753208669903435
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4220566899128702,
+          "median_rmse": 0.4786656186854331
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.46699913387012837,
+          "median_rmse": 0.5611698739594708
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3745570538002196,
+          "median_rmse": 0.48565402068707675
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.697471242340275,
+          "median_rmse": 0.514679493267358
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 5,
+      "kernel": "uniform",
+      "mean_mse": 0.4580348908984874,
+      "median_rmse": 0.5104612410753468,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3921409340094263,
+          "median_rmse": 0.49793348534126297
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4332099899156596,
+          "median_rmse": 0.4795798791052776
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.43137117856668067,
+          "median_rmse": 0.5460350290391067
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4009117115664955,
+          "median_rmse": 0.4697338327198036
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6773026062738912,
+          "median_rmse": 0.5430721830208547
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 9,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4607585274852826,
+      "median_rmse": 0.4951060924247287,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3819430286654635,
+          "median_rmse": 0.49780685935533764
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4315106038979975,
+          "median_rmse": 0.4604522547866
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.4252527927816321,
+          "median_rmse": 0.5121842156279405
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.40796792870609744,
+          "median_rmse": 0.474757834496192
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.7071101931014284,
+          "median_rmse": 0.5485578286021033
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 15,
+      "kernel": "uniform",
+      "mean_mse": 0.4644949250837555,
+      "median_rmse": 0.5707010852222285,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.42457864444211535,
+          "median_rmse": 0.5582832016642256
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.444154669567811,
+          "median_rmse": 0.5622652328376695
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.5127521821163726,
+          "median_rmse": 0.5346297368911566
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.4153781401852302,
+          "median_rmse": 0.6249726171104687
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.5422755888711427,
+          "median_rmse": 0.5880624623961395
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 15,
+      "kernel": "uniform",
+      "mean_mse": 0.4701829144581224,
+      "median_rmse": 0.5056039446961771,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.373137758747827,
+          "median_rmse": 0.47002202140061633
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.43823972251308807,
+          "median_rmse": 0.4730468602771116
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.49975351852092265,
+          "median_rmse": 0.5831689896836281
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.3808606688406443,
+          "median_rmse": 0.5096260331577052
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.707667997465,
+          "median_rmse": 0.5137091497598629
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 9,
+      "kernel": "uniform",
+      "mean_mse": 0.47222124437699314,
+      "median_rmse": 0.4963858653764767,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.3809790124313334,
+          "median_rmse": 0.49801397605165465
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.4420281422081536,
+          "median_rmse": 0.47775215194351395
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.438692321589913,
+          "median_rmse": 0.5174509090181089
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.42261544476609986,
+          "median_rmse": 0.5047368655795657
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.7284546420176645,
+          "median_rmse": 0.5569702210627241
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 3,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.4748897426320566,
+      "median_rmse": 0.5160912368636041,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.4471020741036505,
+          "median_rmse": 0.5183621345785088
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.46036036553966464,
+          "median_rmse": 0.5143932780646704
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.40116010825565257,
+          "median_rmse": 0.5240861579548154
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.45252094393003894,
+          "median_rmse": 0.48236042369220256
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6485657544604809,
+          "median_rmse": 0.5512777400359726
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 3,
+      "kernel": "uniform",
+      "mean_mse": 0.4752858780299005,
+      "median_rmse": 0.5201455308197869,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.42749239972144937,
+          "median_rmse": 0.5189138764886678
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.46003685255286253,
+          "median_rmse": 0.5030588168248576
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.406829780880856,
+          "median_rmse": 0.5214873353606393
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.46279411966678885,
+          "median_rmse": 0.48364740842100823
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.6551403919022001,
+          "median_rmse": 0.5466445092409264
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 1,
+      "kernel": "uniform",
+      "mean_mse": 0.5257463614600951,
+      "median_rmse": 0.5714313967538871,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.44343952351993,
+          "median_rmse": 0.5551177600976895
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.5563391164636684,
+          "median_rmse": 0.5532418034209527
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.544665678577572,
+          "median_rmse": 0.6161692581554611
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.5212877198129963,
+          "median_rmse": 0.5848693268429581
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.568451073395634,
+          "median_rmse": 0.5792455055510402
+        }
+      ]
+    },
+    {
+      "state_weight": 0.75,
+      "neighbors": 1,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.5257463614600951,
+      "median_rmse": 0.5714313967538871,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.44343952351993,
+          "median_rmse": 0.5551177600976895
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.5563391164636684,
+          "median_rmse": 0.5532418034209527
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.544665678577572,
+          "median_rmse": 0.6161692581554611
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.5212877198129963,
+          "median_rmse": 0.5848693268429581
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.568451073395634,
+          "median_rmse": 0.5792455055510402
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 1,
+      "kernel": "uniform",
+      "mean_mse": 0.5867497956485468,
+      "median_rmse": 0.588679702949629,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.45109333535662005,
+          "median_rmse": 0.5647977427407037
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.6312124141516198,
+          "median_rmse": 0.5531419433323963
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.6297043263923945,
+          "median_rmse": 0.6295638337092231
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.5737556213432523,
+          "median_rmse": 0.5848693268429581
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.657414221142179,
+          "median_rmse": 0.6004303217352123
+        }
+      ]
+    },
+    {
+      "state_weight": 0.5,
+      "neighbors": 1,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.5867497956485468,
+      "median_rmse": 0.588679702949629,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.45109333535662005,
+          "median_rmse": 0.5647977427407037
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.6312124141516198,
+          "median_rmse": 0.5531419433323963
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.6297043263923945,
+          "median_rmse": 0.6295638337092231
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.5737556213432523,
+          "median_rmse": 0.5848693268429581
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.657414221142179,
+          "median_rmse": 0.6004303217352123
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 1,
+      "kernel": "uniform",
+      "mean_mse": 0.6153614897138588,
+      "median_rmse": 0.5905293871455106,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.45568589009836463,
+          "median_rmse": 0.5892699097187041
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.6114001468786385,
+          "median_rmse": 0.5532418034209527
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.6595241851147327,
+          "median_rmse": 0.6706208346321924
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.5600707612968222,
+          "median_rmse": 0.5714604280824889
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.8311382038938996,
+          "median_rmse": 0.6464385251505615
+        }
+      ]
+    },
+    {
+      "state_weight": 0.25,
+      "neighbors": 1,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.6153614897138588,
+      "median_rmse": 0.5905293871455106,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.45568589009836463,
+          "median_rmse": 0.5892699097187041
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.6114001468786385,
+          "median_rmse": 0.5532418034209527
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.6595241851147327,
+          "median_rmse": 0.6706208346321924
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.5600707612968222,
+          "median_rmse": 0.5714604280824889
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.8311382038938996,
+          "median_rmse": 0.6464385251505615
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 1,
+      "kernel": "uniform",
+      "mean_mse": 0.6619008107942718,
+      "median_rmse": 0.5837590143038257,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.5367552498868574,
+          "median_rmse": 0.5624521673386846
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.7967473857339699,
+          "median_rmse": 0.5987353694000848
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.5721788732388723,
+          "median_rmse": 0.5831921219379744
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.691723051595838,
+          "median_rmse": 0.5899108293809141
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.7128530266520865,
+          "median_rmse": 0.5480073311635502
+        }
+      ]
+    },
+    {
+      "state_weight": 1.0,
+      "neighbors": 1,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.6619008107942718,
+      "median_rmse": 0.5837590143038257,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 0.5367552498868574,
+          "median_rmse": 0.5624521673386846
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.7967473857339699,
+          "median_rmse": 0.5987353694000848
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.5721788732388723,
+          "median_rmse": 0.5831921219379744
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.691723051595838,
+          "median_rmse": 0.5899108293809141
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.7128530266520865,
+          "median_rmse": 0.5480073311635502
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 1,
+      "kernel": "uniform",
+      "mean_mse": 0.7566572742239348,
+      "median_rmse": 0.6170763680532183,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 1.0216277825222364,
+          "median_rmse": 0.6611462811573231
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.7759948352734997,
+          "median_rmse": 0.657823764742142
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.620319311552208,
+          "median_rmse": 0.5477412059825368
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.6272725053833553,
+          "median_rmse": 0.5906378642550154
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.7433056062361444,
+          "median_rmse": 0.5948789380056814
+        }
+      ]
+    },
+    {
+      "state_weight": 0.0,
+      "neighbors": 1,
+      "kernel": "inverse_distance",
+      "mean_mse": 0.7566572742239348,
+      "median_rmse": 0.6170763680532183,
+      "folds": [
+        {
+          "fold": 0,
+          "groups": 44,
+          "episodes": [
+            "16",
+            "33",
+            "40",
+            "46",
+            "51",
+            "67",
+            "82",
+            "97"
+          ],
+          "mean_mse": 1.0216277825222364,
+          "median_rmse": 0.6611462811573231
+        },
+        {
+          "fold": 1,
+          "groups": 47,
+          "episodes": [
+            "21",
+            "34",
+            "41",
+            "47",
+            "54",
+            "68",
+            "88",
+            "99"
+          ],
+          "mean_mse": 0.7759948352734997,
+          "median_rmse": 0.657823764742142
+        },
+        {
+          "fold": 2,
+          "groups": 45,
+          "episodes": [
+            "25",
+            "35",
+            "42",
+            "48",
+            "59",
+            "72",
+            "89"
+          ],
+          "mean_mse": 0.620319311552208,
+          "median_rmse": 0.5477412059825368
+        },
+        {
+          "fold": 3,
+          "groups": 46,
+          "episodes": [
+            "30",
+            "36",
+            "43",
+            "49",
+            "62",
+            "74",
+            "93"
+          ],
+          "mean_mse": 0.6272725053833553,
+          "median_rmse": 0.5906378642550154
+        },
+        {
+          "fold": 4,
+          "groups": 36,
+          "episodes": [
+            "31",
+            "37",
+            "45",
+            "50",
+            "63",
+            "78",
+            "94"
+          ],
+          "mean_mse": 0.7433056062361444,
+          "median_rmse": 0.5948789380056814
+        }
+      ]
+    }
+  ],
+  "heldout": {
+    "curve_errors": {
+      "early_gap": 0.1135285358402469,
+      "full_gap": 0.10664973990804102,
+      "curve_action": 0.7189002100016785,
+      "curve_early_hold": 0.35583251741855604,
+      "curve_late_hold": 0.28082189750137077
+    },
+    "group_mean_mse": 0.3869522753652774,
+    "group_median_rmse": 0.47816952027838755,
+    "nested": {
+      "boundary": {
+        "states": 38,
+        "reference_positive": 24,
+        "predicted_positive": 34,
+        "tp": 24,
+        "fn": 0,
+        "fp": 10,
+        "tn": 4,
+        "agreement": 0.7368421052631579,
+        "recall": 1.0,
+        "added_positive_rate": 0.7142857142857143
+      },
+      "commitment": {
+        "states": 38,
+        "reference_positive": 12,
+        "predicted_positive": 27,
+        "tp": 12,
+        "fn": 0,
+        "fp": 15,
+        "tn": 11,
+        "agreement": 0.6052631578947368,
+        "recall": 1.0,
+        "added_positive_rate": 0.5769230769230769
+      },
+      "persistence": {
+        "states": 38,
+        "reference_positive": 28,
+        "predicted_positive": 34,
+        "tp": 28,
+        "fn": 0,
+        "fp": 6,
+        "tn": 4,
+        "agreement": 0.8421052631578947,
+        "recall": 1.0,
+        "added_positive_rate": 0.6
+      },
+      "alarm": {
+        "states": 38,
+        "reference_positive": 9,
+        "predicted_positive": 27,
+        "tp": 9,
+        "fn": 0,
+        "fp": 18,
+        "tn": 11,
+        "agreement": 0.5263157894736842,
+        "recall": 1.0,
+        "added_positive_rate": 0.6206896551724138
+      }
+    },
+    "zero": {
+      "groups": 38,
+      "reference_zero": 9,
+      "predicted_zero": 3,
+      "tp": 3,
+      "fn": 6,
+      "fp": 0,
+      "tn": 29,
+      "recall": 0.3333333333333333,
+      "false_zero_rate": 0.0
+    },
+    "evidence": [
+      {
+        "index": 0,
+        "source": "ep0_seed102",
+        "episode": "0",
+        "group_rmse": 0.6962574788721471,
+        "target_amplitude": 1.7090141773223877,
+        "predicted_amplitude": 1.4926216851622562,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep31_seed105",
+            "distance": 0.28960991185193025
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.30143949792114216
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.304311912074256
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.30918928379398525
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.31253448971525644
+          },
+          {
+            "source": "ep37_seed104",
+            "distance": 0.33534457197202294
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.337679617028459
+          },
+          {
+            "source": "ep36_seed104",
+            "distance": 0.3392069281026774
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.34337966789181285
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": true
+      },
+      {
+        "index": 1,
+        "source": "ep0_seed105",
+        "episode": "0",
+        "group_rmse": 0.5429951590601747,
+        "target_amplitude": 1.7586787939071655,
+        "predicted_amplitude": 1.4742344536262313,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep31_seed105",
+            "distance": 0.23870347214475146
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.2555573889732196
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.26753407001348306
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.2720400128028662
+          },
+          {
+            "source": "ep37_seed104",
+            "distance": 0.27341604327294233
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.2783741305160614
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.2945169653364508
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.30724056871097966
+          },
+          {
+            "source": "ep36_seed104",
+            "distance": 0.3138921978862294
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 2,
+        "source": "ep0_seed107",
+        "episode": "0",
+        "group_rmse": 0.695745198100176,
+        "target_amplitude": 1.7358354330062866,
+        "predicted_amplitude": 1.5544918807149666,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep93_seed107",
+            "distance": 0.4148700864733202
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.4775214982921564
+          },
+          {
+            "source": "ep37_seed104",
+            "distance": 0.4847489621260566
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.4856711498493332
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.49361803613108807
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.494193240072248
+          },
+          {
+            "source": "ep68_seed108",
+            "distance": 0.4976058162723383
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.49829882791441416
+          },
+          {
+            "source": "ep31_seed105",
+            "distance": 0.5006124977312998
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 3,
+        "source": "ep12_seed102",
+        "episode": "12",
+        "group_rmse": 1.3542183568114903,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 1.3542183568114903,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep88_seed102",
+            "distance": 0.165223784354694
+          },
+          {
+            "source": "ep30_seed109",
+            "distance": 0.1670568854218576
+          },
+          {
+            "source": "ep21_seed109",
+            "distance": 0.17083678914537243
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 0.1740984085826844
+          },
+          {
+            "source": "ep63_seed109",
+            "distance": 0.1895085026672882
+          },
+          {
+            "source": "ep99_seed107",
+            "distance": 0.23080358336244222
+          },
+          {
+            "source": "ep35_seed101",
+            "distance": 0.23093682793329612
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.2364649038492293
+          },
+          {
+            "source": "ep47_seed104",
+            "distance": 0.2576196394518224
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 4,
+        "source": "ep12_seed102",
+        "episode": "12",
+        "group_rmse": 0.5063448848296762,
+        "target_amplitude": 1.8008689880371094,
+        "predicted_amplitude": 1.77840282408787,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep21_seed107",
+            "distance": 1.2107463574375976
+          },
+          {
+            "source": "ep88_seed108",
+            "distance": 1.2569168142027605
+          },
+          {
+            "source": "ep43_seed109",
+            "distance": 1.271785868449427
+          },
+          {
+            "source": "ep40_seed102",
+            "distance": 1.2765167489391056
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 1.290700290303611
+          },
+          {
+            "source": "ep40_seed102",
+            "distance": 1.2972658598829534
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 1.305843572292474
+          },
+          {
+            "source": "ep88_seed103",
+            "distance": 1.3085754601989568
+          },
+          {
+            "source": "ep42_seed106",
+            "distance": 1.3101551539010843
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 5,
+        "source": "ep12_seed102",
+        "episode": "12",
+        "group_rmse": 1.3919764002054864,
+        "target_amplitude": 1.5659157037734985,
+        "predicted_amplitude": 0.1769347726732285,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep41_seed105",
+            "distance": 0.7133629386469793
+          },
+          {
+            "source": "ep54_seed106",
+            "distance": 0.7289331412535748
+          },
+          {
+            "source": "ep78_seed105",
+            "distance": 0.7305163239399106
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.7513506162100714
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.7669755534842156
+          },
+          {
+            "source": "ep48_seed106",
+            "distance": 0.7687501401651817
+          },
+          {
+            "source": "ep48_seed102",
+            "distance": 0.7941529063894823
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.7978426095186845
+          },
+          {
+            "source": "ep25_seed104",
+            "distance": 0.8090241829700305
+          }
+        ],
+        "prior_unanimous_false_boundary": true,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 6,
+        "source": "ep12_seed103",
+        "episode": "12",
+        "group_rmse": 0.4537442263405673,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 0.4537442263405673,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep74_seed106",
+            "distance": 0.12319448983363017
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.17364721905830977
+          },
+          {
+            "source": "ep40_seed106",
+            "distance": 0.19799348528891603
+          },
+          {
+            "source": "ep94_seed103",
+            "distance": 0.20588865842607995
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.26362984578842047
+          },
+          {
+            "source": "ep21_seed109",
+            "distance": 0.2727050920846006
+          },
+          {
+            "source": "ep43_seed103",
+            "distance": 0.2822729258656602
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.2846478686185391
+          },
+          {
+            "source": "ep47_seed104",
+            "distance": 0.2894919044445907
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 7,
+        "source": "ep12_seed106",
+        "episode": "12",
+        "group_rmse": 0.0,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 0.0,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep74_seed106",
+            "distance": 0.11955053343934821
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.23073716512309206
+          },
+          {
+            "source": "ep40_seed106",
+            "distance": 0.2341317290943414
+          },
+          {
+            "source": "ep54_seed106",
+            "distance": 0.23718804549685485
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.28603948160738746
+          },
+          {
+            "source": "ep94_seed103",
+            "distance": 0.29286590998538786
+          },
+          {
+            "source": "ep74_seed104",
+            "distance": 0.33296019754714457
+          },
+          {
+            "source": "ep48_seed102",
+            "distance": 0.33377244239449305
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.33874537111414377
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 8,
+        "source": "ep12_seed109",
+        "episode": "12",
+        "group_rmse": 0.5613893426043175,
+        "target_amplitude": 1.8942234516143799,
+        "predicted_amplitude": 1.4537013972435475,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep63_seed109",
+            "distance": 0.11292259554754461
+          },
+          {
+            "source": "ep30_seed109",
+            "distance": 0.13948569927730223
+          },
+          {
+            "source": "ep43_seed101",
+            "distance": 0.14237413310137795
+          },
+          {
+            "source": "ep35_seed101",
+            "distance": 0.1620200921060047
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.18144931678916135
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.1820346919187408
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 0.20492652502133882
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.20989442793338442
+          },
+          {
+            "source": "ep33_seed107",
+            "distance": 0.21410095260510614
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 9,
+        "source": "ep12_seed109",
+        "episode": "12",
+        "group_rmse": 0.32365222755417017,
+        "target_amplitude": 1.876196265220642,
+        "predicted_amplitude": 1.7125282493144744,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep93_seed106",
+            "distance": 0.5428893561005019
+          },
+          {
+            "source": "ep74_seed108",
+            "distance": 0.6112268278226128
+          },
+          {
+            "source": "ep31_seed106",
+            "distance": 0.613586723995306
+          },
+          {
+            "source": "ep36_seed101",
+            "distance": 0.6312199292031094
+          },
+          {
+            "source": "ep42_seed101",
+            "distance": 0.6524014307789975
+          },
+          {
+            "source": "ep16_seed100",
+            "distance": 0.6586051877855564
+          },
+          {
+            "source": "ep33_seed109",
+            "distance": 0.6641656717167308
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.7137364831815988
+          },
+          {
+            "source": "ep88_seed102",
+            "distance": 0.7694379610308817
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 10,
+        "source": "ep13_seed101",
+        "episode": "13",
+        "group_rmse": 0.3830211932188755,
+        "target_amplitude": 1.636845350265503,
+        "predicted_amplitude": 1.4571107336448268,
+        "reference": {
+          "boundary": false,
+          "commitment": true,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep35_seed103",
+            "distance": 0.5285076718521196
+          },
+          {
+            "source": "ep35_seed107",
+            "distance": 0.5829337411791534
+          },
+          {
+            "source": "ep35_seed109",
+            "distance": 0.5870152885321613
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.6232656857342659
+          },
+          {
+            "source": "ep99_seed106",
+            "distance": 0.6609375218047613
+          },
+          {
+            "source": "ep47_seed106",
+            "distance": 0.6670481149447397
+          },
+          {
+            "source": "ep35_seed107",
+            "distance": 0.7029032541687834
+          },
+          {
+            "source": "ep78_seed105",
+            "distance": 0.7272832329040291
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.7440782302844384
+          }
+        ],
+        "prior_unanimous_false_boundary": true,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 11,
+        "source": "ep13_seed105",
+        "episode": "13",
+        "group_rmse": 1.3528913910584774,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 1.3528913910584774,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep93_seed105",
+            "distance": 0.08653844688138487
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.11266922786671615
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.11422841506283939
+          },
+          {
+            "source": "ep31_seed105",
+            "distance": 0.11617224911337971
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.14871799986011816
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.17908995392031435
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.1804827081411323
+          },
+          {
+            "source": "ep40_seed106",
+            "distance": 0.18981651308438124
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.1960742218264616
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 12,
+        "source": "ep13_seed105",
+        "episode": "13",
+        "group_rmse": 0.415017645393916,
+        "target_amplitude": 1.7068393230438232,
+        "predicted_amplitude": 1.5573472418342846,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep93_seed105",
+            "distance": 0.04812417292204083
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.09789638528040412
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.1005229445175435
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.11542546038607573
+          },
+          {
+            "source": "ep31_seed105",
+            "distance": 0.13261322562832162
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.1701971867411918
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.17100056048298998
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.17713584829171286
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.1901308324818543
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 13,
+        "source": "ep13_seed108",
+        "episode": "13",
+        "group_rmse": 0.32079781762657106,
+        "target_amplitude": 1.7778478860855103,
+        "predicted_amplitude": 1.7322797322214367,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed105",
+            "distance": 0.1339276798430731
+          },
+          {
+            "source": "ep94_seed101",
+            "distance": 0.3340194201958166
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.469629656676743
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.47594423728404794
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.48663433675776785
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.4870413701007789
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.49030436958670826
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.4904258216199612
+          },
+          {
+            "source": "ep36_seed104",
+            "distance": 0.49251276781236203
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 14,
+        "source": "ep13_seed108",
+        "episode": "13",
+        "group_rmse": 0.36739911401387726,
+        "target_amplitude": 1.843737006187439,
+        "predicted_amplitude": 1.7309936959401362,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed105",
+            "distance": 0.13775662926666982
+          },
+          {
+            "source": "ep94_seed101",
+            "distance": 0.3365215425078529
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.45422074759053416
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.46112332777335513
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.4693827424170193
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.4720587013877332
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.47500681402972905
+          },
+          {
+            "source": "ep36_seed104",
+            "distance": 0.47529346172796355
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.47638756008540284
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 15,
+        "source": "ep13_seed109",
+        "episode": "13",
+        "group_rmse": 0.5313739033672362,
+        "target_amplitude": 1.9140878915786743,
+        "predicted_amplitude": 1.5461693071630105,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed107",
+            "distance": 0.5606012993706047
+          },
+          {
+            "source": "ep99_seed107",
+            "distance": 0.5735865829356673
+          },
+          {
+            "source": "ep63_seed109",
+            "distance": 0.6358836761197769
+          },
+          {
+            "source": "ep88_seed108",
+            "distance": 0.6397704105705264
+          },
+          {
+            "source": "ep30_seed109",
+            "distance": 0.6400904601279155
+          },
+          {
+            "source": "ep35_seed101",
+            "distance": 0.6406148432019773
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.6503695546426438
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.6516332082429006
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 0.6527883850652796
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 16,
+        "source": "ep1_seed100",
+        "episode": "1",
+        "group_rmse": 0.4099371273638046,
+        "target_amplitude": 1.8275907039642334,
+        "predicted_amplitude": 1.7855201178270104,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed106",
+            "distance": 1.4816673289454405
+          },
+          {
+            "source": "ep46_seed104",
+            "distance": 1.617607530907765
+          },
+          {
+            "source": "ep46_seed106",
+            "distance": 1.6948748626132284
+          },
+          {
+            "source": "ep62_seed104",
+            "distance": 1.6987693998697118
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 1.7753215845718349
+          },
+          {
+            "source": "ep62_seed101",
+            "distance": 1.7938797148125751
+          },
+          {
+            "source": "ep40_seed106",
+            "distance": 1.8015666064704021
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 1.8027857544659336
+          },
+          {
+            "source": "ep35_seed105",
+            "distance": 1.8322978324547292
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 17,
+        "source": "ep1_seed101",
+        "episode": "1",
+        "group_rmse": 0.669645738512812,
+        "target_amplitude": 1.6686235666275024,
+        "predicted_amplitude": 1.6429461280200894,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep50_seed107",
+            "distance": 0.6202855913004389
+          },
+          {
+            "source": "ep68_seed101",
+            "distance": 0.6866061474603875
+          },
+          {
+            "source": "ep35_seed103",
+            "distance": 0.7006535626157847
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 0.7028593302809544
+          },
+          {
+            "source": "ep37_seed109",
+            "distance": 0.714183779774143
+          },
+          {
+            "source": "ep54_seed108",
+            "distance": 0.7167007102363752
+          },
+          {
+            "source": "ep35_seed109",
+            "distance": 0.731697099626771
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.7336461417836414
+          },
+          {
+            "source": "ep99_seed106",
+            "distance": 0.7400105939729247
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 18,
+        "source": "ep1_seed102",
+        "episode": "1",
+        "group_rmse": 0.7630889616515021,
+        "target_amplitude": 1.8408598899841309,
+        "predicted_amplitude": 1.2703978387815003,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep37_seed101",
+            "distance": 0.16447119262587434
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.18635594013563037
+          },
+          {
+            "source": "ep42_seed102",
+            "distance": 0.2169965403815856
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.25886411268241377
+          },
+          {
+            "source": "ep37_seed104",
+            "distance": 0.2681473318609767
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.28400396222477436
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.284924313378245
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.2860617972285452
+          },
+          {
+            "source": "ep63_seed109",
+            "distance": 0.3142881330177521
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 19,
+        "source": "ep1_seed102",
+        "episode": "1",
+        "group_rmse": 0.38436462613375255,
+        "target_amplitude": 1.8891806602478027,
+        "predicted_amplitude": 1.8026569253245337,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep54_seed102",
+            "distance": 0.4667909503477069
+          },
+          {
+            "source": "ep46_seed106",
+            "distance": 0.5025904024807559
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 0.5365439152164863
+          },
+          {
+            "source": "ep62_seed104",
+            "distance": 0.5477980303171381
+          },
+          {
+            "source": "ep68_seed101",
+            "distance": 0.5543675066736803
+          },
+          {
+            "source": "ep74_seed108",
+            "distance": 0.5764357769137922
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.6023467710222374
+          },
+          {
+            "source": "ep31_seed106",
+            "distance": 0.6156338053897006
+          },
+          {
+            "source": "ep62_seed104",
+            "distance": 0.6363123443781824
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 20,
+        "source": "ep1_seed103",
+        "episode": "1",
+        "group_rmse": 0.495891892266738,
+        "target_amplitude": 1.778965950012207,
+        "predicted_amplitude": 1.7719478252683905,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep62_seed101",
+            "distance": 0.4186650739558423
+          },
+          {
+            "source": "ep46_seed106",
+            "distance": 0.5998475600805481
+          },
+          {
+            "source": "ep62_seed104",
+            "distance": 0.697976048577069
+          },
+          {
+            "source": "ep68_seed101",
+            "distance": 0.7093390636693359
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 0.7218684940138499
+          },
+          {
+            "source": "ep54_seed102",
+            "distance": 0.72698121781023
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.7751785701781294
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.7902894261059205
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.7922717916624237
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 21,
+        "source": "ep1_seed103",
+        "episode": "1",
+        "group_rmse": 0.3047252249386388,
+        "target_amplitude": 1.7333018779754639,
+        "predicted_amplitude": 1.7149151161719227,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep99_seed106",
+            "distance": 0.5069550282746135
+          },
+          {
+            "source": "ep25_seed105",
+            "distance": 0.6820341442667834
+          },
+          {
+            "source": "ep35_seed103",
+            "distance": 0.7087211682501732
+          },
+          {
+            "source": "ep25_seed105",
+            "distance": 0.7188292577104123
+          },
+          {
+            "source": "ep37_seed109",
+            "distance": 0.7232952614892677
+          },
+          {
+            "source": "ep35_seed107",
+            "distance": 0.7453994930259523
+          },
+          {
+            "source": "ep35_seed109",
+            "distance": 0.7513486579330697
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.7756559220952728
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 0.7943648311741128
+          }
+        ],
+        "prior_unanimous_false_boundary": true,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 22,
+        "source": "ep1_seed106",
+        "episode": "1",
+        "group_rmse": 1.1669958506399258,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 1.1669958506399258,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed106",
+            "distance": 0.11467961551197038
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.14295612309692937
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.1621445759737264
+          },
+          {
+            "source": "ep31_seed105",
+            "distance": 0.16354431370300862
+          },
+          {
+            "source": "ep40_seed106",
+            "distance": 0.16754005532333818
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.16939465041854448
+          },
+          {
+            "source": "ep43_seed103",
+            "distance": 0.1752793074550671
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.17666647306063663
+          },
+          {
+            "source": "ep47_seed104",
+            "distance": 0.19290453437732152
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 23,
+        "source": "ep1_seed106",
+        "episode": "1",
+        "group_rmse": 0.42657772752944445,
+        "target_amplitude": 1.8795820474624634,
+        "predicted_amplitude": 1.7844137145301204,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep54_seed102",
+            "distance": 0.49492256225223247
+          },
+          {
+            "source": "ep62_seed104",
+            "distance": 0.5035747614836678
+          },
+          {
+            "source": "ep46_seed106",
+            "distance": 0.5398008024836888
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 0.6804470137468271
+          },
+          {
+            "source": "ep68_seed108",
+            "distance": 0.7007840341125827
+          },
+          {
+            "source": "ep68_seed101",
+            "distance": 0.7030497347264201
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.7077500451201973
+          },
+          {
+            "source": "ep74_seed108",
+            "distance": 0.7129456779360356
+          },
+          {
+            "source": "ep62_seed104",
+            "distance": 0.7180280983992127
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 24,
+        "source": "ep1_seed106",
+        "episode": "1",
+        "group_rmse": 0.6058452982100468,
+        "target_amplitude": 1.904123306274414,
+        "predicted_amplitude": 1.4159099315957524,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep99_seed106",
+            "distance": 0.6427346030371363
+          },
+          {
+            "source": "ep54_seed108",
+            "distance": 0.6690485732162126
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.6801183784199467
+          },
+          {
+            "source": "ep50_seed107",
+            "distance": 0.6990564763907564
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.6993523384013077
+          },
+          {
+            "source": "ep48_seed109",
+            "distance": 0.7358813118338166
+          },
+          {
+            "source": "ep37_seed109",
+            "distance": 0.7543392670442
+          },
+          {
+            "source": "ep51_seed108",
+            "distance": 0.7910995553312944
+          },
+          {
+            "source": "ep35_seed103",
+            "distance": 0.7919423643730696
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 25,
+        "source": "ep5_seed102",
+        "episode": "5",
+        "group_rmse": 0.3810859634727223,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 0.3810859634727223,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep48_seed102",
+            "distance": 0.22643460373093446
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.23179221232453745
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.2472169936391478
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.2513875788145974
+          },
+          {
+            "source": "ep63_seed109",
+            "distance": 0.2567901780047558
+          },
+          {
+            "source": "ep25_seed104",
+            "distance": 0.2717950127425304
+          },
+          {
+            "source": "ep30_seed109",
+            "distance": 0.2757661992883195
+          },
+          {
+            "source": "ep21_seed109",
+            "distance": 0.29214334020717936
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.29741773439790403
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 26,
+        "source": "ep5_seed103",
+        "episode": "5",
+        "group_rmse": 0.4872964017477969,
+        "target_amplitude": 1.5362439155578613,
+        "predicted_amplitude": 1.4878601282011072,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep93_seed107",
+            "distance": 0.46108092831976794
+          },
+          {
+            "source": "ep35_seed109",
+            "distance": 0.5080219422239195
+          },
+          {
+            "source": "ep35_seed107",
+            "distance": 0.5153010434784953
+          },
+          {
+            "source": "ep37_seed109",
+            "distance": 0.5264184079532069
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.5388923596125078
+          },
+          {
+            "source": "ep35_seed103",
+            "distance": 0.5543232093757429
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.5687110213916974
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.5737988666977253
+          },
+          {
+            "source": "ep99_seed106",
+            "distance": 0.5778437742522639
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 27,
+        "source": "ep5_seed105",
+        "episode": "5",
+        "group_rmse": 0.7051316700589235,
+        "target_amplitude": 1.4727450609207153,
+        "predicted_amplitude": 1.4203835366557973,
+        "reference": {
+          "boundary": false,
+          "commitment": true,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep93_seed107",
+            "distance": 0.4282078392200183
+          },
+          {
+            "source": "ep49_seed100",
+            "distance": 0.4802309262561657
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.48540888828557543
+          },
+          {
+            "source": "ep37_seed104",
+            "distance": 0.4860597004187108
+          },
+          {
+            "source": "ep54_seed107",
+            "distance": 0.4897854960591195
+          },
+          {
+            "source": "ep35_seed109",
+            "distance": 0.49239595282684295
+          },
+          {
+            "source": "ep46_seed107",
+            "distance": 0.4945508823988361
+          },
+          {
+            "source": "ep31_seed105",
+            "distance": 0.4976314742103023
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.4980162935005983
+          }
+        ],
+        "prior_unanimous_false_boundary": true,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 28,
+        "source": "ep5_seed109",
+        "episode": "5",
+        "group_rmse": 0.3769609984348528,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 0.3769609984348528,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep48_seed102",
+            "distance": 0.23587563651654087
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.24059379329526787
+          },
+          {
+            "source": "ep25_seed104",
+            "distance": 0.257201854501504
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.2641968723457092
+          },
+          {
+            "source": "ep63_seed109",
+            "distance": 0.26644321082598676
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.27358224816894344
+          },
+          {
+            "source": "ep37_seed101",
+            "distance": 0.27995533329965894
+          },
+          {
+            "source": "ep30_seed109",
+            "distance": 0.28357003689349214
+          },
+          {
+            "source": "ep21_seed109",
+            "distance": 0.292832867358104
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 29,
+        "source": "ep7_seed102",
+        "episode": "7",
+        "group_rmse": 0.5407137466143768,
+        "target_amplitude": 1.8570929765701294,
+        "predicted_amplitude": 1.6528128592123474,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep43_seed109",
+            "distance": 0.21599739389514044
+          },
+          {
+            "source": "ep16_seed107",
+            "distance": 0.2830636465016764
+          },
+          {
+            "source": "ep21_seed107",
+            "distance": 0.366705752255649
+          },
+          {
+            "source": "ep47_seed105",
+            "distance": 0.3946960495343975
+          },
+          {
+            "source": "ep93_seed104",
+            "distance": 0.3976575656769595
+          },
+          {
+            "source": "ep88_seed103",
+            "distance": 0.4078291325656005
+          },
+          {
+            "source": "ep43_seed101",
+            "distance": 0.42406926070353734
+          },
+          {
+            "source": "ep33_seed107",
+            "distance": 0.4268854752780359
+          },
+          {
+            "source": "ep30_seed109",
+            "distance": 0.42877712777352456
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 30,
+        "source": "ep7_seed103",
+        "episode": "7",
+        "group_rmse": 0.530986961595464,
+        "target_amplitude": 1.7290916442871094,
+        "predicted_amplitude": 1.7327504087113725,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep88_seed108",
+            "distance": 0.9269249187161546
+          },
+          {
+            "source": "ep67_seed103",
+            "distance": 0.9388057313556152
+          },
+          {
+            "source": "ep72_seed104",
+            "distance": 0.9765413601241469
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 0.9973447293512923
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 1.0491756957310476
+          },
+          {
+            "source": "ep94_seed104",
+            "distance": 1.0632967156238327
+          },
+          {
+            "source": "ep99_seed102",
+            "distance": 1.083568893541663
+          },
+          {
+            "source": "ep30_seed104",
+            "distance": 1.1027220065186416
+          },
+          {
+            "source": "ep33_seed101",
+            "distance": 1.1095493236269827
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 31,
+        "source": "ep7_seed104",
+        "episode": "7",
+        "group_rmse": 0.27935179522871534,
+        "target_amplitude": 1.813176155090332,
+        "predicted_amplitude": 1.739556619530672,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed103",
+            "distance": 0.9267368756940801
+          },
+          {
+            "source": "ep88_seed108",
+            "distance": 1.0667113790309315
+          },
+          {
+            "source": "ep72_seed104",
+            "distance": 1.120883636168323
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 1.149848368001305
+          },
+          {
+            "source": "ep43_seed101",
+            "distance": 1.1777742486773761
+          },
+          {
+            "source": "ep94_seed104",
+            "distance": 1.1938622493815123
+          },
+          {
+            "source": "ep33_seed101",
+            "distance": 1.21978982731233
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 1.2246168597035856
+          },
+          {
+            "source": "ep30_seed104",
+            "distance": 1.2291074075255621
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 32,
+        "source": "ep7_seed106",
+        "episode": "7",
+        "group_rmse": 0.4690426388089782,
+        "target_amplitude": 1.8167294263839722,
+        "predicted_amplitude": 1.5067830122550452,
+        "reference": {
+          "boundary": false,
+          "commitment": true,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep43_seed103",
+            "distance": 0.1254904636256829
+          },
+          {
+            "source": "ep36_seed104",
+            "distance": 0.13489152134654053
+          },
+          {
+            "source": "ep47_seed104",
+            "distance": 0.14956813237508676
+          },
+          {
+            "source": "ep67_seed106",
+            "distance": 0.15659803664169109
+          },
+          {
+            "source": "ep37_seed105",
+            "distance": 0.1665805477878977
+          },
+          {
+            "source": "ep31_seed105",
+            "distance": 0.176657702289006
+          },
+          {
+            "source": "ep93_seed105",
+            "distance": 0.18559611767899986
+          },
+          {
+            "source": "ep16_seed103",
+            "distance": 0.20301302106236652
+          },
+          {
+            "source": "ep62_seed105",
+            "distance": 0.21349526862730642
+          }
+        ],
+        "prior_unanimous_false_boundary": true,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 33,
+        "source": "ep7_seed107",
+        "episode": "7",
+        "group_rmse": 0.0,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 0.0,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep74_seed104",
+            "distance": 0.18876473866257334
+          },
+          {
+            "source": "ep94_seed103",
+            "distance": 0.20252700845441612
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.24588948510874276
+          },
+          {
+            "source": "ep74_seed106",
+            "distance": 0.26638165067891884
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.3003259711952121
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.33635992672101883
+          },
+          {
+            "source": "ep48_seed102",
+            "distance": 0.34144013286528385
+          },
+          {
+            "source": "ep25_seed104",
+            "distance": 0.37778128425207436
+          },
+          {
+            "source": "ep21_seed109",
+            "distance": 0.3861242612598285
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 34,
+        "source": "ep7_seed108",
+        "episode": "7",
+        "group_rmse": 0.32769927588589864,
+        "target_amplitude": 1.8365871906280518,
+        "predicted_amplitude": 1.6611393090305935,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed106",
+            "distance": 0.8663076862791936
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 1.0860771241483411
+          },
+          {
+            "source": "ep88_seed108",
+            "distance": 1.09548125211719
+          },
+          {
+            "source": "ep43_seed109",
+            "distance": 1.135536170158001
+          },
+          {
+            "source": "ep21_seed107",
+            "distance": 1.1377389123618382
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 1.1458669126662857
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 1.17632004410687
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 1.1879947921205463
+          },
+          {
+            "source": "ep99_seed106",
+            "distance": 1.1935077075829403
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 35,
+        "source": "ep7_seed108",
+        "episode": "7",
+        "group_rmse": 0.3522054730269937,
+        "target_amplitude": 1.8956018686294556,
+        "predicted_amplitude": 1.6613284051656827,
+        "reference": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": true,
+          "persistence": true,
+          "alarm": true
+        },
+        "neighbors": [
+          {
+            "source": "ep67_seed106",
+            "distance": 0.7705477399278374
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 0.9345825974623119
+          },
+          {
+            "source": "ep88_seed108",
+            "distance": 0.9695115128371671
+          },
+          {
+            "source": "ep43_seed109",
+            "distance": 1.0029928354691504
+          },
+          {
+            "source": "ep21_seed107",
+            "distance": 1.0075086133448825
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 1.015974693241815
+          },
+          {
+            "source": "ep93_seed107",
+            "distance": 1.0330213589848283
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 1.048003842709103
+          },
+          {
+            "source": "ep99_seed106",
+            "distance": 1.0608777895542516
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 36,
+        "source": "ep7_seed109",
+        "episode": "7",
+        "group_rmse": 0.0,
+        "target_amplitude": 0.0,
+        "predicted_amplitude": 0.0,
+        "reference": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": false,
+          "commitment": false,
+          "persistence": false,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep74_seed104",
+            "distance": 0.29802501781599544
+          },
+          {
+            "source": "ep94_seed103",
+            "distance": 0.3683279046281386
+          },
+          {
+            "source": "ep48_seed107",
+            "distance": 0.37171752241138484
+          },
+          {
+            "source": "ep74_seed106",
+            "distance": 0.41320555775316714
+          },
+          {
+            "source": "ep72_seed101",
+            "distance": 0.4134699845210346
+          },
+          {
+            "source": "ep48_seed102",
+            "distance": 0.43948639630036146
+          },
+          {
+            "source": "ep42_seed104",
+            "distance": 0.4759357382479512
+          },
+          {
+            "source": "ep54_seed106",
+            "distance": 0.4859590421105997
+          },
+          {
+            "source": "ep25_seed104",
+            "distance": 0.5284315340713469
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      },
+      {
+        "index": 37,
+        "source": "ep7_seed109",
+        "episode": "7",
+        "group_rmse": 0.6287666392528106,
+        "target_amplitude": 1.6657625436782837,
+        "predicted_amplitude": 1.7323979885986394,
+        "reference": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "predicted": {
+          "boundary": true,
+          "commitment": false,
+          "persistence": true,
+          "alarm": false
+        },
+        "neighbors": [
+          {
+            "source": "ep88_seed108",
+            "distance": 0.8950337088619138
+          },
+          {
+            "source": "ep72_seed104",
+            "distance": 0.9314801208288388
+          },
+          {
+            "source": "ep67_seed103",
+            "distance": 0.9793379602214183
+          },
+          {
+            "source": "ep72_seed102",
+            "distance": 0.9846401672143282
+          },
+          {
+            "source": "ep88_seed107",
+            "distance": 1.033985605706593
+          },
+          {
+            "source": "ep99_seed102",
+            "distance": 1.0376448247183585
+          },
+          {
+            "source": "ep30_seed104",
+            "distance": 1.0798664268923492
+          },
+          {
+            "source": "ep94_seed104",
+            "distance": 1.0948570114622802
+          },
+          {
+            "source": "ep33_seed101",
+            "distance": 1.0954243985580279
+          }
+        ],
+        "prior_unanimous_false_boundary": false,
+        "prior_repeated_false_zero": false
+      }
+    ]
+  },
+  "d9b_baseline": {
+    "mean_mse": 0.36910591875352733,
+    "boundary_agreement": 0.8421052631578947,
+    "boundary_added": 0.35714285714285715,
+    "final_agreement": 0.7368421052631579,
+    "final_added": 0.13793103448275862
+  },
+  "decision": {
+    "checks": {
+      "curve_mse_improves_10pct": false,
+      "one_monitor_agreement_not_worse": false,
+      "boundary_added_controlled": false,
+      "final_added_controlled": false
+    },
+    "local_rule_beats_d9b": false,
+    "decision": "prioritize_feature_or_local_data_identifiability"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "D9b shared group amplitude confirmation",
+  "status": "frozen before execution",
+  "purpose": "replace six redundant per-level zero decisions with one permutation-invariant response amplitude per nested probe group",
+  "scope": "TRAIN-only same-example confirmation; cannot authorize DEV, TEST, deployment, or visual transfer",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "nested_source": "results/jenga/d3_data",
+    "selected_episodes": ["16", "21", "25", "30", "31", "33", "34", "35"],
+    "selection": "identical eight groups used by D6-D9 audits",
+    "states": 8,
+    "levels_per_state": 6,
+    "known_exact_zero_target_episodes": ["25", "31"],
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "model": {
+    "encoder": "unchanged D9 raw temporal endpoint encoder and level context",
+    "factorization": "predicted log-separation equals one shared ReLU group amplitude times a per-level softplus normalized shape",
+    "amplitude_pooling": "mean of the six contextualized level features; invariant to level permutation",
+    "amplitude_target": "RMS magnitude over all six levels and all 41 continuous log1p gap/curve values in a group",
+    "shape_target": "each level target divided by the shared group amplitude for nonzero groups only",
+    "zero_handling": "all shape losses omitted exactly when the continuous group target amplitude is zero",
+    "external_amplitude_threshold": false,
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2
+  },
+  "optimization": {
+    "seeds": [1, 2, 3],
+    "steps": 5000,
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "batching": "deterministic full batch of all eight groups and six levels",
+    "loss": "shared group amplitude MSE plus five equally weighted masked per-level shape MSE terms",
+    "checkpoint_selection": "fixed final step for every seed; no best-seed or intermediate selection"
+  },
+  "frozen_gate_per_seed": {
+    "early_gap_log_mse": 0.0001,
+    "full_gap_log_mse": 0.0001,
+    "each_curve_phase_log_mse": 0.001,
+    "exact_zero_output_on_exact_zero_groups": true,
+    "positive_amplitude_on_nonzero_groups": true,
+    "nested_boundary_agreement": 1.0,
+    "nested_final_agreement": 1.0,
+    "endpoint_swap_max_abs": 0.00001,
+    "level_permutation_max_abs": 0.00001
+  },
+  "replication_decision": "all three fixed final checkpoints must pass every per-seed gate",
+  "interpretation": {
+    "all_pass": "freeze D9b and authorize one episode-held-out TRAIN comparison against D2",
+    "any_fail": "stop modifying the predictor and investigate a boundary test that is robust to microscopic amplitude without a calibrated cutoff"
+  }
+}

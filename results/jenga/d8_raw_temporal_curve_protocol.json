@@ -1,0 +1,56 @@
+{
+  "name": "D8 raw-action temporal curve capacity audit",
+  "status": "frozen before execution",
+  "purpose": "determine whether D7 failed because frozen D6 tokens discard fine action/contact information",
+  "scope": "TRAIN-only same-example diagnostic; cannot authorize DEV, TEST, deployment, or visual transfer",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "nested_source": "results/jenga/d3_data",
+    "selected_episodes": ["16", "21", "25", "30", "31", "33", "34", "35"],
+    "selection": "identical eight groups used by D6 staged and D7 audits",
+    "states": 8,
+    "levels_per_state": 6,
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "matched_comparison": {
+    "baseline": "D7 frozen-token explicit curve head",
+    "baseline_result": "results/jenga/d7_explicit_curve_result.json",
+    "changed_variable": "input representation only",
+    "unchanged": ["curve targets", "five balanced losses", "eight groups", "monitor mathematics", "seed", "optimizer", "learning rate", "steps", "fixed final checkpoint"]
+  },
+  "model": {
+    "scene_encoder": "shared MLP over normalized 61-dimensional current state",
+    "action_encoder": "shared GRU over each endpoint's raw first eight control steps",
+    "pair_features": "endpoint-symmetric mean, absolute difference, product, and shared scene embedding",
+    "level_context": "two permutation-equivariant self-attention blocks without level positions",
+    "output": "log1p early/full gaps plus 39-sample separation curve per level",
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2
+  },
+  "optimization": {
+    "seed": 1,
+    "steps": 5000,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "gradient_clip": 1.0,
+    "batching": "deterministic full batch of all eight groups and six levels",
+    "checkpoint_selection": "fixed final step only"
+  },
+  "frozen_gates": {
+    "early_gap_log_mse": 0.0001,
+    "full_gap_log_mse": 0.0001,
+    "each_curve_phase_log_mse": 0.001,
+    "nested_boundary_agreement": 1.0,
+    "nested_final_agreement": 1.0,
+    "endpoint_swap_max_abs": 0.00001,
+    "level_permutation_max_abs": 0.00001,
+    "decision": "all conditions must pass at the fixed final checkpoint"
+  },
+  "interpretation": {
+    "direct_passes": "frozen D6 tokens are the immediate information bottleneck; redesign the deployable representation",
+    "direct_fails": "raw inputs do not rescue exact fit under matched training; curve parameterization or optimization remains limiting"
+  }
+}

@@ -1,7 +1,7 @@
 """
 Phase 1b — does the piecewise-linear head actually help, or is that just an assumption?
 
-PLAN.md's design commitment #2 says a smooth model "provably cannot represent the
+The archived original FTLE plan's design commitment #2 says a smooth model "provably cannot represent the
 discontinuity". Phase 1b turns that from an assertion into a measurement by running the SAME
 training, SAME data (including off-attractor sequences), SAME Benettin/QR spectrum code on:
 

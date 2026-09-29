@@ -1,7 +1,7 @@
 """
 Smooth-dynamics baselines for Phase 1b — the controls for the piecewise-linear claim.
 
-PLAN.md commits to a piecewise-linear head on the argument that smooth networks cannot
+The archived original FTLE plan commits to a piecewise-linear head on the argument that smooth networks cannot
 represent a discontinuity, only steepen it. That is a *design commitment*, asserted rather
 than measured. These baselines measure it.
 

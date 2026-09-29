@@ -1,0 +1,67 @@
+{
+  "name": "Fit-only D9b episode-blocked data-scaling curve",
+  "status": "frozen before execution",
+  "purpose": "separate response-data limitation from snapshot-representation limitation without reusing the inspected 38-group diagnostic split",
+  "scope": "the 218 prior fit groups only; prior held-out TRAIN, DEV, and TEST remain closed",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+    "nested_source": "results/jenga/d3_data",
+    "eligible_episodes": 37,
+    "eligible_groups": 218,
+    "excluded_inspected_episode_ids": ["0", "1", "5", "7", "12", "13"],
+    "folds": 5,
+    "fold_rule": "eligible episode ids sorted numerically and assigned round-robin by index modulo five",
+    "validation_episode_ids": [
+      ["16", "33", "40", "46", "51", "67", "82", "97"],
+      ["21", "34", "41", "47", "54", "68", "88", "99"],
+      ["25", "35", "42", "48", "59", "72", "89"],
+      ["30", "36", "43", "49", "62", "74", "93"],
+      ["31", "37", "45", "50", "63", "78", "94"]
+    ],
+    "training_fractions": [0.25, 0.5, 0.75, 1.0],
+    "nested_subset_rule": "within each fold order eligible training episodes by SHA256('d9b-scaling-v1:<fold>:<episode>') and take ceil(fraction times episode count); subsets are nested",
+    "normalization": "per fold, fit normalization on neighborhood rows from every eligible non-validation episode; hold fixed across fractions",
+    "task_failure_or_alarm_labels_used": false
+  },
+  "model": {
+    "architecture": "unchanged D9b raw temporal pair encoder, six-level context, shared ReLU group amplitude and per-level softplus shapes",
+    "target": "continuous task-free shared amplitude and normalized 6-by-41 response shape",
+    "amplitude_threshold": false,
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2
+  },
+  "optimization": {
+    "pilot_seed": 1,
+    "replication_seeds_if_pilot_passes": [2, 3],
+    "replication_fractions": [0.25, 0.5, 1.0],
+    "steps": 5000,
+    "group_batch_size": 32,
+    "sampling": "deterministic uniform group sampling without replacement; no class balancing",
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "checkpoint_selection": "fixed final step only",
+    "execution": "one sequential GPU run at a time"
+  },
+  "reporting": {
+    "primary": "pooled per-group 6-by-41 log-response MSE across the five excluded folds",
+    "secondary": ["median group RMSE", "exact-zero recall and false-zero rate", "boundary and final agreement/recall/added-positive rate", "per-fold results", "log-error versus log-group-count slope"],
+    "prior_inspected_38_group_split_scored": false
+  },
+  "pilot_replication_gate": {
+    "pooled_mean_mse_monotone_nonincreasing": true,
+    "full_data_mse_at_least_20_percent_below_quarter_data": true,
+    "full_data_mse_below_quarter_data_in_at_least_four_of_five_folds": true,
+    "boundary_and_final_added_positive_rates_nonincreasing_from_quarter_to_full": true
+  },
+  "interpretation": {
+    "replicated_clear_scaling": "prioritize broader task-agnostic contact-response collection with a new untouched validation split",
+    "pilot_gate_fails_or_replicated_gain_below_10_percent": "snapshot state plus action representation is the primary suspect; test generic temporal/contact history",
+    "intermediate": "run a small data-by-history factorial study",
+    "dev_and_test": "remain closed for every outcome"
+  }
+}

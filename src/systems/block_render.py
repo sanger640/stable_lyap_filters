@@ -1,5 +1,6 @@
 """
-Rasterise the tipping block to a 224x224 RGB frame — Phase A of PLAN_DINOWM.md.
+Rasterise the tipping block to a 224x224 RGB frame — Phase A of
+`docs/archive/PLAN_DINOWM.md`.
 
 The point of this module is to stand in for a camera looking at the block, so that the world model
 sees PIXELS rather than (theta, omega). That change is not cosmetic: a single frame shows theta but

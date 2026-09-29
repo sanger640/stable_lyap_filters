@@ -1,0 +1,56 @@
+{
+  "name": "D21 frozen-D2 enhanced-state contact residual",
+  "status": "frozen before model construction or fitting",
+  "purpose": "one bounded test of whether D20 contact information can be added without replacing or degrading D2 continuous dynamics",
+  "scope": "D3+D12 TRAIN folds only; no new simulation, task labels, joint validation, DEV or TEST",
+  "inputs": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "enhanced_trajectory_data": "results/jenga/d20_enhanced_trajectory_data.npz",
+    "enhanced_trajectory_data_sha256": "bafb8cda9c1ec23d0ac9f40e2a65f628914669d5ec85ca59c54ee2076b4cea8c",
+    "enhanced_trajectory_integrity": "results/jenga/d20_enhanced_trajectory_integrity.json",
+    "enhanced_trajectory_integrity_sha256": "07aecc2cf29398ea11767df97cfe406b98cb25f50063044a4a868037f70d1c38",
+    "d2_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+    "d2_checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+    "d20_result": "results/jenga/d20_enhanced_hybrid_result.json",
+    "d20_result_sha256": "6bf3094fc24bfcdd9dbe9003781b4ed20de05695057b2c312ec0cff7dba7ef5a",
+    "d20_checkpoint": "results/jenga/d20_enhanced_hybrid/one_step_seed1.pt",
+    "d20_checkpoint_sha256": "aea985d9068806ac8a17f226eda17ef7fa4878173b91e2412069c8c0fd0b323f"
+  },
+  "model": {
+    "base": "frozen D2 StepGraphNet and frozen D2 integration scales",
+    "residual": "192-wide enhanced-state MLP with zero-initialized continuous and contact output layers",
+    "contact_modes": ["absent", "persistent", "created", "lost"],
+    "enhanced_future_heads": "proprioception delta and force/impulse next state",
+    "seed": 1,
+    "identity_tolerance": 1e-7,
+    "task_or_failure_labels": false
+  },
+  "stage1": {
+    "epochs": 6,
+    "batch_transitions": 2048,
+    "learning_rate": 0.0001,
+    "loss_weights": {
+      "continuous_base_delta": 1.0,
+      "proprioception_delta": 0.5,
+      "supervised_contact_mode": 1.0,
+      "force_and_impulse_next_state": 0.2,
+      "continuous_residual_l2": 0.01
+    },
+    "checkpoint_selection": "fixed final epoch",
+    "gate_on_each_primary_axis": {
+      "maximum_continuous_nrmse_ratio_to_d2": 1.0,
+      "minimum_contact_event_macro_f1": "matching-axis D20 value"
+    }
+  },
+  "stage2_if_stage1_passes": {
+    "horizon": 8,
+    "requirements": "pose NRMSE no worse than D2 and pair-distance correlation at least 0.05 above D2 on both primary TRAIN axes"
+  },
+  "stage3_if_stage2_passes": {
+    "requirements": "separation-curve and frozen-v0 monitor agreement both improve over D2 on both primary TRAIN axes"
+  },
+  "stop_rule": "any failed stage ends this model-tweaking line; no weight sweep, replication, DEV or TEST"
+}

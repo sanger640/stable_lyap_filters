@@ -1,10 +1,9 @@
-> **Current plan: [`PLAN_NEXT.md`](PLAN_NEXT.md) (status 2026-09-22).** D2 remains the dynamics
-> training objective, but raw spread plus a quiet percentile is diagnostic only. The runtime rule is
-> `src/counterfactual_monitor.py`: among 64 execution-noise rollouts, a BIC-supported PC1 split with
-> Ashman's D > 2 and at least two probes on each side must persist from hold 10 to hold 30. It has no
-> calibration data, learned threshold, task label or failure label. Current Jenga performance is
-> 50.4% fork recall and 7.8% quiet alarms over 10 D2 seeds, so the design requirement is restored but
-> the performance gate is not passed.
+> **Current status (2026-09-29):** Regime Monitor v0 is frozen and works with accurate physical
+> counterfactual trajectories across Jenga picking and upright pushing. Learned futures remain the
+> deployment bottleneck. D21 closes the incremental state-world-model line after failing one frozen
+> held-out gate; do not interpret older “train the next model” text below as active guidance. See
+> [`WORLD_MODEL.md`](WORLD_MODEL.md) for the complete model history and [`PLAN_NEXT.md`](PLAN_NEXT.md)
+> for the active research-direction decision.
 
 > Plain-language version with figures: [`TOY_EXPERIMENT.md`](TOY_EXPERIMENT.md). Current status and next steps: [`HANDOFF.md`](HANDOFF.md).
 

@@ -1,7 +1,7 @@
 """The physical mechanism behind the systematically missed forks (PLAN_NEXT.md Phase 2, step 6).
 
 Reads the dense re-simulations (`jenga_blind_resim.py`) and the 10 frozen `gnn_n5` seeds, and writes
-the three results `blind_fork_analysis.md` is built on:
+the three results `docs/archive/BLIND_FORK_ANALYSIS.md` is built on:
 
   tilt course   the toppling neighbour's tilt over time, real vs predicted (median over the probes
                 that truly topple, and over seeds): start tilt, tilt at the end of the perturbed

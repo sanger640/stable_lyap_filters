@@ -1,7 +1,7 @@
 """
 Flow-map FTLE and the full Lyapunov spectrum, plus a saturating separation measure.
 
-Two rules from PLAN.md that this module exists to enforce:
+Two rules from `docs/archive/PLAN_ORIGINAL_FTLE.md` that this module exists to enforce:
 
 * **Return the full spectrum, not just lambda_max.** The ratio of positive to negative
   exponents separates a saddle (recoverable) from a repeller (not), and that distinction is

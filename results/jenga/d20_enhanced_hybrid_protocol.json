@@ -1,0 +1,95 @@
+{
+  "name": "D20 enhanced-Markov supervised-contact hybrid world model",
+  "status": "frozen before trajectory replay or model fitting",
+  "purpose": "test whether richer Markov observations plus explicitly supervised contact transitions repair the deployable world-model bottleneck while physical monitor v0 remains unchanged",
+  "scope": "D3+D12 TRAIN folds only; joint validation, DEV, physical TEST and task labels remain closed unless every preceding gate passes",
+  "inputs": {
+    "manifest": "results/jenga/d12_combined_manifest.json",
+    "manifest_sha256": "53df2f379e498b87a1df6aedc427b3330d4ee9f5b0d4434004029f653568c4de",
+    "d3_directory": "results/jenga/d3_data",
+    "d3_meta_sha256": "a7717e4dfde9ebd0eff32e0db8cf6abb201d8e21399e00e21ccd36b62e12ec22",
+    "d12_directory": "results/jenga/d12_coverage_data",
+    "d12_meta_sha256": "b95d81a13d91bf6607cd4b0b882f50314118028a831511ffd0d67d613be4e861",
+    "trace_directory": "results/jenga/trace_data",
+    "trace_meta_sha256": "e849bdd205230137c206489bc96e0a48284c5cbd0778fe4a7d248a99295400e9",
+    "simulator": "vendor/panda_express_sim.tar",
+    "simulator_sha256": "46c6b30dac82b267e9bb891c58e23482397bb3940db10645f7f58c4e32ac431f",
+    "d17_start_state": "results/jenga/d17_enhanced_state_data.npz",
+    "d17_start_state_sha256": "d750dd51cf9430187990df6a814f10161503559be8e65e03bc4bb2f708e8706d",
+    "d2_checkpoint": "results/jenga/w6_cw_d2_s1.pt",
+    "d2_checkpoint_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+    "monitor_targets": "results/jenga/d13_monitor_evidence_targets.npz",
+    "monitor_targets_sha256": "408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f"
+  },
+  "trajectory_collection": {
+    "workers": 1,
+    "groups": 832,
+    "paths_per_group": 12,
+    "steps_per_path": 38,
+    "channels": {
+      "base_state": 61,
+      "robot_proprioception": 24,
+      "instant_contact_force_geometry": 60,
+      "recent_contact_impulse": 36,
+      "total": 181
+    },
+    "integrity": "every replayed 61-D trajectory sample and every D17 start channel must reproduce exactly"
+  },
+  "model": {
+    "type": "action-conditioned graph dynamics with enhanced-state context and supervised four-way contact-transition modes",
+    "contact_modes": ["absent", "persistent", "created", "lost"],
+    "task_or_failure_labels": false,
+    "hidden": 192,
+    "graph_rounds": 3,
+    "seed": 1
+  },
+  "stages": {
+    "one_step": {
+      "train_epochs": 12,
+      "batch_transitions": 2048,
+      "learning_rate": 0.0003,
+      "loss_weights": {
+        "continuous_base_delta": 1.0,
+        "proprioception_delta": 0.5,
+        "supervised_contact_mode": 1.0,
+        "force_and_impulse_next_state": 0.2
+      },
+      "checkpoint_selection": "fixed final epoch",
+      "gate_on_both_primary_axes": {
+        "maximum_continuous_nrmse_ratio_to_d2": 0.90,
+        "minimum_contact_event_macro_f1_gain_over_d2": 0.05
+      }
+    },
+    "h8": {
+      "authorized_only_if_one_step_passes": true,
+      "rollout_finetune_epochs": 6,
+      "batch_groups": 16,
+      "learning_rate": 0.0001,
+      "loss_weights": {
+        "base_state_trajectory": 1.0,
+        "proprioception_trajectory": 0.25,
+        "supervised_contact_mode": 0.5,
+        "force_and_impulse_trajectory": 0.1,
+        "pairwise_action_response_geometry": 1.0
+      },
+      "checkpoint_selection": "fixed final epoch",
+      "maximum_h8_pose_nrmse_ratio_to_d2": 0.90,
+      "minimum_pair_distance_correlation_gain_over_d2": 0.05
+    },
+    "curves": {
+      "authorized_only_if_h8_passes": true,
+      "requirements": "improve physical separation-curve MSE and boundary/commitment sign agreement over frozen D2 on both primary TRAIN axes"
+    },
+    "monitor": {
+      "authorized_only_if_curves_pass": true,
+      "requirements": "improve frozen-v0 final decision agreement over D2 on both primary TRAIN axes before any DEV or TEST evaluation"
+    }
+  },
+  "stop_rules": {
+    "one_step_failure": "stop; richer observation plus supervised contact modes does not repair basic dynamics under this model",
+    "h8_failure": "stop; compounding rollout error remains the bottleneck",
+    "curve_failure": "stop; ordinary dynamics accuracy does not preserve local counterfactual geometry",
+    "monitor_pass": "only then freeze a prospective DEV protocol",
+    "threshold_or_task_metric_tuning": false
+  }
+}

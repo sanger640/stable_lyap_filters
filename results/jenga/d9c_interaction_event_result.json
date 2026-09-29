@@ -1,0 +1,4601 @@
+{
+  "protocol": {
+    "name": "D9c explicit generic interaction-event pilot",
+    "status": "frozen before model fitting",
+    "purpose": "test whether identifiable recent interaction events recover response specificity better than snapshot or opaque temporal history",
+    "scope": "the same 218 fit groups and five episode-blocked folds as D9b; prior inspected TRAIN, DEV, and TEST remain closed",
+    "data": {
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "neighborhood_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+      "nested_source": "results/jenga/d3_data",
+      "history_source": "results/jenga/d9b_history_data.npz",
+      "history_sha256": "898e7a69741eb81b286569c41c21a927f3aa30972afcac23d64678221173c502",
+      "history_alignment_result": "results/jenga/d9b_history_alignment_result.json",
+      "history_alignment_result_sha256": "f108f2caa64846f617d57044f0a0598b3b86637ce6c4eb797c492c35141fa9c4",
+      "history_states": 4,
+      "history_actions": 3,
+      "eligible_episodes": 37,
+      "eligible_groups": 218,
+      "excluded_inspected_episode_ids": [
+        "0",
+        "1",
+        "5",
+        "7",
+        "12",
+        "13"
+      ],
+      "folds": 5,
+      "validation_episode_ids": [
+        [
+          "16",
+          "33",
+          "40",
+          "46",
+          "51",
+          "67",
+          "82",
+          "97"
+        ],
+        [
+          "21",
+          "34",
+          "41",
+          "47",
+          "54",
+          "68",
+          "88",
+          "99"
+        ],
+        [
+          "25",
+          "35",
+          "42",
+          "48",
+          "59",
+          "72",
+          "89"
+        ],
+        [
+          "30",
+          "36",
+          "43",
+          "49",
+          "62",
+          "74",
+          "93"
+        ],
+        [
+          "31",
+          "37",
+          "45",
+          "50",
+          "63",
+          "78",
+          "94"
+        ]
+      ],
+      "training_fraction": 1.0,
+      "normalization": "reuse each D9b fold's current-state, future-action, and response normalizers; fit transition-delta and executed-control input normalizers on all non-validation histories",
+      "task_failure_or_alarm_labels_used": false
+    },
+    "controls": {
+      "snapshot_result": "results/jenga/d9b_scaling_result.json",
+      "snapshot_result_sha256": "fc1d392c490271ee188eaccb3a35e437d884c524214e12b4a68324d2060736a1",
+      "history_result": "results/jenga/d9b_history_factorial_result.json",
+      "history_result_sha256": "6dc67d86ad8f88e4f5728de11b9e926f43c123365ed00f197388c3388d34d764"
+    },
+    "event_representation": {
+      "per_transition": [
+        "normalized signed change in the first 45 continuous pose/velocity channels",
+        "absolute continuous change divided by the same scale",
+        "12 contact flags before and after the transition",
+        "12 contact-creation and 12 contact-loss indicators",
+        "normalized executed control"
+      ],
+      "token_dimension": 142,
+      "pooling": "shared event MLP followed by mean, maximum, and latest-event pooling",
+      "scene_context": "fuse event pools with the unchanged normalized current-state D9b encoding",
+      "semantics": "no named modes, task goal, failure label, alarm target, Jenga geometry, or task-specific object role"
+    },
+    "model": {
+      "hidden": 128,
+      "heads": 4,
+      "layers": 2,
+      "action_horizon": 8,
+      "curve_steps": 39
+    },
+    "optimization": {
+      "pilot_seed": 1,
+      "replication_seeds_if_pilot_passes": [
+        2,
+        3
+      ],
+      "steps": 5000,
+      "group_batch_size": 32,
+      "sampling": "deterministic uniform group sampling without replacement; no class balancing",
+      "optimizer": "AdamW",
+      "initial_learning_rate": 0.001,
+      "schedule": "CosineAnnealingLR",
+      "final_learning_rate": 1e-05,
+      "gradient_clip": 1.0,
+      "checkpoint_selection": "fixed final step only",
+      "execution": "one sequential GPU run at a time"
+    },
+    "pilot_gate": {
+      "boundary_added_positive_reduction_from_snapshot": 0.1,
+      "final_added_positive_reduction_from_snapshot": 0.1,
+      "added_positive_no_worse_than_gru_history": true,
+      "maximum_boundary_recall_loss_from_snapshot": 0.05,
+      "maximum_final_recall_loss_from_snapshot": 0.05,
+      "mean_mse_no_worse_than_snapshot": true,
+      "endpoint_and_level_symmetry_max_abs": 1e-05
+    },
+    "decision": {
+      "pass": "replicate seeds 2 and 3 on the same fit-only folds before opening any held-out split",
+      "fail": "do not add event complexity or tune on these folds; reconsider continuous curve prediction as the learned-model interface",
+      "dev_and_test": "remain closed for every outcome"
+    }
+  },
+  "created": "2026-09-28T21:10:33+00:00",
+  "protocol_sha256": "51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392",
+  "arms": {
+    "snapshot": {
+      "runs": 5,
+      "validation_groups": 218,
+      "mean_training_groups": 174.4,
+      "mean_mse": 0.5303428756124383,
+      "median_rmse": 0.5726823703055768,
+      "nested": {
+        "boundary": {
+          "states": 218,
+          "reference_positive": 155,
+          "predicted_positive": 191,
+          "tp": 149,
+          "fn": 6,
+          "fp": 42,
+          "tn": 21,
+          "agreement": 0.7798165137614679,
+          "recall": 0.9612903225806452,
+          "added_positive_rate": 0.6666666666666666
+        },
+        "commitment": {
+          "states": 218,
+          "reference_positive": 67,
+          "predicted_positive": 81,
+          "tp": 31,
+          "fn": 36,
+          "fp": 50,
+          "tn": 101,
+          "agreement": 0.6055045871559633,
+          "recall": 0.4626865671641791,
+          "added_positive_rate": 0.33112582781456956
+        },
+        "persistence": {
+          "states": 218,
+          "reference_positive": 176,
+          "predicted_positive": 174,
+          "tp": 155,
+          "fn": 21,
+          "fp": 19,
+          "tn": 23,
+          "agreement": 0.8165137614678899,
+          "recall": 0.8806818181818182,
+          "added_positive_rate": 0.4523809523809524
+        },
+        "alarm": {
+          "states": 218,
+          "reference_positive": 60,
+          "predicted_positive": 71,
+          "tp": 27,
+          "fn": 33,
+          "fp": 44,
+          "tn": 114,
+          "agreement": 0.6467889908256881,
+          "recall": 0.45,
+          "added_positive_rate": 0.27848101265822783
+        }
+      },
+      "zero": {
+        "groups": 218,
+        "reference_zero": 27,
+        "predicted_zero": 21,
+        "tp": 20,
+        "fn": 7,
+        "fp": 1,
+        "tn": 190,
+        "recall": 0.7407407407407407,
+        "false_zero_rate": 0.005235602094240838
+      }
+    },
+    "gru_history": {
+      "runs": 5,
+      "validation_groups": 218,
+      "mean_training_groups": 174.4,
+      "mean_mse": 0.537162827276582,
+      "median_rmse": 0.6139927671066467,
+      "nested": {
+        "boundary": {
+          "states": 218,
+          "reference_positive": 155,
+          "predicted_positive": 182,
+          "tp": 144,
+          "fn": 11,
+          "fp": 38,
+          "tn": 25,
+          "agreement": 0.7752293577981652,
+          "recall": 0.9290322580645162,
+          "added_positive_rate": 0.6031746031746031
+        },
+        "commitment": {
+          "states": 218,
+          "reference_positive": 67,
+          "predicted_positive": 64,
+          "tp": 21,
+          "fn": 46,
+          "fp": 43,
+          "tn": 108,
+          "agreement": 0.591743119266055,
+          "recall": 0.31343283582089554,
+          "added_positive_rate": 0.2847682119205298
+        },
+        "persistence": {
+          "states": 218,
+          "reference_positive": 176,
+          "predicted_positive": 171,
+          "tp": 153,
+          "fn": 23,
+          "fp": 18,
+          "tn": 24,
+          "agreement": 0.8119266055045872,
+          "recall": 0.8693181818181818,
+          "added_positive_rate": 0.42857142857142855
+        },
+        "alarm": {
+          "states": 218,
+          "reference_positive": 60,
+          "predicted_positive": 55,
+          "tp": 18,
+          "fn": 42,
+          "fp": 37,
+          "tn": 121,
+          "agreement": 0.6376146788990825,
+          "recall": 0.3,
+          "added_positive_rate": 0.23417721518987342
+        }
+      },
+      "zero": {
+        "groups": 218,
+        "reference_zero": 27,
+        "predicted_zero": 22,
+        "tp": 20,
+        "fn": 7,
+        "fp": 2,
+        "tn": 189,
+        "recall": 0.7407407407407407,
+        "false_zero_rate": 0.010471204188481676
+      }
+    },
+    "interaction_event": {
+      "runs": 5,
+      "validation_groups": 218,
+      "mean_training_groups": 174.4,
+      "mean_mse": 0.5739723387251207,
+      "median_rmse": 0.564625587720632,
+      "nested": {
+        "boundary": {
+          "states": 218,
+          "reference_positive": 155,
+          "predicted_positive": 183,
+          "tp": 140,
+          "fn": 15,
+          "fp": 43,
+          "tn": 20,
+          "agreement": 0.7339449541284404,
+          "recall": 0.9032258064516129,
+          "added_positive_rate": 0.6825396825396826
+        },
+        "commitment": {
+          "states": 218,
+          "reference_positive": 67,
+          "predicted_positive": 67,
+          "tp": 23,
+          "fn": 44,
+          "fp": 44,
+          "tn": 107,
+          "agreement": 0.5963302752293578,
+          "recall": 0.34328358208955223,
+          "added_positive_rate": 0.2913907284768212
+        },
+        "persistence": {
+          "states": 218,
+          "reference_positive": 176,
+          "predicted_positive": 173,
+          "tp": 160,
+          "fn": 16,
+          "fp": 13,
+          "tn": 29,
+          "agreement": 0.8669724770642202,
+          "recall": 0.9090909090909091,
+          "added_positive_rate": 0.30952380952380953
+        },
+        "alarm": {
+          "states": 218,
+          "reference_positive": 60,
+          "predicted_positive": 66,
+          "tp": 20,
+          "fn": 40,
+          "fp": 46,
+          "tn": 112,
+          "agreement": 0.6055045871559633,
+          "recall": 0.3333333333333333,
+          "added_positive_rate": 0.2911392405063291
+        }
+      },
+      "zero": {
+        "groups": 218,
+        "reference_zero": 27,
+        "predicted_zero": 24,
+        "tp": 20,
+        "fn": 7,
+        "fp": 4,
+        "tn": 187,
+        "recall": 0.7407407407407407,
+        "false_zero_rate": 0.020942408376963352
+      }
+    }
+  },
+  "pilot_runs": [
+    {
+      "protocol_sha256": "51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392",
+      "arm": "interaction_event",
+      "seed": 1,
+      "fold": 0,
+      "fraction": 1.0,
+      "training_episodes": [
+        "21",
+        "25",
+        "30",
+        "31",
+        "34",
+        "35",
+        "36",
+        "37",
+        "41",
+        "42",
+        "43",
+        "45",
+        "47",
+        "48",
+        "49",
+        "50",
+        "54",
+        "59",
+        "62",
+        "63",
+        "68",
+        "72",
+        "74",
+        "78",
+        "88",
+        "89",
+        "93",
+        "94",
+        "99"
+      ],
+      "training_groups": 174,
+      "seconds": 45.260268211364746,
+      "history": [
+        {
+          "step": 1,
+          "total": 2.5656862258911133,
+          "amplitude": 1.1848666667938232,
+          "shape_early_gap": 0.2972128391265869,
+          "shape_full_gap": 0.27226805686950684,
+          "shape_action": 0.36544403433799744,
+          "shape_early_hold": 0.2778044044971466,
+          "shape_late_hold": 0.16809038817882538
+        },
+        {
+          "step": 1000,
+          "total": 0.12719574570655823,
+          "amplitude": 0.0009460534784011543,
+          "shape_early_gap": 0.009099075570702553,
+          "shape_full_gap": 0.0070179905742406845,
+          "shape_action": 0.06471356749534607,
+          "shape_early_hold": 0.027913887053728104,
+          "shape_late_hold": 0.01750517636537552
+        },
+        {
+          "step": 2000,
+          "total": 0.044544242322444916,
+          "amplitude": 0.00018633194849826396,
+          "shape_early_gap": 0.0020827047992497683,
+          "shape_full_gap": 0.0015469039790332317,
+          "shape_action": 0.026931822299957275,
+          "shape_early_hold": 0.008367066271603107,
+          "shape_late_hold": 0.005429414100944996
+        },
+        {
+          "step": 3000,
+          "total": 0.025015559047460556,
+          "amplitude": 1.4399137398868334e-05,
+          "shape_early_gap": 0.000422044366132468,
+          "shape_full_gap": 0.0002829026198014617,
+          "shape_action": 0.014607200399041176,
+          "shape_early_hold": 0.003305492689833045,
+          "shape_late_hold": 0.0063835191540420055
+        },
+        {
+          "step": 4000,
+          "total": 0.024170227348804474,
+          "amplitude": 7.865869520173874e-06,
+          "shape_early_gap": 0.0003962258924730122,
+          "shape_full_gap": 0.00029243482276797295,
+          "shape_action": 0.012831134721636772,
+          "shape_early_hold": 0.004131613299250603,
+          "shape_late_hold": 0.006510951556265354
+        },
+        {
+          "step": 5000,
+          "total": 0.01756167970597744,
+          "amplitude": 4.806066726814606e-07,
+          "shape_early_gap": 0.00040214628097601235,
+          "shape_full_gap": 0.0001903087686514482,
+          "shape_action": 0.011988867074251175,
+          "shape_early_hold": 0.003147426061332226,
+          "shape_late_hold": 0.0018324493430554867
+        }
+      ],
+      "evaluation": {
+        "groups": 44,
+        "mean_mse": 0.488439679145813,
+        "median_rmse": 0.5777310132980347,
+        "group_mse": [
+          0.2732517123222351,
+          0.23919463157653809,
+          0.0,
+          0.31969916820526123,
+          0.0,
+          0.7429049611091614,
+          0.07725577801465988,
+          0.5678684711456299,
+          0.426914244890213,
+          0.131090447306633,
+          0.40113115310668945,
+          1.2193121910095215,
+          0.21389013528823853,
+          0.3114853501319885,
+          0.17280007898807526,
+          0.2110462486743927,
+          0.0,
+          0.8362135291099548,
+          3.0741472244262695,
+          0.3481501638889313,
+          0.28008443117141724,
+          0.3749123215675354,
+          1.360406756401062,
+          0.43684831261634827,
+          0.4459243416786194,
+          0.2048981487751007,
+          0.24925974011421204,
+          0.0683230385184288,
+          0.26492780447006226,
+          0.512056827545166,
+          0.4598129093647003,
+          0.6727780103683472,
+          1.103678822517395,
+          2.121853828430176,
+          0.16617995500564575,
+          0.5057940483093262,
+          0.09257195144891739,
+          0.35965344309806824,
+          0.37719738483428955,
+          0.7854859828948975,
+          0.16433760523796082,
+          0.6774654984474182,
+          0.2405390590429306,
+          0.0
+        ],
+        "curve_errors": {
+          "early_gap": 0.35988762974739075,
+          "full_gap": 0.3723301887512207,
+          "curve_action": 1.0932661294937134,
+          "curve_early_hold": 0.4648391902446747,
+          "curve_late_hold": 0.24030111730098724
+        },
+        "nested": {
+          "boundary": {
+            "states": 44,
+            "reference_positive": 31,
+            "predicted_positive": 37,
+            "tp": 28,
+            "fn": 3,
+            "fp": 9,
+            "tn": 4,
+            "agreement": 0.7272727272727273,
+            "recall": 0.9032258064516129,
+            "added_positive_rate": 0.6923076923076923
+          },
+          "commitment": {
+            "states": 44,
+            "reference_positive": 13,
+            "predicted_positive": 13,
+            "tp": 6,
+            "fn": 7,
+            "fp": 7,
+            "tn": 24,
+            "agreement": 0.6818181818181818,
+            "recall": 0.46153846153846156,
+            "added_positive_rate": 0.22580645161290322
+          },
+          "persistence": {
+            "states": 44,
+            "reference_positive": 34,
+            "predicted_positive": 34,
+            "tp": 30,
+            "fn": 4,
+            "fp": 4,
+            "tn": 6,
+            "agreement": 0.8181818181818182,
+            "recall": 0.8823529411764706,
+            "added_positive_rate": 0.4
+          },
+          "alarm": {
+            "states": 44,
+            "reference_positive": 12,
+            "predicted_positive": 12,
+            "tp": 6,
+            "fn": 6,
+            "fp": 6,
+            "tn": 26,
+            "agreement": 0.7272727272727273,
+            "recall": 0.5,
+            "added_positive_rate": 0.1875
+          }
+        },
+        "reference_rows": [
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": true,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        ],
+        "predicted_rows": [
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        ],
+        "target_amplitude": [
+          1.8915042877197266,
+          1.8764392137527466,
+          0.0,
+          1.8432989120483398,
+          0.0,
+          1.2935810089111328,
+          1.4798524379730225,
+          1.8338570594787598,
+          1.770301342010498,
+          1.831620693206787,
+          1.8684608936309814,
+          1.2577728033065796,
+          1.8794506788253784,
+          1.8693381547927856,
+          1.8277572393417358,
+          1.8725992441177368,
+          0.0,
+          1.8471143245697021,
+          1.7533246278762817,
+          1.9081963300704956,
+          1.8199104070663452,
+          1.8948895931243896,
+          0.0,
+          1.8785066604614258,
+          1.873448371887207,
+          1.8724764585494995,
+          1.8504122495651245,
+          1.8571358919143677,
+          1.6261179447174072,
+          1.839614987373352,
+          1.6526994705200195,
+          1.7528748512268066,
+          1.8486964702606201,
+          1.4566584825515747,
+          1.8529784679412842,
+          1.8178446292877197,
+          1.7645515203475952,
+          1.8690849542617798,
+          1.6960272789001465,
+          1.8608614206314087,
+          1.8281168937683105,
+          1.770479679107666,
+          1.8347370624542236,
+          0.0
+        ],
+        "predicted_amplitude": [
+          1.858816385269165,
+          1.8439326286315918,
+          0.0,
+          1.8454149961471558,
+          0.0,
+          1.6090701818466187,
+          1.4932217597961426,
+          1.684569239616394,
+          1.8301242589950562,
+          1.8450846672058105,
+          1.8538421392440796,
+          1.709002137184143,
+          1.8236185312271118,
+          1.8632348775863647,
+          1.8594914674758911,
+          1.901431679725647,
+          0.0,
+          1.5137522220611572,
+          0.0,
+          1.8253117799758911,
+          1.835739254951477,
+          1.4451050758361816,
+          1.189039945602417,
+          1.787108302116394,
+          1.8234491348266602,
+          1.787084698677063,
+          1.8093334436416626,
+          1.8667620420455933,
+          1.2936182022094727,
+          1.8958791494369507,
+          1.776355504989624,
+          1.867322564125061,
+          1.632222056388855,
+          0.0,
+          1.8132894039154053,
+          1.6788147687911987,
+          1.8325086832046509,
+          1.8404103517532349,
+          1.8976985216140747,
+          1.4532136917114258,
+          1.7806605100631714,
+          1.7644047737121582,
+          1.7968600988388062,
+          0.0
+        ],
+        "zero": {
+          "groups": 44,
+          "reference_zero": 5,
+          "predicted_zero": 6,
+          "tp": 4,
+          "fn": 1,
+          "fp": 2,
+          "tn": 37,
+          "recall": 0.8,
+          "false_zero_rate": 0.05128205128205128
+        },
+        "invariance": {
+          "endpoint_swap_max_abs": 0.0,
+          "level_permutation_max_abs": 1.430511474609375e-06
+        }
+      },
+      "checkpoint": "results/jenga/d9c_interaction_event/event_seed1_fold0_full.pt",
+      "checkpoint_sha256": "e6db2b6bafd1076c924ce5a8f9104b7787bc723d3905616a5df65a3a82fe7605"
+    },
+    {
+      "protocol_sha256": "51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392",
+      "arm": "interaction_event",
+      "seed": 1,
+      "fold": 1,
+      "fraction": 1.0,
+      "training_episodes": [
+        "16",
+        "25",
+        "30",
+        "31",
+        "33",
+        "35",
+        "36",
+        "37",
+        "40",
+        "42",
+        "43",
+        "45",
+        "46",
+        "48",
+        "49",
+        "50",
+        "51",
+        "59",
+        "62",
+        "63",
+        "67",
+        "72",
+        "74",
+        "78",
+        "82",
+        "89",
+        "93",
+        "94",
+        "97"
+      ],
+      "training_groups": 171,
+      "seconds": 42.94568467140198,
+      "history": [
+        {
+          "step": 1,
+          "total": 2.76383638381958,
+          "amplitude": 1.1853370666503906,
+          "shape_early_gap": 0.3784503638744354,
+          "shape_full_gap": 0.3712901771068573,
+          "shape_action": 0.44638481736183167,
+          "shape_early_hold": 0.24536171555519104,
+          "shape_late_hold": 0.13701194524765015
+        },
+        {
+          "step": 1000,
+          "total": 0.12339117377996445,
+          "amplitude": 0.0037512790877372026,
+          "shape_early_gap": 0.00394887151196599,
+          "shape_full_gap": 0.0032735054846853018,
+          "shape_action": 0.07838976383209229,
+          "shape_early_hold": 0.02068786695599556,
+          "shape_late_hold": 0.01333988644182682
+        },
+        {
+          "step": 2000,
+          "total": 0.06460439413785934,
+          "amplitude": 0.0009898385033011436,
+          "shape_early_gap": 0.001011846587061882,
+          "shape_full_gap": 0.0009393392247147858,
+          "shape_action": 0.03766312077641487,
+          "shape_early_hold": 0.01607523486018181,
+          "shape_late_hold": 0.007925012148916721
+        },
+        {
+          "step": 3000,
+          "total": 0.02805119939148426,
+          "amplitude": 3.150230986648239e-05,
+          "shape_early_gap": 0.0006406576139852405,
+          "shape_full_gap": 0.000439646391896531,
+          "shape_action": 0.021673645824193954,
+          "shape_early_hold": 0.0034241366665810347,
+          "shape_late_hold": 0.00184161146171391
+        },
+        {
+          "step": 4000,
+          "total": 0.02746969275176525,
+          "amplitude": 2.9275411179696675e-06,
+          "shape_early_gap": 0.000417396571720019,
+          "shape_full_gap": 0.00025595712941139936,
+          "shape_action": 0.01433584000915289,
+          "shape_early_hold": 0.004925990477204323,
+          "shape_late_hold": 0.007531581912189722
+        },
+        {
+          "step": 5000,
+          "total": 0.020723581314086914,
+          "amplitude": 1.1347394774929853e-06,
+          "shape_early_gap": 0.00035436381585896015,
+          "shape_full_gap": 0.00024879342527128756,
+          "shape_action": 0.013902486301958561,
+          "shape_early_hold": 0.0028745101299136877,
+          "shape_late_hold": 0.003342293668538332
+        }
+      ],
+      "evaluation": {
+        "groups": 47,
+        "mean_mse": 0.49986210465431213,
+        "median_rmse": 0.5709086656570435,
+        "group_mse": [
+          0.13769620656967163,
+          0.19061295688152313,
+          0.3317874073982239,
+          0.0,
+          0.3931548297405243,
+          0.32491928339004517,
+          0.39495086669921875,
+          0.4635102152824402,
+          0.0,
+          0.29600635170936584,
+          0.5083496570587158,
+          0.3524811863899231,
+          0.5805546045303345,
+          0.9994814395904541,
+          0.4442027509212494,
+          0.14930066466331482,
+          0.13773180544376373,
+          0.9840563535690308,
+          3.3626999855041504,
+          0.32055068016052246,
+          0.2952626943588257,
+          0.0,
+          0.4071801006793976,
+          0.41628822684288025,
+          1.4563002586364746,
+          0.27019837498664856,
+          1.4164581298828125,
+          0.3179062008857727,
+          1.1226515769958496,
+          2.6134891510009766,
+          0.33500322699546814,
+          0.38414743542671204,
+          0.3259367048740387,
+          0.22042448818683624,
+          0.4134390652179718,
+          0.16631969809532166,
+          0.12466934323310852,
+          0.2686353027820587,
+          0.4553545117378235,
+          0.24808351695537567,
+          0.45721736550331116,
+          0.1735406517982483,
+          0.363743394613266,
+          0.1688089668750763,
+          0.1531679630279541,
+          0.23341098427772522,
+          0.31383320689201355
+        ],
+        "curve_errors": {
+          "early_gap": 0.2969781160354614,
+          "full_gap": 0.2894437909126282,
+          "curve_action": 1.0452804565429688,
+          "curve_early_hold": 0.37122654914855957,
+          "curve_late_hold": 0.33940669894218445
+        },
+        "nested": {
+          "boundary": {
+            "states": 47,
+            "reference_positive": 34,
+            "predicted_positive": 41,
+            "tp": 31,
+            "fn": 3,
+            "fp": 10,
+            "tn": 3,
+            "agreement": 0.723404255319149,
+            "recall": 0.9117647058823529,
+            "added_positive_rate": 0.7692307692307693
+          },
+          "commitment": {
+            "states": 47,
+            "reference_positive": 16,
+            "predicted_positive": 16,
+            "tp": 8,
+            "fn": 8,
+            "fp": 8,
+            "tn": 23,
+            "agreement": 0.6595744680851063,
+            "recall": 0.5,
+            "added_positive_rate": 0.25806451612903225
+          },
+          "persistence": {
+            "states": 47,
+            "reference_positive": 40,
+            "predicted_positive": 41,
+            "tp": 37,
+            "fn": 3,
+            "fp": 4,
+            "tn": 3,
+            "agreement": 0.851063829787234,
+            "recall": 0.925,
+            "added_positive_rate": 0.5714285714285714
+          },
+          "alarm": {
+            "states": 47,
+            "reference_positive": 14,
+            "predicted_positive": 16,
+            "tp": 7,
+            "fn": 7,
+            "fp": 9,
+            "tn": 24,
+            "agreement": 0.6595744680851063,
+            "recall": 0.5,
+            "added_positive_rate": 0.2727272727272727
+          }
+        },
+        "reference_rows": [
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        ],
+        "predicted_rows": [
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        ],
+        "target_amplitude": [
+          1.8950591087341309,
+          1.8884382247924805,
+          1.8619571924209595,
+          0.0,
+          1.750590205192566,
+          1.5647367238998413,
+          1.8496993780136108,
+          1.6679285764694214,
+          0.0,
+          1.8653844594955444,
+          1.8486818075180054,
+          1.8585186004638672,
+          1.7834370136260986,
+          1.7694319486618042,
+          1.8793389797210693,
+          1.5137300491333008,
+          1.8625234365463257,
+          1.2527915239334106,
+          1.8337665796279907,
+          1.8195507526397705,
+          1.7127529382705688,
+          0.0,
+          1.8585387468338013,
+          1.7949222326278687,
+          1.5977660417556763,
+          1.6249198913574219,
+          1.8850229978561401,
+          1.8947492837905884,
+          1.2507470846176147,
+          0.0,
+          1.7429934740066528,
+          1.7127467393875122,
+          1.8311594724655151,
+          1.8085483312606812,
+          1.7243901491165161,
+          1.8683528900146484,
+          1.7710093259811401,
+          1.771050214767456,
+          1.854183554649353,
+          1.8717141151428223,
+          1.8460209369659424,
+          1.9090949296951294,
+          1.8230419158935547,
+          1.8147120475769043,
+          1.4394171237945557,
+          1.8774784803390503,
+          1.888601541519165
+        ],
+        "predicted_amplitude": [
+          1.8621439933776855,
+          1.8182060718536377,
+          1.88810396194458,
+          0.0,
+          1.858639121055603,
+          1.5003269910812378,
+          1.6340070962905884,
+          1.9006446599960327,
+          0.0,
+          1.7511552572250366,
+          1.6679590940475464,
+          1.6978063583374023,
+          1.6894344091415405,
+          1.8854783773422241,
+          1.7704311609268188,
+          1.6205662488937378,
+          1.871963381767273,
+          1.8477540016174316,
+          0.0,
+          1.8653736114501953,
+          1.5500679016113281,
+          0.0,
+          1.8868627548217773,
+          1.8519302606582642,
+          1.420751929283142,
+          1.6275099515914917,
+          1.3540053367614746,
+          1.844733476638794,
+          1.8132342100143433,
+          1.5843091011047363,
+          1.8596928119659424,
+          1.8525784015655518,
+          1.5577564239501953,
+          1.8394488096237183,
+          1.7837177515029907,
+          1.7582718133926392,
+          1.9008666276931763,
+          1.832745909690857,
+          1.859031319618225,
+          1.8295702934265137,
+          1.9165102243423462,
+          1.8619836568832397,
+          1.8243085145950317,
+          1.8525558710098267,
+          1.501444697380066,
+          1.844539999961853,
+          1.824532151222229
+        ],
+        "zero": {
+          "groups": 47,
+          "reference_zero": 4,
+          "predicted_zero": 4,
+          "tp": 3,
+          "fn": 1,
+          "fp": 1,
+          "tn": 42,
+          "recall": 0.75,
+          "false_zero_rate": 0.023255813953488372
+        },
+        "invariance": {
+          "endpoint_swap_max_abs": 0.0,
+          "level_permutation_max_abs": 5.960464477539062e-07
+        }
+      },
+      "checkpoint": "results/jenga/d9c_interaction_event/event_seed1_fold1_full.pt",
+      "checkpoint_sha256": "411d6f58fa113ef3125430a0a131283464eb6653cff5156c703f48165420480a"
+    },
+    {
+      "protocol_sha256": "51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392",
+      "arm": "interaction_event",
+      "seed": 1,
+      "fold": 2,
+      "fraction": 1.0,
+      "training_episodes": [
+        "16",
+        "21",
+        "30",
+        "31",
+        "33",
+        "34",
+        "36",
+        "37",
+        "40",
+        "41",
+        "43",
+        "45",
+        "46",
+        "47",
+        "49",
+        "50",
+        "51",
+        "54",
+        "62",
+        "63",
+        "67",
+        "68",
+        "74",
+        "78",
+        "82",
+        "88",
+        "93",
+        "94",
+        "97",
+        "99"
+      ],
+      "training_groups": 173,
+      "seconds": 42.694647550582886,
+      "history": [
+        {
+          "step": 1,
+          "total": 2.6989552974700928,
+          "amplitude": 1.445385217666626,
+          "shape_early_gap": 0.2944360673427582,
+          "shape_full_gap": 0.2896532416343689,
+          "shape_action": 0.36478105187416077,
+          "shape_early_hold": 0.18753916025161743,
+          "shape_late_hold": 0.11716046929359436
+        },
+        {
+          "step": 1000,
+          "total": 0.1250735968351364,
+          "amplitude": 0.002259079599753022,
+          "shape_early_gap": 0.0035498235374689102,
+          "shape_full_gap": 0.003367295255884528,
+          "shape_action": 0.08985850214958191,
+          "shape_early_hold": 0.019885677844285965,
+          "shape_late_hold": 0.006153226364403963
+        },
+        {
+          "step": 2000,
+          "total": 0.05774542689323425,
+          "amplitude": 0.0014520966215059161,
+          "shape_early_gap": 0.003185966983437538,
+          "shape_full_gap": 0.002370873698964715,
+          "shape_action": 0.035610537976026535,
+          "shape_early_hold": 0.009222814813256264,
+          "shape_late_hold": 0.005903138779103756
+        },
+        {
+          "step": 3000,
+          "total": 0.027592092752456665,
+          "amplitude": 4.104125400772318e-05,
+          "shape_early_gap": 0.0007415598956868052,
+          "shape_full_gap": 0.0005741957575082779,
+          "shape_action": 0.016547825187444687,
+          "shape_early_hold": 0.006006397306919098,
+          "shape_late_hold": 0.003681073198094964
+        },
+        {
+          "step": 4000,
+          "total": 0.023334119468927383,
+          "amplitude": 5.519552360055968e-06,
+          "shape_early_gap": 0.0004306277260184288,
+          "shape_full_gap": 0.00024887800100259483,
+          "shape_action": 0.011783156543970108,
+          "shape_early_hold": 0.004460548050701618,
+          "shape_late_hold": 0.006405391730368137
+        },
+        {
+          "step": 5000,
+          "total": 0.016418080776929855,
+          "amplitude": 5.597846666205442e-07,
+          "shape_early_gap": 0.00031293262145482004,
+          "shape_full_gap": 0.00027288252022117376,
+          "shape_action": 0.010483483783900738,
+          "shape_early_hold": 0.0034597248304635286,
+          "shape_late_hold": 0.0018884974997490644
+        }
+      ],
+      "evaluation": {
+        "groups": 45,
+        "mean_mse": 0.6913107633590698,
+        "median_rmse": 0.49427834153175354,
+        "group_mse": [
+          0.0,
+          0.15704771876335144,
+          0.1165008395910263,
+          0.0,
+          0.18995453417301178,
+          0.19192706048488617,
+          0.16930332779884338,
+          2.2651546001434326,
+          1.0827866792678833,
+          0.22702611982822418,
+          0.1890030801296234,
+          0.24431106448173523,
+          0.24097779393196106,
+          0.18985168635845184,
+          0.2546115517616272,
+          0.1436465084552765,
+          0.18333332240581512,
+          0.3967043161392212,
+          1.1337400674819946,
+          0.0,
+          0.23442430794239044,
+          0.4191310703754425,
+          1.6095013618469238,
+          0.4259946048259735,
+          0.0,
+          0.9570828080177307,
+          0.0,
+          10.044878959655762,
+          0.0,
+          0.44228869676589966,
+          2.395221710205078,
+          0.2520565092563629,
+          0.0,
+          0.0,
+          1.092589259147644,
+          1.087791085243225,
+          0.4851285517215729,
+          0.5276737213134766,
+          1.443891167640686,
+          0.5896215438842773,
+          0.43321695923805237,
+          0.32502463459968567,
+          0.5820649862289429,
+          0.17915697395801544,
+          0.20636402070522308
+        ],
+        "curve_errors": {
+          "early_gap": 0.5412322878837585,
+          "full_gap": 0.33946919441223145,
+          "curve_action": 0.8153972625732422,
+          "curve_early_hold": 1.2810313701629639,
+          "curve_late_hold": 0.36570748686790466
+        },
+        "nested": {
+          "boundary": {
+            "states": 45,
+            "reference_positive": 31,
+            "predicted_positive": 33,
+            "tp": 27,
+            "fn": 4,
+            "fp": 6,
+            "tn": 8,
+            "agreement": 0.7777777777777778,
+            "recall": 0.8709677419354839,
+            "added_positive_rate": 0.42857142857142855
+          },
+          "commitment": {
+            "states": 45,
+            "reference_positive": 11,
+            "predicted_positive": 12,
+            "tp": 2,
+            "fn": 9,
+            "fp": 10,
+            "tn": 24,
+            "agreement": 0.5777777777777777,
+            "recall": 0.18181818181818182,
+            "added_positive_rate": 0.29411764705882354
+          },
+          "persistence": {
+            "states": 45,
+            "reference_positive": 34,
+            "predicted_positive": 33,
+            "tp": 32,
+            "fn": 2,
+            "fp": 1,
+            "tn": 10,
+            "agreement": 0.9333333333333333,
+            "recall": 0.9411764705882353,
+            "added_positive_rate": 0.09090909090909091
+          },
+          "alarm": {
+            "states": 45,
+            "reference_positive": 9,
+            "predicted_positive": 12,
+            "tp": 1,
+            "fn": 8,
+            "fp": 11,
+            "tn": 25,
+            "agreement": 0.5777777777777777,
+            "recall": 0.1111111111111111,
+            "added_positive_rate": 0.3055555555555556
+          }
+        },
+        "reference_rows": [
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        ],
+        "predicted_rows": [
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        ],
+        "target_amplitude": [
+          0.0,
+          1.839246392250061,
+          1.8834199905395508,
+          0.0,
+          1.8464741706848145,
+          1.844827651977539,
+          1.8210194110870361,
+          1.7101823091506958,
+          1.5795445442199707,
+          1.8714324235916138,
+          1.78671395778656,
+          1.8960319757461548,
+          1.5610301494598389,
+          1.822279453277588,
+          1.7722318172454834,
+          1.844032645225525,
+          1.9068219661712646,
+          1.876217246055603,
+          1.2981425523757935,
+          0.0,
+          1.5416737794876099,
+          1.7809230089187622,
+          1.9051514863967896,
+          1.8682223558425903,
+          0.0,
+          1.4804984331130981,
+          0.0,
+          0.0,
+          0.0,
+          1.8685302734375,
+          1.7941688299179077,
+          1.9007856845855713,
+          0.0,
+          0.0,
+          1.5659873485565186,
+          1.7397485971450806,
+          1.7980005741119385,
+          1.857795000076294,
+          1.77419912815094,
+          1.747833013534546,
+          1.8506675958633423,
+          1.9158689975738525,
+          1.5400111675262451,
+          1.8387242555618286,
+          1.874065637588501
+        ],
+        "predicted_amplitude": [
+          0.0,
+          1.8375451564788818,
+          1.887629508972168,
+          0.0,
+          1.7758846282958984,
+          1.832566738128662,
+          1.8687119483947754,
+          1.526757001876831,
+          1.1607706546783447,
+          1.8272078037261963,
+          1.878627896308899,
+          1.81448233127594,
+          1.6968520879745483,
+          1.8637328147888184,
+          1.8081982135772705,
+          1.855865478515625,
+          1.735961675643921,
+          1.810564398765564,
+          1.7891939878463745,
+          0.0,
+          1.5989105701446533,
+          1.7701834440231323,
+          1.3865740299224854,
+          1.8329219818115234,
+          0.0,
+          1.9468162059783936,
+          0.0,
+          2.6100354194641113,
+          0.0,
+          1.8789921998977661,
+          1.3269076347351074,
+          1.867918610572815,
+          0.0,
+          0.0,
+          1.2563085556030273,
+          1.5964747667312622,
+          1.8420982360839844,
+          1.8222216367721558,
+          1.2998689413070679,
+          1.7767521142959595,
+          1.7052431106567383,
+          1.8662852048873901,
+          1.7164855003356934,
+          1.8629380464553833,
+          1.8050711154937744
+        ],
+        "zero": {
+          "groups": 45,
+          "reference_zero": 9,
+          "predicted_zero": 8,
+          "tp": 8,
+          "fn": 1,
+          "fp": 0,
+          "tn": 36,
+          "recall": 0.8888888888888888,
+          "false_zero_rate": 0.0
+        },
+        "invariance": {
+          "endpoint_swap_max_abs": 0.0,
+          "level_permutation_max_abs": 4.76837158203125e-07
+        }
+      },
+      "checkpoint": "results/jenga/d9c_interaction_event/event_seed1_fold2_full.pt",
+      "checkpoint_sha256": "6240ed74b0826c5c1052a97fdeb1206b111f099c8bb02966cf02fedae7402a6a"
+    },
+    {
+      "protocol_sha256": "51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392",
+      "arm": "interaction_event",
+      "seed": 1,
+      "fold": 3,
+      "fraction": 1.0,
+      "training_episodes": [
+        "16",
+        "21",
+        "25",
+        "31",
+        "33",
+        "34",
+        "35",
+        "37",
+        "40",
+        "41",
+        "42",
+        "45",
+        "46",
+        "47",
+        "48",
+        "50",
+        "51",
+        "54",
+        "59",
+        "63",
+        "67",
+        "68",
+        "72",
+        "78",
+        "82",
+        "88",
+        "89",
+        "94",
+        "97",
+        "99"
+      ],
+      "training_groups": 172,
+      "seconds": 43.39580702781677,
+      "history": [
+        {
+          "step": 1,
+          "total": 2.633314847946167,
+          "amplitude": 1.41164231300354,
+          "shape_early_gap": 0.30948659777641296,
+          "shape_full_gap": 0.29269418120384216,
+          "shape_action": 0.3093385696411133,
+          "shape_early_hold": 0.18980073928833008,
+          "shape_late_hold": 0.12035249918699265
+        },
+        {
+          "step": 1000,
+          "total": 0.14343801140785217,
+          "amplitude": 0.0009478110005147755,
+          "shape_early_gap": 0.005217954516410828,
+          "shape_full_gap": 0.004095751792192459,
+          "shape_action": 0.08274341374635696,
+          "shape_early_hold": 0.029050756245851517,
+          "shape_late_hold": 0.021382339298725128
+        },
+        {
+          "step": 2000,
+          "total": 0.11956177651882172,
+          "amplitude": 0.04890616238117218,
+          "shape_early_gap": 0.008373518474400043,
+          "shape_full_gap": 0.006017540115863085,
+          "shape_action": 0.03334539756178856,
+          "shape_early_hold": 0.01492958515882492,
+          "shape_late_hold": 0.007989577017724514
+        },
+        {
+          "step": 3000,
+          "total": 0.02310238778591156,
+          "amplitude": 2.9817114409524947e-05,
+          "shape_early_gap": 0.0003918292641174048,
+          "shape_full_gap": 0.000291056843707338,
+          "shape_action": 0.013882662169635296,
+          "shape_early_hold": 0.005405157804489136,
+          "shape_late_hold": 0.0031018652953207493
+        },
+        {
+          "step": 4000,
+          "total": 0.0241830013692379,
+          "amplitude": 1.7340271369903348e-06,
+          "shape_early_gap": 0.0003606114478316158,
+          "shape_full_gap": 0.0002339889033464715,
+          "shape_action": 0.010654445737600327,
+          "shape_early_hold": 0.004164042882621288,
+          "shape_late_hold": 0.008768178522586823
+        },
+        {
+          "step": 5000,
+          "total": 0.019111983478069305,
+          "amplitude": 4.172106571331824e-07,
+          "shape_early_gap": 0.00026990476180799305,
+          "shape_full_gap": 0.00019656261429190636,
+          "shape_action": 0.008214875124394894,
+          "shape_early_hold": 0.0038339796010404825,
+          "shape_late_hold": 0.006596245802938938
+        }
+      ],
+      "evaluation": {
+        "groups": 46,
+        "mean_mse": 0.4979969561100006,
+        "median_rmse": 0.4815904498100281,
+        "group_mse": [
+          0.20630428194999695,
+          0.09098591655492783,
+          0.19429545104503632,
+          0.6798998713493347,
+          0.8099831342697144,
+          0.8528711199760437,
+          0.1831226795911789,
+          1.8316458463668823,
+          0.21389010548591614,
+          0.8015490770339966,
+          0.2026607245206833,
+          0.4876501262187958,
+          0.7208290696144104,
+          0.8457063436508179,
+          1.423567533493042,
+          0.2784087359905243,
+          0.9755690693855286,
+          0.2264237403869629,
+          0.22923290729522705,
+          0.0813790112733841,
+          0.20507021248340607,
+          0.13998617231845856,
+          0.38689544796943665,
+          0.7198260426521301,
+          0.19305942952632904,
+          0.23328551650047302,
+          0.26306799054145813,
+          0.16332659125328064,
+          0.4608912169933319,
+          0.46872833371162415,
+          0.0,
+          0.8603917360305786,
+          0.23057714104652405,
+          0.0,
+          0.0,
+          0.16566908359527588,
+          0.12414371967315674,
+          0.19817081093788147,
+          0.34529849886894226,
+          0.20815564692020416,
+          1.3346526622772217,
+          0.0,
+          3.376028537750244,
+          0.1937602162361145,
+          0.3807050585746765,
+          0.9201963543891907
+        ],
+        "curve_errors": {
+          "early_gap": 0.2789447605609894,
+          "full_gap": 0.27549800276756287,
+          "curve_action": 0.9687243700027466,
+          "curve_early_hold": 0.4137217700481415,
+          "curve_late_hold": 0.350384920835495
+        },
+        "nested": {
+          "boundary": {
+            "states": 46,
+            "reference_positive": 37,
+            "predicted_positive": 37,
+            "tp": 32,
+            "fn": 5,
+            "fp": 5,
+            "tn": 4,
+            "agreement": 0.782608695652174,
+            "recall": 0.8648648648648649,
+            "added_positive_rate": 0.5555555555555556
+          },
+          "commitment": {
+            "states": 46,
+            "reference_positive": 16,
+            "predicted_positive": 15,
+            "tp": 4,
+            "fn": 12,
+            "fp": 11,
+            "tn": 19,
+            "agreement": 0.5,
+            "recall": 0.25,
+            "added_positive_rate": 0.36666666666666664
+          },
+          "persistence": {
+            "states": 46,
+            "reference_positive": 40,
+            "predicted_positive": 39,
+            "tp": 38,
+            "fn": 2,
+            "fp": 1,
+            "tn": 5,
+            "agreement": 0.9347826086956522,
+            "recall": 0.95,
+            "added_positive_rate": 0.16666666666666666
+          },
+          "alarm": {
+            "states": 46,
+            "reference_positive": 16,
+            "predicted_positive": 15,
+            "tp": 4,
+            "fn": 12,
+            "fp": 11,
+            "tn": 19,
+            "agreement": 0.5,
+            "recall": 0.25,
+            "added_positive_rate": 0.36666666666666664
+          }
+        },
+        "reference_rows": [
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          }
+        ],
+        "predicted_rows": [
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          }
+        ],
+        "target_amplitude": [
+          1.8855116367340088,
+          1.8246873617172241,
+          1.7329955101013184,
+          1.7570892572402954,
+          1.8846704959869385,
+          1.4996280670166016,
+          1.8686662912368774,
+          1.1681630611419678,
+          1.709830641746521,
+          1.7757766246795654,
+          1.8018147945404053,
+          1.8847264051437378,
+          1.8515002727508545,
+          1.4371435642242432,
+          1.8152363300323486,
+          1.8804283142089844,
+          1.7311323881149292,
+          1.79120934009552,
+          1.7892755270004272,
+          1.8280410766601562,
+          1.8369007110595703,
+          1.5934042930603027,
+          1.646580457687378,
+          1.7602845430374146,
+          1.860201120376587,
+          1.8644354343414307,
+          1.8562465906143188,
+          1.8200252056121826,
+          1.7066717147827148,
+          1.7949391603469849,
+          0.0,
+          1.8394641876220703,
+          1.8655235767364502,
+          0.0,
+          0.0,
+          1.8532159328460693,
+          1.8660036325454712,
+          1.881807804107666,
+          1.7197601795196533,
+          1.5543841123580933,
+          1.4231523275375366,
+          0.0,
+          1.8373972177505493,
+          1.7594877481460571,
+          1.8071333169937134,
+          1.4648598432540894
+        ],
+        "predicted_amplitude": [
+          1.801325798034668,
+          1.8355810642242432,
+          1.679682731628418,
+          1.8630971908569336,
+          1.7139859199523926,
+          1.8284907341003418,
+          1.8729727268218994,
+          1.8190596103668213,
+          1.6770272254943848,
+          1.7107667922973633,
+          1.8218457698822021,
+          1.8322222232818604,
+          1.8110971450805664,
+          1.5369157791137695,
+          1.505486011505127,
+          1.8351659774780273,
+          1.7487692832946777,
+          1.8003251552581787,
+          1.8361644744873047,
+          1.8080217838287354,
+          1.8579614162445068,
+          1.50569748878479,
+          1.497429609298706,
+          1.8752381801605225,
+          1.9170897006988525,
+          1.8558814525604248,
+          1.8793847560882568,
+          1.8130888938903809,
+          1.8527007102966309,
+          1.8492228984832764,
+          0.0,
+          1.6398711204528809,
+          1.7337086200714111,
+          0.0,
+          0.0,
+          1.8434491157531738,
+          1.8015353679656982,
+          1.8760645389556885,
+          1.862757682800293,
+          1.5861430168151855,
+          1.844623327255249,
+          0.0,
+          0.0,
+          1.82344388961792,
+          1.614753007888794,
+          1.612424612045288
+        ],
+        "zero": {
+          "groups": 46,
+          "reference_zero": 4,
+          "predicted_zero": 5,
+          "tp": 4,
+          "fn": 0,
+          "fp": 1,
+          "tn": 41,
+          "recall": 1.0,
+          "false_zero_rate": 0.023809523809523808
+        },
+        "invariance": {
+          "endpoint_swap_max_abs": 0.0,
+          "level_permutation_max_abs": 1.1920928955078125e-06
+        }
+      },
+      "checkpoint": "results/jenga/d9c_interaction_event/event_seed1_fold3_full.pt",
+      "checkpoint_sha256": "d2e14c738711ac13cd4b895907932865978f3a920cb2fc038afa08dc12b23bf4"
+    },
+    {
+      "protocol_sha256": "51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392",
+      "arm": "interaction_event",
+      "seed": 1,
+      "fold": 4,
+      "fraction": 1.0,
+      "training_episodes": [
+        "16",
+        "21",
+        "25",
+        "30",
+        "33",
+        "34",
+        "35",
+        "36",
+        "40",
+        "41",
+        "42",
+        "43",
+        "46",
+        "47",
+        "48",
+        "49",
+        "51",
+        "54",
+        "59",
+        "62",
+        "67",
+        "68",
+        "72",
+        "74",
+        "82",
+        "88",
+        "89",
+        "93",
+        "97",
+        "99"
+      ],
+      "training_groups": 182,
+      "seconds": 46.278165340423584,
+      "history": [
+        {
+          "step": 1,
+          "total": 2.720245122909546,
+          "amplitude": 1.2909233570098877,
+          "shape_early_gap": 0.34152334928512573,
+          "shape_full_gap": 0.3296530544757843,
+          "shape_action": 0.3360536992549896,
+          "shape_early_hold": 0.2778828740119934,
+          "shape_late_hold": 0.14420898258686066
+        },
+        {
+          "step": 1000,
+          "total": 0.11614006012678146,
+          "amplitude": 0.0010432524140924215,
+          "shape_early_gap": 0.008090701885521412,
+          "shape_full_gap": 0.006191457621753216,
+          "shape_action": 0.06574662029743195,
+          "shape_early_hold": 0.024606356397271156,
+          "shape_late_hold": 0.010461675003170967
+        },
+        {
+          "step": 2000,
+          "total": 0.058080121874809265,
+          "amplitude": 7.972278399392962e-05,
+          "shape_early_gap": 0.002018407918512821,
+          "shape_full_gap": 0.0013949846616014838,
+          "shape_action": 0.03361673653125763,
+          "shape_early_hold": 0.013053006492555141,
+          "shape_late_hold": 0.007917261682450771
+        },
+        {
+          "step": 3000,
+          "total": 0.029167499393224716,
+          "amplitude": 4.426495070219971e-05,
+          "shape_early_gap": 0.0005906291771680117,
+          "shape_full_gap": 0.00041010475251823664,
+          "shape_action": 0.01763160340487957,
+          "shape_early_hold": 0.006418765056878328,
+          "shape_late_hold": 0.004072132986038923
+        },
+        {
+          "step": 4000,
+          "total": 0.025091568008065224,
+          "amplitude": 2.7164769562659785e-06,
+          "shape_early_gap": 0.00027185631915926933,
+          "shape_full_gap": 0.0002158122370019555,
+          "shape_action": 0.012143476866185665,
+          "shape_early_hold": 0.003998789470642805,
+          "shape_late_hold": 0.00845891609787941
+        },
+        {
+          "step": 5000,
+          "total": 0.011993760243058205,
+          "amplitude": 3.0114372862044547e-07,
+          "shape_early_gap": 0.00029591607744805515,
+          "shape_full_gap": 0.0002665171050466597,
+          "shape_action": 0.007508210837841034,
+          "shape_early_hold": 0.002391957677900791,
+          "shape_late_hold": 0.001530857989564538
+        }
+      ],
+      "evaluation": {
+        "groups": 36,
+        "mean_mse": 0.7256739139556885,
+        "median_rmse": 0.5816298723220825,
+        "group_mse": [
+          0.8247457146644592,
+          0.14446809887886047,
+          1.236345887184143,
+          0.44005250930786133,
+          3.815763473510742,
+          0.538104772567749,
+          0.4983898401260376,
+          0.2828989028930664,
+          0.25070562958717346,
+          0.30298954248428345,
+          0.7776080965995789,
+          0.7382622361183167,
+          0.4310338497161865,
+          2.9243524074554443,
+          0.18051156401634216,
+          0.2868988513946533,
+          0.33969810605049133,
+          2.12469482421875,
+          3.0883631706237793,
+          0.4693886637687683,
+          0.6443141102790833,
+          2.0234780311584473,
+          0.1302615851163864,
+          0.3295039236545563,
+          0.22012996673583984,
+          0.19323702156543732,
+          0.14197272062301636,
+          0.23634125292301178,
+          0.8452181816101074,
+          0.33689138293266296,
+          0.4029068946838379,
+          0.0,
+          0.28830549120903015,
+          0.19627568125724792,
+          0.19854377210140228,
+          0.24160581827163696
+        ],
+        "curve_errors": {
+          "early_gap": 0.35290032625198364,
+          "full_gap": 0.3964473009109497,
+          "curve_action": 1.456904649734497,
+          "curve_early_hold": 0.7170549035072327,
+          "curve_late_hold": 0.43602973222732544
+        },
+        "nested": {
+          "boundary": {
+            "states": 36,
+            "reference_positive": 22,
+            "predicted_positive": 35,
+            "tp": 22,
+            "fn": 0,
+            "fp": 13,
+            "tn": 1,
+            "agreement": 0.6388888888888888,
+            "recall": 1.0,
+            "added_positive_rate": 0.9285714285714286
+          },
+          "commitment": {
+            "states": 36,
+            "reference_positive": 11,
+            "predicted_positive": 11,
+            "tp": 3,
+            "fn": 8,
+            "fp": 8,
+            "tn": 17,
+            "agreement": 0.5555555555555556,
+            "recall": 0.2727272727272727,
+            "added_positive_rate": 0.32
+          },
+          "persistence": {
+            "states": 36,
+            "reference_positive": 28,
+            "predicted_positive": 26,
+            "tp": 23,
+            "fn": 5,
+            "fp": 3,
+            "tn": 5,
+            "agreement": 0.7777777777777778,
+            "recall": 0.8214285714285714,
+            "added_positive_rate": 0.375
+          },
+          "alarm": {
+            "states": 36,
+            "reference_positive": 9,
+            "predicted_positive": 11,
+            "tp": 2,
+            "fn": 7,
+            "fp": 9,
+            "tn": 18,
+            "agreement": 0.5555555555555556,
+            "recall": 0.2222222222222222,
+            "added_positive_rate": 0.3333333333333333
+          }
+        },
+        "reference_rows": [
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": true,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        ],
+        "predicted_rows": [
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": false,
+            "commitment": false,
+            "persistence": false,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": true,
+            "persistence": true,
+            "alarm": true
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          },
+          {
+            "boundary": true,
+            "commitment": false,
+            "persistence": true,
+            "alarm": false
+          }
+        ],
+        "target_amplitude": [
+          0.0,
+          1.8520809412002563,
+          1.5336854457855225,
+          1.8021847009658813,
+          0.0,
+          1.8247684240341187,
+          1.7506418228149414,
+          1.6197571754455566,
+          1.8024876117706299,
+          1.778481364250183,
+          1.6656663417816162,
+          1.5446158647537231,
+          1.9208950996398926,
+          0.0,
+          1.8243708610534668,
+          1.8773540258407593,
+          1.8191653490066528,
+          1.0795153379440308,
+          0.0,
+          1.892380952835083,
+          1.5890076160430908,
+          1.0686428546905518,
+          1.4724527597427368,
+          1.8014357089996338,
+          1.859917402267456,
+          1.8825128078460693,
+          1.528656244277954,
+          1.882959246635437,
+          1.8873003721237183,
+          1.7776532173156738,
+          1.721021056175232,
+          0.0,
+          1.6650562286376953,
+          1.8761383295059204,
+          1.861620545387268,
+          1.8277400732040405
+        ],
+        "predicted_amplitude": [
+          1.0293649435043335,
+          1.8817338943481445,
+          1.5618793964385986,
+          1.8553391695022583,
+          1.7301191091537476,
+          1.6043317317962646,
+          1.8064388036727905,
+          1.5255200862884521,
+          1.7968636751174927,
+          1.8351629972457886,
+          1.7941385507583618,
+          1.8597718477249146,
+          1.8719114065170288,
+          1.73708975315094,
+          1.7949316501617432,
+          1.7943891286849976,
+          1.732709527015686,
+          1.7747197151184082,
+          1.76923406124115,
+          1.7797602415084839,
+          1.692273736000061,
+          1.8209306001663208,
+          1.518686056137085,
+          1.5369888544082642,
+          1.8555638790130615,
+          1.8846282958984375,
+          1.4945082664489746,
+          1.820393443107605,
+          1.5570756196975708,
+          1.8318032026290894,
+          1.8520208597183228,
+          0.0,
+          1.8709853887557983,
+          1.8817652463912964,
+          1.9123657941818237,
+          1.8293544054031372
+        ],
+        "zero": {
+          "groups": 36,
+          "reference_zero": 5,
+          "predicted_zero": 1,
+          "tp": 1,
+          "fn": 4,
+          "fp": 0,
+          "tn": 31,
+          "recall": 0.2,
+          "false_zero_rate": 0.0
+        },
+        "invariance": {
+          "endpoint_swap_max_abs": 0.0,
+          "level_permutation_max_abs": 1.1920928955078125e-06
+        }
+      },
+      "checkpoint": "results/jenga/d9c_interaction_event/event_seed1_fold4_full.pt",
+      "checkpoint_sha256": "99494e63fd6373385d92b274eb68ca0c51acc1ca2d7efc625522cd61f4b6e36b"
+    }
+  ],
+  "pilot_gate": {
+    "comparisons": {
+      "boundary_added_positive_reduction_from_snapshot": -0.015873015873015928,
+      "final_added_positive_reduction_from_snapshot": -0.012658227848101278,
+      "boundary_added_positive_change_from_history": 0.07936507936507942,
+      "final_added_positive_change_from_history": 0.056962025316455694,
+      "boundary_recall_change_from_snapshot": -0.058064516129032295,
+      "final_recall_change_from_snapshot": -0.1166666666666667,
+      "mean_mse_change_from_snapshot": 0.04362946311268234,
+      "symmetry_max_abs": 1.430511474609375e-06
+    },
+    "checks": {
+      "boundary_specificity": false,
+      "final_specificity": false,
+      "no_worse_than_history": false,
+      "boundary_recall": false,
+      "final_recall": false,
+      "mean_mse": false,
+      "symmetry": true
+    },
+    "passes": false
+  },
+  "replication_runs": [],
+  "interpretation": "event_representation_failed_reconsider_curve_interface"
+}

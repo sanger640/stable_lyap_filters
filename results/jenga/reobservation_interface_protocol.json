@@ -1,0 +1,46 @@
+{
+  "name": "D2 re-observation interface analysis",
+  "status": "frozen before execution",
+  "purpose": "separate accumulated open-loop rollout error from local transition/response error before any new model training",
+  "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+  "data": {
+    "split": "TRAIN episode-held-out only",
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "neighborhood_validation_rule": "first ceil(12%) of numerically sorted episode ids, identical to D4",
+    "nested_source": "results/jenga/d3_data",
+    "nested_validation_rule": "groups from the same held-out episode ids",
+    "task_or_failure_labels": false,
+    "test_opened": false
+  },
+  "models": {
+    "family": "frozen D2 StepGraphNet",
+    "checkpoints": "results/jenga/w6_cw_d2_s1.pt through s10.pt",
+    "training": "none"
+  },
+  "conditions": {
+    "reobservation_intervals": [1, 2, 4, 8, 38],
+    "control": "38-step open-loop rollout",
+    "construction": "each forecast segment starts from the recorded physical state at the preceding segment boundary; reported states remain model predictions, so interval 1 is one-step teacher forcing rather than copied physics",
+    "interpretation": "oracle interface diagnostic, not a deployable counterfactual rollout"
+  },
+  "measurements": {
+    "neighborhood": [
+      "smooth-versus-branch candidate decision agreement, recall, and added-positive rate against physical trajectories",
+      "candidate partition agreement",
+      "response, topology, and local commitment errors"
+    ],
+    "nested_paths": [
+      "boundary-scaling decision",
+      "commitment decision",
+      "persistence decision",
+      "their final conjunction"
+    ],
+    "aggregation": "all ten seeds; medians and ranges; no best-seed selection"
+  },
+  "decision_rule": {
+    "short_horizon_pass": "an interval in 1/2/4 improves median physical-candidate recall and median final-consequence recall by at least 0.10 each versus interval 38, while candidate and final added-positive rates are no more than 0.05 above interval 38",
+    "selection_if_multiple_pass": "choose the longest passing interval",
+    "if_pass": "prefer repeated short-horizon monitoring/re-observation and design its causal runtime version",
+    "if_fail": "prefer a direct local action-response/boundary model; do not train another long open-loop Jenga dynamics model"
+  }
+}

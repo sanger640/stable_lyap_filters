@@ -1,0 +1,4324 @@
+{
+  "protocol": {
+    "name": "D2 re-observation interface analysis",
+    "status": "frozen before execution",
+    "purpose": "separate accumulated open-loop rollout error from local transition/response error before any new model training",
+    "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+    "data": {
+      "split": "TRAIN episode-held-out only",
+      "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+      "neighborhood_validation_rule": "first ceil(12%) of numerically sorted episode ids, identical to D4",
+      "nested_source": "results/jenga/d3_data",
+      "nested_validation_rule": "groups from the same held-out episode ids",
+      "task_or_failure_labels": false,
+      "test_opened": false
+    },
+    "models": {
+      "family": "frozen D2 StepGraphNet",
+      "checkpoints": "results/jenga/w6_cw_d2_s1.pt through s10.pt",
+      "training": "none"
+    },
+    "conditions": {
+      "reobservation_intervals": [
+        1,
+        2,
+        4,
+        8,
+        38
+      ],
+      "control": "38-step open-loop rollout",
+      "construction": "each forecast segment starts from the recorded physical state at the preceding segment boundary; reported states remain model predictions, so interval 1 is one-step teacher forcing rather than copied physics",
+      "interpretation": "oracle interface diagnostic, not a deployable counterfactual rollout"
+    },
+    "measurements": {
+      "neighborhood": [
+        "smooth-versus-branch candidate decision agreement, recall, and added-positive rate against physical trajectories",
+        "candidate partition agreement",
+        "response, topology, and local commitment errors"
+      ],
+      "nested_paths": [
+        "boundary-scaling decision",
+        "commitment decision",
+        "persistence decision",
+        "their final conjunction"
+      ],
+      "aggregation": "all ten seeds; medians and ranges; no best-seed selection"
+    },
+    "decision_rule": {
+      "short_horizon_pass": "an interval in 1/2/4 improves median physical-candidate recall and median final-consequence recall by at least 0.10 each versus interval 38, while candidate and final added-positive rates are no more than 0.05 above interval 38",
+      "selection_if_multiple_pass": "choose the longest passing interval",
+      "if_pass": "prefer repeated short-horizon monitoring/re-observation and design its causal runtime version",
+      "if_fail": "prefer a direct local action-response/boundary model; do not train another long open-loop Jenga dynamics model"
+    }
+  },
+  "created": "2026-09-28T13:49:28+00:00",
+  "protocol_sha256": "a28158faebe56009d866efeaa3a025ac077648102c44d13bf778f4c8d8d21ba1",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "heldout_episodes": [
+    "0",
+    "1",
+    "5",
+    "7",
+    "12",
+    "13"
+  ],
+  "neighborhood_states": 36,
+  "nested_groups": 38,
+  "nested_sources": [
+    "ep0_seed102",
+    "ep0_seed105",
+    "ep0_seed107",
+    "ep12_seed102",
+    "ep12_seed102",
+    "ep12_seed102",
+    "ep12_seed103",
+    "ep12_seed106",
+    "ep12_seed109",
+    "ep12_seed109",
+    "ep13_seed101",
+    "ep13_seed105",
+    "ep13_seed105",
+    "ep13_seed108",
+    "ep13_seed108",
+    "ep13_seed109",
+    "ep1_seed100",
+    "ep1_seed101",
+    "ep1_seed102",
+    "ep1_seed102",
+    "ep1_seed103",
+    "ep1_seed103",
+    "ep1_seed106",
+    "ep1_seed106",
+    "ep1_seed106",
+    "ep5_seed102",
+    "ep5_seed103",
+    "ep5_seed105",
+    "ep5_seed109",
+    "ep7_seed102",
+    "ep7_seed103",
+    "ep7_seed104",
+    "ep7_seed106",
+    "ep7_seed107",
+    "ep7_seed108",
+    "ep7_seed108",
+    "ep7_seed109",
+    "ep7_seed109"
+  ],
+  "intervals": [
+    1,
+    2,
+    4,
+    8,
+    38
+  ],
+  "per_seed": [
+    {
+      "model": "results/jenga/w6_cw_d2_s1.pt",
+      "model_sha256": "67590778bf2a3489512980512c1be64e0e353f045134c19750ac763054957965",
+      "seed": 1,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 16,
+            "fn": 8,
+            "fp": 1,
+            "tn": 11,
+            "agreement": 0.75,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.08333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8138020833333334
+          },
+          "continuous": {
+            "response": 0.03256425344281726,
+            "topology": 0.01377797177216659,
+            "commitment": 0.017241657245904207
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 9,
+              "fn": 3,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8421052631578947,
+              "recall": 0.75,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 7,
+              "fn": 2,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.8421052631578947,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 16,
+            "fn": 8,
+            "fp": 1,
+            "tn": 11,
+            "agreement": 0.75,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.08333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.82421875
+          },
+          "continuous": {
+            "response": 0.03714644474287828,
+            "topology": 0.018790811791809067,
+            "commitment": 0.01937526474810309
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 10,
+              "fn": 2,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.8947368421052632,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 19,
+            "tp": 17,
+            "fn": 7,
+            "fp": 2,
+            "tn": 10,
+            "agreement": 0.75,
+            "recall": 0.7083333333333334,
+            "added_positive_rate": 0.16666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7990451388888888
+          },
+          "continuous": {
+            "response": 0.03689066982931561,
+            "topology": 0.026538029520048037,
+            "commitment": 0.024606931023299694
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 11,
+              "fn": 1,
+              "fp": 6,
+              "tn": 20,
+              "agreement": 0.8157894736842105,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.23076923076923078
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 31,
+              "tp": 27,
+              "fn": 1,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.868421052631579,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 8,
+              "fn": 1,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 15,
+            "fn": 9,
+            "fp": 2,
+            "tn": 10,
+            "agreement": 0.6944444444444444,
+            "recall": 0.625,
+            "added_positive_rate": 0.16666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7630208333333334
+          },
+          "continuous": {
+            "response": 0.042000838037994176,
+            "topology": 0.03038532638715373,
+            "commitment": 0.026061133067640994
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 16,
+              "tp": 15,
+              "fn": 9,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.7368421052631579,
+              "recall": 0.625,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 16,
+              "tp": 10,
+              "fn": 2,
+              "fp": 6,
+              "tn": 20,
+              "agreement": 0.7894736842105263,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.23076923076923078
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 28,
+              "fn": 0,
+              "fp": 1,
+              "tn": 9,
+              "agreement": 0.9736842105263158,
+              "recall": 1.0,
+              "added_positive_rate": 0.1
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 7,
+              "fn": 2,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8157894736842105,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 15,
+            "fn": 9,
+            "fp": 2,
+            "tn": 10,
+            "agreement": 0.6944444444444444,
+            "recall": 0.625,
+            "added_positive_rate": 0.16666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7248263888888888
+          },
+          "continuous": {
+            "response": 0.058702236455347806,
+            "topology": 0.046538643073290586,
+            "commitment": 0.0414163496138321
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 7,
+              "tp": 4,
+              "fn": 20,
+              "fp": 3,
+              "tn": 11,
+              "agreement": 0.39473684210526316,
+              "recall": 0.16666666666666666,
+              "added_positive_rate": 0.21428571428571427
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 13,
+              "tp": 6,
+              "fn": 6,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.6578947368421053,
+              "recall": 0.5,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 1,
+              "tp": 0,
+              "fn": 9,
+              "fp": 1,
+              "tn": 28,
+              "agreement": 0.7368421052631579,
+              "recall": 0.0,
+              "added_positive_rate": 0.034482758620689655
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s2.pt",
+      "model_sha256": "46bdb8a6ffc290137eacbe47aacb784b87e53c1cf8c3c05a9988c9c909e611f2",
+      "seed": 2,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 18,
+            "fn": 6,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.7222222222222222,
+            "recall": 0.75,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8276909722222222
+          },
+          "continuous": {
+            "response": 0.03626879283951388,
+            "topology": 0.017265053013236158,
+            "commitment": 0.019469405213991802
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 26,
+              "tp": 23,
+              "fn": 1,
+              "fp": 3,
+              "tn": 11,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9583333333333334,
+              "added_positive_rate": 0.21428571428571427
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 13,
+              "tp": 10,
+              "fn": 2,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.868421052631579,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 8,
+              "fn": 1,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.8947368421052632,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 19,
+            "tp": 16,
+            "fn": 8,
+            "fp": 3,
+            "tn": 9,
+            "agreement": 0.6944444444444444,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.25,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8194444444444444
+          },
+          "continuous": {
+            "response": 0.040376188026534185,
+            "topology": 0.021802870116920933,
+            "commitment": 0.02221708796504471
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 22,
+              "fn": 2,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 9,
+              "fn": 3,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.868421052631579,
+              "recall": 0.75,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 31,
+              "tp": 27,
+              "fn": 1,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.868421052631579,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 9,
+              "tp": 6,
+              "fn": 3,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.8421052631578947,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 18,
+            "fn": 6,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.7222222222222222,
+            "recall": 0.75,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7973090277777778
+          },
+          "continuous": {
+            "response": 0.04193400074210432,
+            "topology": 0.030509352658150926,
+            "commitment": 0.02793024733869566
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 16,
+              "tp": 10,
+              "fn": 2,
+              "fp": 6,
+              "tn": 20,
+              "agreement": 0.7894736842105263,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.23076923076923078
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 32,
+              "tp": 27,
+              "fn": 1,
+              "fp": 5,
+              "tn": 5,
+              "agreement": 0.8421052631578947,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.5
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 7,
+              "fn": 2,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.8421052631578947,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 20,
+            "tp": 15,
+            "fn": 9,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.6111111111111112,
+            "recall": 0.625,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7951388888888888
+          },
+          "continuous": {
+            "response": 0.04812097280389733,
+            "topology": 0.035848890638185874,
+            "commitment": 0.031530363485217094
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 10,
+              "fn": 2,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7631578947368421,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 27,
+              "fn": 1,
+              "fp": 1,
+              "tn": 9,
+              "agreement": 0.9473684210526315,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.1
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 7,
+              "fn": 2,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8157894736842105,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 16,
+            "fn": 8,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.6111111111111112,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7677951388888888
+          },
+          "continuous": {
+            "response": 0.0675699652896987,
+            "topology": 0.053344435420715146,
+            "commitment": 0.053246861737635404
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 10,
+              "tp": 8,
+              "fn": 16,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.5263157894736842,
+              "recall": 0.3333333333333333,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 18,
+              "tp": 7,
+              "fn": 5,
+              "fp": 11,
+              "tn": 15,
+              "agreement": 0.5789473684210527,
+              "recall": 0.5833333333333334,
+              "added_positive_rate": 0.4230769230769231
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 4,
+              "tp": 1,
+              "fn": 8,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.7105263157894737,
+              "recall": 0.1111111111111111,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s3.pt",
+      "model_sha256": "c432ecb0142ae1daa70fbb547475118218271d28dfd6147859c9f9e69fd7d522",
+      "seed": 3,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 15,
+            "fn": 9,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5555555555555556,
+            "recall": 0.625,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8328993055555556
+          },
+          "continuous": {
+            "response": 0.04240811492005984,
+            "topology": 0.022482989698700193,
+            "commitment": 0.024651123417748347
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 9,
+              "fn": 3,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8421052631578947,
+              "recall": 0.75,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 27,
+              "fn": 1,
+              "fp": 1,
+              "tn": 9,
+              "agreement": 0.9473684210526315,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.1
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 20,
+            "tp": 14,
+            "fn": 10,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.5555555555555556,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8342013888888888
+          },
+          "continuous": {
+            "response": 0.04728684015572071,
+            "topology": 0.02719972189515829,
+            "commitment": 0.027649938439329464
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 22,
+              "fn": 2,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 14,
+              "tp": 10,
+              "fn": 2,
+              "fp": 4,
+              "tn": 22,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.15384615384615385
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 31,
+              "tp": 27,
+              "fn": 1,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.868421052631579,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 7,
+              "fn": 2,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8157894736842105,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 23,
+            "tp": 16,
+            "fn": 8,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5833333333333334,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8046875
+          },
+          "continuous": {
+            "response": 0.046202456992533475,
+            "topology": 0.03598262374806735,
+            "commitment": 0.032852536274327174
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 19,
+              "tp": 11,
+              "fn": 1,
+              "fp": 8,
+              "tn": 18,
+              "agreement": 0.7631578947368421,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.3076923076923077
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 32,
+              "tp": 28,
+              "fn": 0,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.8947368421052632,
+              "recall": 1.0,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 8,
+              "fn": 1,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 23,
+            "tp": 16,
+            "fn": 8,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5833333333333334,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8146701388888888
+          },
+          "continuous": {
+            "response": 0.051142321071690984,
+            "topology": 0.040109407984548144,
+            "commitment": 0.03587018915762504
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 15,
+              "tp": 8,
+              "fn": 4,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7105263157894737,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 6,
+              "fn": 3,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.7894736842105263,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 15,
+            "fn": 9,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5555555555555556,
+            "recall": 0.625,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7877604166666666
+          },
+          "continuous": {
+            "response": 0.06173008638951513,
+            "topology": 0.058962728103829756,
+            "commitment": 0.05788386054337025
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 9,
+              "tp": 7,
+              "fn": 17,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.5,
+              "recall": 0.2916666666666667,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 18,
+              "tp": 8,
+              "fn": 4,
+              "fp": 10,
+              "tn": 16,
+              "agreement": 0.631578947368421,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.38461538461538464
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 4,
+              "tp": 0,
+              "fn": 9,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.6578947368421053,
+              "recall": 0.0,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s4.pt",
+      "model_sha256": "18afbd669d16e808cb5da7eafaaf4a96c91b2e16bbf9bbc23a2c671015efcdcf",
+      "seed": 4,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 11,
+            "fn": 13,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.4722222222222222,
+            "recall": 0.4583333333333333,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7803819444444444
+          },
+          "continuous": {
+            "response": 0.028872716137104563,
+            "topology": 0.022631531542477507,
+            "commitment": 0.023263046699058678
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 13,
+              "tp": 10,
+              "fn": 2,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.868421052631579,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 27,
+              "fn": 1,
+              "fp": 1,
+              "tn": 9,
+              "agreement": 0.9473684210526315,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.1
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 7,
+              "fn": 2,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.8421052631578947,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 13,
+            "fn": 11,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.5555555555555556,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8059895833333334
+          },
+          "continuous": {
+            "response": 0.03194623047278987,
+            "topology": 0.02845900117730101,
+            "commitment": 0.025986813008785248
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 13,
+              "tp": 10,
+              "fn": 2,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.868421052631579,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 7,
+              "fn": 2,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.8421052631578947,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 17,
+            "fn": 7,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.6666666666666666,
+            "recall": 0.7083333333333334,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8068576388888888
+          },
+          "continuous": {
+            "response": 0.031068264713717833,
+            "topology": 0.03729184817833205,
+            "commitment": 0.031755149054030575
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 19,
+              "tp": 10,
+              "fn": 2,
+              "fp": 9,
+              "tn": 17,
+              "agreement": 0.7105263157894737,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.34615384615384615
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 7,
+              "fn": 2,
+              "fp": 6,
+              "tn": 23,
+              "agreement": 0.7894736842105263,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.20689655172413793
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 20,
+            "tp": 15,
+            "fn": 9,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.6111111111111112,
+            "recall": 0.625,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7730034722222222
+          },
+          "continuous": {
+            "response": 0.03498192152215375,
+            "topology": 0.041250621537781425,
+            "commitment": 0.03395586564309067
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 18,
+              "tp": 16,
+              "fn": 8,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7368421052631579,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 9,
+              "fn": 3,
+              "fp": 8,
+              "tn": 18,
+              "agreement": 0.7105263157894737,
+              "recall": 0.75,
+              "added_positive_rate": 0.3076923076923077
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 27,
+              "fn": 1,
+              "fp": 1,
+              "tn": 9,
+              "agreement": 0.9473684210526315,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.1
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 6,
+              "fn": 3,
+              "fp": 6,
+              "tn": 23,
+              "agreement": 0.7631578947368421,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.20689655172413793
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 19,
+            "tp": 14,
+            "fn": 10,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.5833333333333334,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7252604166666666
+          },
+          "continuous": {
+            "response": 0.04516180894441075,
+            "topology": 0.05737684925811158,
+            "commitment": 0.05142464519788822
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 8,
+              "tp": 4,
+              "fn": 20,
+              "fp": 4,
+              "tn": 10,
+              "agreement": 0.3684210526315789,
+              "recall": 0.16666666666666666,
+              "added_positive_rate": 0.2857142857142857
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 20,
+              "tp": 9,
+              "fn": 3,
+              "fp": 11,
+              "tn": 15,
+              "agreement": 0.631578947368421,
+              "recall": 0.75,
+              "added_positive_rate": 0.4230769230769231
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 4,
+              "tp": 0,
+              "fn": 9,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.6578947368421053,
+              "recall": 0.0,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s5.pt",
+      "model_sha256": "b75cf2a288b81863c394ae3cbbdbcf1ddcf5987f76127efd7fac423d9ea99d38",
+      "seed": 5,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 13,
+            "fn": 11,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.5555555555555556,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7951388888888888
+          },
+          "continuous": {
+            "response": 0.02885370867119895,
+            "topology": 0.017364651650293834,
+            "commitment": 0.019203135795477364
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 9,
+              "fn": 3,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.868421052631579,
+              "recall": 0.75,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 8,
+              "tp": 7,
+              "fn": 2,
+              "fp": 1,
+              "tn": 28,
+              "agreement": 0.9210526315789473,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.034482758620689655
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 19,
+            "tp": 13,
+            "fn": 11,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.5277777777777778,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8181423611111112
+          },
+          "continuous": {
+            "response": 0.03282557759020063,
+            "topology": 0.020921852530187204,
+            "commitment": 0.021915857421441212
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 13,
+              "tp": 10,
+              "fn": 2,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.868421052631579,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 26,
+              "fn": 2,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9285714285714286,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 7,
+              "fn": 2,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.8421052631578947,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 12,
+            "fn": 12,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.5,
+            "recall": 0.5,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8368055555555556
+          },
+          "continuous": {
+            "response": 0.0358537422079179,
+            "topology": 0.02947841812339094,
+            "commitment": 0.027247263842986688
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 20,
+              "tp": 18,
+              "fn": 6,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7894736842105263,
+              "recall": 0.75,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 18,
+              "tp": 11,
+              "fn": 1,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7894736842105263,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 8,
+              "fn": 1,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 15,
+            "tp": 10,
+            "fn": 14,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.4722222222222222,
+            "recall": 0.4166666666666667,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8038194444444444
+          },
+          "continuous": {
+            "response": 0.04040827602148056,
+            "topology": 0.031284021886272564,
+            "commitment": 0.02841636383285125
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 16,
+              "tp": 9,
+              "fn": 3,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7368421052631579,
+              "recall": 0.75,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 7,
+              "fn": 2,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8157894736842105,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 13,
+            "fn": 11,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.5555555555555556,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7821180555555556
+          },
+          "continuous": {
+            "response": 0.050628416861097016,
+            "topology": 0.0472535561873681,
+            "commitment": 0.04277589886138836
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 17,
+              "fp": 3,
+              "tn": 11,
+              "agreement": 0.47368421052631576,
+              "recall": 0.2916666666666667,
+              "added_positive_rate": 0.21428571428571427
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 19,
+              "tp": 6,
+              "fn": 6,
+              "fp": 13,
+              "tn": 13,
+              "agreement": 0.5,
+              "recall": 0.5,
+              "added_positive_rate": 0.5
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 37,
+              "tp": 27,
+              "fn": 1,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7105263157894737,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 4,
+              "tp": 1,
+              "fn": 8,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.7105263157894737,
+              "recall": 0.1111111111111111,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s6.pt",
+      "model_sha256": "c1c1aa2ab75fc054727f28a7c74230265530124935f636a65492cd3b2b9e932e",
+      "seed": 6,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 14,
+            "fn": 10,
+            "fp": 3,
+            "tn": 9,
+            "agreement": 0.6388888888888888,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.25,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8012152777777778
+          },
+          "continuous": {
+            "response": 0.03141249892198377,
+            "topology": 0.016211587405349646,
+            "commitment": 0.020184621318346925
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 9,
+              "fn": 3,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.868421052631579,
+              "recall": 0.75,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 8,
+              "tp": 6,
+              "fn": 3,
+              "fp": 2,
+              "tn": 27,
+              "agreement": 0.868421052631579,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.06896551724137931
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 12,
+            "fn": 12,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.5,
+            "recall": 0.5,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8190104166666666
+          },
+          "continuous": {
+            "response": 0.03521144617762831,
+            "topology": 0.021300445129680965,
+            "commitment": 0.02166342818074756
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 22,
+              "fn": 2,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 10,
+              "fn": 2,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.8947368421052632,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 31,
+              "tp": 27,
+              "fn": 1,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.868421052631579,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 21,
+            "tp": 13,
+            "fn": 11,
+            "fp": 8,
+            "tn": 4,
+            "agreement": 0.4722222222222222,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.6666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7990451388888888
+          },
+          "continuous": {
+            "response": 0.038013395853340626,
+            "topology": 0.028417354863550928,
+            "commitment": 0.0268433117825124
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 20,
+              "tp": 12,
+              "fn": 0,
+              "fp": 8,
+              "tn": 18,
+              "agreement": 0.7894736842105263,
+              "recall": 1.0,
+              "added_positive_rate": 0.3076923076923077
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 8,
+              "fn": 1,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 16,
+            "tp": 10,
+            "fn": 14,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.4444444444444444,
+            "recall": 0.4166666666666667,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.78515625
+          },
+          "continuous": {
+            "response": 0.04233853808707661,
+            "topology": 0.03220990295004514,
+            "commitment": 0.02853630617674854
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 18,
+              "tp": 11,
+              "fn": 1,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7894736842105263,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 7,
+              "fn": 2,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8157894736842105,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 21,
+            "tp": 13,
+            "fn": 11,
+            "fp": 8,
+            "tn": 4,
+            "agreement": 0.4722222222222222,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.6666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7465277777777778
+          },
+          "continuous": {
+            "response": 0.05096198514931732,
+            "topology": 0.04594084599779712,
+            "commitment": 0.04320522273580233
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 4,
+              "tp": 2,
+              "fn": 22,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.3684210526315789,
+              "recall": 0.08333333333333333,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 19,
+              "tp": 7,
+              "fn": 5,
+              "fp": 12,
+              "tn": 14,
+              "agreement": 0.5526315789473685,
+              "recall": 0.5833333333333334,
+              "added_positive_rate": 0.46153846153846156
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 37,
+              "tp": 27,
+              "fn": 1,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7105263157894737,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 2,
+              "tp": 0,
+              "fn": 9,
+              "fp": 2,
+              "tn": 27,
+              "agreement": 0.7105263157894737,
+              "recall": 0.0,
+              "added_positive_rate": 0.06896551724137931
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s7.pt",
+      "model_sha256": "b119707aa1e0c6cd775ed122241a2a2589b9cdf182f0bc8145dc70fbadce6ca4",
+      "seed": 7,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 23,
+            "tp": 15,
+            "fn": 9,
+            "fp": 8,
+            "tn": 4,
+            "agreement": 0.5277777777777778,
+            "recall": 0.625,
+            "added_positive_rate": 0.6666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8246527777777778
+          },
+          "continuous": {
+            "response": 0.04043709962732262,
+            "topology": 0.03201987038159536,
+            "commitment": 0.029481899769355852
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 25,
+              "tp": 23,
+              "fn": 1,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9583333333333334,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 8,
+              "fn": 4,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8157894736842105,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 27,
+              "tp": 27,
+              "fn": 1,
+              "fp": 0,
+              "tn": 10,
+              "agreement": 0.9736842105263158,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 14,
+            "fn": 10,
+            "fp": 8,
+            "tn": 4,
+            "agreement": 0.5,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.6666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8194444444444444
+          },
+          "continuous": {
+            "response": 0.04344220718161927,
+            "topology": 0.042857175912811525,
+            "commitment": 0.03343184483754966
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 22,
+              "fn": 2,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 9,
+              "fn": 3,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.868421052631579,
+              "recall": 0.75,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 27,
+              "fn": 1,
+              "fp": 1,
+              "tn": 9,
+              "agreement": 0.9473684210526315,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.1
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 9,
+              "tp": 6,
+              "fn": 3,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.8421052631578947,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 25,
+            "tp": 17,
+            "fn": 7,
+            "fp": 8,
+            "tn": 4,
+            "agreement": 0.5833333333333334,
+            "recall": 0.7083333333333334,
+            "added_positive_rate": 0.6666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8190104166666666
+          },
+          "continuous": {
+            "response": 0.046542022480732866,
+            "topology": 0.052890335494238466,
+            "commitment": 0.04102753216607703
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 15,
+              "tp": 10,
+              "fn": 2,
+              "fp": 5,
+              "tn": 21,
+              "agreement": 0.8157894736842105,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.19230769230769232
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 28,
+              "fn": 0,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9473684210526315,
+              "recall": 1.0,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 21,
+            "tp": 14,
+            "fn": 10,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5277777777777778,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8203125
+          },
+          "continuous": {
+            "response": 0.04938844425810708,
+            "topology": 0.060969169872502484,
+            "commitment": 0.04582638541857401
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 9,
+              "fn": 3,
+              "fp": 8,
+              "tn": 18,
+              "agreement": 0.7105263157894737,
+              "recall": 0.75,
+              "added_positive_rate": 0.3076923076923077
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 26,
+              "fn": 2,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9285714285714286,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 6,
+              "fn": 3,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.7894736842105263,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 22,
+            "tp": 15,
+            "fn": 9,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5555555555555556,
+            "recall": 0.625,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8159722222222222
+          },
+          "continuous": {
+            "response": 0.0657019101911121,
+            "topology": 0.08408974064514041,
+            "commitment": 0.06940622451818651
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 8,
+              "tp": 7,
+              "fn": 17,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.5263157894736842,
+              "recall": 0.2916666666666667,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 16,
+              "tp": 6,
+              "fn": 6,
+              "fp": 10,
+              "tn": 16,
+              "agreement": 0.5789473684210527,
+              "recall": 0.5,
+              "added_positive_rate": 0.38461538461538464
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 4,
+              "tp": 1,
+              "fn": 8,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.7105263157894737,
+              "recall": 0.1111111111111111,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s8.pt",
+      "model_sha256": "ac902f92d110d279bc13873b38490a78c8815989c78250d93fc5c9840aa82206",
+      "seed": 8,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 23,
+            "tp": 18,
+            "fn": 6,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.6944444444444444,
+            "recall": 0.75,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8033854166666666
+          },
+          "continuous": {
+            "response": 0.0292634227209621,
+            "topology": 0.014319475791934464,
+            "commitment": 0.017114937590021227
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 23,
+              "fn": 1,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.9473684210526315,
+              "recall": 0.9583333333333334,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 8,
+              "fn": 4,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8157894736842105,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 19,
+            "tp": 15,
+            "fn": 9,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.6388888888888888,
+            "recall": 0.625,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7912326388888888
+          },
+          "continuous": {
+            "response": 0.03242226876318455,
+            "topology": 0.019246077397838235,
+            "commitment": 0.019816012897839148
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 22,
+              "fn": 2,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 10,
+              "fn": 2,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.8947368421052632,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 27,
+              "fn": 1,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 23,
+            "tp": 16,
+            "fn": 8,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5833333333333334,
+            "recall": 0.6666666666666666,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8020833333333334
+          },
+          "continuous": {
+            "response": 0.03353250751064883,
+            "topology": 0.027814682055678632,
+            "commitment": 0.026502937854578097
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 20,
+              "tp": 18,
+              "fn": 6,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7894736842105263,
+              "recall": 0.75,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 11,
+              "fn": 1,
+              "fp": 6,
+              "tn": 20,
+              "agreement": 0.8157894736842105,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.23076923076923078
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 32,
+              "tp": 28,
+              "fn": 0,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.8947368421052632,
+              "recall": 1.0,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 8,
+              "fn": 1,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 12,
+            "fn": 12,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.5,
+            "recall": 0.5,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7921006944444444
+          },
+          "continuous": {
+            "response": 0.03854126814338896,
+            "topology": 0.03356302006997996,
+            "commitment": 0.029027310096555285
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 15,
+              "tp": 9,
+              "fn": 3,
+              "fp": 6,
+              "tn": 20,
+              "agreement": 0.7631578947368421,
+              "recall": 0.75,
+              "added_positive_rate": 0.23076923076923078
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 25,
+              "fn": 3,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8928571428571429,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 6,
+              "fn": 3,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.7894736842105263,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 20,
+            "tp": 13,
+            "fn": 11,
+            "fp": 7,
+            "tn": 5,
+            "agreement": 0.5,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.5833333333333334,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7417534722222222
+          },
+          "continuous": {
+            "response": 0.049940060617195234,
+            "topology": 0.05879545801629623,
+            "commitment": 0.05455547902319166
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 9,
+              "tp": 7,
+              "fn": 17,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.5,
+              "recall": 0.2916666666666667,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 6,
+              "fn": 6,
+              "fp": 11,
+              "tn": 15,
+              "agreement": 0.5526315789473685,
+              "recall": 0.5,
+              "added_positive_rate": 0.4230769230769231
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 36,
+              "tp": 27,
+              "fn": 1,
+              "fp": 9,
+              "tn": 1,
+              "agreement": 0.7368421052631579,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.9
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 3,
+              "tp": 1,
+              "fn": 8,
+              "fp": 2,
+              "tn": 27,
+              "agreement": 0.7368421052631579,
+              "recall": 0.1111111111111111,
+              "added_positive_rate": 0.06896551724137931
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s9.pt",
+      "model_sha256": "a48c3d61b10b3febc4c356087c8ae3371c75dea727da0314c462800197390c68",
+      "seed": 9,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 14,
+            "fn": 10,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.6111111111111112,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8467881944444444
+          },
+          "continuous": {
+            "response": 0.03085870233674844,
+            "topology": 0.018541156094417803,
+            "commitment": 0.020173246299641
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 9,
+              "fn": 3,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8421052631578947,
+              "recall": 0.75,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 13,
+            "fn": 11,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.5833333333333334,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8203125
+          },
+          "continuous": {
+            "response": 0.03378784335735771,
+            "topology": 0.022846239450801577,
+            "commitment": 0.02151410286832187
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 23,
+              "tp": 21,
+              "fn": 3,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.868421052631579,
+              "recall": 0.875,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 10,
+              "fn": 2,
+              "fp": 2,
+              "tn": 24,
+              "agreement": 0.8947368421052632,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.07692307692307693
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 31,
+              "tp": 27,
+              "fn": 1,
+              "fp": 4,
+              "tn": 6,
+              "agreement": 0.868421052631579,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.4
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 10,
+              "tp": 7,
+              "fn": 2,
+              "fp": 3,
+              "tn": 26,
+              "agreement": 0.868421052631579,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.10344827586206896
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 13,
+            "fn": 11,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.5833333333333334,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.84375
+          },
+          "continuous": {
+            "response": 0.03788637452655368,
+            "topology": 0.029961470850846834,
+            "commitment": 0.02729287412431505
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 18,
+              "tp": 11,
+              "fn": 1,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7894736842105263,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 31,
+              "tp": 28,
+              "fn": 0,
+              "fp": 3,
+              "tn": 7,
+              "agreement": 0.9210526315789473,
+              "recall": 1.0,
+              "added_positive_rate": 0.3
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 13,
+              "tp": 8,
+              "fn": 1,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8421052631578947,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 15,
+            "tp": 11,
+            "fn": 13,
+            "fp": 4,
+            "tn": 8,
+            "agreement": 0.5277777777777778,
+            "recall": 0.4583333333333333,
+            "added_positive_rate": 0.3333333333333333,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8090277777777778
+          },
+          "continuous": {
+            "response": 0.041983208101656705,
+            "topology": 0.03377428500809603,
+            "commitment": 0.029266648097998567
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 18,
+              "tp": 16,
+              "fn": 8,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7368421052631579,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 16,
+              "tp": 10,
+              "fn": 2,
+              "fp": 6,
+              "tn": 20,
+              "agreement": 0.7894736842105263,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.23076923076923078
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 30,
+              "tp": 28,
+              "fn": 0,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9473684210526315,
+              "recall": 1.0,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 7,
+              "fn": 2,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.8157894736842105,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 11,
+            "fn": 13,
+            "fp": 6,
+            "tn": 6,
+            "agreement": 0.4722222222222222,
+            "recall": 0.4583333333333333,
+            "added_positive_rate": 0.5,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7495659722222222
+          },
+          "continuous": {
+            "response": 0.05695035225815243,
+            "topology": 0.05293155021758543,
+            "commitment": 0.048880023053950734
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 5,
+              "tp": 3,
+              "fn": 21,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.39473684210526316,
+              "recall": 0.125,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 5,
+              "fn": 7,
+              "fp": 12,
+              "tn": 14,
+              "agreement": 0.5,
+              "recall": 0.4166666666666667,
+              "added_positive_rate": 0.46153846153846156
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 1,
+              "tp": 0,
+              "fn": 9,
+              "fp": 1,
+              "tn": 28,
+              "agreement": 0.7368421052631579,
+              "recall": 0.0,
+              "added_positive_rate": 0.034482758620689655
+            }
+          }
+        }
+      }
+    },
+    {
+      "model": "results/jenga/w6_cw_d2_s10.pt",
+      "model_sha256": "23c64390840178646337c344f383720817f088a5b0916f07db73ed746152b08f",
+      "seed": 10,
+      "intervals": {
+        "1": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 16,
+            "tp": 14,
+            "fn": 10,
+            "fp": 2,
+            "tn": 10,
+            "agreement": 0.6666666666666666,
+            "recall": 0.5833333333333334,
+            "added_positive_rate": 0.16666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7942708333333334
+          },
+          "continuous": {
+            "response": 0.04338325415220526,
+            "topology": 0.018538691336289048,
+            "commitment": 0.021671416781221826
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 24,
+              "tp": 22,
+              "fn": 2,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 9,
+              "fn": 3,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8421052631578947,
+              "recall": 0.75,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 9,
+              "tp": 7,
+              "fn": 2,
+              "fp": 2,
+              "tn": 27,
+              "agreement": 0.8947368421052632,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.06896551724137931
+            }
+          }
+        },
+        "2": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 17,
+            "tp": 15,
+            "fn": 9,
+            "fp": 2,
+            "tn": 10,
+            "agreement": 0.6944444444444444,
+            "recall": 0.625,
+            "added_positive_rate": 0.16666666666666666,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8129340277777778
+          },
+          "continuous": {
+            "response": 0.05030497329102622,
+            "topology": 0.023010066943243146,
+            "commitment": 0.02315893753742178
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 25,
+              "tp": 22,
+              "fn": 2,
+              "fp": 3,
+              "tn": 11,
+              "agreement": 0.868421052631579,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.21428571428571427
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 12,
+              "tp": 9,
+              "fn": 3,
+              "fp": 3,
+              "tn": 23,
+              "agreement": 0.8421052631578947,
+              "recall": 0.75,
+              "added_positive_rate": 0.11538461538461539
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 6,
+              "fn": 3,
+              "fp": 5,
+              "tn": 24,
+              "agreement": 0.7894736842105263,
+              "recall": 0.6666666666666666,
+              "added_positive_rate": 0.1724137931034483
+            }
+          }
+        },
+        "4": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 15,
+            "tp": 12,
+            "fn": 12,
+            "fp": 3,
+            "tn": 9,
+            "agreement": 0.5833333333333334,
+            "recall": 0.5,
+            "added_positive_rate": 0.25,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.8194444444444444
+          },
+          "continuous": {
+            "response": 0.054477978911664754,
+            "topology": 0.029887637899567682,
+            "commitment": 0.028955955627477832
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 19,
+              "tp": 18,
+              "fn": 6,
+              "fp": 1,
+              "tn": 13,
+              "agreement": 0.8157894736842105,
+              "recall": 0.75,
+              "added_positive_rate": 0.07142857142857142
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 18,
+              "tp": 11,
+              "fn": 1,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7894736842105263,
+              "recall": 0.9166666666666666,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 29,
+              "tp": 27,
+              "fn": 1,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.9210526315789473,
+              "recall": 0.9642857142857143,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 12,
+              "tp": 8,
+              "fn": 1,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.868421052631579,
+              "recall": 0.8888888888888888,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "8": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 13,
+            "tp": 10,
+            "fn": 14,
+            "fp": 3,
+            "tn": 9,
+            "agreement": 0.5277777777777778,
+            "recall": 0.4166666666666667,
+            "added_positive_rate": 0.25,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7703993055555556
+          },
+          "continuous": {
+            "response": 0.06426165997982025,
+            "topology": 0.03547097188937995,
+            "commitment": 0.03232603675375382
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 17,
+              "tp": 15,
+              "fn": 9,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.7105263157894737,
+              "recall": 0.625,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 17,
+              "tp": 10,
+              "fn": 2,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.7631578947368421,
+              "recall": 0.8333333333333334,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 28,
+              "tp": 26,
+              "fn": 2,
+              "fp": 2,
+              "tn": 8,
+              "agreement": 0.8947368421052632,
+              "recall": 0.9285714285714286,
+              "added_positive_rate": 0.2
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 11,
+              "tp": 7,
+              "fn": 2,
+              "fp": 4,
+              "tn": 25,
+              "agreement": 0.8421052631578947,
+              "recall": 0.7777777777777778,
+              "added_positive_rate": 0.13793103448275862
+            }
+          }
+        },
+        "38": {
+          "candidate": {
+            "states": 36,
+            "reference_positive": 24,
+            "predicted_positive": 18,
+            "tp": 13,
+            "fn": 11,
+            "fp": 5,
+            "tn": 7,
+            "agreement": 0.5555555555555556,
+            "recall": 0.5416666666666666,
+            "added_positive_rate": 0.4166666666666667,
+            "valid_states": 36,
+            "mean_partition_agreement": 0.7556423611111112
+          },
+          "continuous": {
+            "response": 0.07923948475056225,
+            "topology": 0.05636043784519037,
+            "commitment": 0.05454573925170633
+          },
+          "nested": {
+            "boundary": {
+              "states": 38,
+              "reference_positive": 24,
+              "predicted_positive": 7,
+              "tp": 5,
+              "fn": 19,
+              "fp": 2,
+              "tn": 12,
+              "agreement": 0.4473684210526316,
+              "recall": 0.20833333333333334,
+              "added_positive_rate": 0.14285714285714285
+            },
+            "commitment": {
+              "states": 38,
+              "reference_positive": 12,
+              "predicted_positive": 11,
+              "tp": 4,
+              "fn": 8,
+              "fp": 7,
+              "tn": 19,
+              "agreement": 0.6052631578947368,
+              "recall": 0.3333333333333333,
+              "added_positive_rate": 0.2692307692307692
+            },
+            "persistence": {
+              "states": 38,
+              "reference_positive": 28,
+              "predicted_positive": 38,
+              "tp": 28,
+              "fn": 0,
+              "fp": 10,
+              "tn": 0,
+              "agreement": 0.7368421052631579,
+              "recall": 1.0,
+              "added_positive_rate": 1.0
+            },
+            "alarm": {
+              "states": 38,
+              "reference_positive": 9,
+              "predicted_positive": 1,
+              "tp": 1,
+              "fn": 8,
+              "fp": 0,
+              "tn": 29,
+              "agreement": 0.7894736842105263,
+              "recall": 0.1111111111111111,
+              "added_positive_rate": 0.0
+            }
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "1": {
+      "candidate": {
+        "agreement": {
+          "median": 0.625,
+          "min": 0.4722222222222222,
+          "max": 0.75
+        },
+        "recall": {
+          "median": 0.6041666666666667,
+          "min": 0.4583333333333333,
+          "max": 0.75
+        },
+        "added_positive_rate": {
+          "median": 0.375,
+          "min": 0.08333333333333333,
+          "max": 0.6666666666666666
+        },
+        "mean_partition_agreement": {
+          "median": 0.80859375,
+          "min": 0.7803819444444444,
+          "max": 0.8467881944444444
+        }
+      },
+      "continuous": {
+        "response": {
+          "median": 0.03198837618240052,
+          "min": 0.02885370867119895,
+          "max": 0.04338325415220526
+        },
+        "topology": {
+          "median": 0.01795167149329144,
+          "min": 0.01377797177216659,
+          "max": 0.03201987038159536
+        },
+        "commitment": {
+          "median": 0.02017893380899396,
+          "min": 0.017114937590021227,
+          "max": 0.029481899769355852
+        }
+      },
+      "nested": {
+        "boundary": {
+          "agreement": {
+            "median": 0.868421052631579,
+            "min": 0.868421052631579,
+            "max": 0.9473684210526315
+          },
+          "recall": {
+            "median": 0.875,
+            "min": 0.875,
+            "max": 0.9583333333333334
+          },
+          "added_positive_rate": {
+            "median": 0.14285714285714285,
+            "min": 0.07142857142857142,
+            "max": 0.21428571428571427
+          }
+        },
+        "commitment": {
+          "agreement": {
+            "median": 0.8421052631578947,
+            "min": 0.8157894736842105,
+            "max": 0.868421052631579
+          },
+          "recall": {
+            "median": 0.75,
+            "min": 0.6666666666666666,
+            "max": 0.8333333333333334
+          },
+          "added_positive_rate": {
+            "median": 0.11538461538461539,
+            "min": 0.07692307692307693,
+            "max": 0.11538461538461539
+          }
+        },
+        "persistence": {
+          "agreement": {
+            "median": 0.9210526315789473,
+            "min": 0.8947368421052632,
+            "max": 0.9736842105263158
+          },
+          "recall": {
+            "median": 0.9642857142857143,
+            "min": 0.9642857142857143,
+            "max": 0.9642857142857143
+          },
+          "added_positive_rate": {
+            "median": 0.2,
+            "min": 0.0,
+            "max": 0.3
+          }
+        },
+        "alarm": {
+          "agreement": {
+            "median": 0.868421052631579,
+            "min": 0.8421052631578947,
+            "max": 0.9210526315789473
+          },
+          "recall": {
+            "median": 0.7777777777777778,
+            "min": 0.6666666666666666,
+            "max": 0.8888888888888888
+          },
+          "added_positive_rate": {
+            "median": 0.10344827586206896,
+            "min": 0.034482758620689655,
+            "max": 0.13793103448275862
+          }
+        }
+      }
+    },
+    "2": {
+      "candidate": {
+        "agreement": {
+          "median": 0.5694444444444444,
+          "min": 0.5,
+          "max": 0.75
+        },
+        "recall": {
+          "median": 0.5833333333333334,
+          "min": 0.5,
+          "max": 0.6666666666666666
+        },
+        "added_positive_rate": {
+          "median": 0.375,
+          "min": 0.08333333333333333,
+          "max": 0.6666666666666666
+        },
+        "mean_partition_agreement": {
+          "median": 0.8192274305555556,
+          "min": 0.7912326388888888,
+          "max": 0.8342013888888888
+        }
+      },
+      "continuous": {
+        "response": {
+          "median": 0.0361789454602533,
+          "min": 0.03194623047278987,
+          "max": 0.05030497329102622
+        },
+        "topology": {
+          "median": 0.022324554783861257,
+          "min": 0.018790811791809067,
+          "max": 0.042857175912811525
+        },
+        "commitment": {
+          "median": 0.02206647269324296,
+          "min": 0.01937526474810309,
+          "max": 0.03343184483754966
+        }
+      },
+      "nested": {
+        "boundary": {
+          "agreement": {
+            "median": 0.881578947368421,
+            "min": 0.868421052631579,
+            "max": 0.8947368421052632
+          },
+          "recall": {
+            "median": 0.9166666666666666,
+            "min": 0.875,
+            "max": 0.9166666666666666
+          },
+          "added_positive_rate": {
+            "median": 0.14285714285714285,
+            "min": 0.14285714285714285,
+            "max": 0.21428571428571427
+          }
+        },
+        "commitment": {
+          "agreement": {
+            "median": 0.868421052631579,
+            "min": 0.8421052631578947,
+            "max": 0.8947368421052632
+          },
+          "recall": {
+            "median": 0.8333333333333334,
+            "min": 0.75,
+            "max": 0.8333333333333334
+          },
+          "added_positive_rate": {
+            "median": 0.07692307692307693,
+            "min": 0.07692307692307693,
+            "max": 0.15384615384615385
+          }
+        },
+        "persistence": {
+          "agreement": {
+            "median": 0.8947368421052632,
+            "min": 0.868421052631579,
+            "max": 0.9473684210526315
+          },
+          "recall": {
+            "median": 0.9642857142857143,
+            "min": 0.9285714285714286,
+            "max": 0.9642857142857143
+          },
+          "added_positive_rate": {
+            "median": 0.3,
+            "min": 0.1,
+            "max": 0.4
+          }
+        },
+        "alarm": {
+          "agreement": {
+            "median": 0.8421052631578947,
+            "min": 0.7894736842105263,
+            "max": 0.868421052631579
+          },
+          "recall": {
+            "median": 0.7777777777777778,
+            "min": 0.6666666666666666,
+            "max": 0.7777777777777778
+          },
+          "added_positive_rate": {
+            "median": 0.10344827586206896,
+            "min": 0.10344827586206896,
+            "max": 0.1724137931034483
+          }
+        }
+      }
+    },
+    "4": {
+      "candidate": {
+        "agreement": {
+          "median": 0.5833333333333334,
+          "min": 0.4722222222222222,
+          "max": 0.75
+        },
+        "recall": {
+          "median": 0.6666666666666666,
+          "min": 0.5,
+          "max": 0.75
+        },
+        "added_positive_rate": {
+          "median": 0.45833333333333337,
+          "min": 0.16666666666666666,
+          "max": 0.6666666666666666
+        },
+        "mean_partition_agreement": {
+          "median": 0.8057725694444444,
+          "min": 0.7973090277777778,
+          "max": 0.84375
+        }
+      },
+      "continuous": {
+        "response": {
+          "median": 0.03794988518994716,
+          "min": 0.031068264713717833,
+          "max": 0.054477978911664754
+        },
+        "topology": {
+          "median": 0.02992455437520726,
+          "min": 0.026538029520048037,
+          "max": 0.052890335494238466
+        },
+        "commitment": {
+          "median": 0.027611560731505357,
+          "min": 0.024606931023299694,
+          "max": 0.04102753216607703
+        }
+      },
+      "nested": {
+        "boundary": {
+          "agreement": {
+            "median": 0.8157894736842105,
+            "min": 0.7894736842105263,
+            "max": 0.8157894736842105
+          },
+          "recall": {
+            "median": 0.75,
+            "min": 0.75,
+            "max": 0.75
+          },
+          "added_positive_rate": {
+            "median": 0.07142857142857142,
+            "min": 0.07142857142857142,
+            "max": 0.14285714285714285
+          }
+        },
+        "commitment": {
+          "agreement": {
+            "median": 0.7894736842105263,
+            "min": 0.7105263157894737,
+            "max": 0.8157894736842105
+          },
+          "recall": {
+            "median": 0.9166666666666666,
+            "min": 0.8333333333333334,
+            "max": 1.0
+          },
+          "added_positive_rate": {
+            "median": 0.2692307692307692,
+            "min": 0.19230769230769232,
+            "max": 0.34615384615384615
+          }
+        },
+        "persistence": {
+          "agreement": {
+            "median": 0.8947368421052632,
+            "min": 0.8421052631578947,
+            "max": 0.9473684210526315
+          },
+          "recall": {
+            "median": 0.9642857142857143,
+            "min": 0.9642857142857143,
+            "max": 1.0
+          },
+          "added_positive_rate": {
+            "median": 0.3,
+            "min": 0.2,
+            "max": 0.5
+          }
+        },
+        "alarm": {
+          "agreement": {
+            "median": 0.8421052631578947,
+            "min": 0.7894736842105263,
+            "max": 0.868421052631579
+          },
+          "recall": {
+            "median": 0.8888888888888888,
+            "min": 0.7777777777777778,
+            "max": 0.8888888888888888
+          },
+          "added_positive_rate": {
+            "median": 0.1724137931034483,
+            "min": 0.10344827586206896,
+            "max": 0.20689655172413793
+          }
+        }
+      }
+    },
+    "8": {
+      "candidate": {
+        "agreement": {
+          "median": 0.5277777777777778,
+          "min": 0.4444444444444444,
+          "max": 0.6944444444444444
+        },
+        "recall": {
+          "median": 0.5416666666666667,
+          "min": 0.4166666666666667,
+          "max": 0.6666666666666666
+        },
+        "added_positive_rate": {
+          "median": 0.4166666666666667,
+          "min": 0.16666666666666666,
+          "max": 0.5833333333333334
+        },
+        "mean_partition_agreement": {
+          "median": 0.7936197916666666,
+          "min": 0.7630208333333334,
+          "max": 0.8203125
+        }
+      },
+      "continuous": {
+        "response": {
+          "median": 0.04216968806253539,
+          "min": 0.03498192152215375,
+          "max": 0.06426165997982025
+        },
+        "topology": {
+          "median": 0.034622628448737994,
+          "min": 0.03038532638715373,
+          "max": 0.060969169872502484
+        },
+        "commitment": {
+          "median": 0.03039850579160783,
+          "min": 0.026061133067640994,
+          "max": 0.04582638541857401
+        }
+      },
+      "nested": {
+        "boundary": {
+          "agreement": {
+            "median": 0.7105263157894737,
+            "min": 0.7105263157894737,
+            "max": 0.7368421052631579
+          },
+          "recall": {
+            "median": 0.625,
+            "min": 0.625,
+            "max": 0.6666666666666666
+          },
+          "added_positive_rate": {
+            "median": 0.14285714285714285,
+            "min": 0.07142857142857142,
+            "max": 0.14285714285714285
+          }
+        },
+        "commitment": {
+          "agreement": {
+            "median": 0.7631578947368421,
+            "min": 0.7105263157894737,
+            "max": 0.7894736842105263
+          },
+          "recall": {
+            "median": 0.7916666666666667,
+            "min": 0.6666666666666666,
+            "max": 0.9166666666666666
+          },
+          "added_positive_rate": {
+            "median": 0.2692307692307692,
+            "min": 0.23076923076923078,
+            "max": 0.3076923076923077
+          }
+        },
+        "persistence": {
+          "agreement": {
+            "median": 0.9210526315789473,
+            "min": 0.8421052631578947,
+            "max": 0.9736842105263158
+          },
+          "recall": {
+            "median": 0.9642857142857143,
+            "min": 0.8928571428571429,
+            "max": 1.0
+          },
+          "added_positive_rate": {
+            "median": 0.2,
+            "min": 0.1,
+            "max": 0.3
+          }
+        },
+        "alarm": {
+          "agreement": {
+            "median": 0.8157894736842105,
+            "min": 0.7631578947368421,
+            "max": 0.8421052631578947
+          },
+          "recall": {
+            "median": 0.7777777777777778,
+            "min": 0.6666666666666666,
+            "max": 0.7777777777777778
+          },
+          "added_positive_rate": {
+            "median": 0.1724137931034483,
+            "min": 0.13793103448275862,
+            "max": 0.20689655172413793
+          }
+        }
+      }
+    },
+    "38": {
+      "candidate": {
+        "agreement": {
+          "median": 0.5555555555555556,
+          "min": 0.4722222222222222,
+          "max": 0.6944444444444444
+        },
+        "recall": {
+          "median": 0.5625,
+          "min": 0.4583333333333333,
+          "max": 0.6666666666666666
+        },
+        "added_positive_rate": {
+          "median": 0.5,
+          "min": 0.16666666666666666,
+          "max": 0.6666666666666666
+        },
+        "mean_partition_agreement": {
+          "median": 0.7526041666666667,
+          "min": 0.7248263888888888,
+          "max": 0.8159722222222222
+        }
+      },
+      "continuous": {
+        "response": {
+          "median": 0.057826294356750116,
+          "min": 0.04516180894441075,
+          "max": 0.07923948475056225
+        },
+        "topology": {
+          "median": 0.05485243663295276,
+          "min": 0.04594084599779712,
+          "max": 0.08408974064514041
+        },
+        "commitment": {
+          "median": 0.052335753467761814,
+          "min": 0.0414163496138321,
+          "max": 0.06940622451818651
+        }
+      },
+      "nested": {
+        "boundary": {
+          "agreement": {
+            "median": 0.4605263157894737,
+            "min": 0.3684210526315789,
+            "max": 0.5263157894736842
+          },
+          "recall": {
+            "median": 0.25,
+            "min": 0.08333333333333333,
+            "max": 0.3333333333333333
+          },
+          "added_positive_rate": {
+            "median": 0.14285714285714285,
+            "min": 0.07142857142857142,
+            "max": 0.2857142857142857
+          }
+        },
+        "commitment": {
+          "agreement": {
+            "median": 0.5789473684210527,
+            "min": 0.5,
+            "max": 0.6578947368421053
+          },
+          "recall": {
+            "median": 0.5,
+            "min": 0.3333333333333333,
+            "max": 0.75
+          },
+          "added_positive_rate": {
+            "median": 0.4230769230769231,
+            "min": 0.2692307692307692,
+            "max": 0.5
+          }
+        },
+        "persistence": {
+          "agreement": {
+            "median": 0.7368421052631579,
+            "min": 0.7105263157894737,
+            "max": 0.7368421052631579
+          },
+          "recall": {
+            "median": 1.0,
+            "min": 0.9642857142857143,
+            "max": 1.0
+          },
+          "added_positive_rate": {
+            "median": 1.0,
+            "min": 0.9,
+            "max": 1.0
+          }
+        },
+        "alarm": {
+          "agreement": {
+            "median": 0.7105263157894737,
+            "min": 0.6578947368421053,
+            "max": 0.7894736842105263
+          },
+          "recall": {
+            "median": 0.05555555555555555,
+            "min": 0.0,
+            "max": 0.1111111111111111
+          },
+          "added_positive_rate": {
+            "median": 0.08620689655172414,
+            "min": 0.0,
+            "max": 0.13793103448275862
+          }
+        }
+      }
+    }
+  },
+  "decision": {
+    "comparisons": [
+      {
+        "interval": 4,
+        "candidate_recall_gain": 0.10416666666666663,
+        "final_recall_gain": 0.8333333333333333,
+        "candidate_added_positive_change": -0.04166666666666663,
+        "final_added_positive_change": 0.08620689655172414,
+        "passes": false
+      },
+      {
+        "interval": 2,
+        "candidate_recall_gain": 0.02083333333333337,
+        "final_recall_gain": 0.7222222222222222,
+        "candidate_added_positive_change": -0.125,
+        "final_added_positive_change": 0.01724137931034482,
+        "passes": false
+      },
+      {
+        "interval": 1,
+        "candidate_recall_gain": 0.04166666666666674,
+        "final_recall_gain": 0.7222222222222222,
+        "candidate_added_positive_change": -0.125,
+        "final_added_positive_change": 0.01724137931034482,
+        "passes": false
+      }
+    ],
+    "selected_interval": null,
+    "direction": "direct_local_response",
+    "conclusion": "Re-anchoring does not pass the frozen recovery rule; prefer a direct local action-response/boundary model over another long open-loop dynamics model."
+  }
+}

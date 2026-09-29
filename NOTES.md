@@ -184,7 +184,7 @@ two made the negative exponents line up well. Near-zero exponents are where thes
   `0.899, 0.020, -6.75, -7.85, -8.94, -10.05, ...`, a smooth ladder with no gap. The true
   lambda_3 is not the 3rd exponent at all. **Without the gap check we would have reported
   -6.75 as lambda_3 and never known the comparison was meaningless.**
-* **Correction to an earlier claim in these notes and in PLAN.md:** I stated that papers use
+* **Correction to an earlier claim in these notes and in `docs/archive/PLAN_ORIGINAL_FTLE.md`:** I stated that papers use
   d≈20 for a 3D system. That is wrong. The shPLRNN/GTF paper's headline claim is the
   opposite — reconstruction *"with at most as many latent dynamical variables as those of the
   underlying system"* (M=16 for 64-d EEG, vs dendPLRNN's 105). High-M is what that paper argues
@@ -193,7 +193,7 @@ two made the negative exponents line up well. Near-zero exponents are where thes
   D_stsp (attractor geometry), D_H (power spectra) and PE(20) (prediction error); lambda_max
   appears only to characterise the EEG data. So its hyperparameters carry no evidence for our
   purpose, and our acceptance criterion is strictly harder than anything it validates.
-* **PLAN.md's inherited claim about reservoir computing is now VERIFIED**, not assumed:
+* **The archived FTLE plan's inherited claim about reservoir computing is now VERIFIED**, not assumed:
   Pathak et al. Table II reproduces lambda_max (0.90 vs 0.91) and lambda_2 (0.00) well and
   fails lambda_3 (-10.5 vs -14.6).
 
@@ -1273,7 +1273,7 @@ affects every k-based AUC recorded above this line.
 
 ## The shPLRNN's stated justification has lapsed
 
-PLAN.md §0 picks shPLRNN over the causal-ViT head for one reason: **exact Jacobians**. The
+`docs/archive/PLAN_ORIGINAL_FTLE.md` §0 picks shPLRNN over the causal-ViT head for one reason: **exact Jacobians**. The
 diagnosis there is sound and worth keeping -- FTLE on the ViT head failed because "the linear
 regime is 50x too small" (at ||delta||=1e-3, cosine 0.9995; at the operating sigma=0.05,
 relative error 0.963 and cosine 0.538), so the Jacobian was correct and useless. A smooth network
@@ -2971,7 +2971,7 @@ Reality separates fork from quiet by jump ratio (14.9 vs 3.6); neither model doe
 jump ratio on fork states is well above its own value on quiet ones.
 
 W0 gate met: benchmark runs, is committed, reproduces the earlier 8-state finding at scale.
-Result: `results/jenga/w0_response_curves.json`. Plan and gates: `PLAN_WORLDMODEL.md`.
+Result: `results/jenga/w0_response_curves.json`. Plan and gates: `docs/archive/PLAN_WORLDMODEL.md`.
 
 ## Correction: the "spread relative to real" column mixes units (2026-09-18)
 
@@ -3823,7 +3823,7 @@ Next: re-simulate the robust forks with every-step logging (Phase 2 step 5).
 
 ## Phase 2 steps 5-6: why the systematic blind forks are invisible (2026-09-21)
 
-Full write-up: `blind_fork_analysis.md`. Code: `eval/jenga_blind_resim.py` (dense re-simulation),
+Full write-up: `docs/archive/BLIND_FORK_ANALYSIS.md`. Code: `eval/jenga_blind_resim.py` (dense re-simulation),
 `eval/jenga_blind_analyse.py` (response regimes, contacts), `eval/jenga_blind_mechanism.py` (tilt
 course, true-state handoff, classes, training coverage). Results: `results/jenga/blind_analysis.json`,
 `results/jenga/blind_mechanism.json`, `results/jenga/blind_resim/index.json` (traces gitignored).
@@ -5063,3 +5063,776 @@ Jenga. Next analyze re-observation horizon and decision-stage disagreement using
 then decide whether the deployable system should use short-horizon repeated monitoring or a direct
 task-independent local-response model. Canonical result:
 `results/jenga/d5_multimodal_pilot_summary.json`.
+
+## Re-observation/interface analysis selects direct local response (2026-09-28)
+
+The read-only interface experiment was frozen before execution at
+`results/jenga/reobservation_interface_protocol.json` (SHA-256
+`a28158faebe56009d866efeaa3a025ac077648102c44d13bf778f4c8d8d21ba1`). It uses all ten existing
+D2 checkpoints, 36 episode-held-out TRAIN neighborhoods (64 probes each), and 38 independent
+nested-width groups from the same held-out episodes. DEV and TEST were not read. Conditions restart
+predictions from recorded physical state every 1, 2, 4, 8 or 38 steps; predicted endpoints remain
+predictions, so interval one measures teacher-forced one-step dynamics rather than copying truth.
+This is an oracle mechanism diagnostic, not a deployable claim about observing counterfactuals.
+
+Open-loop interval 38 has median physical-candidate recall 56.3%, candidate added-positive rate
+50.0%, partition agreement 75.3%, nested boundary recall 25.0%, commitment recall 50.0%, and final
+consequence recall 5.6% with 8.6% added positives. At intervals 1/2, candidate recall is only
+60.4%/58.3% and added positives 37.5%, but partition agreement rises to 80.9%/81.9%. On supplied
+nested paths the recovery is much stronger: boundary recall is 87.5%/91.7%, commitment recall
+75.0%/83.3%, and final consequence recall 77.8% at both intervals, with 10.3% added positives.
+Continuous response/topology/commitment errors all improve as the forecast is shortened.
+
+No interval passes the prospective complete rule. Intervals 1/2 miss the required +10-point
+candidate-recall gain; interval 4 reaches +10.4 points but raises final added positives by 8.6
+points, beyond the +5-point allowance. Therefore accumulated rollout error explains much of the
+lost boundary/consequence signal once a relevant pair is supplied, but not the full-neighborhood
+candidate problem. The next justified architecture is a permutation-equivariant, set-conditioned
+local response model trained directly on anonymous response geometry and separation curves—not
+another long open-loop Jenga state predictor. Canonical result:
+`results/jenga/reobservation_interface_result.json` (SHA-256
+`601e8c2e8423ce42bcc5d06a85a8e8b361719fce94a2b740025c8ba58d52ecaa`).
+
+## D6 direct set-conditioned response pilot fails (2026-09-28)
+
+The D6 protocol was frozen before substantive training at
+`results/jenga/d6_set_response_protocol.json` (SHA-256
+`7440f092a1851b4de8018e07671d9b6891612d52ce955219d677d442a56f79fb`). Two matched arms directly
+decode the normalized 38-step pose/velocity response from current state and action chunks. They
+share scene/action encoders, decoder, task-free response/topology/commitment/nested losses, seed 1,
+12 epochs, random probe permutations and 32–64-probe subsets. Only the set-conditioned arm inserts
+two self-attention blocks over probe tokens. The model sees no task, failure, success or object-role
+labels. The unchanged 220/36 episode split is used; DEV and TEST remain closed.
+
+The independent-direct arm detects 4/24 physical candidates (16.7% recall), adds 3/12 positives on
+physical non-candidates, agrees on 36.1% of decisions and reaches 67.5% partition agreement. The
+set-conditioned arm detects only 1/24 (4.2%), adds 0/12, has the same 36.1% decision agreement and
+64.8% partition agreement. Neither arm recovers any of nine physical final positives on the 38
+nested validation groups. Set conditioning marginally improves response error 0.171 -> 0.167 but
+worsens topology 0.165 -> 0.316 and commitment 0.114 -> 0.173. It passes exact permutation
+equivariance at maximum absolute error 5.4e-7, but fails candidate recall/agreement, partition and
+nested-recall gates. No replication or DEV/TEST run is authorized. Canonical result:
+`results/jenga/d6_set_response_pilot.json` (SHA-256
+`b01c33247a2628a7adfe45c71c3a56ad5e4f94101815777882ba77de4786c8bc`).
+
+The post-gate task-free diagnostic measures RMS response variation across the 64 actions after
+removing their mean. For the set model, median predicted/physical spread is only 3.3% during the
+action, 2.7% in early hold and 6.0% in late hold. Thus attention has collapsed the local response
+manifold rather than organized it. The independent model retains response magnitude on many states
+but not correct pairwise geometry. Diagnostic:
+`results/jenga/d6_set_response_analysis.json` (SHA-256
+`a3778c5c58b66e21039373dbb4b22397a2bbc50c7476e284f6fd0dc2666ad9ce`).
+
+Do not tune D6 on held-out states. The next bounded experiment is a TRAIN-only small-subset
+memorization audit. If the present models cannot reproduce topology and structural decisions on
+4–8 states they directly train on, the architecture/objective is inadequate. If they can memorize
+but fail episode-held-out states, data diversity/generalization is the dominant limitation.
+
+## D6 small-subset memorization audit fails both arms (2026-09-28)
+
+The diagnostic protocol was frozen before execution at
+`results/jenga/d6_memorization_protocol.json` (SHA-256
+`db81832780b6c273ccf81253fd2ca15df406ac6c68b82137fb3beab7319c71d0`). It selects the first
+state and first nested group from eight fixed TRAIN episodes (16, 21, 25, 30, 31, 33, 34, 35).
+The exact same examples are used for optimization and evaluation. Both unchanged D6 arms receive
+all 64 probes for 2,000 AdamW updates; losses, normalizers, architecture and seed remain fixed.
+No DEV, TEST, task-failure label or object-role label is used.
+
+Independent-direct recovers 4/8 physical candidate decisions, 64.45% mean partition agreement,
+and 0/4 physical final nested positives. Its response/topology/commitment errors are
+0.2522/0.0630/0.0641. Set-conditioned improves to 6/8 candidate decisions and 75.0% partition
+agreement, but still recovers 0/4 final positives; its errors are 0.1486/0.0539/0.0530. Neither arm
+passes any continuous or structural memorization gate. Both pass permutation checks and preserve
+substantial action-dependent response variation: independent phase spread ratios are
+0.872/0.929/0.880 and set-conditioned ratios are 0.857/0.869/0.820.
+
+Therefore the held-out D6 failure is not presently attributable to insufficient data. The current
+architecture/objective/optimization cannot reproduce even directly trained relational examples.
+The next diagnostic must isolate the failing component with deterministic full-batch overfitting:
+one state with raw response loss, then eight states, then topology, commitment and nested losses
+added sequentially. Do not collect more data, open DEV/TEST, or begin visual transfer before the
+same-example structural gate passes. Canonical result:
+`results/jenga/d6_memorization_result.json` (SHA-256
+`3b414c39cde69c0390984f15f2b96fc1c7263d87cb625de6a0909be7c72dc8e9`).
+
+## D6 staged overfit isolates nested consequence objective (2026-09-28)
+
+The staged protocol was frozen before execution at
+`results/jenga/d6_staged_overfit_protocol.json` (SHA-256
+`e7d7b85dd2fe60c60716bc1af0db5635d6abeae7feb29941760e2156b7a3cad6`). It uses the exact same
+eight TRAIN states and nested groups as the prior audit, deterministic full batches, all 64 probes,
+unchanged D6 architectures and loss weights, and fixed final-step checkpoints. Each stage warm-starts
+the previous stage and resets AdamW: one-state response, eight-state response, add topology, add
+commitment, then add nested D3. Gradient norms and cosines are recorded at every transition. No
+task labels, DEV or TEST are used.
+
+The strict raw-only gates fail for both arms, but later stages disprove a simple decoder-capacity
+interpretation. The set-conditioned arm's eight-state response error falls from 0.0304 after raw-only
+training to 0.0145 after topology, then it passes the full continuous gate after commitment at
+0.0081 response, 0.0047 topology and 0.0051 commitment. Candidate agreement is 7/8 and partition
+agreement 87.5%. At commitment-stage entry, response/topology/commitment gradient cosines are all
+positive (0.64, 0.76 and 0.92), so those relational terms cooperate rather than interfere.
+
+Adding nested supervision preserves continuous fit: final set errors improve to
+0.0078/0.0039/0.0042 and across-action phase spread is 0.963/0.998/0.998 of physical. Nevertheless,
+candidate agreement remains 7/8, nested boundary agreement is 5/8 (4/6 physical positives), and
+final agreement is 5/8 with only 1/4 physical final positives recovered. The aggregate nested loss
+falls from 6.318 to 0.113; its final components are response 0.0141, effect 0.0232, global scale
+0.0434 and local scale 0.0322. Thus a small average curve/scale error is still enough to flip the
+threshold-sensitive structural decision.
+
+At nested-stage entry, the nested term's weighted gradient norm is 0.655 versus
+0.066/0.035/0.080 for response/topology/commitment. Its cosine with commitment is -0.695 (and with
+topology -0.377), showing strong initial competition. This localizes the next formulation: explicit
+continuous pair-separation curves with balanced per-group, per-level and per-phase reconstruction,
+rather than another aggregate D3 scalar or more data. Require exact same-example monitor decisions
+before held-out TRAIN. Result SHA-256:
+`4bd237bbc666df7902f287d09f3f22bed4b830482550bce6a133101dadda2bcf`;
+analysis SHA-256:
+`1311d4a3a54a7afa156f93b35bea187a5092276d89c24bc5886d23f10410acfb`.
+
+## D7 explicit nested pair curves improve but fail exact memorization (2026-09-28)
+
+The D7 protocol was frozen before execution at
+`results/jenga/d7_explicit_curve_protocol.json` (SHA-256
+`7f917641917fa7d8a131ac9eb00b9bfe1d03ac751e5d8a860c9d27b0bd954289`). It freezes the passed
+set-conditioned add-commitment backbone. A symmetric endpoint-pair head predicts, for every nested
+level, log1p early/full gaps and a complete 39-sample separation curve. Five MSE terms balance early
+gap, full gap, action, early hold and late hold. Targets are continuous and task-free. The existing
+consequence rule was factored so trace-derived and externally predicted curves follow the identical
+decision path.
+
+On the exact eight optimization groups, commitment agreement rises from aggregate D3's 5/8 to 8/8.
+Persistence is 7/8. Final positive recovery rises from 1/4 to 3/4, with final agreement 7/8 and zero
+added final positives. Boundary agreement stays 5/8: D7 recovers five of six physical boundaries
+but flags both physical negatives. The frozen backbone retains 7/8 candidate decisions and 87.5%
+partition agreement.
+
+The prospective gate fails. Early/full log-gap MSE is 0.001213/0.000813 against 0.0001 limits;
+action-phase curve MSE is 0.005115 against 0.001. Early/late hold errors pass at
+0.000902/0.000911. Endpoint-swap error passes at 9.78e-6; level-permutation error narrowly misses at
+1.17e-5. Structural failure rejects the experiment regardless. Although some intermediate logs
+show lower scalar losses, the protocol fixes final-step selection, so none is chosen post hoc.
+
+This supports explicit curves but rejects the frozen-token implementation. Next compare a direct
+temporal encoder over raw paired action chunks and shared scene state. Passing identifies D6 token
+information loss; failing implicates curve parameterization or optimization. Keep held-out data,
+DEV, TEST and vision closed. Canonical result:
+`results/jenga/d7_explicit_curve_result.json` (SHA-256
+`627381507138fdcc169613b0eea7cf50df79e7ba0385b0fe4ed41726e8d804f5`).
+
+## D8 direct temporal raw-action curves recover exact decisions (2026-09-28)
+
+The D8 protocol was frozen before execution at
+`results/jenga/d8_raw_temporal_curve_protocol.json` (SHA-256
+`a46583ceb49266075213e8c2bc78d1c2e7745eeec42652bfdc592d0120e14368`). It keeps D7's eight
+groups, physical curve targets, five balanced losses, monitor mathematics, seed, AdamW at 1e-3,
+5,000 updates and fixed-final checkpoint. Only input representation changes. A shared GRU encodes
+each endpoint's raw first eight action steps; symmetric mean/absolute-difference/product features
+join a shared scene embedding, and two position-free attention blocks exchange context across the
+six refinement levels. No task or monitor labels enter training.
+
+At the fixed final checkpoint, D8 exactly matches all structural decisions: boundary 8/8,
+commitment 8/8, persistence 8/8 and final alarm 8/8, with no false positives. This improves D7's
+5/8 boundary and 7/8 final agreement. Full-gap log MSE is 0.0000808; action, early-hold and
+late-hold curve MSE is 0.000288/0.000481/0.000530. All pass. Endpoint swap error is exactly zero
+and level-permutation error is 7.2e-7.
+
+The complete prospective gate still formally fails: early-gap log MSE is 0.0001158 versus its
+0.0001 limit, a 16% excess. Constant-lr training is visibly oscillatory; several logged intermediate
+steps are far below every continuous limit, but fixed-final selection correctly prevents choosing
+them post hoc. Thus the result strongly implicates information loss in frozen D6 tokens and proves
+the raw temporal architecture can realize the required decisions, while not yet establishing a
+stable passed formulation.
+
+Next freeze a learning-rate-decay replication with fixed seeds and unchanged gates. Only robust
+fixed-final passes may authorize episode-held-out TRAIN. DEV, TEST and vision stay closed.
+Canonical result: `results/jenga/d8_raw_temporal_curve_result.json` (SHA-256
+`ecbe011a657fe468ca911ba563812492255faf3fdaf1456cd05ca4d95a4d06d7`).
+
+## D8b removes optimization error and exposes exact-zero BIC pathology (2026-09-28)
+
+The D8b protocol was frozen before execution at
+`results/jenga/d8b_stability_protocol.json` (SHA-256
+`05270e8a7efa44018a25c6556203a7a77c58d414cf562d5f1ba37c5d571ad711`). It keeps D8's model,
+eight groups, targets, five balanced losses and exact gates, and changes only optimization to cosine
+learning-rate decay from 1e-3 to 1e-5. Seeds 1–3 are fixed; only final checkpoints count; every seed
+must pass.
+
+Decay completely stabilizes continuous fitting. Across seeds, maximum early/full gap log MSE is
+1.52e-8/1.53e-8. Maximum action/early-hold/late-hold curve MSE is
+1.45e-6/1.19e-6/1.48e-6. Swap error is zero and level-permutation error remains below 1e-6. All
+three seeds recover 8/8 commitment, persistence and final decisions with no added positives.
+
+The all-seed gate nevertheless fails: boundary agreement is 8/8, 7/8 and 7/8, so only seed 1
+passes. A read-only evidence audit localizes every disagreement to episode 25. Episodes 25 and 31
+have exactly zero physical early/full gaps and complete curves at all levels. Predicted maximum gaps
+are only about 3e-5–2.5e-4 and curves 5e-4–1.6e-3, but boundary BIC is scale-invariant. It can
+interpret the shape of an arbitrarily tiny residual as a branch. Seeds 2–3 therefore flag episode
+25; all nonzero-response groups are stable, and final decisions remain exact.
+
+The next formulation should not add a calibrated amplitude threshold. Instead, factor response into
+amplitude × normalized shape, use an exact-zero-capable nonnegative amplitude output, supervise
+amplitude with continuous physical magnitude, and omit shape loss when target amplitude is exactly
+zero. This preserves task-label-free training while preventing arbitrary zero-response shapes.
+Held-out TRAIN, DEV and TEST remain closed. Result SHA-256:
+`7f0536454f94900ee43aafb5009e164d800468590af3ae77a4db9ae5f3d67695`;
+analysis SHA-256:
+`042cdf3730efe1c577e3c4eaa725899146c6fa512b6b9b9286dcdf632e9130ec`.
+
+## D9 zero-preserving amplitude × shape passes two of three seeds (2026-09-28)
+
+The D9 protocol was frozen before execution at
+`results/jenga/d9_amplitude_shape_protocol.json` (SHA-256
+`94cabad727e1e08a64ed48a34f8b41608abe11b1ee81b512d8d6517d290db361`). D9 retains D8b's raw
+temporal encoder, level context, three fixed seeds and cosine decay. It factors each level's
+41-dimensional log curve into a ReLU amplitude and softplus normalized shape. Amplitude receives a
+continuous RMS-magnitude target; shape loss is applied only when that target is nonzero. No task,
+failure, quiet or monitor decision label is used.
+
+Seeds 1 and 2 pass every frozen gate. They output exactly 12/12 zero amplitudes, recover 8/8
+boundaries and 8/8 final decisions, retain positive amplitude on every nonzero level, and pass all
+continuous and invariance limits. Seed 3 outputs 11/12 exact zeros. Episode 31's coarsest level is
+5.04e-5 while the other five are exactly zero; that lone residual produces one false boundary.
+Boundary agreement is therefore 8/8, 8/8 and 7/8; final, commitment and persistence agreement stay
+8/8 for every seed. All continuous curve errors pass by wide margins.
+
+The all-seed gate fails, but exact-zero factorization improves complete passes from D8b's 1/3 to
+D9's 2/3. The remaining fragility comes from learning six independent amplitudes for a refinement
+group whose response/no-response property is shared. Next use one pooled group amplitude and retain
+level-specific normalized shapes. Held-out TRAIN, DEV and TEST remain closed. Canonical result:
+`results/jenga/d9_amplitude_shape_result.json` (SHA-256
+`e828d12e010ce08a32ec7be73fdb53c243e390698f8c000456c2fa5301a72167`).
+
+## D9b shared group amplitude passes all three seeds (2026-09-28)
+
+The D9b protocol was frozen before execution at
+`results/jenga/d9b_shared_amplitude_protocol.json` (SHA-256
+`879f74b754c7bff8e516a8897a4411c1c3e476c34eb434eba6215d0ac457de35`). It changes only D9's
+amplitude factorization: the six contextualized refinement-level features are mean pooled and one
+ReLU amplitude is predicted for the complete group. Per-level softplus shapes retain variation
+across probe scale. The continuous amplitude target is RMS magnitude over all 6 x 41 group values;
+shape loss is omitted only for a group whose physical amplitude is exactly zero.
+
+All fixed seeds pass every gate. Each emits exactly two zero amplitudes for episodes 25 and 31,
+positive amplitudes for the six responding groups, and 8/8 boundary and 8/8 final agreement.
+Maximum early/full/action/early-hold/late-hold curve MSE across seeds is
+2.28e-6/1.81e-6/6.10e-6/5.54e-7/2.32e-6. Endpoint-swap error is zero and maximum level-permutation
+error is 2.15e-6. D9b therefore improves complete fixed-seed passes from D9's 2/3 to 3/3 without a
+task label, monitor target or calibrated cutoff.
+
+The same-example capacity/stability gate is now closed successfully. The next authorized experiment
+is a preregistered episode-held-out TRAIN comparison against D2; DEV and TEST remain closed.
+Canonical result: `results/jenga/d9b_shared_amplitude_result.json` (SHA-256
+`51b7910271006c4de36f93a44d343eb21448c9d6f1e7e4ed11445cd72fab5bea`).
+
+## D9b episode-held-out TRAIN gate fails on added positives (2026-09-28)
+
+The held-out protocol was frozen at `results/jenga/d9b_heldout_train_protocol.json` (SHA-256
+`28c14310d6bc1e5d89233f1b16bcbd58d6bc7ab530ec62c9481bf3f18ce0d5ed`). It uses the same
+episode split and D2 result already established by the re-observation study: 218 fit groups from
+37 episodes and 38 evaluation groups from excluded episodes 0, 1, 5, 7, 12 and 13. Three fixed D9b
+seeds train for 5000 cosine-decayed steps using only continuous task-free response targets. Fixed
+final checkpoints are compared with the ten-seed open-loop D2 medians.
+
+D9b materially improves sensitivity. Median boundary recall is 95.8% versus D2's 25.0%; median
+final recall is 33.3% versus 5.6%. It also produces much more realistic persistence behavior than
+D2: 85.7% recall and 10.0% added positives versus 100% and 100%. But median boundary added-positive
+rate is 35.7% versus D2's 14.3%, and final added-positive rate is 13.8% versus 8.6%. The frozen gate
+allows at most a five-point increase, so both checks fail; the final check misses by one quiet case.
+
+The failure is systematic. The same five sources (`ep12_seed102`, `ep13_seed101`, `ep1_seed103`,
+`ep5_seed105`, `ep7_seed106`) are false boundaries for all three seeds. Every seed recovers all
+nine physical zero-response groups exactly, so D9's tiny-residue pathology is fixed. Seeds 2 and 3
+instead collapse one and two nonzero episode-0 groups to literal zero, despite physical amplitudes
+around 1.71 and 1.76. Held-out phase errors are also far above same-example errors. This points to
+systematic generalization/representation error, not seed instability.
+
+DEV and TEST remain closed. Next run a read-only nearest-support audit in normalized initial-state,
+paired-action and physical response-curve spaces to distinguish missing data coverage from an
+ambiguous input representation or learning failure. Canonical result:
+`results/jenga/d9b_heldout_train_result.json` (SHA-256
+`1049240894f9d6984c2f4fd4fba034d3a244bd405634a85c177b7c180afe35a3`).
+
+## D9b support audit finds response novelty without simple input OOD (2026-09-28)
+
+The read-only diagnostic specification is
+`results/jenga/d9b_support_audit_protocol.json` (SHA-256
+`72be38b68ffc724dffa14374b115ea4ec57a9c38b12a177abcddfe62e6dbc1dd`). It loads the three fixed
+D9b checkpoints and computes nearest-fit distances for all 38 held-out groups. Initial states use
+fit-only 61D normalization. Actions use endpoint-symmetric mean/absolute-difference features over
+the model-visible eight steps and all six levels. Physical response distance uses the complete
+6 x 41 task-free log-response curve. No model is trained and no distance is fitted to alarm labels.
+
+Nearest joint state/action distance has only 0.108 Spearman correlation with cross-seed median curve
+error. State distance alone is 0.177 and action distance is -0.378. By contrast, nearest physical-
+response distance correlates at 0.744, and physical response mismatch to the nearest input neighbor
+correlates at 0.410. The six recurrent-error groups have median joint-input percentile 0.605,
+nearest-response percentile 0.816 and prediction-error percentile 0.697. They therefore occupy
+fairly ordinary input locations while having relatively novel physical responses.
+
+The repeated `ep0_seed102` false zero is the clearest representation/local-coverage failure: joint
+input distance is at percentile 0.447, but the nearest input neighbor's response mismatch is at
+0.921 and its D9b error is the maximum observed. The five unanimous false boundaries are
+heterogeneous: their joint-input percentiles range from 0.132 to 0.816. Consequently none of the
+predeclared single-cause markers fires and the formal conclusion is mixed/inconclusive. Simple
+global input OOD is nevertheless not supported as the sole explanation.
+
+Next use episode-blocked cross-validation entirely inside the 218 fit groups to freeze a nearest-
+neighbor response predictor, then score the same held-out groups once. This will test whether a
+local nonparametric rule can recover curves that D9b misses. DEV and TEST remain closed. Canonical
+result: `results/jenga/d9b_support_audit_result.json` (SHA-256
+`463ce570bef9b2d575654cbd60a546a604c05b4d85e7f49ed94f0cc3cc9c8ebd`).
+
+## Fit-only nearest-neighbor response baseline fails (2026-09-28)
+
+The protocol at `results/jenga/d9b_knn_protocol.json` (SHA-256
+`a145d962c86c8a107a2c8067ad89b9863972dba67b93c2169d063e283bfa625e`) freezes five episode-
+blocked folds over the 218 fit groups, five state/action block weights, five neighbor counts and two
+weighting kernels. Selection minimizes only continuous 6 x 41 log-response MSE within fit folds;
+the 38 held-out groups and all monitor decisions are excluded. The selected rule uses state weight
+0.75, nine neighbors and inverse-distance averaging. Its cross-validated mean MSE is 0.397.
+
+Held-out mean curve MSE is 0.387, slightly worse than D9b's 0.369 rather than the preregistered 10%
+improvement. The local rule predicts all 24 physical boundaries and all nine final alarms, but at
+the cost of 10/14 quiet false boundaries and 18/29 quiet false final alarms. Boundary agreement and
+added-positive rate are 73.7%/71.4%; final agreement and added-positive rate are 52.6%/62.1%.
+D9b's corresponding values are 84.2%/35.7% and 73.7%/13.8%. Only 3/9 exact-zero groups remain
+exact zero. Every frozen comparison fails.
+
+The nonparametric rule correctly restores a nonzero response and correct final alarm for the
+episode-0 case D9b collapsed, but interpolation predicts response too broadly elsewhere. Similar
+fit-CV and held-out errors show that the limitation is not unique to the six held-out episodes.
+This rejects a simple nearest-neighbor repair and favors a fit-only data-scaling study next: if D9b
+improves with more independent groups, collect broader task-agnostic contact-response data; if the
+curve is flat, add generic temporal/contact history. Result SHA-256:
+`2c5eee136ccff42ea5c81af4ee0a1d277c831a834b540332124f44aa6ead5f58`.
+
+## D9b scaling improves curves but worsens alarm specificity (2026-09-28)
+
+The frozen scaling protocol is `results/jenga/d9b_scaling_protocol.json` (SHA-256
+`8ad8e549add016ea0d83e4c40b5a8819561d6721a594dcc6918d03b7920fc45b`). It quarantines the
+already inspected six-episode split and uses only the previous 218 fitting groups. Five numerical-
+episode folds are fixed. Within each fold, deterministic episode-level 25%, 50%, 75% and 100%
+training subsets are nested. Fold-only input normalization, D9b, 5000 update steps, continuous
+targets and fixed final checkpoints are held constant. One pilot seed runs sequentially; two more
+seeds are allowed only if continuous error and monitor specificity both scale favorably.
+
+Continuous prediction clearly benefits from more data. Pooled fold MSE is 0.871, 0.735, 0.678 and
+0.530 as mean training groups rise from 47.6 to 92.8, 134.0 and 174.4. The full-data result is 39.1%
+below quarter data, all five folds improve, and the descriptive log-error/log-groups slope is
+-0.346. False-zero rate also improves from 6.8% to 0.5%.
+
+The monitor tradeoff worsens. Boundary recall rises from 86.5% to 96.1%, but boundary added-positive
+rate rises from 60.3% to 66.7%. Final recall rises from 25.0% to 45.0%, but final added-positive rate
+rises from 15.8% to 27.8%. Full-data exact-zero recall is 74.1%. The two specificity checks fail, so
+the frozen pilot gate fails and replication seeds are not run.
+
+The correct conclusion is not that data is irrelevant: it materially improves continuous curves
+and sensitivity. Rather, data alone does not recover the local decision geometry needed by the
+calibration-free monitor. Next reconstruct a short generic pre-probe state/action/contact history
+and run a fit-only 2 x 2 snapshot-versus-history by quarter-versus-full experiment. This directly
+tests whether unobserved recent contact mode causes the remaining ambiguity without introducing
+Jenga-specific labels. Result SHA-256:
+`fc1d392c490271ee188eaccb3a35e437d884c524214e12b4a68324d2060736a1`.
+
+## Generic temporal-history factorial fails the specificity/recall gate (2026-09-28)
+
+Warm-start-safe replay generated four-state/three-control causal histories for all 256 D3 groups.
+The final reconstructed state matches each cached probe start exactly: maximum absolute and RMS
+error are zero and all contact signatures match. The frozen fit-only factorial reuses the D9b
+snapshot results and trains the history arm at 25% and 100% data in the same five episode folds.
+
+At full data, snapshot versus history MSE is 0.530 versus 0.537. Boundary recall is 96.1% versus
+92.9%, and added-positive rate is 66.7% versus 60.3%. Final recall is 45.0% versus 30.0%, and
+added-positive rate is 27.8% versus 23.4%. Thus history modestly reduces over-alarming but fails the
+predeclared ten-point specificity gains, loses too much final recall, and does not preserve curve
+MSE. Endpoint and level symmetries pass. Replication seeds were not run.
+
+This rules out a short unstructured GRU history as the missing ingredient, not temporal evidence in
+general. The next justified representation is a universal, identifiable interaction-mode memory
+formed from state/control deltas and contact creation/loss events, trained on the same task-free
+continuous curves. DEV and TEST remain closed. Canonical protocol/result SHA-256:
+`8c7d8714c07ab250d2bd8de33742ea1f2aed4987f810271c9f8fb301072ccae2` /
+`6dc67d86ad8f88e4f5728de11b9e926f43c123365ed00f197388c3388d34d764`.
+
+## Explicit interaction events do not repair D9b generalization (2026-09-28)
+
+D9c tests the strongest short-history representation justified by the previous factorial. Each
+transition explicitly contains signed and absolute changes in all 45 continuous pose/velocity
+channels, contact presence before and after, contact creation and loss, and the executed control.
+Shared event encoding with mean, maximum and latest-event pooling is fused with the unchanged D9b
+current-state encoding. Supervision remains the continuous task-free response curve; no task,
+failure, alarm or named-mode label is used.
+
+On the same five full-data episode folds, interaction-event versus snapshot D9b MSE is 0.574 versus
+0.530. Boundary recall is 90.3% versus 96.1% and added-positive rate is 68.3% versus 66.7%. Final
+recall is 33.3% versus 45.0% and added-positive rate is 29.1% versus 27.8%. The GRU-history control
+is also more specific at 60.3%/23.4% added-positive rates. Only the exact symmetry check passes;
+all substantive frozen checks fail, and replication is not run.
+
+The next experiment should no longer search for better short-history features. Freeze a task-free
+multimodal model over complete response curves and explicitly separate execution variation from
+model uncertainty. If a distributional interface still cannot improve held-out curve geometry and
+specificity, stop model iteration on this small dataset and collect broader generic physical
+interaction-response coverage or revise the world-model/monitor contract. Protocol/result hashes:
+`51f80b99c7b4443a6a4783b921d914f2812450b2b69650e99fe83c2d9e411392` /
+`c686578b37b3608839423906ec16adb660bfbad796e3150aa81e116c461723d3`.
+
+## D10 multimodal curves expose a mode-routing bottleneck (2026-09-28)
+
+D10 keeps D9b's snapshot state and future-action encoder but predicts three alternative complete
+6 x 41 response curves. Each component has one exact-zero-capable group amplitude and six shapes;
+one categorical latent applies to the whole refinement group. Training uses a fixed-variance
+Gaussian-mixture likelihood on task-free curves. Deployment selects the component with highest
+input-conditioned probability. Target-conditioned best-component selection is diagnostic only.
+
+The deployed MAP result fails: MSE is 0.615 versus D9b's 0.530. Boundary recall/additional-positive
+rate is 89.0%/69.8% versus 96.1%/66.7%; final recall/additional-positive rate is 38.3%/29.1%
+versus 45.0%/27.8%. No substantive gate passes and no replication seed runs.
+
+However, oracle-best selection among the same three generated curves has MSE 0.330, improving
+46.4% over MAP and 37.8% over D9b. MAP selects the oracle component for 178/218 groups (81.7%).
+The MAP/oracle confusion matrix is `[[8,2,6],[2,16,6],[14,10,154]]`; those 40 errors create a large
+capacity/readout gap. MAP mode counts are 16/24/178 versus oracle counts 24/28/166, so the model is
+imbalanced but not completely collapsed.
+
+The next justified experiment freezes these experts and learns task-free component routing from
+training-fold curve-likelihood assignments. Compare snapshot-only and generic history/event router
+inputs. If neither closes a substantial fraction of the oracle gap while improving frozen monitor
+specificity, stop architecture iteration on this small dataset and collect broader generic physical
+response coverage. Protocol/result hashes:
+`e076e18747396550bf39340e8fd9fe1f9a0e65d8cf103a138c2207507ce6dd97` /
+`aeedabcd1aca588d307efc40f8e4b968faad7e87d2a89584d2eedd6692f2e4e0`.
+
+## D11 event routing improves curves but does not pass the monitor gate (2026-09-28)
+
+D11 freezes every D10 curve expert and derives mode assignments only by minimum task-free curve
+error inside each training fold. A snapshot router uses mean/max pooled frozen pair features. An
+event router adds signed/absolute motion changes, contact presence and creation/loss, and executed
+controls. Neither arm sees validation assignments, alarm labels, failures or task outcomes.
+
+Both routers reach 100% assignment accuracy on every training fold. Snapshot routing generalizes to
+only 75.7% accuracy, with MSE 0.695. Event routing reaches 84.4%, lowers MSE to 0.496 versus D9b's
+0.530, and closes 41.7% of D10's 0.615-to-0.330 MAP/oracle gap. Generic history therefore contains
+useful mode information even though earlier direct history regression failed.
+
+The monitor gate still fails. Event routing gives boundary recall/additional-positive rate
+90.3%/61.9% and final recall/additional-positive rate 40.0%/26.6%. Relative to D9b, specificity
+improves only 4.8/1.3 points rather than ten; boundary recall loses 5.8 points, exceeding the limit
+by 0.8 point. No replication runs.
+
+The preregistered stopping rule now applies: do not fit another architecture to these 218 groups.
+Freeze a broader task-independent collection protocol stratified by generic interaction events,
+expand episodes/configurations/mechanisms, and reserve new episode/configuration validation splits.
+Protocol/result hashes:
+`6e3eb5b518088b0cb25808fe522a366fd908c6270db785698ce08f8f6612362a` /
+`58e09e6c7741aec78f86128540661c9fa1be5f6647dc106afda5e18e2e05a5c3`.
+
+## D12 balanced generic interaction-response collection (2026-09-28)
+
+The D11 stopping condition triggered a data expansion rather than another architecture fit. The
+protocol was frozen before event audit and physical replay. From unused transitions in the
+43-episode, ten-reset TRAIN trace corpus, D12 selects exactly 96 path-distinct examples in each of
+six anonymous strata: contact creation, contact loss, velocity impulse, pose motion, persistent
+motion and quiet response. Selection uses only contact-channel transitions and continuous
+pose/velocity changes—never task success, failure, toppling, alarm or model-error labels.
+
+All 576 selected groups completed physical simulation with three residual directions, six nested
+levels, an eight-step action and a 30-step hold. They span all 43 episodes and 311 episode/reset
+configurations. The reproducible integrity check passes: 311 files, 576 finite correctly shaped
+groups, 576 unique source/state/probe paths, 96 groups per stratum and zero exact D3 overlap. Six
+paths coincide with a D3 source/state/probe at a different event step, so future combined training
+must apply source-level split exclusions rather than concatenate blindly. Data SHA-256 is
+`944965669d3041112e768ff1d3cec6c2a4611f7d948b906a178decddec6fbe11`.
+
+A two-axis D12 split was frozen before model fitting: 339 fit groups, 105 from held-out episode IDs,
+97 from held-out reset seeds 108–109 and 35 held out on both axes. The subsequently verified D3+D12
+manifest applies those rules to every source and contains 511/139/132/50 groups respectively.
+Every episode/reset source appears in exactly one fold. Every primary fold contains every stratum;
+the D12 joint diagnostic has only one contact-loss group and must not drive selection. This result
+establishes broader physical coverage only. No model has yet been trained on D12, so it is not
+evidence that world-model or monitor performance improved. Next run one fixed D9b/D10/D11-style
+comparison with DEV and TEST closed. Protocol/integrity/split hashes:
+`feb0565783b62736ff98f9ba5bd5454e92c4a7ebe6c0173bf5188820c35eda92` /
+`944965669d3041112e768ff1d3cec6c2a4611f7d948b906a178decddec6fbe11` /
+`45537919d011bf49c7c914d28177a3297d2254aa8f70c16f2d342cdc50ee77e8`.
+
+## D12 coverage-controlled model ladder fails both validation axes (2026-09-29)
+
+Exact causal histories were reconstructed for all 576 D12 groups before fitting. Every final
+history state equals its cached response start exactly, with zero maximum/RMS error and no contact
+mismatch. The frozen ladder then trained one D9b-style deterministic curve model, one D10-style
+three-mode model and one D11-style event router on the 511-group combined fit partition. Validation
+contains 139 episode-held-out and 132 reset-configuration-held-out groups; the 50-group joint fold
+is diagnostic only. No task, failure, alarm or object-role labels were used, and DEV/TEST stayed
+closed.
+
+The deterministic model fits its training curves (MSE 0.0436) but generalizes poorly: episode and
+configuration MSE are 0.5802 and 0.4023. Boundary recall is 98.1%/100%, but added-positive rates are
+58.8%/56.1%. Final recall/additional-positive rates are 54.5%/50.5% and 57.1%/43.3%.
+
+The multimodal MAP arm has MSE 0.5778/0.5117 and worsens added boundaries to 61.8%/63.4%. The event
+router lowers MSE to 0.5437/0.4813 and final added positives to 42.1%/35.1%, gains of 8.4/8.2
+points from deterministic, but these miss the predeclared ten-point gate. It also worsens added
+boundaries to 64.7%/61.0%. Router assignment accuracy is 100% fit versus 57.6%/53.8% validation and
+it closes only 15.3%/11.7% of the MAP-to-best-component MSE gap.
+
+A target-conditioned best-MSE component diagnostic lowers curve MSE to 0.3543/0.2516. Its final
+added-positive rates improve to 32.6%/28.9%, but final recall is only 54.5%/45.7%; critically,
+boundary added positives remain 64.7%/56.1%. The issue is therefore not merely selecting among
+good experts: the generated experts do not preserve the held-out smooth-versus-branch evidence.
+No arm passes both primary axes, so no replication is authorized.
+
+The next justified experiment changes the interface while preserving the universal objective:
+predict continuous physical smooth-versus-branch BIC differences, commitment BIC and persistence
+BIC directly from generic state/action inputs, jointly with auxiliary curve reconstruction. These
+are task-independent structural quantities, not success/failure labels or a calibrated alarm.
+Protocol/result/analysis hashes:
+`00558798bacc618e911a12a06e23a878cda821c3097845f6a7a00bfce92bd752` /
+`51b14e1a652adfb56bcc1f98cb938e161571222ac2c50bb96aa1210a330c5330` /
+`c5ff832fff501fdd69e9224e786fe75918895b38f2a0040002039bea77268d09`.
+
+## D13 direct continuous monitor evidence improves specificity but fails recall (2026-09-29)
+
+D13 held the D12 source splits and raw current-state/action encoder fixed while changing only the
+output interface. The frozen curve baseline recomputes v0 evidence from predicted curves. The
+direct arm predicts fit-normalized signed-log early/full boundary, commitment and persistence
+delta-BIC values. The joint arm predicts the same four values plus the unchanged D9b curves. No
+final alarm, task outcome, failure or object-role labels were used. The sign after inverse transform
+is the unchanged calibration-free decision; no threshold was fitted.
+
+Both new arms nearly exactly memorize all 511 fit groups. Direct evidence fit MSE is 0.00044 with
+99.95% channel-sign agreement, 100% final recall and zero added final positives. Joint evidence fit
+MSE is 0.00064 with the same sign agreement and final recall. This confirms ample head/encoder
+capacity on observed sources.
+
+On episode/configuration validation, direct evidence lowers normalized evidence MSE from
+1.271/1.272 to 0.992/0.803. Boundary added positives fall from 58.8%/56.1% to 35.3%/39.0%, and
+final added positives from 50.5%/43.3% to 18.9%/25.8%. But boundary recall falls from 98.1%/100%
+to 81.9%/90.1%, and final recall from 54.5%/57.1% to 29.5%/40.0%.
+
+Joint curve/evidence training lowers final added positives further to 16.8%/15.5%, but final recall
+falls to 25.0%/25.7%. The stage decomposition localizes the issue: direct commitment recall is
+34.5%/39.5% and joint commitment recall 27.3%/23.7%, whereas persistence recall remains high.
+Thus direct evidence removes much of curve-induced over-alarming but does not make committed
+physical regimes identifiable in held-out sources.
+
+Both arms fail the predeclared recall and episode sign-agreement gates; no replication is
+authorized and DEV/TEST remain unread. Per the frozen decision, stop this privileged ordered-vector
+Jenga encoder family. The next experiment must test a generic relational/object-centric encoder
+and cross-mechanism training over picking and upright pushing while keeping these continuous
+targets and losses fixed. Protocol/result/target hashes:
+`7cf3b77945978a3f2e630eb03ed3f392820663755aff344f6e77d7ec78de426f` /
+`1b9d5c52b0424eeabcde76657376889dd198a72593af9de496897a636efe1d03` /
+`408f1835bd11e6b82b06faab18ad424155724c6e90a4f8a3dcd040ca68f66b2f`.
+
+## D14 anonymous object/contact graph improves D13 but fails the frozen gate (2026-09-29)
+
+D14 froze a Stage-1 representation-only comparison before fitting. It kept D13's combined
+511/139/132 fit/episode/configuration split, continuous signed-log BIC evidence targets, auxiliary
+amplitude/shape curve loss, seed and 5,000-step budget. The only causal change was replacing the
+ordered 61-D scene MLP with three shared-weight anonymous rigid-body nodes, generic per-body
+support/robot contacts, relative geometry and pair-contact edges, a gripper token, gripper-relative
+Cartesian controls and invariant mean/max pooling. No task outcome, alarm, failure, target-block,
+neighbour-block or semantic mode label was used.
+
+The graph essentially memorizes fit: evidence MSE 0.00091, boundary recall/added positives
+99.7%/0.7%, and final recall/added positives 100%/0%. Held-out episode/configuration evidence MSE is
+0.877/0.694. Boundary recall/added-positive rates are 87.6%/20.6% and 91.2%/36.6%; final
+recall/added-positive rates are 29.5%/22.1% and 34.3%/24.7%. Compared with the matched D13 joint
+arm, evidence MSE improves by 0.144/0.060 and final recall by 4.5/8.6 points, but final added
+positives worsen by 5.3/9.3 points. Commitment recall remains only 29.1%/31.6%.
+
+Against the preregistered high-recall curve control, the graph passes evidence-MSE and specificity
+checks but loses 10.5/8.8 boundary-recall points and 25.0/22.9 final-recall points, so both primary
+axes fail. The float32 invariance diagnostic is 0 for endpoint swap, 7.15e-7 for level order,
+8.70e-6 for object relabeling and 3.48e-5 for joint horizontal translation; the last exceeds the
+strict 1e-5 gate but is not outcome-determinative. Per protocol, no replication, upright-push data,
+DEV or TEST run was authorized. Next perform a read-only held-out error/alias audit before freezing
+another intervention. Protocol/result/checkpoint hashes:
+`186b8a45fe7927f7733d951a16acd0b6f39b093820dd96fd1ed06edc6d1a8355` /
+`432f86b793cee03a4bf0135e804567fcd0ff3b963cfe22efdf43b86c0dc17796` /
+`0633c626797278597c1472f09bb0140a7bef5376e7e509d9921ea0ce2972877f`.
+
+## D15 read-only audit finds D14 snapshot alias pressure (2026-09-29)
+
+D15 used the frozen D14 checkpoint without optimization or threshold selection. For each episode-
+and configuration-held-out group it measured distance to all 511 fit groups in the exact anonymous
+graph input and gripper-relative action representation, minimizing over all six object labelings.
+It separately measured distance in the learned D14 pair embedding. Commitment sign remained the
+unchanged zero crossing of physical delta-BIC. Joint validation, DEV and TEST were not loaded.
+
+There are 39 episode-held-out and 26 configuration-held-out missed positive commitments. Their
+median raw five-neighbour same-sign purity is 0.20 on both axes. Median nearest-opposite divided by
+nearest-same distance is 0.917/0.949, so an opposite-sign fit response is generally closer than a
+same-sign response. Their learned-embedding same-sign purity is 0 on both axes and learned ratios
+fall to 0.632/0.653. In contrast, correctly detected positives have learned purity 0.80/1.00, and
+correctly rejected non-positives have 1.00/1.00. Overall raw five-neighbour commitment accuracy is
+only 62.6%/62.9%; learned accuracy is 56.8%/60.6%.
+
+The failure is not isolated to one generic mechanism. Episode/configuration commitment recall is
+22.2%/22.2% on original D3 groups, while D12 strata vary and remain sample-limited. The consistent
+cross-axis local overlap supports the preregistered `raw_snapshot_alias_pressure` marker. This
+does not establish exact state aliasing or non-Markov physics: the fixed metric may fail to expose
+causal information. Next run a frozen read-only separability audit using the existing aligned
+four-state/three-action histories. Train a temporal graph only if that audit materially separates
+the exact D15 misses; otherwise collect richer generic robot and contact state. Protocol/result
+hashes: `d307818a2662ea2b1d2e2cbe9a59ad1ef07cfb2798ef0733e5e65538f236d1bf` /
+`401d3156da7426ea2501acb73028666a5497c35181daca278318eed2dabdf337`.
+
+## D16 exact causal history does not resolve commitment aliases (2026-09-29)
+
+D16 used the previously verified histories for all 256 D3 and 576 D12 groups. Every history has
+four 61-D states and three executed controls; its last state exactly equals the corresponding
+response start. The read-only representation contains three signed differences of D14 anonymous
+graph features plus the three controls expressed relative to the source-state gripper. One object
+permutation is used consistently through the history and distance is minimized over all six
+permutations. Snapshot and history-context distances receive equal weight. No model or threshold
+was fitted, and joint validation, DEV and TEST were not read.
+
+For the 39 episode-held-out D15 missed positives, snapshot/history-augmented five-neighbour
+same-sign purity is 0.20/0.20, nearest-opposite/nearest-same distance is 0.917/0.946, and overall
+accuracy changes 0.626→0.568. For the 26 configuration-held-out misses, purity is 0.20/0.20,
+the ratio is 0.949/0.925, and overall accuracy changes 0.629→0.621. A history-only view reaches
+0.40 purity on episode misses but only 0.20 on configuration misses, remains opposite-sign-nearest
+on both axes, and does not satisfy the prospective gate when combined with current state.
+
+Both axes fail, so structured temporal-graph training is not authorized. The next experiment must
+prospectively record richer generic Markov information—robot joint position/velocity, gripper
+state, end-effector twist and contact force/impulse—and test separability before fitting. Protocol/
+result hashes: `6e44b988bcd6645b2c6806c8b22e9281d6ac4bb9ee3143336af081f52362e165` /
+`68004199ef78efa99a72fbe2a0d56368063674921d1c75ea80aefda88826d749`.
+
+## D17 richer proprioception helps partially; contact forces do not pass (2026-09-29)
+
+D17 prospectively replayed the same 832 D3+D12 TRAIN groups with one simulator worker. It added
+seven arm and two finger joint positions, their nine velocities, six-dimensional end-effector
+twist, instantaneous force/penetration/count for twelve generic contact categories, and contact
+force integrated across the preceding 0.1-second control interval. Existing 61-D state alignment
+is exact for every group: maximum error 0, zero contact mismatches, expected finite shapes.
+
+Four frozen read-only distances were tested on the exact D15 misses. Snapshot baseline reproduces
+D15 exactly. Adding deployable proprioception raises missed-positive five-neighbour purity from
+0.20 to 0.40 on both episode and configuration axes. Overall sign accuracy changes 0.626→0.633
+and 0.629→0.697. Nevertheless, nearest-opposite/nearest-same distance is 0.911/0.987, so opposite
+signs remain closer and the ≥1.05 gate fails. Contact-only purity is 0.20/0.20 with ratios
+0.932/0.899 and harms episode accuracy. All-enhanced purity is 0.20/0.40 with ratios 0.906/0.974.
+No arm passes both axes; no model was trained and joint validation/DEV/TEST were not read.
+
+The correct conclusion is narrower than “unobservable”: added state does not make commitment
+locally separable under this fixed Euclidean neighbourhood. Since a genuine nonlinear branch
+boundary naturally places opposite signs nearby, next audit commitment delta-BIC sign/magnitude
+robustness under frozen causal temporal resampling. This will distinguish a brittle supervision
+target from robust nonlinear geometry requiring a different learner. Protocol/data/integrity/
+result hashes:
+`20a004b7352c4e4056fa18f98720acffc22924ac89992c9fed65ef0e822e8ba1` /
+`d750dd51cf9430187990df6a814f10161503559be8e65e03bc4bb2f708e8706d` /
+`d0a59e9a6e1d706d20bd39129979ec042a1a8706a6c53fc38ecec909876201a6` /
+`b3ae33b5c558474beb1407b8d6b729ce234b8d0bc2c025aa1e4ca23dbe80009a`.
+
+## D18 commitment target is tail-sensitive but instability does not explain D14 misses (2026-09-29)
+
+D18 exactly reproduced every frozen D13 physical commitment value before analysis. It then applied
+nine preregistered, order-preserving variants to the narrowest-pair curve: H8 plus 15/20/25 held-
+step prefixes, two late-tail half-rate sampling phases reconstructed at original timestamps, and
+four fixed three-step late-tail dropout reconstructions. The unchanged zero delta-BIC sign was the
+only decision; no model or threshold was fitted, and joint validation/DEV/TEST were not read.
+
+Among 39 episode-held-out D14 missed positives, 53.8% retain their sign under all nine variants;
+among 26 configuration misses, 42.3% do. The corresponding correctly detected positives are only
+37.5%/41.7% stable. Primary-miss instability minus control instability is therefore -16.3/-0.6
+points rather than the preregistered +20 points required for a brittle-target explanation. Misses
+also have median absolute baseline delta-BIC 5.07/4.99 and fit-margin percentile 0.397/0.390,
+slightly above detected positives (3.66/4.56 and 0.301/0.367). D14 errors are not preferentially
+near-zero or unstable.
+
+The target nevertheless has broad temporal sensitivity: only 49.1%/42.1% of all positive
+commitments are stable. Episode/configuration positive prevalence rises from 21.6%/13.6% at hold15
+to 33.1%/19.7% at hold25 and about 40%/30% under full-length late-sampling variants. This suggests
+that the commitment fit consumes long-tail evidence also assessed by persistence. The frozen
+interpretation is `mixed`. Next compare an immediate H8+5 commitment window against the old full
+trajectory while retaining long-tail persistence separately. Protocol/result hashes:
+`b4b046df06bd4716afaba30dc4f069c6915639d92ec2afccd9d67c0ef8eb474c` /
+`a27d89cc398e2471ef82eec5a5d3b37fabe5701e7c76082c71080a3177294587`.
+
+## D19 five-step immediate commitment is clean but too weak (2026-09-29)
+
+D19 froze the proposed factorization before computation. Boundary evidence and late persistence
+remain unchanged; only commitment is recomputed from the common start, H8 action response and
+five immediate held samples. Its input is exactly identical under every D18 late-tail resampling,
+so the intended temporal locality is real rather than inferred. The decision remains the
+calibration-free sign of delta-BIC, with no fitted threshold.
+
+The short test retains only 13/55 (23.6%) full-trajectory positives on episode validation and 9/38
+(23.7%) on configuration validation, below the frozen 50% minimum on both axes. It adds only 5/84
+(6.0%) and 3/94 (3.2%) positives among prior negatives, but the low added rate does not compensate
+for losing over three quarters of prior evidence. Commitment/persistence phi falls from 0.300 to
+0.043 and from 0.265 to 0.086. The fit split is consistent: 37/148 positives retained (25.0%).
+
+Stage 1 therefore fails and Stage 2 is deliberately absent; no Jenga or Panda physical TEST
+outcome was exposed to this rejected formulation. Retain v0, do not regenerate learned targets,
+and next audit first positive onset over a frozen hold5/10/15/20/25/30 prefix ladder. That audit
+must determine whether later evidence reflects genuine delayed branch growth or artificial
+statistical leverage from repeated settled samples. Protocol/result hashes:
+`7a0a9e955b002bd57102baa440621eecc40abc84dce687ac1cb78bce86a4d2fc` /
+`7c065e2e446d75cf25bfa7d670e415424cec578811d5b612d35ce0babc894476`.
+
+## D20 richer Markov state improves contact events but fails basic continuous dynamics (2026-09-29)
+
+D20 stops changing the monitor and tests the deployable learned-future bottleneck. A single
+MuJoCo worker replayed every path in all 832 D3+D12 TRAIN groups and recorded 181 channels at all
+379,392 transitions: the old 61-D state, 24 robot proprioception values, 60 instantaneous generic
+contact force/geometry values and 36 preceding-control impulse values. Every old trajectory value
+and every D17 start feature reproduces exactly (maximum error 0).
+
+The 1.94M-parameter action-conditioned graph model predicts ordinary continuous dynamics,
+proprioception and force state. Its contact head is supervised with four generic transition modes:
+absent, persistent, created and lost. These are physical interaction labels derived from contacts,
+not Jenga failure, topple, success, object-role or monitor labels. Training loss decreases smoothly
+from 2.305 to 0.309 over the frozen 12 epochs.
+
+Contact-event macro-F1 improves over D2 from 0.426 to 0.472 on episode validation (+0.0456) and
+0.431 to 0.535 on configuration validation (+0.1042). Contact-loss F1 specifically improves from
+0.310→0.457 and 0.301→0.495. However, continuous one-step NRMSE is 0.583 versus D2's 0.462 on
+episode validation and 0.561 versus 0.466 on configuration validation. Ratios 1.262 and 1.205 fail
+the frozen requirement of ≤0.90 on both axes; episode contact gain also narrowly misses +0.05.
+
+The exact preregistered stop rule is applied. H8 rollout, separation curves, monitor decisions,
+DEV and TEST are not run. The result rejects a from-scratch enhanced replacement, not the utility
+of the added channels: they demonstrably help contact transitions while the new backbone loses
+D2's continuous-motion competence. The single justified follow-up is a zero-initialized residual
+on a frozen D2 identity path, requiring no continuous regression before any rollout evaluation.
+Protocol/data/integrity/result hashes:
+`d7ef8f7d14daac87134ec76afeb405ab1f9bf46a46934e9fc40215d9fd387597` /
+`bafb8cda9c1ec23d0ac9f40e2a65f628914669d5ec85ca59c54ee2076b4cea8c` /
+`07aecc2cf29398ea11767df97cfe406b98cb25f50063044a4a868037f70d1c38` /
+`6bf3094fc24bfcdd9dbe9003781b4ed20de05695057b2c312ec0cff7dba7ef5a`.
+
+## D21 preserves D2 motion but misses the frozen contact-retention gate (2026-09-29)
+
+D21 is the explicitly bounded final incremental model test. The D2 graph and integration scales
+are frozen. Zero-initialized enhanced-state heads add continuous residuals and supervised
+absent/persistent/created/lost contact transitions. Before fitting, physical block/gripper deltas
+have zero maximum difference from the internal D2 identity path and all next-contact decisions are
+exact. No new simulation or task/failure labels are used.
+
+After six fixed epochs, episode continuous NRMSE is 0.444 versus D2's 0.462 (ratio 0.961) and
+configuration NRMSE is 0.453 versus 0.466 (ratio 0.972). Contact-event macro-F1 is 0.499 versus
+D2's 0.426 on episode validation and 0.508 versus 0.431 on configuration validation. Thus the
+residual successfully avoids D20's broad motion regression and adds contact information.
+
+The frozen requirement was stricter: retain at least D20's matching-axis contact F1 while causing
+no continuous regression. Episode passes 0.499 ≥ 0.472. Configuration fails 0.508 < 0.535. The
+overall gate therefore fails. H8 rollout, response curves, monitor agreement, DEV and TEST are not
+run. No post-result epoch, weight or seed adjustment is authorized.
+
+This ends the incremental supervised state-model line. The established contribution is the
+calibration-free structural monitor under accurate counterfactual trajectories; the unresolved
+deployment bottleneck is learning local intervention geometry at this data/model scale. Any next
+program must be materially different—larger/pretrained physical world modeling or online
+re-observation/active sensing—not D22 as another small architecture variant. Protocol/result/
+checkpoint hashes:
+`d2cad06779201ee07bdf0c3c38d1281f6008966288b2921563ade4a9fa73393c` /
+`5042545bf579a8b7a9f4a3ab8d827aeff09bbde8fa20517141a29d4816c96b97` /
+`d7984994153e18ef9a58e5af4a54ee85eb6db6eb5e36074731ea99fe06957a69`.

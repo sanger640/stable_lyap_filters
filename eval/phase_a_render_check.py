@@ -1,4 +1,4 @@
-"""Phase A acceptance check for the block renderer (PLAN_DINOWM.md).
+"""Phase A acceptance check for the block renderer (docs/archive/PLAN_DINOWM.md).
 
 Three things have to hold before Phase B is worth starting:
 

@@ -120,6 +120,11 @@ held-out monitor; a three-mode trajectory model (D5) also failed its pre-declare
 For pushing, the monitor has been validated with physical trajectories, but no learned pushing
 world model has passed evaluation yet.
 
+D6–D21 subsequently tested direct response curves, routing, monitor-evidence prediction, anonymous
+object graphs, richer Markov state, supervised contact modes and a frozen-D2 residual. None passed
+the full staged gate. The incremental line is closed; see [`WORLD_MODEL.md`](WORLD_MODEL.md) for the
+compact history and evidence.
+
 ---
 
 ## Current progress
@@ -131,6 +136,12 @@ world model has passed evaluation yet.
 | Upright push, fresh physical TEST | **14/20** mixed topple forks; **0/15** stable pushes | The unchanged monitor transfers to a second mechanism. It also finds 3/5 contact-loss regimes and stays quiet on 0/6 overshoots. |
 | Jenga D2 learned futures, 10 seeds | **31.1%** mean fork recall; **1.95%** quiet alarms | The learned dynamics lose roughly half of the physical monitor's useful signal. |
 | D4 and D5 model studies | both failed their frozen gates | More Jenga-specific model tuning is not justified by the present evidence. |
+| D12 generic response corpus | **576** new groups; 96 in each of six contact/motion/quiet strata | Used in the frozen model ladder; coverage alone did not repair generalization. |
+| D12 learned-model ladder | all deterministic, multimodal and routed gates failed | More generic data alone did not repair held-out boundary geometry; routing is not the only failure. |
+| D13 direct monitor evidence | false alarms fell strongly, but commitment/final recall collapsed | Predicting monitor statistics helps specificity; the ordered Jenga state encoder does not transfer commitment. |
+| D19 shorter commitment test | only **23.6%/23.7%** of old positives retained | Five held steps are too short; the deployed physical monitor remains unchanged at hold30. |
+| D20 enhanced hybrid dynamics | contact F1 improves, but one-step motion is **1.21–1.26× worse than D2** | Richer state helps contact events but does not yet produce a usable replacement world model. |
+| D21 frozen-D2 residual | motion improves **2.8–3.9%** and contact F1 improves, but one frozen contact-retention gate fails | Promising combination, but insufficient evidence for rollout evaluation; incremental tuning stops. |
 
 **What is established:** the calibration-free structural monitor works on accurate trajectories
 across picking and pushing.
@@ -140,14 +151,16 @@ in real time. This is not yet a deployed safety filter.
 
 ## Next steps
 
-1. Test **short re-observation intervals** (1, 2, 4, or 8 steps) instead of demanding one accurate
-   38-step open-loop prediction.
-2. Decide whether repeated short rollouts or a direct local action-response predictor best
-   preserves branch geometry.
-3. Move that interface to a generic visual representation, then freeze it before new evaluation.
-4. Validate on additional contact-rich tasks; do not optimize the monitor around Jenga alone.
+1. Keep the physical v0 monitor and its Jenga/pushing evidence frozen.
+2. Do not tune another small state model, residual, router, contact loss or hold window. D21 closes
+   that line without opening DEV/TEST.
+3. Consolidate the monitor contribution and learned-rollout limitation as the current research
+   result.
+4. Begin further implementation only after choosing a genuinely different program: a larger or
+   pretrained physical/visual world model, or online re-observation/active sensing that avoids a
+   long open-loop rollout.
 
 The core result is therefore encouraging but sharply scoped: **the monitor transfers; the learned
 future representation is now the bottleneck.** Full methods and audit trails are in
-[MONITOR.md](MONITOR.md), [PANDA_BLOCK_PUSH.md](PANDA_BLOCK_PUSH.md), and
+[MONITOR.md](MONITOR.md), [WORLD_MODEL.md](WORLD_MODEL.md), [PANDA_BLOCK_PUSH.md](PANDA_BLOCK_PUSH.md), and
 [PLAN_NEXT.md](PLAN_NEXT.md).

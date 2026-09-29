@@ -1,0 +1,57 @@
+{
+  "name": "D9 zero-preserving amplitude-times-shape confirmation",
+  "status": "frozen before execution",
+  "purpose": "prevent scale-invariant BIC from promoting microscopic model residue on exact-zero physical responses",
+  "scope": "TRAIN-only same-example confirmation; cannot authorize DEV, TEST, deployment, or visual transfer",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz",
+    "nested_source": "results/jenga/d3_data",
+    "selected_episodes": ["16", "21", "25", "30", "31", "33", "34", "35"],
+    "selection": "identical eight groups used by D6-D8b audits",
+    "states": 8,
+    "levels_per_state": 6,
+    "known_exact_zero_target_episodes": ["25", "31"],
+    "task_failure_or_object_role_labels": false,
+    "dev_opened": false,
+    "test_opened": false
+  },
+  "model": {
+    "encoder": "unchanged D8b raw temporal endpoint encoder and level context",
+    "factorization": "predicted log-separation equals ReLU amplitude times softplus normalized shape",
+    "amplitude_target": "RMS magnitude of the 41-dimensional continuous log1p gap/curve target per group and level",
+    "shape_target": "target divided by amplitude for nonzero-amplitude levels only",
+    "zero_handling": "shape loss omitted exactly when continuous target amplitude is zero",
+    "external_amplitude_threshold": false,
+    "hidden": 128,
+    "heads": 4,
+    "layers": 2
+  },
+  "optimization": {
+    "seeds": [1, 2, 3],
+    "steps": 5000,
+    "optimizer": "AdamW",
+    "initial_learning_rate": 0.001,
+    "schedule": "CosineAnnealingLR",
+    "final_learning_rate": 0.00001,
+    "gradient_clip": 1.0,
+    "batching": "deterministic full batch of all eight groups and six levels",
+    "loss": "amplitude MSE plus five equally weighted masked shape MSE terms",
+    "checkpoint_selection": "fixed final step for every seed; no best-seed or intermediate selection"
+  },
+  "frozen_gate_per_seed": {
+    "early_gap_log_mse": 0.0001,
+    "full_gap_log_mse": 0.0001,
+    "each_curve_phase_log_mse": 0.001,
+    "exact_zero_output_on_exact_zero_targets": true,
+    "positive_amplitude_on_nonzero_targets": true,
+    "nested_boundary_agreement": 1.0,
+    "nested_final_agreement": 1.0,
+    "endpoint_swap_max_abs": 0.00001,
+    "level_permutation_max_abs": 0.00001
+  },
+  "replication_decision": "all three fixed final checkpoints must pass every per-seed gate",
+  "interpretation": {
+    "all_pass": "authorize one episode-held-out TRAIN comparison against D2",
+    "any_fail": "zero-preserving parameterization is not yet stable; keep held-out TRAIN closed"
+  }
+}

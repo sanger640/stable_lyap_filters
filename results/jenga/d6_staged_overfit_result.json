@@ -1,0 +1,4053 @@
+{
+  "protocol": {
+    "name": "D6 staged representation-versus-objective overfit audit",
+    "status": "frozen before execution",
+    "purpose": "identify the first stage at which the current direct response formulation cannot memorize exact TRAIN examples",
+    "scope": "diagnostic only; cannot authorize DEV, TEST, deployment, or visual transfer",
+    "data": {
+      "source": "results/jenga/d4_neighborhood_data_large.npz",
+      "selected_episodes": [
+        "16",
+        "21",
+        "25",
+        "30",
+        "31",
+        "33",
+        "34",
+        "35"
+      ],
+      "selection": "same first state and first nested group per episode as the frozen D6 memorization audit",
+      "one_state_episode": "16",
+      "probes_per_state": 64,
+      "nested_source": "results/jenga/d3_data",
+      "evaluation": "exact optimization examples only",
+      "task_failure_or_object_role_labels": false,
+      "dev_opened": false,
+      "test_opened": false
+    },
+    "models": {
+      "arms": [
+        "independent_direct",
+        "set_conditioned"
+      ],
+      "architecture": "unchanged D6",
+      "initialization_seed": 1,
+      "stage_transition": "warm-start model from prior final checkpoint and reset AdamW",
+      "checkpoint_selection": "fixed final update of every stage"
+    },
+    "optimization": {
+      "optimizer": "AdamW",
+      "learning_rate": 0.0003,
+      "gradient_clip": 1.0,
+      "batching": "deterministic full batch with all states and all 64 probes",
+      "stages": [
+        {
+          "name": "one_state_response",
+          "steps": 2000,
+          "states": 1,
+          "terms": [
+            "response"
+          ]
+        },
+        {
+          "name": "eight_state_response",
+          "steps": 3000,
+          "states": 8,
+          "terms": [
+            "response"
+          ]
+        },
+        {
+          "name": "add_topology",
+          "steps": 1500,
+          "states": 8,
+          "terms": [
+            "response",
+            "topology"
+          ]
+        },
+        {
+          "name": "add_commitment",
+          "steps": 1500,
+          "states": 8,
+          "terms": [
+            "response",
+            "topology",
+            "commitment"
+          ]
+        },
+        {
+          "name": "add_nested",
+          "steps": 1500,
+          "states": 8,
+          "terms": [
+            "response",
+            "topology",
+            "commitment",
+            "nested"
+          ]
+        }
+      ],
+      "loss_weights": "unchanged frozen D6 pilot weights for active terms",
+      "gradient_diagnostics": "unweighted and weighted gradient norms plus pairwise cosine at stage entry and exit"
+    },
+    "stage_gates": {
+      "one_state_response": {
+        "response_error": 0.005
+      },
+      "eight_state_response": {
+        "response_error": 0.02
+      },
+      "add_topology": {
+        "response_error": 0.02,
+        "topology_error": 0.01
+      },
+      "add_commitment": {
+        "response_error": 0.02,
+        "topology_error": 0.01,
+        "commitment_error": 0.01
+      },
+      "add_nested": {
+        "response_error": 0.02,
+        "topology_error": 0.01,
+        "commitment_error": 0.01,
+        "candidate_decision_agreement": 1.0,
+        "partition_agreement": 0.9,
+        "nested_boundary_agreement": 0.9,
+        "nested_final_agreement": 0.9,
+        "response_spread_ratio_each_phase": [
+          0.5,
+          1.5
+        ],
+        "permutation_equivariance_max_abs": 1e-05
+      }
+    },
+    "interpretation": {
+      "one_state_response_fails": "decoder or optimization cannot represent even one fixed action-response map",
+      "eight_state_response_first_fails": "scene conditioning or model capacity cannot store several response maps",
+      "relational_stage_first_fails": "that added objective conflicts with or fails to enforce the required relational structure",
+      "all_stages_pass": "formulation can memorize; held-out failure returns focus to generalization and data diversity"
+    }
+  },
+  "created": "2026-09-28T14:33:27+00:00",
+  "protocol_sha256": "e7d7b85dd2fe60c60716bc1af0db5635d6abeae7feb29941760e2156b7a3cad6",
+  "data_sha256": "8e98a48347b3854db10971b715c3cb316222f32a3815cccb6fd4b784ba68088e",
+  "pilot_sha256": "b01c33247a2628a7adfe45c71c3a56ad5e4f94101815777882ba77de4786c8bc",
+  "loss_weights": {
+    "response": 1.0,
+    "topology": 0.6457651484434727,
+    "commitment": 1.0256487504115952,
+    "nested": 0.04642875248371264
+  },
+  "selected_rows": [
+    36,
+    42,
+    48,
+    54,
+    60,
+    66,
+    72,
+    78
+  ],
+  "arms": {
+    "independent_direct": {
+      "stages": [
+        {
+          "name": "one_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 2000,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.726922869682312,
+              "response": 0.726922869682312
+            },
+            {
+              "step": 250,
+              "total": 0.03628096356987953,
+              "response": 0.03628096356987953
+            },
+            {
+              "step": 500,
+              "total": 0.03643404692411423,
+              "response": 0.03643404692411423
+            },
+            {
+              "step": 750,
+              "total": 0.03151213750243187,
+              "response": 0.03151213750243187
+            },
+            {
+              "step": 1000,
+              "total": 0.028800930827856064,
+              "response": 0.028800930827856064
+            },
+            {
+              "step": 1250,
+              "total": 0.023669129237532616,
+              "response": 0.023669129237532616
+            },
+            {
+              "step": 1500,
+              "total": 0.019695742055773735,
+              "response": 0.019695742055773735
+            },
+            {
+              "step": 1750,
+              "total": 0.019996561110019684,
+              "response": 0.019996561110019684
+            },
+            {
+              "step": 2000,
+              "total": 0.02041429467499256,
+              "response": 0.02041429467499256
+            }
+          ],
+          "seconds": 8.840254068374634,
+          "gradient_before": {
+            "losses": {
+              "response": 0.726922869682312
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.1577928163962731,
+                "weighted": 0.1577928163962731
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.01884821429848671
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.372912603966503,
+                "weighted": 1.372912603966503
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 1,
+              "reference_positive": 1,
+              "predicted_positive": 0,
+              "tp": 0,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.0,
+              "recall": 0.0,
+              "added_positive_rate": 0.0,
+              "valid_states": 1,
+              "mean_partition_agreement": 0.5
+            },
+            "continuous": {
+              "response": 0.017670204862952232,
+              "topology": 0.099156454205513,
+              "commitment": 0.1043405532836914
+            },
+            "nested": {
+              "boundary": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "persistence": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 0,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 1.0,
+                "recall": 1.0,
+                "added_positive_rate": 0.0
+              },
+              "alarm": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 0.0,
+              "subset_response_rms": 1.5271450592990732e-07
+            }
+          },
+          "spread_ratio": {
+            "action": 0.5161980986595154,
+            "early_hold": 0.7942781448364258,
+            "late_hold": 0.7087527513504028
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_one_state_response.pt",
+          "checkpoint_sha256": "3cffc7104164b132a120f45883e15c4f49fd66c0092c1fb0fc4239982c471fbf"
+        },
+        {
+          "name": "eight_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 3000,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.9991508722305298,
+              "response": 0.9991508722305298
+            },
+            {
+              "step": 250,
+              "total": 0.26229313015937805,
+              "response": 0.26229313015937805
+            },
+            {
+              "step": 500,
+              "total": 0.4146667718887329,
+              "response": 0.4146667718887329
+            },
+            {
+              "step": 750,
+              "total": 0.16445600986480713,
+              "response": 0.16445600986480713
+            },
+            {
+              "step": 1000,
+              "total": 0.2070101946592331,
+              "response": 0.2070101946592331
+            },
+            {
+              "step": 1250,
+              "total": 0.11782561987638474,
+              "response": 0.11782561987638474
+            },
+            {
+              "step": 1500,
+              "total": 0.1486065834760666,
+              "response": 0.1486065834760666
+            },
+            {
+              "step": 1750,
+              "total": 0.14873522520065308,
+              "response": 0.14873522520065308
+            },
+            {
+              "step": 2000,
+              "total": 0.15935328602790833,
+              "response": 0.15935328602790833
+            },
+            {
+              "step": 2250,
+              "total": 0.16452737152576447,
+              "response": 0.16452737152576447
+            },
+            {
+              "step": 2500,
+              "total": 0.12178915739059448,
+              "response": 0.12178915739059448
+            },
+            {
+              "step": 2750,
+              "total": 0.10667324811220169,
+              "response": 0.10667324811220169
+            },
+            {
+              "step": 3000,
+              "total": 0.08873049914836884,
+              "response": 0.08873049914836884
+            }
+          ],
+          "seconds": 15.015870094299316,
+          "gradient_before": {
+            "losses": {
+              "response": 0.9991508722305298
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 4.806268169943526,
+                "weighted": 4.806268169943526
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.10165300220251083
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.031150142328206,
+                "weighted": 11.031150142328206
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 5,
+              "tp": 5,
+              "fn": 3,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.625,
+              "recall": 0.625,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.755859375
+            },
+            "continuous": {
+              "response": 0.09529969096183777,
+              "topology": 0.3930114805698395,
+              "commitment": 0.29490378499031067
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 6,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.25,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 2,
+                "tp": 1,
+                "fn": 3,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.5,
+                "recall": 0.25,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 4,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.5,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 4.76837158203125e-06,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.30701130628585815,
+            "early_hold": 0.4787784516811371,
+            "late_hold": 0.35474324226379395
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_eight_state_response.pt",
+          "checkpoint_sha256": "80d3edd0b300178b3255db65a32d12040fd1ced27773470cc4fa348787294004"
+        },
+        {
+          "name": "add_topology",
+          "terms": [
+            "response",
+            "topology"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.35544607043266296,
+              "response": 0.10165300220251083,
+              "topology": 0.3930114209651947
+            },
+            {
+              "step": 250,
+              "total": 0.12545786798000336,
+              "response": 0.08645772188901901,
+              "topology": 0.060393694788217545
+            },
+            {
+              "step": 500,
+              "total": 0.07823361456394196,
+              "response": 0.04899686202406883,
+              "topology": 0.04527459293603897
+            },
+            {
+              "step": 750,
+              "total": 0.06881852447986603,
+              "response": 0.042955510318279266,
+              "topology": 0.040050193667411804
+            },
+            {
+              "step": 1000,
+              "total": 0.05615248903632164,
+              "response": 0.03514212742447853,
+              "topology": 0.0325356088578701
+            },
+            {
+              "step": 1250,
+              "total": 0.05120982602238655,
+              "response": 0.03259044885635376,
+              "topology": 0.028833048418164253
+            },
+            {
+              "step": 1500,
+              "total": 0.08899465948343277,
+              "response": 0.0701901912689209,
+              "topology": 0.029119672253727913
+            }
+          ],
+          "seconds": 12.842803716659546,
+          "gradient_before": {
+            "losses": {
+              "response": 0.10165300220251083,
+              "topology": 0.3930114209651947
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.031150142328206,
+                "weighted": 11.031150142328206
+              },
+              "topology": {
+                "unweighted": 2.4790546686366985,
+                "weighted": 1.6008871060916616
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.5000888619909822
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.0334450900554657,
+              "topology": 0.028981303796172142
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.7080598784979475,
+                "weighted": 1.7080598784979475
+              },
+              "topology": {
+                "unweighted": 0.8105233248597704,
+                "weighted": 0.5234077151949666
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.523358854147266
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.75
+            },
+            "continuous": {
+              "response": 0.03135477751493454,
+              "topology": 0.02898130565881729,
+              "commitment": 0.03910287469625473
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 3,
+                "tp": 3,
+                "fn": 3,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 5,
+                "tp": 3,
+                "fn": 1,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.75,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 3,
+                "tp": 2,
+                "fn": 2,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 6.735324859619141e-06,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9036162495613098,
+            "early_hold": 0.9478423595428467,
+            "late_hold": 0.9544399976730347
+          },
+          "gate": {
+            "checks": {
+              "response": false,
+              "topology": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_add_topology.pt",
+          "checkpoint_sha256": "e8bcd7b5afd520098b2bc0aa1c8d724f6f3aae0a85547eb0b6e744c2c03d5d1f"
+        },
+        {
+          "name": "add_commitment",
+          "terms": [
+            "response",
+            "topology",
+            "commitment"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.09226600080728531,
+              "response": 0.0334450900554657,
+              "topology": 0.028981303796172142,
+              "commitment": 0.039102859795093536
+            },
+            {
+              "step": 250,
+              "total": 0.08468145877122879,
+              "response": 0.036907583475112915,
+              "topology": 0.025473184883594513,
+              "commitment": 0.030540848150849342
+            },
+            {
+              "step": 500,
+              "total": 0.09067125618457794,
+              "response": 0.052967268973588943,
+              "topology": 0.01999874971807003,
+              "commitment": 0.024169567972421646
+            },
+            {
+              "step": 750,
+              "total": 0.04837406426668167,
+              "response": 0.022482190281152725,
+              "topology": 0.014284398406744003,
+              "commitment": 0.016250696033239365
+            },
+            {
+              "step": 1000,
+              "total": 0.04155956208705902,
+              "response": 0.0194826852530241,
+              "topology": 0.012143172323703766,
+              "commitment": 0.013879254460334778
+            },
+            {
+              "step": 1250,
+              "total": 0.044837843626737595,
+              "response": 0.02087559551000595,
+              "topology": 0.012597422115504742,
+              "commitment": 0.015431474894285202
+            },
+            {
+              "step": 1500,
+              "total": 0.03585835173726082,
+              "response": 0.01760150119662285,
+              "topology": 0.009948886930942535,
+              "commitment": 0.011536316946148872
+            }
+          ],
+          "seconds": 33.665273666381836,
+          "gradient_before": {
+            "losses": {
+              "response": 0.0334450900554657,
+              "topology": 0.028981303796172142,
+              "commitment": 0.039102859795093536
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.7080598784979475,
+                "weighted": 1.7080598784979475
+              },
+              "topology": {
+                "unweighted": 0.8105233248597704,
+                "weighted": 0.5234077151949666
+              },
+              "commitment": {
+                "unweighted": 1.0977766899687265,
+                "weighted": 1.1259332902974015
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.523358854147266,
+              "response:commitment": 0.43100585008171105,
+              "topology:commitment": 0.8831509179170125
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.02521979622542858,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.45035468280938,
+                "weighted": 11.45035468280938
+              },
+              "topology": {
+                "unweighted": 1.420049832858683,
+                "weighted": 0.917018691113116
+              },
+              "commitment": {
+                "unweighted": 1.939606342621381,
+                "weighted": 1.9893548216000239
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.8695963266599273,
+              "response:commitment": 0.7523035859027236,
+              "topology:commitment": 0.9705110844666627
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.8203125
+            },
+            "continuous": {
+              "response": 0.023643556982278824,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 3,
+                "tp": 3,
+                "fn": 3,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 4,
+                "tp": 2,
+                "fn": 2,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.5,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 0,
+                "fn": 4,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.375,
+                "recall": 0.0,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 1.4781951904296875e-05,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9330302476882935,
+            "early_hold": 0.9667257070541382,
+            "late_hold": 0.9367460012435913
+          },
+          "gate": {
+            "checks": {
+              "response": false,
+              "topology": false,
+              "commitment": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_add_commitment.pt",
+          "checkpoint_sha256": "72bbafdc8c6fa3f47e93a55655f057b78b2b95546caf57d992b7e7256df89f5c"
+        },
+        {
+          "name": "add_nested",
+          "terms": [
+            "response",
+            "topology",
+            "commitment",
+            "nested"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.32790449261665344,
+              "response": 0.02521979622542858,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083,
+              "nested": 6.1100568771362305
+            },
+            {
+              "step": 250,
+              "total": 0.26701727509498596,
+              "response": 0.025391463190317154,
+              "topology": 0.01502174511551857,
+              "commitment": 0.0187322236597538,
+              "nested": 4.581484794616699
+            },
+            {
+              "step": 500,
+              "total": 0.240553617477417,
+              "response": 0.03362652659416199,
+              "topology": 0.016592353582382202,
+              "commitment": 0.020265107974410057,
+              "nested": 3.7784228324890137
+            },
+            {
+              "step": 750,
+              "total": 0.2995724081993103,
+              "response": 0.11268363893032074,
+              "topology": 0.019671732559800148,
+              "commitment": 0.024945953860878944,
+              "nested": 3.200596332550049
+            },
+            {
+              "step": 1000,
+              "total": 0.23104974627494812,
+              "response": 0.03011424094438553,
+              "topology": 0.01328978966921568,
+              "commitment": 0.016235601156949997,
+              "nested": 3.7843234539031982
+            },
+            {
+              "step": 1250,
+              "total": 0.24480554461479187,
+              "response": 0.028448231518268585,
+              "topology": 0.015304071828722954,
+              "commitment": 0.018877726048231125,
+              "nested": 4.030101299285889
+            },
+            {
+              "step": 1500,
+              "total": 0.19929686188697815,
+              "response": 0.02748005837202072,
+              "topology": 0.011570539325475693,
+              "commitment": 0.015025726519525051,
+              "nested": 3.2077929973602295
+            }
+          ],
+          "seconds": 41.53360152244568,
+          "gradient_before": {
+            "losses": {
+              "response": 0.02521979622542858,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083,
+              "nested": 6.1100568771362305
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.45035468280938,
+                "weighted": 11.45035468280938
+              },
+              "topology": {
+                "unweighted": 1.420049832858683,
+                "weighted": 0.917018691113116
+              },
+              "commitment": {
+                "unweighted": 1.939606342621381,
+                "weighted": 1.9893548216000239
+              },
+              "nested": {
+                "unweighted": 4.578043201522068,
+                "weighted": 0.21255283466321148
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.8695963266599273,
+              "response:commitment": 0.7523035859027236,
+              "response:nested": -0.25928231862301926,
+              "topology:commitment": 0.9705110844666627,
+              "topology:nested": -0.1790958239147332,
+              "commitment:nested": -0.1383215107744451
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.017508765682578087,
+              "topology": 0.01040729507803917,
+              "commitment": 0.013006303459405899,
+              "nested": 2.7530293464660645
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.3138524064786598,
+                "weighted": 0.3138524064786598
+              },
+              "topology": {
+                "unweighted": 0.25594948801739553,
+                "weighted": 0.16528325912358424
+              },
+              "commitment": {
+                "unweighted": 0.3167821474346894,
+                "weighted": 0.3249072136690909
+              },
+              "nested": {
+                "unweighted": 35.51665384803544,
+                "weighted": 1.6489939305601375
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.7164116579474614,
+              "response:commitment": 0.8105058457242669,
+              "response:nested": 0.42214012400962814,
+              "topology:commitment": 0.9686348971570115,
+              "topology:nested": 0.12036196263406848,
+              "commitment:nested": 0.17395986444634762
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 6,
+              "tp": 6,
+              "fn": 2,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.75,
+              "recall": 0.75,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.75390625
+            },
+            "continuous": {
+              "response": 0.016414469107985497,
+              "topology": 0.010407296940684319,
+              "commitment": 0.013006303459405899
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 5,
+                "tp": 3,
+                "fn": 1,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.75,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 0,
+                "fn": 4,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.375,
+                "recall": 0.0,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 8.106231689453125e-06,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9497182369232178,
+            "early_hold": 0.9925409555435181,
+            "late_hold": 0.9936593770980835
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": false,
+              "commitment": false,
+              "candidate_decision": false,
+              "partition": false,
+              "nested_boundary": false,
+              "nested_final": false,
+              "response_spread": true,
+              "permutation": true
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_add_nested.pt",
+          "checkpoint_sha256": "752a43276d4a58d8f586a37d4a023b0856f698786fb6dfcfd3ffb68eb1460f9d"
+        }
+      ],
+      "stages_by_name": {
+        "one_state_response": {
+          "name": "one_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 2000,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.726922869682312,
+              "response": 0.726922869682312
+            },
+            {
+              "step": 250,
+              "total": 0.03628096356987953,
+              "response": 0.03628096356987953
+            },
+            {
+              "step": 500,
+              "total": 0.03643404692411423,
+              "response": 0.03643404692411423
+            },
+            {
+              "step": 750,
+              "total": 0.03151213750243187,
+              "response": 0.03151213750243187
+            },
+            {
+              "step": 1000,
+              "total": 0.028800930827856064,
+              "response": 0.028800930827856064
+            },
+            {
+              "step": 1250,
+              "total": 0.023669129237532616,
+              "response": 0.023669129237532616
+            },
+            {
+              "step": 1500,
+              "total": 0.019695742055773735,
+              "response": 0.019695742055773735
+            },
+            {
+              "step": 1750,
+              "total": 0.019996561110019684,
+              "response": 0.019996561110019684
+            },
+            {
+              "step": 2000,
+              "total": 0.02041429467499256,
+              "response": 0.02041429467499256
+            }
+          ],
+          "seconds": 8.840254068374634,
+          "gradient_before": {
+            "losses": {
+              "response": 0.726922869682312
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.1577928163962731,
+                "weighted": 0.1577928163962731
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.01884821429848671
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.372912603966503,
+                "weighted": 1.372912603966503
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 1,
+              "reference_positive": 1,
+              "predicted_positive": 0,
+              "tp": 0,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.0,
+              "recall": 0.0,
+              "added_positive_rate": 0.0,
+              "valid_states": 1,
+              "mean_partition_agreement": 0.5
+            },
+            "continuous": {
+              "response": 0.017670204862952232,
+              "topology": 0.099156454205513,
+              "commitment": 0.1043405532836914
+            },
+            "nested": {
+              "boundary": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "persistence": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 0,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 1.0,
+                "recall": 1.0,
+                "added_positive_rate": 0.0
+              },
+              "alarm": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 0.0,
+              "subset_response_rms": 1.5271450592990732e-07
+            }
+          },
+          "spread_ratio": {
+            "action": 0.5161980986595154,
+            "early_hold": 0.7942781448364258,
+            "late_hold": 0.7087527513504028
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_one_state_response.pt",
+          "checkpoint_sha256": "3cffc7104164b132a120f45883e15c4f49fd66c0092c1fb0fc4239982c471fbf"
+        },
+        "eight_state_response": {
+          "name": "eight_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 3000,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.9991508722305298,
+              "response": 0.9991508722305298
+            },
+            {
+              "step": 250,
+              "total": 0.26229313015937805,
+              "response": 0.26229313015937805
+            },
+            {
+              "step": 500,
+              "total": 0.4146667718887329,
+              "response": 0.4146667718887329
+            },
+            {
+              "step": 750,
+              "total": 0.16445600986480713,
+              "response": 0.16445600986480713
+            },
+            {
+              "step": 1000,
+              "total": 0.2070101946592331,
+              "response": 0.2070101946592331
+            },
+            {
+              "step": 1250,
+              "total": 0.11782561987638474,
+              "response": 0.11782561987638474
+            },
+            {
+              "step": 1500,
+              "total": 0.1486065834760666,
+              "response": 0.1486065834760666
+            },
+            {
+              "step": 1750,
+              "total": 0.14873522520065308,
+              "response": 0.14873522520065308
+            },
+            {
+              "step": 2000,
+              "total": 0.15935328602790833,
+              "response": 0.15935328602790833
+            },
+            {
+              "step": 2250,
+              "total": 0.16452737152576447,
+              "response": 0.16452737152576447
+            },
+            {
+              "step": 2500,
+              "total": 0.12178915739059448,
+              "response": 0.12178915739059448
+            },
+            {
+              "step": 2750,
+              "total": 0.10667324811220169,
+              "response": 0.10667324811220169
+            },
+            {
+              "step": 3000,
+              "total": 0.08873049914836884,
+              "response": 0.08873049914836884
+            }
+          ],
+          "seconds": 15.015870094299316,
+          "gradient_before": {
+            "losses": {
+              "response": 0.9991508722305298
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 4.806268169943526,
+                "weighted": 4.806268169943526
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.10165300220251083
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.031150142328206,
+                "weighted": 11.031150142328206
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 5,
+              "tp": 5,
+              "fn": 3,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.625,
+              "recall": 0.625,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.755859375
+            },
+            "continuous": {
+              "response": 0.09529969096183777,
+              "topology": 0.3930114805698395,
+              "commitment": 0.29490378499031067
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 6,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.25,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 2,
+                "tp": 1,
+                "fn": 3,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.5,
+                "recall": 0.25,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 4,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.5,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 4.76837158203125e-06,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.30701130628585815,
+            "early_hold": 0.4787784516811371,
+            "late_hold": 0.35474324226379395
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_eight_state_response.pt",
+          "checkpoint_sha256": "80d3edd0b300178b3255db65a32d12040fd1ced27773470cc4fa348787294004"
+        },
+        "add_topology": {
+          "name": "add_topology",
+          "terms": [
+            "response",
+            "topology"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.35544607043266296,
+              "response": 0.10165300220251083,
+              "topology": 0.3930114209651947
+            },
+            {
+              "step": 250,
+              "total": 0.12545786798000336,
+              "response": 0.08645772188901901,
+              "topology": 0.060393694788217545
+            },
+            {
+              "step": 500,
+              "total": 0.07823361456394196,
+              "response": 0.04899686202406883,
+              "topology": 0.04527459293603897
+            },
+            {
+              "step": 750,
+              "total": 0.06881852447986603,
+              "response": 0.042955510318279266,
+              "topology": 0.040050193667411804
+            },
+            {
+              "step": 1000,
+              "total": 0.05615248903632164,
+              "response": 0.03514212742447853,
+              "topology": 0.0325356088578701
+            },
+            {
+              "step": 1250,
+              "total": 0.05120982602238655,
+              "response": 0.03259044885635376,
+              "topology": 0.028833048418164253
+            },
+            {
+              "step": 1500,
+              "total": 0.08899465948343277,
+              "response": 0.0701901912689209,
+              "topology": 0.029119672253727913
+            }
+          ],
+          "seconds": 12.842803716659546,
+          "gradient_before": {
+            "losses": {
+              "response": 0.10165300220251083,
+              "topology": 0.3930114209651947
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.031150142328206,
+                "weighted": 11.031150142328206
+              },
+              "topology": {
+                "unweighted": 2.4790546686366985,
+                "weighted": 1.6008871060916616
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.5000888619909822
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.0334450900554657,
+              "topology": 0.028981303796172142
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.7080598784979475,
+                "weighted": 1.7080598784979475
+              },
+              "topology": {
+                "unweighted": 0.8105233248597704,
+                "weighted": 0.5234077151949666
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.523358854147266
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.75
+            },
+            "continuous": {
+              "response": 0.03135477751493454,
+              "topology": 0.02898130565881729,
+              "commitment": 0.03910287469625473
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 3,
+                "tp": 3,
+                "fn": 3,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 5,
+                "tp": 3,
+                "fn": 1,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.75,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 3,
+                "tp": 2,
+                "fn": 2,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 6.735324859619141e-06,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9036162495613098,
+            "early_hold": 0.9478423595428467,
+            "late_hold": 0.9544399976730347
+          },
+          "gate": {
+            "checks": {
+              "response": false,
+              "topology": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_add_topology.pt",
+          "checkpoint_sha256": "e8bcd7b5afd520098b2bc0aa1c8d724f6f3aae0a85547eb0b6e744c2c03d5d1f"
+        },
+        "add_commitment": {
+          "name": "add_commitment",
+          "terms": [
+            "response",
+            "topology",
+            "commitment"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.09226600080728531,
+              "response": 0.0334450900554657,
+              "topology": 0.028981303796172142,
+              "commitment": 0.039102859795093536
+            },
+            {
+              "step": 250,
+              "total": 0.08468145877122879,
+              "response": 0.036907583475112915,
+              "topology": 0.025473184883594513,
+              "commitment": 0.030540848150849342
+            },
+            {
+              "step": 500,
+              "total": 0.09067125618457794,
+              "response": 0.052967268973588943,
+              "topology": 0.01999874971807003,
+              "commitment": 0.024169567972421646
+            },
+            {
+              "step": 750,
+              "total": 0.04837406426668167,
+              "response": 0.022482190281152725,
+              "topology": 0.014284398406744003,
+              "commitment": 0.016250696033239365
+            },
+            {
+              "step": 1000,
+              "total": 0.04155956208705902,
+              "response": 0.0194826852530241,
+              "topology": 0.012143172323703766,
+              "commitment": 0.013879254460334778
+            },
+            {
+              "step": 1250,
+              "total": 0.044837843626737595,
+              "response": 0.02087559551000595,
+              "topology": 0.012597422115504742,
+              "commitment": 0.015431474894285202
+            },
+            {
+              "step": 1500,
+              "total": 0.03585835173726082,
+              "response": 0.01760150119662285,
+              "topology": 0.009948886930942535,
+              "commitment": 0.011536316946148872
+            }
+          ],
+          "seconds": 33.665273666381836,
+          "gradient_before": {
+            "losses": {
+              "response": 0.0334450900554657,
+              "topology": 0.028981303796172142,
+              "commitment": 0.039102859795093536
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.7080598784979475,
+                "weighted": 1.7080598784979475
+              },
+              "topology": {
+                "unweighted": 0.8105233248597704,
+                "weighted": 0.5234077151949666
+              },
+              "commitment": {
+                "unweighted": 1.0977766899687265,
+                "weighted": 1.1259332902974015
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.523358854147266,
+              "response:commitment": 0.43100585008171105,
+              "topology:commitment": 0.8831509179170125
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.02521979622542858,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.45035468280938,
+                "weighted": 11.45035468280938
+              },
+              "topology": {
+                "unweighted": 1.420049832858683,
+                "weighted": 0.917018691113116
+              },
+              "commitment": {
+                "unweighted": 1.939606342621381,
+                "weighted": 1.9893548216000239
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.8695963266599273,
+              "response:commitment": 0.7523035859027236,
+              "topology:commitment": 0.9705110844666627
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.8203125
+            },
+            "continuous": {
+              "response": 0.023643556982278824,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 3,
+                "tp": 3,
+                "fn": 3,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 4,
+                "tp": 2,
+                "fn": 2,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.5,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 0,
+                "fn": 4,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.375,
+                "recall": 0.0,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 1.4781951904296875e-05,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9330302476882935,
+            "early_hold": 0.9667257070541382,
+            "late_hold": 0.9367460012435913
+          },
+          "gate": {
+            "checks": {
+              "response": false,
+              "topology": false,
+              "commitment": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_add_commitment.pt",
+          "checkpoint_sha256": "72bbafdc8c6fa3f47e93a55655f057b78b2b95546caf57d992b7e7256df89f5c"
+        },
+        "add_nested": {
+          "name": "add_nested",
+          "terms": [
+            "response",
+            "topology",
+            "commitment",
+            "nested"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.32790449261665344,
+              "response": 0.02521979622542858,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083,
+              "nested": 6.1100568771362305
+            },
+            {
+              "step": 250,
+              "total": 0.26701727509498596,
+              "response": 0.025391463190317154,
+              "topology": 0.01502174511551857,
+              "commitment": 0.0187322236597538,
+              "nested": 4.581484794616699
+            },
+            {
+              "step": 500,
+              "total": 0.240553617477417,
+              "response": 0.03362652659416199,
+              "topology": 0.016592353582382202,
+              "commitment": 0.020265107974410057,
+              "nested": 3.7784228324890137
+            },
+            {
+              "step": 750,
+              "total": 0.2995724081993103,
+              "response": 0.11268363893032074,
+              "topology": 0.019671732559800148,
+              "commitment": 0.024945953860878944,
+              "nested": 3.200596332550049
+            },
+            {
+              "step": 1000,
+              "total": 0.23104974627494812,
+              "response": 0.03011424094438553,
+              "topology": 0.01328978966921568,
+              "commitment": 0.016235601156949997,
+              "nested": 3.7843234539031982
+            },
+            {
+              "step": 1250,
+              "total": 0.24480554461479187,
+              "response": 0.028448231518268585,
+              "topology": 0.015304071828722954,
+              "commitment": 0.018877726048231125,
+              "nested": 4.030101299285889
+            },
+            {
+              "step": 1500,
+              "total": 0.19929686188697815,
+              "response": 0.02748005837202072,
+              "topology": 0.011570539325475693,
+              "commitment": 0.015025726519525051,
+              "nested": 3.2077929973602295
+            }
+          ],
+          "seconds": 41.53360152244568,
+          "gradient_before": {
+            "losses": {
+              "response": 0.02521979622542858,
+              "topology": 0.010319323278963566,
+              "commitment": 0.012029961682856083,
+              "nested": 6.1100568771362305
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 11.45035468280938,
+                "weighted": 11.45035468280938
+              },
+              "topology": {
+                "unweighted": 1.420049832858683,
+                "weighted": 0.917018691113116
+              },
+              "commitment": {
+                "unweighted": 1.939606342621381,
+                "weighted": 1.9893548216000239
+              },
+              "nested": {
+                "unweighted": 4.578043201522068,
+                "weighted": 0.21255283466321148
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.8695963266599273,
+              "response:commitment": 0.7523035859027236,
+              "response:nested": -0.25928231862301926,
+              "topology:commitment": 0.9705110844666627,
+              "topology:nested": -0.1790958239147332,
+              "commitment:nested": -0.1383215107744451
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.017508765682578087,
+              "topology": 0.01040729507803917,
+              "commitment": 0.013006303459405899,
+              "nested": 2.7530293464660645
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.3138524064786598,
+                "weighted": 0.3138524064786598
+              },
+              "topology": {
+                "unweighted": 0.25594948801739553,
+                "weighted": 0.16528325912358424
+              },
+              "commitment": {
+                "unweighted": 0.3167821474346894,
+                "weighted": 0.3249072136690909
+              },
+              "nested": {
+                "unweighted": 35.51665384803544,
+                "weighted": 1.6489939305601375
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.7164116579474614,
+              "response:commitment": 0.8105058457242669,
+              "response:nested": 0.42214012400962814,
+              "topology:commitment": 0.9686348971570115,
+              "topology:nested": 0.12036196263406848,
+              "commitment:nested": 0.17395986444634762
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 6,
+              "tp": 6,
+              "fn": 2,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.75,
+              "recall": 0.75,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.75390625
+            },
+            "continuous": {
+              "response": 0.016414469107985497,
+              "topology": 0.010407296940684319,
+              "commitment": 0.013006303459405899
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 5,
+                "tp": 3,
+                "fn": 1,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.625,
+                "recall": 0.75,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 0,
+                "fn": 4,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.375,
+                "recall": 0.0,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 8.106231689453125e-06,
+              "subset_response_rms": 0.0
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9497182369232178,
+            "early_hold": 0.9925409555435181,
+            "late_hold": 0.9936593770980835
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": false,
+              "commitment": false,
+              "candidate_decision": false,
+              "partition": false,
+              "nested_boundary": false,
+              "nested_final": false,
+              "response_spread": true,
+              "permutation": true
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/independent_direct_add_nested.pt",
+          "checkpoint_sha256": "752a43276d4a58d8f586a37d4a023b0856f698786fb6dfcfd3ffb68eb1460f9d"
+        }
+      }
+    },
+    "set_conditioned": {
+      "stages": [
+        {
+          "name": "one_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 2000,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.724308967590332,
+              "response": 0.724308967590332
+            },
+            {
+              "step": 250,
+              "total": 0.03650253638625145,
+              "response": 0.03650253638625145
+            },
+            {
+              "step": 500,
+              "total": 0.035856299102306366,
+              "response": 0.035856299102306366
+            },
+            {
+              "step": 750,
+              "total": 0.03603367134928703,
+              "response": 0.03603367134928703
+            },
+            {
+              "step": 1000,
+              "total": 0.030327316373586655,
+              "response": 0.030327316373586655
+            },
+            {
+              "step": 1250,
+              "total": 0.029769010841846466,
+              "response": 0.029769010841846466
+            },
+            {
+              "step": 1500,
+              "total": 0.02801637165248394,
+              "response": 0.02801637165248394
+            },
+            {
+              "step": 1750,
+              "total": 0.022168926894664764,
+              "response": 0.022168926894664764
+            },
+            {
+              "step": 2000,
+              "total": 0.017445169389247894,
+              "response": 0.017445169389247894
+            }
+          ],
+          "seconds": 9.896942615509033,
+          "gradient_before": {
+            "losses": {
+              "response": 0.724308967590332
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.16901831430992142,
+                "weighted": 0.16901831430992142
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.017471222206950188
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.07536779435620651,
+                "weighted": 0.07536779435620651
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 1,
+              "reference_positive": 1,
+              "predicted_positive": 0,
+              "tp": 0,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.0,
+              "recall": 0.0,
+              "added_positive_rate": 0.0,
+              "valid_states": 1,
+              "mean_partition_agreement": 0.5625
+            },
+            "continuous": {
+              "response": 0.01637960597872734,
+              "topology": 0.11801418662071228,
+              "commitment": 0.11349658668041229
+            },
+            "nested": {
+              "boundary": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "persistence": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 0,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 1.0,
+                "recall": 1.0,
+                "added_positive_rate": 0.0
+              },
+              "alarm": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 4.291534423828125e-06,
+              "subset_response_rms": 0.03273475542664528
+            }
+          },
+          "spread_ratio": {
+            "action": 0.5661272406578064,
+            "early_hold": 0.7670910954475403,
+            "late_hold": 0.7642382383346558
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_one_state_response.pt",
+          "checkpoint_sha256": "eda9a56998e77945883e80ba8aece3e6da725d152b332ba90adf09669512456e"
+        },
+        {
+          "name": "eight_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 3000,
+          "history": [
+            {
+              "step": 1,
+              "total": 1.1280691623687744,
+              "response": 1.1280691623687744
+            },
+            {
+              "step": 250,
+              "total": 0.26988181471824646,
+              "response": 0.26988181471824646
+            },
+            {
+              "step": 500,
+              "total": 0.11505155265331268,
+              "response": 0.11505155265331268
+            },
+            {
+              "step": 750,
+              "total": 0.09747103601694107,
+              "response": 0.09747103601694107
+            },
+            {
+              "step": 1000,
+              "total": 0.0896645039319992,
+              "response": 0.0896645039319992
+            },
+            {
+              "step": 1250,
+              "total": 0.1988033503293991,
+              "response": 0.1988033503293991
+            },
+            {
+              "step": 1500,
+              "total": 0.06664397567510605,
+              "response": 0.06664397567510605
+            },
+            {
+              "step": 1750,
+              "total": 0.0866379588842392,
+              "response": 0.0866379588842392
+            },
+            {
+              "step": 2000,
+              "total": 0.06144583597779274,
+              "response": 0.06144583597779274
+            },
+            {
+              "step": 2250,
+              "total": 0.06733003258705139,
+              "response": 0.06733003258705139
+            },
+            {
+              "step": 2500,
+              "total": 0.057926010340452194,
+              "response": 0.057926010340452194
+            },
+            {
+              "step": 2750,
+              "total": 0.04581374675035477,
+              "response": 0.04581374675035477
+            },
+            {
+              "step": 3000,
+              "total": 0.03247050195932388,
+              "response": 0.03247050195932388
+            }
+          ],
+          "seconds": 19.720449924468994,
+          "gradient_before": {
+            "losses": {
+              "response": 1.1280691623687744
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.7029098464707588,
+                "weighted": 1.7029098464707588
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.03243622928857803
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.014043990558639937,
+                "weighted": 0.014043990558639937
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 4,
+              "tp": 4,
+              "fn": 4,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.5,
+              "recall": 0.5,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.72265625
+            },
+            "continuous": {
+              "response": 0.03040914796292782,
+              "topology": 1.1124751567840576,
+              "commitment": 0.8349466323852539
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 4,
+                "tp": 3,
+                "fn": 1,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.75,
+                "recall": 0.75,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 3,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.625,
+                "recall": 0.25,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 1.0967254638671875e-05,
+              "subset_response_rms": 0.03966701775789261
+            }
+          },
+          "spread_ratio": {
+            "action": 0.503445565700531,
+            "early_hold": 0.7058584690093994,
+            "late_hold": 0.6761788129806519
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_eight_state_response.pt",
+          "checkpoint_sha256": "918e6fb877f019b5b6782af05cd4616a133264000a2f3dac49c75c46c80dceaa"
+        },
+        {
+          "name": "add_topology",
+          "terms": [
+            "response",
+            "topology"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.7509041428565979,
+              "response": 0.03243622928857803,
+              "topology": 1.112583875656128
+            },
+            {
+              "step": 250,
+              "total": 0.05045980215072632,
+              "response": 0.031235307455062866,
+              "topology": 0.029770104214549065
+            },
+            {
+              "step": 500,
+              "total": 0.03876432776451111,
+              "response": 0.02499750256538391,
+              "topology": 0.021318627521395683
+            },
+            {
+              "step": 750,
+              "total": 0.034156717360019684,
+              "response": 0.022340824827551842,
+              "topology": 0.018297504633665085
+            },
+            {
+              "step": 1000,
+              "total": 0.030284862965345383,
+              "response": 0.019886674359440804,
+              "topology": 0.016102122142910957
+            },
+            {
+              "step": 1250,
+              "total": 0.02607457898557186,
+              "response": 0.0174010768532753,
+              "topology": 0.013431357219815254
+            },
+            {
+              "step": 1500,
+              "total": 0.023189136758446693,
+              "response": 0.015516150742769241,
+              "topology": 0.011882007122039795
+            }
+          ],
+          "seconds": 14.51711916923523,
+          "gradient_before": {
+            "losses": {
+              "response": 0.03243622928857803,
+              "topology": 1.112583875656128
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.014043990558639937,
+                "weighted": 0.014043990558639937
+              },
+              "topology": {
+                "unweighted": 9.042966091975147,
+                "weighted": 5.839632340753621
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": -0.031499810037215414
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.015416931360960007,
+              "topology": 0.011856102384626865
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.11122549800914944,
+                "weighted": 0.11122549800914944
+              },
+              "topology": {
+                "unweighted": 0.14608769100070398,
+                "weighted": 0.09433833946483378
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.6443546652545526
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 5,
+              "tp": 5,
+              "fn": 3,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.625,
+              "recall": 0.625,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.837890625
+            },
+            "continuous": {
+              "response": 0.014454679563641548,
+              "topology": 0.01185681764036417,
+              "commitment": 0.02045130729675293
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 4,
+                "tp": 2,
+                "fn": 2,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.5,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 3,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.625,
+                "recall": 0.25,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 5.6862831115722656e-05,
+              "subset_response_rms": 0.08245348930358887
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9441224932670593,
+            "early_hold": 0.9857274293899536,
+            "late_hold": 0.9768452048301697
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_topology.pt",
+          "checkpoint_sha256": "71d7b8d9abe2eb5c42ad7a2db6a2b81f1d841bfe3ea4437dc2b798cfea8ee7de"
+        },
+        {
+          "name": "add_commitment",
+          "terms": [
+            "response",
+            "topology",
+            "commitment"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.04404553771018982,
+              "response": 0.015416931360960007,
+              "topology": 0.011856102384626865,
+              "commitment": 0.020447885617613792
+            },
+            {
+              "step": 250,
+              "total": 0.034607451409101486,
+              "response": 0.015302035957574844,
+              "topology": 0.010050243698060513,
+              "commitment": 0.012494843453168869
+            },
+            {
+              "step": 500,
+              "total": 0.02823226898908615,
+              "response": 0.013418869115412235,
+              "topology": 0.00809237640351057,
+              "commitment": 0.009347863495349884
+            },
+            {
+              "step": 750,
+              "total": 0.024149926379323006,
+              "response": 0.011568211019039154,
+              "topology": 0.006980971898883581,
+              "commitment": 0.007871746085584164
+            },
+            {
+              "step": 1000,
+              "total": 0.0206886176019907,
+              "response": 0.010203885845839977,
+              "topology": 0.005886464845389128,
+              "commitment": 0.006516322493553162
+            },
+            {
+              "step": 1250,
+              "total": 0.018013162538409233,
+              "response": 0.009082695469260216,
+              "topology": 0.005087042227387428,
+              "commitment": 0.00550425611436367
+            },
+            {
+              "step": 1500,
+              "total": 0.016849404200911522,
+              "response": 0.008559020236134529,
+              "topology": 0.004748412407934666,
+              "commitment": 0.005093386396765709
+            }
+          ],
+          "seconds": 36.192259788513184,
+          "gradient_before": {
+            "losses": {
+              "response": 0.015416931360960007,
+              "topology": 0.011856102384626865,
+              "commitment": 0.020447885617613792
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.11122549800914944,
+                "weighted": 0.11122549800914944
+              },
+              "topology": {
+                "unweighted": 0.14608769100070398,
+                "weighted": 0.09433833946483378
+              },
+              "commitment": {
+                "unweighted": 0.3257082313374624,
+                "weighted": 0.3340622404700391
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.6443546652545526,
+              "response:commitment": 0.7564254831666957,
+              "topology:commitment": 0.9217897175055272
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.00864811148494482,
+              "topology": 0.0047257281839847565,
+              "commitment": 0.005128327291458845
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.06638754776172896,
+                "weighted": 0.06638754776172896
+              },
+              "topology": {
+                "unweighted": 0.05491871167751088,
+                "weighted": 0.03546458999875209
+              },
+              "commitment": {
+                "unweighted": 0.07838686216311963,
+                "weighted": 0.0803973872262896
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.3539954986999083,
+              "response:commitment": 0.5814595544950873,
+              "topology:commitment": 0.6129109515538843
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.875
+            },
+            "continuous": {
+              "response": 0.008108125068247318,
+              "topology": 0.004725700244307518,
+              "commitment": 0.00512920506298542
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 2,
+                "tp": 1,
+                "fn": 3,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.5,
+                "recall": 0.25,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 0,
+                "fn": 4,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.375,
+                "recall": 0.0,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 2.956390380859375e-05,
+              "subset_response_rms": 0.08445986360311508
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9607545137405396,
+            "early_hold": 0.9971283674240112,
+            "late_hold": 0.9910145998001099
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": true,
+              "commitment": true
+            },
+            "passes": true
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_commitment.pt",
+          "checkpoint_sha256": "f67ff4b30795eded71127e9af44b489d6e1272a545aaba7b369140a8091f3f3b"
+        },
+        {
+          "name": "add_nested",
+          "terms": [
+            "response",
+            "topology",
+            "commitment",
+            "nested"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.31028878688812256,
+              "response": 0.00864811148494482,
+              "topology": 0.0047257281839847565,
+              "commitment": 0.005128327291458845,
+              "nested": 6.317832946777344
+            },
+            {
+              "step": 250,
+              "total": 0.11360679566860199,
+              "response": 0.018413463607430458,
+              "topology": 0.0103200888261199,
+              "commitment": 0.012926760129630566,
+              "nested": 1.6212079524993896
+            },
+            {
+              "step": 500,
+              "total": 0.05695071816444397,
+              "response": 0.01199332531541586,
+              "topology": 0.006080643739551306,
+              "commitment": 0.007090799510478973,
+              "nested": 0.7270937561988831
+            },
+            {
+              "step": 750,
+              "total": 0.039815932512283325,
+              "response": 0.011329072527587414,
+              "topology": 0.005573184695094824,
+              "commitment": 0.006354808807373047,
+              "nested": 0.39566195011138916
+            },
+            {
+              "step": 1000,
+              "total": 0.026104159653186798,
+              "response": 0.009682881645858288,
+              "topology": 0.004596624057739973,
+              "commitment": 0.00500858947634697,
+              "nested": 0.17911067605018616
+            },
+            {
+              "step": 1250,
+              "total": 0.023057900369167328,
+              "response": 0.00900539942085743,
+              "topology": 0.004316447302699089,
+              "commitment": 0.0046724071726202965,
+              "nested": 0.13941451907157898
+            },
+            {
+              "step": 1500,
+              "total": 0.020838458091020584,
+              "response": 0.008378970436751842,
+              "topology": 0.003947653342038393,
+              "commitment": 0.004271944984793663,
+              "nested": 0.1190795749425888
+            }
+          ],
+          "seconds": 46.91402339935303,
+          "gradient_before": {
+            "losses": {
+              "response": 0.00864811148494482,
+              "topology": 0.0047257281839847565,
+              "commitment": 0.005128327291458845,
+              "nested": 6.317832946777344
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.06638754776172896,
+                "weighted": 0.06638754776172896
+              },
+              "topology": {
+                "unweighted": 0.05491871167751088,
+                "weighted": 0.03546458999875209
+              },
+              "commitment": {
+                "unweighted": 0.07838686216311963,
+                "weighted": 0.0803973872262896
+              },
+              "nested": {
+                "unweighted": 14.10002691881233,
+                "weighted": 0.6546466598272231
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.3539954986999083,
+              "response:commitment": 0.5814595544950873,
+              "response:nested": -0.2622736339772392,
+              "topology:commitment": 0.6129109515538843,
+              "topology:nested": -0.3771729719488894,
+              "commitment:nested": -0.6950676328664717
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.008332248777151108,
+              "topology": 0.0039362674579024315,
+              "commitment": 0.004234934225678444,
+              "nested": 0.11296048760414124
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.04568636611859152,
+                "weighted": 0.04568636611859152
+              },
+              "topology": {
+                "unweighted": 0.048494321067261016,
+                "weighted": 0.03131594244266523
+              },
+              "commitment": {
+                "unweighted": 0.05701337425399333,
+                "weighted": 0.05847569606035687
+              },
+              "nested": {
+                "unweighted": 2.5505023583639117,
+                "weighted": 0.11841664270560343
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": -0.07708448133722885,
+              "response:commitment": 0.5257481668772852,
+              "response:nested": 0.24773741654523437,
+              "topology:commitment": 0.17358182290962762,
+              "topology:nested": 0.07633489721681005,
+              "commitment:nested": 0.2700602296941144
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.8984375
+            },
+            "continuous": {
+              "response": 0.007811444811522961,
+              "topology": 0.003935865592211485,
+              "commitment": 0.004234031308442354
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 5,
+                "tp": 4,
+                "fn": 2,
+                "fp": 1,
+                "tn": 1,
+                "agreement": 0.625,
+                "recall": 0.6666666666666666,
+                "added_positive_rate": 0.5
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 3,
+                "tp": 2,
+                "fn": 2,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 3,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.625,
+                "recall": 0.25,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 8.07046890258789e-05,
+              "subset_response_rms": 0.10867956280708313
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9627578854560852,
+            "early_hold": 0.9975948929786682,
+            "late_hold": 0.9981828331947327
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": true,
+              "commitment": true,
+              "candidate_decision": false,
+              "partition": false,
+              "nested_boundary": false,
+              "nested_final": false,
+              "response_spread": true,
+              "permutation": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_nested.pt",
+          "checkpoint_sha256": "d66c7e9484124274ad1ecae7b953f35bcf33586bcaa2eb86fdd6484d98601a00"
+        }
+      ],
+      "stages_by_name": {
+        "one_state_response": {
+          "name": "one_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 2000,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.724308967590332,
+              "response": 0.724308967590332
+            },
+            {
+              "step": 250,
+              "total": 0.03650253638625145,
+              "response": 0.03650253638625145
+            },
+            {
+              "step": 500,
+              "total": 0.035856299102306366,
+              "response": 0.035856299102306366
+            },
+            {
+              "step": 750,
+              "total": 0.03603367134928703,
+              "response": 0.03603367134928703
+            },
+            {
+              "step": 1000,
+              "total": 0.030327316373586655,
+              "response": 0.030327316373586655
+            },
+            {
+              "step": 1250,
+              "total": 0.029769010841846466,
+              "response": 0.029769010841846466
+            },
+            {
+              "step": 1500,
+              "total": 0.02801637165248394,
+              "response": 0.02801637165248394
+            },
+            {
+              "step": 1750,
+              "total": 0.022168926894664764,
+              "response": 0.022168926894664764
+            },
+            {
+              "step": 2000,
+              "total": 0.017445169389247894,
+              "response": 0.017445169389247894
+            }
+          ],
+          "seconds": 9.896942615509033,
+          "gradient_before": {
+            "losses": {
+              "response": 0.724308967590332
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.16901831430992142,
+                "weighted": 0.16901831430992142
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.017471222206950188
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.07536779435620651,
+                "weighted": 0.07536779435620651
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 1,
+              "reference_positive": 1,
+              "predicted_positive": 0,
+              "tp": 0,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.0,
+              "recall": 0.0,
+              "added_positive_rate": 0.0,
+              "valid_states": 1,
+              "mean_partition_agreement": 0.5625
+            },
+            "continuous": {
+              "response": 0.01637960597872734,
+              "topology": 0.11801418662071228,
+              "commitment": 0.11349658668041229
+            },
+            "nested": {
+              "boundary": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              },
+              "persistence": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 0,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 1.0,
+                "recall": 1.0,
+                "added_positive_rate": 0.0
+              },
+              "alarm": {
+                "states": 1,
+                "reference_positive": 1,
+                "predicted_positive": 0,
+                "tp": 0,
+                "fn": 1,
+                "fp": 0,
+                "tn": 0,
+                "agreement": 0.0,
+                "recall": 0.0,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 4.291534423828125e-06,
+              "subset_response_rms": 0.03273475542664528
+            }
+          },
+          "spread_ratio": {
+            "action": 0.5661272406578064,
+            "early_hold": 0.7670910954475403,
+            "late_hold": 0.7642382383346558
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_one_state_response.pt",
+          "checkpoint_sha256": "eda9a56998e77945883e80ba8aece3e6da725d152b332ba90adf09669512456e"
+        },
+        "eight_state_response": {
+          "name": "eight_state_response",
+          "terms": [
+            "response"
+          ],
+          "steps": 3000,
+          "history": [
+            {
+              "step": 1,
+              "total": 1.1280691623687744,
+              "response": 1.1280691623687744
+            },
+            {
+              "step": 250,
+              "total": 0.26988181471824646,
+              "response": 0.26988181471824646
+            },
+            {
+              "step": 500,
+              "total": 0.11505155265331268,
+              "response": 0.11505155265331268
+            },
+            {
+              "step": 750,
+              "total": 0.09747103601694107,
+              "response": 0.09747103601694107
+            },
+            {
+              "step": 1000,
+              "total": 0.0896645039319992,
+              "response": 0.0896645039319992
+            },
+            {
+              "step": 1250,
+              "total": 0.1988033503293991,
+              "response": 0.1988033503293991
+            },
+            {
+              "step": 1500,
+              "total": 0.06664397567510605,
+              "response": 0.06664397567510605
+            },
+            {
+              "step": 1750,
+              "total": 0.0866379588842392,
+              "response": 0.0866379588842392
+            },
+            {
+              "step": 2000,
+              "total": 0.06144583597779274,
+              "response": 0.06144583597779274
+            },
+            {
+              "step": 2250,
+              "total": 0.06733003258705139,
+              "response": 0.06733003258705139
+            },
+            {
+              "step": 2500,
+              "total": 0.057926010340452194,
+              "response": 0.057926010340452194
+            },
+            {
+              "step": 2750,
+              "total": 0.04581374675035477,
+              "response": 0.04581374675035477
+            },
+            {
+              "step": 3000,
+              "total": 0.03247050195932388,
+              "response": 0.03247050195932388
+            }
+          ],
+          "seconds": 19.720449924468994,
+          "gradient_before": {
+            "losses": {
+              "response": 1.1280691623687744
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 1.7029098464707588,
+                "weighted": 1.7029098464707588
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.03243622928857803
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.014043990558639937,
+                "weighted": 0.014043990558639937
+              }
+            },
+            "gradient_cosines": {}
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 4,
+              "tp": 4,
+              "fn": 4,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.5,
+              "recall": 0.5,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.72265625
+            },
+            "continuous": {
+              "response": 0.03040914796292782,
+              "topology": 1.1124751567840576,
+              "commitment": 0.8349466323852539
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 4,
+                "tp": 3,
+                "fn": 1,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.75,
+                "recall": 0.75,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 3,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.625,
+                "recall": 0.25,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 1.0967254638671875e-05,
+              "subset_response_rms": 0.03966701775789261
+            }
+          },
+          "spread_ratio": {
+            "action": 0.503445565700531,
+            "early_hold": 0.7058584690093994,
+            "late_hold": 0.6761788129806519
+          },
+          "gate": {
+            "checks": {
+              "response": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_eight_state_response.pt",
+          "checkpoint_sha256": "918e6fb877f019b5b6782af05cd4616a133264000a2f3dac49c75c46c80dceaa"
+        },
+        "add_topology": {
+          "name": "add_topology",
+          "terms": [
+            "response",
+            "topology"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.7509041428565979,
+              "response": 0.03243622928857803,
+              "topology": 1.112583875656128
+            },
+            {
+              "step": 250,
+              "total": 0.05045980215072632,
+              "response": 0.031235307455062866,
+              "topology": 0.029770104214549065
+            },
+            {
+              "step": 500,
+              "total": 0.03876432776451111,
+              "response": 0.02499750256538391,
+              "topology": 0.021318627521395683
+            },
+            {
+              "step": 750,
+              "total": 0.034156717360019684,
+              "response": 0.022340824827551842,
+              "topology": 0.018297504633665085
+            },
+            {
+              "step": 1000,
+              "total": 0.030284862965345383,
+              "response": 0.019886674359440804,
+              "topology": 0.016102122142910957
+            },
+            {
+              "step": 1250,
+              "total": 0.02607457898557186,
+              "response": 0.0174010768532753,
+              "topology": 0.013431357219815254
+            },
+            {
+              "step": 1500,
+              "total": 0.023189136758446693,
+              "response": 0.015516150742769241,
+              "topology": 0.011882007122039795
+            }
+          ],
+          "seconds": 14.51711916923523,
+          "gradient_before": {
+            "losses": {
+              "response": 0.03243622928857803,
+              "topology": 1.112583875656128
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.014043990558639937,
+                "weighted": 0.014043990558639937
+              },
+              "topology": {
+                "unweighted": 9.042966091975147,
+                "weighted": 5.839632340753621
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": -0.031499810037215414
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.015416931360960007,
+              "topology": 0.011856102384626865
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.11122549800914944,
+                "weighted": 0.11122549800914944
+              },
+              "topology": {
+                "unweighted": 0.14608769100070398,
+                "weighted": 0.09433833946483378
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.6443546652545526
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 5,
+              "tp": 5,
+              "fn": 3,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.625,
+              "recall": 0.625,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.837890625
+            },
+            "continuous": {
+              "response": 0.014454679563641548,
+              "topology": 0.01185681764036417,
+              "commitment": 0.02045130729675293
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 4,
+                "tp": 2,
+                "fn": 2,
+                "fp": 2,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.5,
+                "added_positive_rate": 0.5
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 3,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.625,
+                "recall": 0.25,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 5.6862831115722656e-05,
+              "subset_response_rms": 0.08245348930358887
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9441224932670593,
+            "early_hold": 0.9857274293899536,
+            "late_hold": 0.9768452048301697
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_topology.pt",
+          "checkpoint_sha256": "71d7b8d9abe2eb5c42ad7a2db6a2b81f1d841bfe3ea4437dc2b798cfea8ee7de"
+        },
+        "add_commitment": {
+          "name": "add_commitment",
+          "terms": [
+            "response",
+            "topology",
+            "commitment"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.04404553771018982,
+              "response": 0.015416931360960007,
+              "topology": 0.011856102384626865,
+              "commitment": 0.020447885617613792
+            },
+            {
+              "step": 250,
+              "total": 0.034607451409101486,
+              "response": 0.015302035957574844,
+              "topology": 0.010050243698060513,
+              "commitment": 0.012494843453168869
+            },
+            {
+              "step": 500,
+              "total": 0.02823226898908615,
+              "response": 0.013418869115412235,
+              "topology": 0.00809237640351057,
+              "commitment": 0.009347863495349884
+            },
+            {
+              "step": 750,
+              "total": 0.024149926379323006,
+              "response": 0.011568211019039154,
+              "topology": 0.006980971898883581,
+              "commitment": 0.007871746085584164
+            },
+            {
+              "step": 1000,
+              "total": 0.0206886176019907,
+              "response": 0.010203885845839977,
+              "topology": 0.005886464845389128,
+              "commitment": 0.006516322493553162
+            },
+            {
+              "step": 1250,
+              "total": 0.018013162538409233,
+              "response": 0.009082695469260216,
+              "topology": 0.005087042227387428,
+              "commitment": 0.00550425611436367
+            },
+            {
+              "step": 1500,
+              "total": 0.016849404200911522,
+              "response": 0.008559020236134529,
+              "topology": 0.004748412407934666,
+              "commitment": 0.005093386396765709
+            }
+          ],
+          "seconds": 36.192259788513184,
+          "gradient_before": {
+            "losses": {
+              "response": 0.015416931360960007,
+              "topology": 0.011856102384626865,
+              "commitment": 0.020447885617613792
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.11122549800914944,
+                "weighted": 0.11122549800914944
+              },
+              "topology": {
+                "unweighted": 0.14608769100070398,
+                "weighted": 0.09433833946483378
+              },
+              "commitment": {
+                "unweighted": 0.3257082313374624,
+                "weighted": 0.3340622404700391
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.6443546652545526,
+              "response:commitment": 0.7564254831666957,
+              "topology:commitment": 0.9217897175055272
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.00864811148494482,
+              "topology": 0.0047257281839847565,
+              "commitment": 0.005128327291458845
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.06638754776172896,
+                "weighted": 0.06638754776172896
+              },
+              "topology": {
+                "unweighted": 0.05491871167751088,
+                "weighted": 0.03546458999875209
+              },
+              "commitment": {
+                "unweighted": 0.07838686216311963,
+                "weighted": 0.0803973872262896
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.3539954986999083,
+              "response:commitment": 0.5814595544950873,
+              "topology:commitment": 0.6129109515538843
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.875
+            },
+            "continuous": {
+              "response": 0.008108125068247318,
+              "topology": 0.004725700244307518,
+              "commitment": 0.00512920506298542
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 2,
+                "tp": 2,
+                "fn": 4,
+                "fp": 0,
+                "tn": 2,
+                "agreement": 0.5,
+                "recall": 0.3333333333333333,
+                "added_positive_rate": 0.0
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 2,
+                "tp": 1,
+                "fn": 3,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.5,
+                "recall": 0.25,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 0,
+                "fn": 4,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.375,
+                "recall": 0.0,
+                "added_positive_rate": 0.25
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 2.956390380859375e-05,
+              "subset_response_rms": 0.08445986360311508
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9607545137405396,
+            "early_hold": 0.9971283674240112,
+            "late_hold": 0.9910145998001099
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": true,
+              "commitment": true
+            },
+            "passes": true
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_commitment.pt",
+          "checkpoint_sha256": "f67ff4b30795eded71127e9af44b489d6e1272a545aaba7b369140a8091f3f3b"
+        },
+        "add_nested": {
+          "name": "add_nested",
+          "terms": [
+            "response",
+            "topology",
+            "commitment",
+            "nested"
+          ],
+          "steps": 1500,
+          "history": [
+            {
+              "step": 1,
+              "total": 0.31028878688812256,
+              "response": 0.00864811148494482,
+              "topology": 0.0047257281839847565,
+              "commitment": 0.005128327291458845,
+              "nested": 6.317832946777344
+            },
+            {
+              "step": 250,
+              "total": 0.11360679566860199,
+              "response": 0.018413463607430458,
+              "topology": 0.0103200888261199,
+              "commitment": 0.012926760129630566,
+              "nested": 1.6212079524993896
+            },
+            {
+              "step": 500,
+              "total": 0.05695071816444397,
+              "response": 0.01199332531541586,
+              "topology": 0.006080643739551306,
+              "commitment": 0.007090799510478973,
+              "nested": 0.7270937561988831
+            },
+            {
+              "step": 750,
+              "total": 0.039815932512283325,
+              "response": 0.011329072527587414,
+              "topology": 0.005573184695094824,
+              "commitment": 0.006354808807373047,
+              "nested": 0.39566195011138916
+            },
+            {
+              "step": 1000,
+              "total": 0.026104159653186798,
+              "response": 0.009682881645858288,
+              "topology": 0.004596624057739973,
+              "commitment": 0.00500858947634697,
+              "nested": 0.17911067605018616
+            },
+            {
+              "step": 1250,
+              "total": 0.023057900369167328,
+              "response": 0.00900539942085743,
+              "topology": 0.004316447302699089,
+              "commitment": 0.0046724071726202965,
+              "nested": 0.13941451907157898
+            },
+            {
+              "step": 1500,
+              "total": 0.020838458091020584,
+              "response": 0.008378970436751842,
+              "topology": 0.003947653342038393,
+              "commitment": 0.004271944984793663,
+              "nested": 0.1190795749425888
+            }
+          ],
+          "seconds": 46.91402339935303,
+          "gradient_before": {
+            "losses": {
+              "response": 0.00864811148494482,
+              "topology": 0.0047257281839847565,
+              "commitment": 0.005128327291458845,
+              "nested": 6.317832946777344
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.06638754776172896,
+                "weighted": 0.06638754776172896
+              },
+              "topology": {
+                "unweighted": 0.05491871167751088,
+                "weighted": 0.03546458999875209
+              },
+              "commitment": {
+                "unweighted": 0.07838686216311963,
+                "weighted": 0.0803973872262896
+              },
+              "nested": {
+                "unweighted": 14.10002691881233,
+                "weighted": 0.6546466598272231
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": 0.3539954986999083,
+              "response:commitment": 0.5814595544950873,
+              "response:nested": -0.2622736339772392,
+              "topology:commitment": 0.6129109515538843,
+              "topology:nested": -0.3771729719488894,
+              "commitment:nested": -0.6950676328664717
+            }
+          },
+          "gradient_after": {
+            "losses": {
+              "response": 0.008332248777151108,
+              "topology": 0.0039362674579024315,
+              "commitment": 0.004234934225678444,
+              "nested": 0.11296048760414124
+            },
+            "gradient_norms": {
+              "response": {
+                "unweighted": 0.04568636611859152,
+                "weighted": 0.04568636611859152
+              },
+              "topology": {
+                "unweighted": 0.048494321067261016,
+                "weighted": 0.03131594244266523
+              },
+              "commitment": {
+                "unweighted": 0.05701337425399333,
+                "weighted": 0.05847569606035687
+              },
+              "nested": {
+                "unweighted": 2.5505023583639117,
+                "weighted": 0.11841664270560343
+              }
+            },
+            "gradient_cosines": {
+              "response:topology": -0.07708448133722885,
+              "response:commitment": 0.5257481668772852,
+              "response:nested": 0.24773741654523437,
+              "topology:commitment": 0.17358182290962762,
+              "topology:nested": 0.07633489721681005,
+              "commitment:nested": 0.2700602296941144
+            }
+          },
+          "evaluation": {
+            "candidate": {
+              "states": 8,
+              "reference_positive": 8,
+              "predicted_positive": 7,
+              "tp": 7,
+              "fn": 1,
+              "fp": 0,
+              "tn": 0,
+              "agreement": 0.875,
+              "recall": 0.875,
+              "added_positive_rate": 0.0,
+              "valid_states": 8,
+              "mean_partition_agreement": 0.8984375
+            },
+            "continuous": {
+              "response": 0.007811444811522961,
+              "topology": 0.003935865592211485,
+              "commitment": 0.004234031308442354
+            },
+            "nested": {
+              "boundary": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 5,
+                "tp": 4,
+                "fn": 2,
+                "fp": 1,
+                "tn": 1,
+                "agreement": 0.625,
+                "recall": 0.6666666666666666,
+                "added_positive_rate": 0.5
+              },
+              "commitment": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 3,
+                "tp": 2,
+                "fn": 2,
+                "fp": 1,
+                "tn": 3,
+                "agreement": 0.625,
+                "recall": 0.5,
+                "added_positive_rate": 0.25
+              },
+              "persistence": {
+                "states": 8,
+                "reference_positive": 6,
+                "predicted_positive": 8,
+                "tp": 6,
+                "fn": 0,
+                "fp": 2,
+                "tn": 0,
+                "agreement": 0.75,
+                "recall": 1.0,
+                "added_positive_rate": 1.0
+              },
+              "alarm": {
+                "states": 8,
+                "reference_positive": 4,
+                "predicted_positive": 1,
+                "tp": 1,
+                "fn": 3,
+                "fp": 0,
+                "tn": 4,
+                "agreement": 0.625,
+                "recall": 0.25,
+                "added_positive_rate": 0.0
+              }
+            },
+            "checks": {
+              "permutation_max_abs": 8.07046890258789e-05,
+              "subset_response_rms": 0.10867956280708313
+            }
+          },
+          "spread_ratio": {
+            "action": 0.9627578854560852,
+            "early_hold": 0.9975948929786682,
+            "late_hold": 0.9981828331947327
+          },
+          "gate": {
+            "checks": {
+              "response": true,
+              "topology": true,
+              "commitment": true,
+              "candidate_decision": false,
+              "partition": false,
+              "nested_boundary": false,
+              "nested_final": false,
+              "response_spread": true,
+              "permutation": false
+            },
+            "passes": false
+          },
+          "checkpoint": "results/jenga/d6_staged_overfit/set_conditioned_add_nested.pt",
+          "checkpoint_sha256": "d66c7e9484124274ad1ecae7b953f35bcf33586bcaa2eb86fdd6484d98601a00"
+        }
+      }
+    }
+  },
+  "diagnosis": {
+    "first_failed_stage": {
+      "independent_direct": "one_state_response",
+      "set_conditioned": "one_state_response"
+    },
+    "conclusion": "neighborhood_geometry_representable_nested_consequence_bottleneck"
+  }
+}
