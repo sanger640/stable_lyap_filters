@@ -82,6 +82,11 @@ Proposed gates:
 This is not permission to tune the observation interval on topple labels. Use trajectory agreement
 and frozen monitor evidence for selection; task labels remain grading-only.
 
+Interpretation is deliberately binary. If frequent exact-state correction materially restores
+pair selection and monitor evidence, long open-loop drift is a major cause and the next stage is
+rendered re-observation. If correction fails even at one- or two-step segments, local contact
+branching is already absent and further scheduling work should stop in favour of Program B.
+
 ### Program B — pretrained physical/visual world model
 
 Start a new data/model budget rather than extending D21:
@@ -95,6 +100,10 @@ Start a new data/model budget rather than extending D21:
 This program is more expensive and should proceed only if Program A shows that short-horizon
 re-observation still cannot preserve the signal, or if suitable pretrained infrastructure becomes
 available.
+
+Do not combine the two programs in the first experiment. Keeping them separate makes the result
+diagnostic: Program A tests the interaction horizon while holding D2 fixed; Program B changes the
+learned physical prior and data scale while preserving the frozen evaluation.
 
 ## Evaluation hierarchy for either program
 

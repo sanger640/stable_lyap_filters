@@ -112,17 +112,87 @@ authorized. Continuing that sequence would be result-driven tuning on the same b
 
 ## Materially different future directions
 
-Further work should begin only as a new program with its own data and evaluation budget:
+Further work should begin only as a new program with its own protocol and evaluation budget. The
+two directions test different explanations for the deployment gap.
 
-1. **Larger or pretrained physical/visual world model.** Use broad interaction pretraining,
-   object persistence, 3-D geometry and stochastic futures, then freeze it before this benchmark.
-2. **Online re-observation or active sensing.** Shorten open-loop prediction by observing after
-   each small action, updating the state, and treating uncertainty or repeated disagreement as the
-   runtime signal.
-3. **Research artifact and benchmark.** Present the monitor, physical cross-task evidence and
-   learned-rollout failure as a benchmark for whether world models preserve local causal geometry.
+### Direction 1 — substantially larger or pretrained physical/visual world model
 
-These are genuine pivots. They should not be implemented as another small Jenga model variant.
+**Hypothesis:** local physical branches are learnable, but the present Jenga-scale data and model
+family do not contain enough varied contact experience or the right physical prior.
+
+This direction changes both scale and training distribution. It is not D22 with a wider GNN. A
+candidate should be pretrained on broad contact-rich interaction data and should represent object
+persistence, 3-D geometry, contact creation/loss and multiple plausible futures. Ordinary
+deterministic regression can minimize average error by predicting between two outcomes; a
+stochastic or multimodal model must preserve the alternatives instead.
+
+Two stages keep perception and dynamics identifiable:
+
+1. **Pretrained physical/object model:** consume generic object state and robot proprioception to
+   test whether broader pretraining repairs counterfactual dynamics under good perception. Exact
+   simulator state makes this a privileged diagnostic, not a deployment claim.
+2. **Visual model:** consume camera history, proprioception and action, then predict generic visual
+   or object-centric futures. This is the deployable target, attempted only after the physical
+   model preserves local branches.
+
+The model must be frozen before Jenga/pushing evaluation. Success requires more than low video or
+next-state error: it must recover physical neighbouring pairs, preserve separation-versus-action
+scale curves, and reproduce frozen-v0 boundary, commitment, persistence and final decisions on
+both episode- and configuration-held-out data.
+
+This is the closest route to a fully predictive monitor, but it needs a genuinely new data and
+compute budget and risks becoming a foundation-world-model project. It is justified if short
+re-observation cannot recover the signal or suitable pretrained infrastructure becomes available.
+
+### Direction 2 — online re-observation and active sensing
+
+**Hypothesis:** asking one learned model to predict the full action-plus-settle trajectory is
+unnecessarily difficult; repeated short predictions corrected by reality may preserve enough local
+geometry for the same frozen monitor.
+
+The current open-loop path feeds each prediction into the next prediction. A small contact error
+can therefore put the rollout in the wrong regime and contaminate every later state. Re-observation
+periodically replaces that imagined state with a real observation:
+
+```text
+observe → predict short nearby futures → execute a small segment
+        → re-observe → correct the state → predict again
+```
+
+The model is still necessary because only one action is executed and the alternatives remain
+counterfactual. What changes is its burden: it predicts short local alternatives rather than a
+38-step future from one initial state. Active sensing extends this idea by slowing, pausing, making
+a bounded reversible probe, changing viewpoint, or reading force/torque when the current regime is
+ambiguous. Those actions gather generic physical information; they must not encode a Jenga-specific
+topple rule.
+
+The first bounded test should reuse frozen D2 and v0. Split H8 into a preregistered short schedule,
+replace predicted state with the exact simulator observation after each executed segment, and
+recompute the remaining nearby futures. Start on held-out TRAIN episode and configuration axes.
+Measure:
+
+- agreement with physical neighbouring-pair selection;
+- boundary, commitment, persistence and final-decision agreement;
+- fork recall and quiet-alarm burden, used only for frozen grading;
+- observation count, latency and delay before intervention.
+
+Do not tune the observation interval on topple labels. Advance to DEV only if both held-out TRAIN
+axes improve over open-loop D2 without a material quiet-alarm regression; keep TEST closed until
+the complete protocol passes. If correction helps, replace exact state progressively with rendered
+observation and proprioception. If even one- or two-step corrected predictions miss the branch, the
+problem is local representation rather than accumulated rollout drift, strengthening the case for
+Direction 1.
+
+### Decision rule
+
+| Direction | Question it answers | Cost | Recommended order |
+|---|---|---:|---:|
+| Re-observation/active sensing | Can feedback remove the need for accurate long open-loop futures? | lower | **first** |
+| Larger/pretrained model | Can broad physical learning represent the local branches directly? | high | second or parallel if infrastructure exists |
+
+A third valid outcome is to publish the monitor, physical cross-task evidence and learned-rollout
+failure as a benchmark for whether world models preserve local causal geometry. None of these paths
+should be implemented as another small Jenga-specific model variation.
 
 ## Canonical artifacts
 

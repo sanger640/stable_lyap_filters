@@ -119,8 +119,15 @@ programs:
    uncertainty as evidence.
 
 The second is the lower-cost next scientific test because it directly attacks compounded rollout
-error without another Jenga-specific architecture sweep. Its protocol still needs to be written
-before implementation.
+error without another Jenga-specific architecture sweep. A detailed rationale and falsification
+logic for both directions is in [WORLD_MODEL.md](WORLD_MODEL.md).
+
+For a re-observation takeover, do not begin with a new model. First freeze a simulator-state
+diagnostic using existing D2 and v0: split H8 into short causal segments, replace D2's imagined
+state with the exact observed state between segments, and compare pair-selection and monitor-stage
+agreement against open-loop D2 on both held-out TRAIN axes. Keep DEV and TEST closed. A positive
+result licenses a rendered-observation version; a negative result at one- or two-step horizons
+points toward the larger/pretrained-model direction instead.
 
 ## Documentation policy
 
