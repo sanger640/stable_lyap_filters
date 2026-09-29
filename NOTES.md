@@ -5946,3 +5946,18 @@ at both periods. Excluding them gives 1.7% / 8.1%; the decision is unchanged. Th
 corpus moves the gripper faster than Jenga (site p50 9 mm/step vs Jenga moving-step p90 4.3), so
 Jenga miss rates should be no higher. Result: `results/jenga/program_b_timestep_audit_result.json`
 (SHA-256 `8e672b6cd2f037b4c59ca1019be0fb10fa1aa2ebcb6d9da0dcaba60a04549619`). This choice is final and is not revisited after any model or Jenga result.
+
+## Program B stage 1 addendum 2 frozen: models, training and G0 measurement (2026-09-29)
+
+`results/jenga/program_b_stage1_addendum_2.json` (SHA-256 `3e0259434fc2d525f3ad3160f8c71dda039f13180993d57b10d1ff171627223e`) fixes the implementation
+before any training beyond throughput benchmarks. The Panda hand and fingers are ACTUATED FIGNet
+objects: predicted like free objects, their nodes carrying the command (target minus the current
+site position, plus the closed state). They share a contact group, so no face-face edges form
+between them; a design view of a real frame found 594 such edges, more than all real contacts.
+Both FIGNet* (5.56M parameters) and a fully connected object-level GNS (1.59M parameters, same
+width, depth and MLP layout) train for 400k steps on 8 x 8 episode-grouped batches with 0.15 mm
+input noise. G0 uses 400 twenty-step windows from the 100 untouched test trajectories: FIGNet*
+median (3 seeds) must beat GNS seed 1 on mean object position error, with mean per-step maximum
+interpenetration below 1 mm. A port change caching one mesh copy per object in the contact loop
+gave a 5.6x faster graph build with bit-identical edges. Measured: FIGNet* 5.85 steps/s (~19 h per
+seed), GNS 29.3 steps/s (~3.8 h).

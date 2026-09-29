@@ -1,0 +1,46 @@
+{
+  "id": "program-b-stage1-addendum-2",
+  "amends": "results/jenga/program_b_stage1_protocol.json (SHA-256 c688e59afc1b36965cab138313a099bfca14b23653dffcb1bb102bd2aa81bcab), after addendum 1",
+  "status": "frozen before any model training beyond 1,000-step throughput benchmarks; GNS seed count (1, revisit after G0) set by the user 2026-09-29; gripper design approved by the user 2026-09-29",
+  "scope": "model implementation, training configuration and exact G0 measurement. No gate, arm or threshold changes.",
+
+  "gripper": {
+    "design": "hand, left finger and right finger are ACTUATED objects: predicted like free objects, their nodes carrying a command feature (commanded target minus the current attachment-site position, 3 numbers; gripper closed state, 1 number) plus a node-type one-hot (static / dynamic / actuated) on every node",
+    "geometry": "each part is the convex hull of the Panda's own collision geoms for that body (hand 102 vertices; each finger shell 45 vertices)",
+    "self_contacts": "the three parts share one group, and FIGNet builds no face-face edges within a group. The 2026-09-29 design view found 594 such edges in a resting frame, more than all real contacts combined.",
+    "inputs_at_rollout": "gripper poses for the first 3 input frames come from proprioception; afterwards they are the model's own predictions; the attachment site is computed from the predicted hand pose",
+    "arm_links": "not modelled (34 of 1,794 new validation contacts)"
+  },
+
+  "port_changes": "vendor/fignet_port.patch: dependency shims; ACTUATED kinematic type; optional per-node extra features; contact groups; the per-pair mesh copy in _cal_connectivity cached once per object (edges verified bit-identical on 9 graphs)",
+
+  "training": {
+    "models": {
+      "fignet": "FIGNet* (mesh-mesh edges left out), latent 128, 10 message-passing rounds, 2-layer MLPs of width 128; 5,561,222 parameters",
+      "gns": "object-level GNS, fully connected, latent 128, 10 rounds, 2-layer MLPs of width 128; 1,593,990 parameters. 'Matched size' = matched width, depth and MLP layout; parameter counts are reported, not equalised."
+    },
+    "timestep": "100 ms (addendum 1 audit)",
+    "input_frames": 3,
+    "noise": "Gaussian position noise sigma = 0.15 mm on moving nodes (the port's 0.03 mm scaled x5 for 5x longer steps); GNS also gets rotation noise sigma = 0.15 mm / 5 cm = 3 mrad",
+    "targets": "clean next-step accelerations (the port's convention, used for both models)",
+    "loss": "per-node MSE on normalized accelerations over all moving nodes (objects and gripper), the port's convention",
+    "batch": "8 random training episodes x 8 random samples (main or branch sequences), deterministic in (seed, batch index)",
+    "optimizer": "Adam, lr = 1e-3 * 0.1 ** (step / 1e6) + 1e-6, 5 normalizer warm-up batches",
+    "steps": 400000,
+    "seeds": {"fignet": [1, 2, 3], "gns": [1]},
+    "checkpoint_used": "the final (400k) checkpoint of every run; no checkpoint selection on any held-out data",
+    "normalizers": "frozen at evaluation (the port's normalizers otherwise keep accumulating when called)"
+  },
+
+  "G0_measurement": {
+    "data": "the 100 generic TEST trajectories (episodes 5100-5199), main sequences only; never used before this measurement",
+    "windows": "rollouts start at model steps t in {2, 22, 42, 62} of every trajectory (400 windows) from 3 true input frames, and run 20 model steps (2 s) with the recorded commands",
+    "position_error": "mean over windows, rollout steps 1-20 and free objects of the Euclidean error of predicted vs true object body positions, in metres",
+    "interpenetration": "for each window and rollout step, the maximum penetration depth among object/object and object/table pairs of the predicted configuration (coal, zero security margin); mean over windows and steps, in mm. The same quantity is reported on the true trajectories for reference.",
+    "pass": "median over the 3 FIGNet* seeds of position_error < the GNS seed-1 value, AND median FIGNet* interpenetration < 1 mm",
+    "also_reported": "per-seed values; rotation error; gripper (hand) position error; step-20 position error; ms per 64-probe x 38-step rollout batch; corpus throughput (7,310 episodes/h with 4 workers)",
+    "fail": "per protocol: switch to an in-repo FIGNet* implementation and repeat G0 once"
+  },
+
+  "compute": "measured with 1,000-step benchmarks: FIGNet* 5.85 steps/s (14 data workers, GPU-bound), ~19 h per seed; GNS 29.3 steps/s, ~3.8 h"
+}
