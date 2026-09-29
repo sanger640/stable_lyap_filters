@@ -1,0 +1,105 @@
+{
+  "id": "program-a-reobservation-feasibility-v1",
+  "status": "frozen before execution (approved by user 2026-09-29)",
+  "purpose": "Cheap go/no-go for Program A (online re-observation) before writing a full protocol. Answers three questions: (T1) does the 09-28 re-anchoring recovery survive when only the executed branch is observed; (T2) does the re-anchored alarm arrive before the physical split; (T3) can nearby-pair selection be done by a fixed action-space rule instead of the learned model.",
+  "research_constraint": "universal, task-label-free counterfactual runtime monitoring",
+  "motivation": {
+    "prior_result": "results/jenga/reobservation_interface_result.json (SHA-256 601e8c2e8423ce42bcc5d06a85a8e8b361719fce94a2b740025c8ba58d52ecaa)",
+    "prior_finding": "re-anchoring every 1-2 steps raised nested final-consequence recall 5.6% -> 77.8%, but candidate recall stayed ~flat (56% -> 60%)",
+    "prior_limitation": "eval/jenga_reobservation_interface.py:reanchored_rollout re-anchors EVERY probe to its OWN recorded physical state. On a robot only the executed branch is observed, so that result is an upper bound that leaks counterfactual truth."
+  },
+  "timescale": "one model/control step = 0.1 s (10 Hz, 50 physics substeps of 2 ms); H8 action = 0.8 s; 30-step hold = 3.0 s; full rollout 38 steps = 3.8 s",
+  "data": {
+    "neighborhood_source": "results/jenga/d4_neighborhood_data_large.npz (256 states x 64 probes x 38 steps; physical traces)",
+    "nested_source": "results/jenga/d3_data (per-group nested widths, 6 levels x 2 endpoints x 38 steps)",
+    "axes": {
+      "episode": "rows whose episode_id is in the first ceil(12%) of numerically sorted ids: 0, 1, 5, 7, 12, 13 (identical to D4 and the 09-28 analysis)",
+      "configuration": "rows whose reset seed is in {108, 109} (identical to results/jenga/d12_coverage_split_protocol.json)",
+      "overlap": "rows in both axes are reported in both and counted once in a separate joint row"
+    },
+    "split": "TRAIN only. DEV and TEST are not opened. The DEV pair-selection crossover (23 topple forks) is NOT reused.",
+    "task_or_failure_labels": "none read. Every reference is the frozen physical monitor's own decision on physical trajectories.",
+    "known_caveat": "the implementation must report whether these TRAIN rows overlap the D2 fit data. Conditions are compared within model, so overlap affects absolute levels, not the between-condition contrasts that the gates use.",
+    "simulation": "none. Physical references are existing recorded traces (restore-then-continue replays, the same reference used 09-28)."
+  },
+  "models": {
+    "dynamics": "frozen D2 StepGraphNet, results/jenga/w6_cw_d2_s1.pt ... s10.pt; no training, no fine-tuning",
+    "monitor": "unchanged frozen components: smooth_vs_branch_alarm, action_branch_partition, boundary_refinement_alarm, whole_trajectory_consequence_alarm, with the exact arguments used in eval/jenga_reobservation_interface.py",
+    "aggregation": "all ten seeds; report median and range; never select a best seed"
+  },
+  "tests": {
+    "T3_model_free_pair_selection": {
+      "question": "Can candidate nearby-action pairs be chosen without any model, so that Program A only has to CONFIRM a split rather than FIND it?",
+      "order": 1,
+      "inputs": "neighborhood actions and physical traces only; no learned model in the rule",
+      "fixed_rule": "Flatten the 64 residual snippets (8 x 3) that generated each neighborhood's probes. Compute principal directions ONCE from all fit-fold snippets (the snippet set is shared across states). Pair p = (argmin, argmax) of the probe projections on principal direction p. Budget B in {3, 8} = the first B directions.",
+      "reference": "physical partition = action_branch_partition on physical traces, evaluated on states where the physical smooth_vs_branch_alarm fires ('physical-candidate states')",
+      "comparators": {
+        "random": "B uniformly random probe pairs, 1000 draws with fixed rng seed 0; report the mean",
+        "d2_open_loop": "the three nearest cross-branch pairs under each D2 seed's open-loop predicted partition (median over seeds)"
+      },
+      "metric": "coverage = fraction of physical-candidate states where at least one selected pair lies on opposite sides of the physical partition. Also report the physical action distance of the covering pair, normalized by the median probe spacing.",
+      "pass": "at B=8 on BOTH axes: coverage >= 0.75, AND coverage >= random + 0.15, AND coverage >= d2_open_loop",
+      "scope_note": "straddling is necessary, not sufficient: v0's boundary test also needs nested refinement between the pair endpoints, which needs new simulation. If T3 passes, that nested follow-up (T3b) gets its own protocol."
+    },
+    "T1_causal_reanchoring": {
+      "question": "Does the re-anchoring recovery survive when only the executed branch is observed?",
+      "order": 2,
+      "intervals_steps": [
+        1,
+        2,
+        4
+      ],
+      "executed_branch": {
+        "neighborhoods": "primary: the probe with the smallest residual-snippet norm (closest to nominal); robustness: 8 probes drawn with rng seed 0, report the median",
+        "nested_groups": "each endpoint of the pair in turn; report both, and gate on their mean"
+      },
+      "conditions": {
+        "open_loop": "38-step D2 rollout from the common start (lower bound; must reproduce the 09-28 interval-38 numbers on the episode axis)",
+        "per_branch_oracle": "the 09-28 construction: each probe re-anchored to its own recorded state (upper bound; must reproduce the 09-28 numbers on the episode axis)",
+        "A1_shared_anchor": "at each segment boundary t, EVERY probe restarts from the executed branch's recorded state truth[e, t-1] and continues with its own remaining actions. This is what a deployed re-observing monitor can actually do.",
+        "A2_offset_anchor": "at each boundary, probe j restarts from truth[e, t-1] + (pred[j, t-1] - pred[e, t-1]), keeping its own predicted divergence. Continuous dims [0:45] and gripper xyz [57:60] are additive; each block's 6D rotation [9:27] is re-orthonormalized (Gram-Schmidt); contact flags [45:57] and gripper-closed [60] are copied from probe j's own prediction."
+      },
+      "metrics": "identical to 09-28: candidate recall / added-positive rate / partition agreement against physical decisions; nested boundary, commitment, persistence and final-alarm recall / added-positive rate against physical decisions",
+      "recovery_fraction": "R = (final recall_condition - final recall_open_loop) / (final recall_per_branch_oracle - final recall_open_loop), computed per seed, then take the median",
+      "pass": "A1 or A2, at some interval in {1, 2, 4}, on BOTH axes: median R >= 0.50, AND median final added-positive rate <= open_loop + 0.05, AND median candidate recall >= open_loop - 0.05",
+      "selection_if_multiple_pass": "longest passing interval; prefer A1 over A2 at equal interval (A1 is simpler and fully causal). Both variants at all intervals are always reported.",
+      "diagnostic_reading": {
+        "R_high": "open-loop drift is a major cause and correcting from the single executed branch is enough",
+        "R_low": "the 09-28 gain came from observing counterfactual truth; Program A is not supported"
+      }
+    },
+    "T2_warning_lead_time": {
+      "question": "Does the causal re-anchored alarm fire before the physical split becomes large, and before the action is over?",
+      "order": 3,
+      "runs_only_if": "T1 passes; uses T1's selected variant and interval k",
+      "physical_split_step": "tau_split = first step at which the physical pair's normalized separation (same normalization and dims [0:45] as gap_rows) reaches 50% of its step-38 value; computed only on groups where the physical final alarm is positive",
+      "causal_alarm_step": "for boundary t in {0, k, 2k, ...}: build trajectories whose steps < t come from the selected re-anchoring and whose steps >= t are an open-loop D2 rollout from the executed-branch anchor at t, then run the unchanged nested monitor. t_alarm = the first t at which the final alarm fires. t = 0 is pure open-loop.",
+      "deadline": "min(tau_split, 8); step 8 is the end of the commanded action",
+      "metrics": "early-warning recall = fraction of physical-positive groups with t_alarm < deadline; lead distribution (deadline - t_alarm) in steps and seconds; also the added-positive rate at t_alarm for physically negative groups",
+      "pass": "on BOTH axes: median early-warning recall >= 0.40, AND among groups where the causal alarm fires at all, >= 50% fire before the deadline",
+      "diagnostic_reading": {
+        "fail_late": "re-observation detects the split but too late to prevent it; its value is post-hoc re-observation (already covered by the existing intervention wrapper), not prevention"
+      }
+    }
+  },
+  "decision": {
+    "T1_fail": "Program A is not supported. Stop scheduling work; move to Program B (pretrained/larger world model), starting with an availability survey.",
+    "T1_pass_T2_fail": "detection works but comes too late. Do not build Program A as a preventive monitor; record the result; Program B is primary.",
+    "T1_pass_T2_pass_T3_pass": "write the full Program A protocol: fixed-rule pair selection + short causal re-anchored confirmation, then T3b nested simulation, then rendered re-observation.",
+    "T1_pass_T2_pass_T3_fail": "Program A only as a confirmation stage; pair selection remains an open problem and is scoped separately before any full protocol."
+  },
+  "discipline": [
+    "T3 and T1 are independent and both always run (T3 first, as it is cheapest); T2 runs only if T1 passes.",
+    "No threshold, interval, anchor variant or executed-branch rule may change after any result is seen.",
+    "Monitor v0 and all TEST results remain frozen; DEV stays closed.",
+    "SIM_HEADLESS is irrelevant (no simulation); keep GPU/CPU workers conservative.",
+    "Record protocol, data and checkpoint SHA-256 in the result file and in NOTES.md."
+  ],
+  "implementation": {
+    "script": "eval/program_a_feasibility.py (new; reuses functions from eval/jenga_reobservation_interface.py, never edits it)",
+    "result": "results/jenga/program_a_feasibility_result.json",
+    "tests_required": "unit tests for A1/A2 anchoring (A1 with executed == every probe equals the per-branch oracle; interval 38 equals open loop), for the 6D re-orthonormalization, and for tau_split on synthetic separations",
+    "reproduction_check": "open_loop and per_branch_oracle on the episode axis must match reobservation_interface_result.json exactly before any new condition is read"
+  }
+}

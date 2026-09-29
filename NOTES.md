@@ -5836,3 +5836,26 @@ checkpoint hashes:
 `d2cad06779201ee07bdf0c3c38d1281f6008966288b2921563ade4a9fa73393c` /
 `5042545bf579a8b7a9f4a3ab8d827aeff09bbde8fa20517141a29d4816c96b97` /
 `d7984994153e18ef9a58e5af4a54ee85eb6db6eb5e36074731ea99fe06957a69`.
+
+## Program A feasibility protocol frozen (2026-09-29)
+
+Before choosing between the post-D21 programs, a cheap read-only go/no-go for Program A
+(online re-observation) was frozen at `results/jenga/program_a_feasibility_protocol.json`
+(SHA-256 `6bd05071c0a5bedb3f1a40cabb2b0ce2c9eef792657a25e6fd505b07ef9dc9a7`). Motivation: the
+09-28 interface analysis re-anchored every probe to its OWN recorded state, which cannot be
+observed for counterfactual probes, so its 5.6% -> 77.8% nested final-recall recovery is an upper
+bound. Three tests, all on held-out TRAIN episode (0, 1, 5, 7, 12, 13) and configuration (reset
+seeds 108, 109) axes with the ten frozen D2 checkpoints, no simulation, training or task labels,
+and DEV/TEST closed:
+
+- T3: fixed principal-direction pairs from the shared residual snippets must straddle the physical
+  partition on >= 75% of physical-candidate states at eight pairs, beat random pairs by 15 points
+  and match D2's own pair choice.
+- T1: re-anchor only from the executed branch (A1 shared anchor, A2 offset anchor) every 1, 2 or 4
+  steps; pass needs median recovery >= 0.50 of the open-loop-to-oracle final-recall gap on both
+  axes, with <= +5 points final added positives and no candidate-recall loss beyond 5 points.
+- T2 (only if T1 passes): early-warning recall >= 0.40 before min(physical half-split, action end),
+  and >= 50% of fired alarms before that deadline.
+
+The implementation must reproduce the 09-28 open-loop and per-branch numbers exactly before any new
+condition is read. Script: `eval/program_a_feasibility.py`.
