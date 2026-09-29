@@ -1,0 +1,121 @@
+diff --git a/fignet/_compat.py b/fignet/_compat.py
+new file mode 100644
+index 0000000..56101ee
+--- /dev/null
++++ b/fignet/_compat.py
+@@ -0,0 +1,30 @@
++"""Replacements for heavy optional dependencies (added for stable_lyap_filters).
++
++torch_scatter.scatter(reduce="sum", dim=0) -> index_add_; pytorch3d's
++corresponding_points_alignment (no weights, no scaling) -> batched Kabsch.
++"""
++from collections import namedtuple
++
++import torch
++
++Alignment = namedtuple("Alignment", ["R", "T", "s"])
++
++
++def scatter(src, index, dim=0, dim_size=None, reduce="sum"):
++    if dim != 0 or reduce != "sum":
++        raise NotImplementedError("only dim=0, reduce='sum' is used by fignet")
++    size = int(index.max()) + 1 if dim_size is None else dim_size
++    out = torch.zeros((size, *src.shape[1:]), dtype=src.dtype, device=src.device)
++    return out.index_add_(0, index.long(), src)
++
++
++def corresponding_points_alignment(X, Y):
++    """Batched rigid fit with X[i] @ R[i] + T[i] ~= Y[i] (pytorch3d convention)."""
++    x_mean, y_mean = X.mean(1, keepdim=True), Y.mean(1, keepdim=True)
++    covariance = (X - x_mean).transpose(1, 2) @ (Y - y_mean)
++    U, _, Vh = torch.linalg.svd(covariance)
++    sign = torch.sign(torch.linalg.det(U @ Vh))
++    E = torch.diag_embed(torch.stack([torch.ones_like(sign), torch.ones_like(sign), sign], -1))
++    R = U @ E @ Vh
++    T = (y_mean - x_mean @ R).squeeze(1)
++    return Alignment(R, T, torch.ones(X.shape[0], dtype=X.dtype, device=X.device))
+diff --git a/fignet/collision.py b/fignet/collision.py
+index 3161706..cefed2f 100644
+--- a/fignet/collision.py
++++ b/fignet/collision.py
+@@ -23,7 +23,14 @@
+ import collections
+ from typing import List, Optional
+ 
+-import hppfcl as fcl
++try:  # hpp-fcl was renamed coal (3.x): Vec3f -> Vec3s, Transform3f -> Transform3s
++    import coal as fcl
++    _Vec3List = fcl.StdVec_Vec3s
++    _Transform = fcl.Transform3s
++except ImportError:
++    import hppfcl as fcl
++    _Vec3List = fcl.StdVec_Vec3f
++    _Transform = fcl.Transform3f
+ import numpy as np
+ import trimesh
+ 
+@@ -93,7 +100,7 @@ class CollisionManager:
+         Raises:
+             ValueError: If transform matrix is not 4x4
+         """
+-        verts = fcl.StdVec_Vec3f()
++        verts = _Vec3List()
+         faces = fcl.StdVec_Triangle()
+         verts.extend(mesh.vertices)
+         faces.extend(
+@@ -113,7 +120,7 @@ class CollisionManager:
+         geom.addSubModel(verts, faces)
+         geom.endModel()
+ 
+-        t = fcl.Transform3f(transform[:3, :3], transform[:3, 3])
++        t = _Transform(transform[:3, :3], transform[:3, 3])
+         o = fcl.CollisionObject(geom, t)
+         # o.getAABB().expand(self._security_margin/2.)
+         # #https://github.com/humanoid-path-planner/hpp-fcl/issues/346
+diff --git a/fignet/graph_networks.py b/fignet/graph_networks.py
+index b86c66d..29acf66 100644
+--- a/fignet/graph_networks.py
++++ b/fignet/graph_networks.py
+@@ -24,7 +24,7 @@ from typing import List, Optional
+ 
+ import torch
+ import torch.nn as nn
+-from torch_scatter import scatter
++from fignet._compat import scatter
+ 
+ from fignet.utils import to_tensor
+ 
+diff --git a/fignet/utils.py b/fignet/utils.py
+index 1ddff2b..96a9bce 100644
+--- a/fignet/utils.py
++++ b/fignet/utils.py
+@@ -28,9 +28,13 @@ import numpy as np
+ import torch
+ import tqdm
+ import trimesh
+-from pytorch3d.ops import corresponding_points_alignment
+-from robosuite.utils import OpenCVRenderer
+-from robosuite.utils.binding_utils import MjRenderContext, MjSim
++from fignet._compat import corresponding_points_alignment
++
++try:  # rendering only
++    from robosuite.utils import OpenCVRenderer
++    from robosuite.utils.binding_utils import MjRenderContext, MjSim
++except ImportError:
++    OpenCVRenderer = MjRenderContext = MjSim = None
+ from scipy.spatial.transform import Rotation as R
+ 
+ 
+diff --git a/tests/test_graph_networks.py b/tests/test_graph_networks.py
+index a3a623f..1c165f1 100644
+--- a/tests/test_graph_networks.py
++++ b/tests/test_graph_networks.py
+@@ -22,7 +22,7 @@
+ 
+ import pytest
+ import torch
+-from torch_scatter import scatter
++from fignet._compat import scatter
+ 
+ from fignet.graph_networks import EncodeProcessDecode
+ 
