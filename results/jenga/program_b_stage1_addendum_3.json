@@ -1,0 +1,12 @@
+{
+  "id": "program-b-stage1-addendum-3",
+  "amends": "results/jenga/program_b_stage1_addendum_2.json, G0_measurement.interpenetration and G0_measurement.pass",
+  "status": "frozen before any G0 test measurement (approved by user 2026-09-29, option B)",
+  "reason": "On the 100 generic VALIDATION trajectories (400 windows, no model), the TRUE MuJoCo trajectories already have a mean per-step maximum penetration of 0.885 mm (median 0.406, p90 1.587): soft contacts let heavy objects sink about a millimetre. The frozen absolute bar (< 1 mm) would leave a perfect model a 0.1 mm margin, so it would test the simulator's contact softness rather than the learned model.",
+  "change": {
+    "interpenetration": "for each window, excess = (mean over rollout steps of the per-step maximum penetration of the predicted configuration) - (the same quantity on the true trajectory for that window); report the mean excess over windows, plus predicted and true values separately",
+    "pass": "median over the 3 FIGNet* seeds of position_error < GNS seed 1, AND median FIGNet* mean EXCESS interpenetration < 1 mm"
+  },
+  "unchanged": "windows, test split, position-error metric, penetration geometry (coal convex signed distance over object/object and object/table pairs), final checkpoints, seed counts",
+  "measurement_note": "coal's triangle-mesh contact depths are per-triangle and do not measure overlap (a 2 mm box overlap reported 0 or 20 mm), so penetration uses coal's convex signed distance, which is exact on test shapes (1, 0, -2, -5 mm). All corpus shapes are convex."
+}

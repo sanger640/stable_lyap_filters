@@ -5961,3 +5961,15 @@ median (3 seeds) must beat GNS seed 1 on mean object position error, with mean p
 interpenetration below 1 mm. A port change caching one mesh copy per object in the contact loop
 gave a 5.6x faster graph build with bit-identical edges. Measured: FIGNet* 5.85 steps/s (~19 h per
 seed), GNS 29.3 steps/s (~3.8 h).
+
+## Program B addendum 3: G0 interpenetration measured as excess over the true trajectory (2026-09-29)
+
+A validation-only smoke test of the G0 script found that the TRUE MuJoCo trajectories already
+have a mean per-step maximum penetration of 0.885 mm (400 validation windows; median 0.41, p90
+1.59). Soft contacts let heavy objects sink about a millimetre, so the frozen absolute < 1 mm bar
+would test contact softness rather than the model. With user approval (option B), before any test
+measurement, `results/jenga/program_b_stage1_addendum_3.json` (SHA-256 `8b65be8f52a3af20ca65d1638dbf0dbaa03f1341c364c7fb668cb6762473e0f9`) changes the
+bar: per window, excess = predicted minus true mean per-step maximum penetration; median FIGNet*
+mean excess must be < 1 mm. Penetration uses coal's convex signed distance (exact on test shapes),
+because coal's triangle-mesh contact depths are per-triangle and do not measure overlap. The
+position-error test is unchanged.
