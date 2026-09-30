@@ -1,0 +1,15 @@
+{
+  "id": "program-b-stage1-addendum-4",
+  "amends": "results/jenga/program_b_stage1_addendum_2.json training.seeds and G0_measurement.pass; adds descriptive G0 metrics",
+  "status": "frozen before any G0 test measurement (requested by the user 2026-09-30)",
+  "change": {
+    "seeds": "G0 is run once with FIGNet* seed 1 against GNS seed 1. FIGNet* seeds 2 and 3 are not trained for now; they run only if the user asks later, and any such run is reported as a separate, later measurement.",
+    "pass": "FIGNet* seed-1 position_error < GNS seed-1 position_error, AND FIGNet* seed-1 mean excess interpenetration < 1 mm (addendum 3)",
+    "descriptive_metrics": {
+      "moving_windows": "windows whose 'nothing moves' error (mean over steps and free objects of the true displacement from the start pose) exceeds 10 mm; report the count and both models' position error on them, beside the 'nothing moves' error",
+      "gripper_contact_objects": "free objects within 5 mm (coal convex distance) of any gripper part in any true frame of the window; report both models' mean position error on those (window, object) pairs, beside the 'nothing moves' error"
+    },
+    "note": "The descriptive metrics do not gate. They were added after a validation-only look showed that the G0 position error is dominated by resting objects: GNS 4.8 mm against 5.6 mm for 'nothing moves' overall, but 16.0 against 23.5 mm on the 64 validation windows with real motion."
+  },
+  "unchanged": "test split, windows, the position-error and interpenetration definitions, final (400k) checkpoints"
+}

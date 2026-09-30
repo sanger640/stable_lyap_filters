@@ -5,7 +5,9 @@ mean object position error over windows, steps and free objects. Interpenetratio
 maximum penetration depth over object/object and object/table pairs (coal convex signed
 distance), averaged over windows and steps. Pass: median FIGNet* (3 seeds) position error below
 GNS seed 1, and median FIGNet* EXCESS interpenetration (predicted minus the true trajectory on the
-same windows; addendum 3) below 1 mm. Final checkpoints only.
+same windows; addendum 3) below 1 mm. Final checkpoints only. Addendum 4: G0 is run with FIGNet*
+seed 1 only against GNS seed 1, and two descriptive (non-gating) breakdowns are reported: error on
+windows where objects really move, and error on objects the gripper touches.
 """
 import argparse
 from datetime import datetime, timezone
@@ -31,11 +33,14 @@ from program_b_train import CHECKPOINTS, load  # noqa: E402
 CORPUS = ROOT / "results/program_b/corpus"
 ADDENDUM = ROOT / "results/jenga/program_b_stage1_addendum_2.json"
 ADDENDUM_3 = ROOT / "results/jenga/program_b_stage1_addendum_3.json"
+ADDENDUM_4 = ROOT / "results/jenga/program_b_stage1_addendum_4.json"
+MOVING_WINDOW = 0.010          # "nothing moves" error above 10 mm
+GRIPPER_CONTACT = 0.005        # FIGNet's contact radius
 OUTPUT = ROOT / "results/jenga/program_b_g0_result.json"
 STARTS = (2, 22, 42, 62)
 HORIZON = 20
 FINAL_STEP = 400_000
-RUNS = [("fignet", 1), ("fignet", 2), ("fignet", 3), ("gns", 1)]
+RUNS = [("fignet", 1), ("gns", 1)]            # addendum 4
 
 
 def convex(mesh):
@@ -78,6 +83,27 @@ class Penetration:
         return worst
 
 
+class GripperContact:
+    """Objects within 5 mm of any gripper part (convex shells) in a true configuration."""
+
+    def __init__(self, objects):
+        self.objects = [convex(pf.object_mesh(o)) for o in objects]
+        self.parts = [convex(pf.gripper_meshes()[p]) for p in pf.GRIPPER_PARTS]
+
+    def __call__(self, poses_xyzw):
+        n = len(self.objects)
+        request, touching = coal.DistanceRequest(), set()
+        parts = [Penetration.transform(poses_xyzw[n + k]) for k in range(len(self.parts))]
+        for i, shape in enumerate(self.objects):
+            pose = Penetration.transform(poses_xyzw[i])
+            for part, part_pose in zip(self.parts, parts):
+                if coal.distance(shape, pose, part, part_pose, request,
+                                 coal.DistanceResult()) <= GRIPPER_CONTACT:
+                    touching.add(i)
+                    break
+        return touching
+
+
 def rotation_error(predicted, truth):
     return (Rotation.from_quat(predicted.reshape(-1, 4)).inv()
             * Rotation.from_quat(truth.reshape(-1, 4))).magnitude().reshape(predicted.shape[:-1])
@@ -92,6 +118,7 @@ def evaluate(model, checkpoint, files, device):
         n = len(objects)
         poses, actions, closed = sequences[0]
         penetration = Penetration(objects)
+        gripper_contact = GripperContact(objects)
         for start in STARTS:
             began = time.time()
             if model == "fignet":
@@ -102,6 +129,8 @@ def evaluate(model, checkpoint, files, device):
             step_seconds.append((time.time() - began) / HORIZON)
             truth = poses[start + 1:start + 1 + HORIZON]
             position = np.linalg.norm(predicted[:, :n, :3] - truth[:, :n, :3], axis=-1)
+            still = np.linalg.norm(truth[:, :n, :3] - poses[start, :n, :3], axis=-1)
+            touched = sorted(set().union(*[gripper_contact(p) for p in truth]))
             truth_pen = float(np.mean([penetration(p) for p in truth]))
             predicted_pen = float(np.mean([penetration(p) for p in predicted]))
             rows.append({
@@ -113,11 +142,25 @@ def evaluate(model, checkpoint, files, device):
                 "interpenetration": predicted_pen,
                 "truth_interpenetration": truth_pen,
                 "excess_interpenetration": predicted_pen - truth_pen,
+                "nothing_moves_error": float(still.mean()),
+                "moving": bool(still.mean() > MOVING_WINDOW),
+                "gripper_contact_objects": touched,
+                "gripper_contact_error": [float(position[:, i].mean()) for i in touched],
+                "gripper_contact_nothing_moves": [float(still[:, i].mean()) for i in touched],
             })
     summary = {key: float(np.mean([r[key] for r in rows]))
                for key in ("position_error", "position_error_step20", "rotation_error",
                            "hand_error", "interpenetration", "truth_interpenetration",
-                           "excess_interpenetration")}
+                           "excess_interpenetration", "nothing_moves_error")}
+    moving = [r for r in rows if r["moving"]]
+    summary["moving_windows"] = len(moving)
+    summary["position_error_moving_windows"] = float(np.mean([r["position_error"] for r in moving])) if moving else None
+    summary["nothing_moves_error_moving_windows"] = float(np.mean([r["nothing_moves_error"] for r in moving])) if moving else None
+    touched = [e for r in rows for e in r["gripper_contact_error"]]
+    touched_still = [e for r in rows for e in r["gripper_contact_nothing_moves"]]
+    summary["gripper_contact_object_windows"] = len(touched)
+    summary["position_error_gripper_contact_objects"] = float(np.mean(touched)) if touched else None
+    summary["nothing_moves_error_gripper_contact_objects"] = float(np.mean(touched_still)) if touched else None
     summary["ms_per_step"] = 1000 * float(np.mean(step_seconds))
     summary["ms_per_64x38_batch"] = summary["ms_per_step"] * 64 * 38
     summary["windows"] = len(rows)
@@ -147,16 +190,18 @@ def main():
     fignet = [v["summary"] for k, v in results.items() if k.startswith("fignet")]
     gns = results.get("gns_s1", {}).get("summary")
     decision = None
-    if len(fignet) == 3 and gns:
+    if fignet and gns:
         median_error = float(np.median([s["position_error"] for s in fignet]))
         median_excess = float(np.median([s["excess_interpenetration"] for s in fignet]))
-        decision = {"fignet_median_position_error": median_error,
+        decision = {"fignet_seeds": len(fignet),
+                    "fignet_median_position_error": median_error,
                     "gns_position_error": gns["position_error"],
                     "fignet_median_excess_interpenetration_mm": 1000 * median_excess,
                     "truth_interpenetration_mm": 1000 * fignet[0]["truth_interpenetration"],
                     "passes": bool(median_error < gns["position_error"] and median_excess < 0.001)}
     result = {"addendum_sha256": hashlib.sha256(ADDENDUM.read_bytes()).hexdigest(),
               "addendum_3_sha256": hashlib.sha256(ADDENDUM_3.read_bytes()).hexdigest(),
+              "addendum_4_sha256": hashlib.sha256(ADDENDUM_4.read_bytes()).hexdigest(),
               "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
               "split": args.split, "episodes": len(files), "starts": STARTS, "horizon": HORIZON,
               "runs": results, "decision": decision}

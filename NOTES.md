@@ -5989,3 +5989,14 @@ The GNS run is unaffected (it never builds a scene). The corpus, timestep audit 
 view are also unaffected. The invalid checkpoints were moved to
 `results/program_b/checkpoints/invalid_fignet_s1_shared_mesh_bug/` (not used). All three FIGNet*
 seeds restart from scratch with unchanged configuration.
+
+## Program B addendum 4: one-seed G0 and descriptive contact metrics (2026-09-30)
+
+At the user's request, `results/jenga/program_b_stage1_addendum_4.json` (SHA-256 `272958b21ea8a662bfa8b3a0e7e64e66afd8aee33943e05d317d60ac8bb4249a`) runs
+G0 once with FIGNet* seed 1 against GNS seed 1; seeds 2 and 3 are not trained for now (the
+queue was stopped after seed 1). Pass: FIGNet* seed-1 position error below GNS, and its mean
+excess interpenetration below 1 mm. Two non-gating breakdowns are added because a validation-only
+look showed the G0 average is dominated by resting objects. Final GNS on validation (400 windows):
+4.81 mm overall against 5.55 mm for "nothing moves"; 16.0 against 23.5 mm on the 64 windows with
+real motion; 11.5 against 12.9 mm on the 455 object-windows the gripper touches. Rotation error
+5.6 degrees, hand 9.5 mm, excess interpenetration 2.9 mm, 10 ms per step.
