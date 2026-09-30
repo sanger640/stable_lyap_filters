@@ -5973,3 +5973,19 @@ bar: per window, excess = predicted minus true mean per-step maximum penetration
 mean excess must be < 1 mm. Penetration uses coal's convex signed distance (exact on test shapes),
 because coal's triangle-mesh contact depths are per-triangle and do not measure overlap. The
 position-error test is unchanged.
+
+## Program B: shared gripper mesh bug invalidates the first FIGNet* run (2026-09-30)
+
+The first FIGNet* seed-1 run (stopped at ~92k steps) was invalid. The port's CollisionManager
+transforms the mesh object it is given in place. The port itself loads fresh meshes per scene,
+but `program_b_fignet.build_scene` passed the process-wide cached gripper meshes, so every scene a
+data worker built moved the shared finger/hand meshes further (0.58 m after a single scene). Graph
+vertices reached ~100 m, the normalizers learned an acceleration scale of ~13 m/step^2 (true
+p99 ~0.06), and validation rollouts exploded (hand error ~7,600 km at 40k steps) while the GNS
+baseline stayed at 5-8 mm. It was found by validation-only monitoring (protocol-permitted), before
+any test data was read. Fix: each scene gets its own copy of the gripper meshes; tests now check
+that building scenes never moves the shared meshes and that graph vertices stay near the table.
+The GNS run is unaffected (it never builds a scene). The corpus, timestep audit and the 3D design
+view are also unaffected. The invalid checkpoints were moved to
+`results/program_b/checkpoints/invalid_fignet_s1_shared_mesh_bug/` (not used). All three FIGNet*
+seeds restart from scratch with unchanged configuration.

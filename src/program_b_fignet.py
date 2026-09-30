@@ -103,7 +103,9 @@ def build_scene(objects, noise_std=NOISE_STD):
         scene._set_obj_properties(name, properties(1.0 / mass, obj["friction"]))
         obj_ids[name] = number
     for offset, part in enumerate(GRIPPER_PARTS):
-        scene.add_object(part, KinematicType.ACTUATED, gripper_meshes()[part])
+        # The port's CollisionManager transforms the mesh it is given in place: never hand it
+        # the cached shared mesh.
+        scene.add_object(part, KinematicType.ACTUATED, gripper_meshes()[part].copy())
         scene._set_obj_properties(part, properties(1.0 / GRIPPER_MASS[part], 1.0))
         scene.set_group(part, "gripper")
         obj_ids[part] = len(objects) + offset

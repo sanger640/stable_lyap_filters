@@ -79,3 +79,26 @@ def test_gns_rollout_with_zero_acceleration_extrapolates_constant_velocity():
     out = pg.rollout(Zero(), meta["scene"]["objects"], poses, actions, closed, 10, 3, "cpu")
     velocity = poses[10, :, :3] - poses[9, :, :3]
     assert np.allclose(out[2, :, :3], poses[10, :, :3] + 3 * velocity, atol=1e-9)
+
+
+@pytest.mark.skipif(not VALIDATION, reason="generic corpus not generated")
+def test_building_scenes_never_moves_the_shared_gripper_meshes():
+    before = {k: m.vertices.copy() for k, m in pf.gripper_meshes().items()}
+    for path in VALIDATION[:2]:
+        meta, sequences = pf.episode_sequences(path)
+        scene, obj_ids = pf.build_scene(meta["scene"]["objects"], noise_std=0.0)
+        pf.make_graph(scene, obj_ids, *sequences[0], 5, noise=False)
+    for key, mesh in pf.gripper_meshes().items():
+        assert np.array_equal(mesh.vertices, before[key]), key
+
+
+@pytest.mark.skipif(not VALIDATION, reason="generic corpus not generated")
+def test_graph_vertices_stay_near_the_table():
+    from fignet.types import NodeType
+    for path in VALIDATION[:3]:
+        meta, sequences = pf.episode_sequences(path)
+        scene, obj_ids = pf.build_scene(meta["scene"]["objects"], noise_std=0.0)
+        poses, actions, closed = sequences[0]
+        for t in (2, 30, 60, 90):
+            graph = pf.make_graph(scene, obj_ids, poses, actions, closed, t, noise=False)
+            assert np.abs(graph.node_sets[NodeType.MESH].position).max() < 2.0
