@@ -6137,3 +6137,7 @@ beat DINOv2 by 30%. V-JEPA 2, the backbone of V-JEPA 2-AC, is about 3x worse tha
 view. From the default camera a block spans about 10 pixels, so this measures the encoders at V1's
 viewpoint only. The MLP probes overfit as in V1. Results: `results/jenga/visual_probe_*.json`
 (V-JEPA 2.1 SHA-256 `ef2a78102009aa37376ab5cecdc6d23121974708edb496b548d081b607341a3b`).
+
+## Visual encoder precision addendum 1 frozen: close fixed camera (2026-10-01)
+
+`results/jenga/visual_encoder_precision_addendum_1.json` (SHA-256 `176c5e84c51b9b514ec0cb9d300f53f78b434503acc23ef43c4349080a2324fa`): the same three encoders and readout on frames from cam_fixed's direction about 3x closer (blocks about 45 px wide). Wrist camera deferred.

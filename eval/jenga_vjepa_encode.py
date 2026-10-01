@@ -67,12 +67,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--encoder", required=True,
                     choices=("dinov2_392", "vjepa2_vitg_384", "vjepa2_1_vitg_384"))
+    ap.add_argument("--frames-dir", default=str(FRAMES))
+    ap.add_argument("--tag", default="", help="suffix for the output directory (e.g. _close)")
     ap.add_argument("--fit-files", type=int, default=60)
     ap.add_argument("--fit-tokens", type=int, default=200_000)
     args = ap.parse_args()
     device = "cuda"
-    files = sorted(FRAMES.glob("ep*_seed*.npz"))
-    out = OUT / f"enc_{args.encoder}"
+    files = sorted(Path(args.frames_dir).glob("ep*_seed*.npz"))
+    out = OUT / f"enc_{args.encoder}{args.tag}"
     out.mkdir(parents=True, exist_ok=True)
     if args.encoder == "dinov2_392":
         from jenga_runtime import DEFAULT_CHECKPOINT, load_world_model

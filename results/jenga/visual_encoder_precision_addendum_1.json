@@ -1,0 +1,9 @@
+{
+  "id": "visual-encoder-precision-addendum-1-close-camera",
+  "amends": "results/jenga/visual_encoder_precision_protocol.json",
+  "status": "frozen before execution (close fixed camera requested by the user 2026-10-01, after the default-camera result)",
+  "change": "frames re-rendered from a fixed free camera with cam_fixed's viewing direction (azimuth 180, elevation -63.43 deg) looking at (0.5, 0, 0.46) from 0.30 m, at 384 x 384: about 3x closer, blocks about 45 px wide instead of 10",
+  "unchanged": "states (identical to V1), encoders (DINOv2 @392, V-JEPA 2 ViT-g @384, V-JEPA 2.1 ViT-g @384), channel-PCA adapter, jenga_v1_probe.py readout and split, decision thresholds",
+  "decision": "same rule: relative position and every gap <= 1.0 mm is promising; >= 30% better than the same encoder family's best default-camera result but > 1 mm is partial; otherwise negative. Also report each encoder's change from its default-camera result.",
+  "not_tested": "a wrist (moving) camera, deliberately deferred: its viewpoint changes with every probe and the gripper occludes the contact"
+}
