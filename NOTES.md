@@ -6017,3 +6017,32 @@ models overlap objects by about 2 mm more than the true physics. Per protocol, t
 failure is an in-repo FIGNet* implementation and one G0 retry; that is not started pending
 review, because both models share the overlap failure, which points at the setup rather than the
 port. Result: `results/jenga/program_b_g0_result.json` (SHA-256 `170830bd8e23d32eeb59048829e5cc45e9d19c403327a9f57b113b5a5b7d720e`).
+
+## Program B reference arm R: monitor decisions under perception error (2026-10-01)
+
+The true Jenga simulator was run from block poses misperceived once per state (per-axis position
+noise sigma = 0, 1, 2.65, 4.44 mm, rotation noise sigma / 37.5 mm, gripper exact), plus 4
+friction cousins (x0.9-1.1) at 2.65 mm, on the Program A held-out TRAIN axes (episode: 36
+neighbourhoods, 38 nested groups; configuration: 52 and 50). sigma = 0 reproduces every recorded
+trace bit for bit (two earlier runs were discarded because the replay's solver warm start drifted
+on later states of the same episode). Recall / added positives against the physical decisions,
+episode | configuration:
+
+| sigma | candidate (64-probe, re-evaluated) | nested boundary | commitment | persistence | final alarm |
+|---|---|---|---|---|---|
+| 1 mm | 0.83/0.17 \| 0.85/0.32 | 0.79 \| 0.78 | 0.50 \| 0.15 | 0.96 \| 0.92 | 0.33 \| 0.17 |
+| 2.65 mm | 0.75/0.25 \| 0.85/0.47 | 0.71 \| 0.75 | 0.17 \| 0.23 | 0.86 \| 0.92 | **0.00 \| 0.08** |
+| 4.44 mm | 0.62/0.25 \| 0.91/0.47 | 0.67 \| 0.75 | 0.25 \| 0.23 | 0.89 \| 0.87 | 0.22 \| 0.25 |
+
+Physical positives: candidates 24 | 33, final 9 | 12 (small samples). Friction cousins at 2.65 mm
+change the final decision on 29% | 24% of groups (33% | 25% of physical positives).
+
+By the frozen decision rule (final recall >= 0.50 at 2.65 mm), **R fails**: under this measure
+perception precision binds for any model, and no tested sigma > 0 keeps final recall >= 0.50
+(required precision < 1 mm). Stage breakdown: boundary and persistence survive; **commitment** is
+what collapses, and +/-10% friction flips it as often as millimetre pose error. Caveat: the nested
+pairs were refined to bracket the boundary at the EXACT state (width 1/32), so a shifted boundary
+can leave them outside it. The final-alarm metric therefore partly measures the state-specificity
+of the probe pairs, not only what a re-searching monitor would see. The re-evaluated 64-probe
+candidate stage keeps 62-91% recall but gains 17-47% added positives. Result:
+`results/jenga/program_b_reference_result.json` (SHA-256 `d122f1e4d596d1f99c182bad40bbd9a98f6d15c454c01b24a507d70014b55b53`).
