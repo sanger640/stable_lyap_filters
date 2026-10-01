@@ -6113,3 +6113,7 @@ execution-error scale, whatever the monitor. Result: `results/jenga/monitor_v1_r
 ## Visual encoder precision protocol frozen (2026-10-01)
 
 `results/jenga/visual_encoder_precision_protocol.json` (SHA-256 `2ed86980f4b8c0740aea1ea07939d8465dbb59e954c454a873ee53fd31236ff6`): frozen DINOv2 (392), V-JEPA 2 ViT-g/384 and V-JEPA 2.1 ViT-g/384 on identical re-rendered V1 frames (8,810 states, true states equal to V1's), each read out by `jenga_v1_probe.py` unchanged (4,096 components). V-JEPA channels are reduced 1408 -> 384 by a channel PCA fitted on training tokens only, so all encoders get the same readout capacity. Decision: relative position and every gap <= 1.0 mm is promising; >= 30% better than DINOv2 but > 1 mm is partial; otherwise negative.
+
+## Uncertainty-aware monitor protocol frozen (2026-10-01)
+
+`results/jenga/uncertainty_monitor_protocol.json` (SHA-256 `f68784156471671795f9164754d55a5fe3c124bdab6817544bf730ceb503a790`). On Jenga DEV with the true simulator, the monitor sees a state misperceived by sigma_p = 1 or 2.65 mm. A naive monitor (all 64 probes from the perceived state) is compared with an uncertainty-aware one (each probe also draws its own state sample from the known perception error model), both with v1's split rule. Useful if, at 2.65 mm, the aware monitor recovers >= 70% of true topple forks while the naive one is below 50%, with quiet alarms <= 25%. Development evidence only.

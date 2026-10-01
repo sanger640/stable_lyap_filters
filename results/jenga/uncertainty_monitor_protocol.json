@@ -1,0 +1,31 @@
+{
+  "id": "uncertainty-aware-boundary-monitor-v1",
+  "status": "frozen before execution (approved by user 2026-10-01)",
+  "question": "Ask 'given my uncertainty about the STATE as well as the ACTION, do the futures split?' instead of 'is the exact state near a boundary?'. Does that recover true-state forks when the monitor only sees a misperceived state, and what does it cost in quiet alarms?",
+  "motivation": "R and the monitor v1 study: a 2.65 mm misperception (about the execution-error scale, 3.2 mm) makes the perceived scene a different scene, and both v0 and v1 lose most of their alarms. Treating perception error as part of the uncertainty is the principled fix; R's pose and friction cousins are already this machinery.",
+  "setting": {
+    "states": "Jenga DEV benchmark, 140 states at 1x (23 topple forks, 89 quiet, 17 nudge forks, 8 small splits, 3 weak); classes are for grading only",
+    "truth": "a state is a fork if its TRUE state is a topple fork under execution noise (the frozen benchmark class)",
+    "perception": "the monitor sees s_hat = s_true + one perception error draw, applied once per state as in R: per-axis block-position noise sigma_p and rotation noise sigma_p / 37.5 mm, gripper exact. sigma_p in {1.0, 2.65} mm (2.65 = V1's measured vision error).",
+    "simulator": "the true Jenga MuJoCo simulator (Track A): this isolates the monitor question from world-model error"
+  },
+  "monitors_compared": {
+    "naive": "64 execution probes, all rolled out from s_hat (what v0/v1 currently do)",
+    "uncertainty_aware": "64 rollouts, probe j using execution snippet j AND its own state sample s_hat + e_j, with e_j drawn from the SAME perception-noise model and sigma_p the monitor is told (the perception system's own error statistics, which are task-label-free)",
+    "decision_rule": "monitor v1's persistent two-mode split (persistent_mode_alarm, unchanged) on non-robot positions at hold 10 and 30, for both monitors. v0 is also scored on the same rollouts, but only its 64-probe candidate stage, since its bisection stage would need new state-dependent simulations."
+  },
+  "metrics": "for each sigma_p and monitor: recall on true topple forks; alarm rate on true quiet states; alarms on nudge forks and small splits; Wilson 95% intervals. Reference: the same rule at the exact state (sigma_p = 0): v1 caught 23/23 forks with 9/89 quiet alarms on DEV.",
+  "decision": {
+    "useful": "at sigma_p = 2.65 mm the uncertainty-aware monitor recovers >= 70% of true topple forks while the naive monitor is below 50%, AND its quiet alarm rate is <= 25%",
+    "interpretation_if_useful": "perception uncertainty can be absorbed by the monitor at a measured cost in conservatism; a deployable counterfactual monitor need not wait for sub-millimetre perception. Next would be a fresh held-out panel and a world-model version.",
+    "interpretation_if_not": "absorbing uncertainty makes the futures so spread that the split test either fires everywhere or loses forks; perception precision remains binding"
+  },
+  "scope_and_cost": {
+    "development_only": "DEV was used to build v0 and v1, so any result here is development evidence. A frozen fresh panel is required before any adoption claim.",
+    "simulation": "140 states x 2 sigma_p x 2 monitors x 64 rollouts x 38 steps (about 36k rollouts) on <= 4 CPU workers, about 30-45 minutes; it can run while the GPU does the encoder probe"
+  },
+  "implementation": {
+    "script": "eval/uncertainty_monitor_dev.py (new): replays each DEV state exactly as the benchmark generator did, applies the noise draws (seeded per state, sigma and probe), simulates, and scores",
+    "tests": "sigma_p = 0 reproduces the benchmark's cached endings exactly; per-probe state samples are independent and seeded; the naive monitor uses one shared s_hat for all 64 probes"
+  }
+}
