@@ -6162,3 +6162,23 @@ attention head) would be needed to bound the encoders themselves. Breakdown:
 ## Visual encoder precision addendum 2 frozen: spatial keypoint readout (2026-10-01)
 
 `results/jenga/visual_encoder_precision_addendum_2.json` (SHA-256 `1c92f20cfdfac4b7574d8bacceaee6aada6dff49a9282e79a1ea10fc49231c32`): one identical keypoint head (coordinate channels, 3 residual conv blocks, 16 spatial-softmax keypoints, MLP to the 27 pose numbers; 60 fixed epochs, seed 0, no held-out selection) on all six encoder/camera grids. Same split and decision thresholds.
+
+## Spatial readout: the readout was the bottleneck; best is 2.5 mm, still above 1 mm (2026-10-01)
+
+Addendum 2 (one identical keypoint head, 60 fixed epochs, same split). Held-out relative position /
+gaps (grasped-left, grasped-right, left-right) / absolute / orientation:
+
+| encoder | default camera | close camera |
+|---|---|---|
+| DINOv2 | 3.49 mm / 4.05, 3.76, 1.11 / 4.5 mm / 0.85 deg | **2.54 mm / 3.21, 3.26, 1.32 / 3.2 mm / 0.85 deg** |
+| V-JEPA 2 ViT-g | 5.12 / 4.85, 4.81, 1.65 / 6.4 / 1.78 | 2.74 / 2.73, 2.83, 1.29 / 3.6 / 1.13 |
+| V-JEPA 2.1 ViT-g | 4.16 / 3.70, 4.54, 1.46 / 5.2 / 1.36 | 3.36 / 3.46, 3.56, 1.59 / 4.2 / 1.20 |
+
+**Decision: partial.** The best (DINOv2, close camera, 2.54 mm) beats the best linear readout (4.08 mm)
+by 38%, but no run reaches 1 mm. With a spatial readout the close camera now helps every encoder
+(it hurt the linear readout), absolute error falls from 19-30 mm to 3-6 mm, and orientation
+reaches 0.85 deg. V-JEPA 2 and 2.1 do not beat DINOv2. The free-block gap (left-right) reaches
+1.1-1.6 mm; the gaps to the grasped block stay near 3 mm. Training loss ends near 0.001-0.002
+(normalized), so held-out error is dominated by generalization to new episodes, not by fitting. Result:
+`results/jenga/visual_spatial_readout.json` (SHA-256 `a4f3ad258e4aff70ea4137dd3ff9188564bd8e53e11acd19fdd408a11aca9c83`). About 2.5 mm is the realistic
+frozen-encoder precision here, which is the sigma_p = 2.65 mm level option 2 tests.
