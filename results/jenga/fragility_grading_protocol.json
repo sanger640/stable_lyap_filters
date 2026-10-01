@@ -1,0 +1,32 @@
+{
+  "id": "fragility-at-own-uncertainty-v1",
+  "status": "frozen before execution (approved by user 2026-10-01)",
+  "research_goal": "A robot intuitive physics engine in the sense of Battaglia, Hamrick & Tenenbaum (2013): judge how fragile a situation is at the agent's OWN uncertainty scale, from rough perception, without millimetre-exact state.",
+  "question": "Is the uncertainty-aware monitor's 'be careful' signal CALIBRATED? Option 2 graded it against exact-state topple forks, but an agent with sigma of state uncertainty should be graded against fragility at that same scale. Does the aware monitor, which sees only a misperceived state, agree with the true fragility of the scene at its own uncertainty radius?",
+  "definitions": {
+    "fragility_truth": "For a DEV state s and scale sigma: run the aware sampling centred on the TRUE state, so probe j uses execution snippet j and state sample s + e_j with e_j from the frozen perception-noise model (per-axis block position sigma, rotation sigma / 37.5 mm, gripper exact). The state is fragile at sigma if monitor v1's persistent split rule alarms on those 64 rollouts. No task label enters.",
+    "truth_repeatability": "Fragility truth is computed twice per (state, sigma) with independent sample seeds (A and B). A-vs-B agreement is the ceiling any monitor can reach given finite sampling.",
+    "monitors_graded": "the option-2 rollouts, unchanged: aware (centred on the misperceived state s_hat, its own independent samples) and naive (all probes from s_hat), plus exact-state v1 (sigma 0). Their decisions are compared with fragility truth seed A."
+  },
+  "setting": "Jenga DEV, 140 states at 1x, sigma in {1.0, 2.65} mm, true MuJoCo simulator with the same bit-identical stage-0 chain replay as option 2 (sigma 0 must reproduce the cache exactly). The truth seeds are disjoint from option 2's perception and probe seeds.",
+  "metrics": {
+    "per_sigma_and_monitor": "agreement with truth A; recall of truth-fragile states; alarm rate on truth-robust states; Cohen's kappa; Wilson 95% intervals",
+    "ceiling": "truth A vs truth B agreement and kappa",
+    "relation_to_exact_forks": "cross-tabulation of truth-fragile against the exact-state benchmark classes (topple fork, nudge fork, small split, quiet). In particular: of option 2's 42 quiet-state alarms at 2.65 mm, how many are truth-fragile at 2.65 mm?",
+    "continuous": "minority size at hold 30 for every condition, to show how graded fragility compares across monitors"
+  },
+  "decision": {
+    "calibrated": "at sigma = 2.65 mm, the aware monitor's kappa with truth A is >= 0.8 x the truth A-vs-B kappa, AND its recall of truth-fragile states is >= 0.80 with an alarm rate on truth-robust states <= 0.20",
+    "also_reported_at_1mm": "the same quantities at sigma = 1.0 mm (not gated)",
+    "if_calibrated": "rough perception suffices to judge fragility at the agent's own uncertainty scale: the monitor's caution under uncertainty is warranted, not noise. The headline becomes 'judge fragility at your own uncertainty scale', and the next step is a fresh held-out panel and a learned or identified engine.",
+    "if_not": "report where the aware monitor disagrees with true fragility (missed fragile states, or alarms on robust ones) and whether the naive or exact-state monitor tracks it better"
+  },
+  "scope": {
+    "development_only": "DEV was used to build v0 and v1 and to run option 2, so this is development evidence; any adoption claim needs a fresh frozen panel.",
+    "cost": "140 states x 2 sigma x 2 truth seeds x 64 rollouts (~36k) plus the stage-0 chain replay: about 2.5 h on <= 4 CPU workers; GPU idle"
+  },
+  "implementation": {
+    "script": "eval/fragility_grading_dev.py (new): reuses uncertainty_monitor_dev's replay, rollout and noise functions; simulates truth_<sigma>_<seed>; scores against the existing results/program_b/uncertainty traces",
+    "tests": "truth samples are centred on the true state (no perception draw); seeds A and B differ from each other and from option 2's; sigma 0 reproduces the cache exactly"
+  }
+}

@@ -6204,3 +6204,7 @@ at almost no cost in quiet alarms (16% to 17%). At 2.65 mm it becomes a conserva
 spans a boundary" alarm. The naive monitor degrades less on these DEV classes than R's retention
 suggested; R measured agreement with each state's own exact decision on few positives (4 per axis).
 Development evidence only. Result: `results/jenga/uncertainty_monitor_result.json` (SHA-256 `1e37e15693ef8b05b0617ecf8e07ee2f557a473fc552c1181f058e16c91fe8f4`).
+
+## Fragility-grading protocol frozen (2026-10-01)
+
+`results/jenga/fragility_grading_protocol.json` (SHA-256 `dae592bdb257bd75e497ed0ac33d68da779924145b3694cb326ce9b672d3c74c`): ground-truth fragility at the agent's own uncertainty scale (aware sampling centred on the TRUE DEV state, sigma 1 and 2.65 mm, two independent seeds), against which the option-2 aware, naive and exact-state monitors are graded. Calibrated if, at 2.65 mm, aware kappa >= 0.8 x truth A-vs-B kappa, recall of truly fragile states >= 0.80, and alarms on truly robust states <= 0.20.
