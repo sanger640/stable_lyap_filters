@@ -6109,3 +6109,7 @@ Boundary proximity is local, so any monitor scored against its own exact-state d
 alarms at that error scale. This qualifies R's reading: perception error must be well below the
 execution-error scale, whatever the monitor. Result: `results/jenga/monitor_v1_result.json`
 (SHA-256 `57eb529155f2786b840de5c249236f8b98ff2321fa8342e552208b61dfad3cd3`).
+
+## Visual encoder precision protocol frozen (2026-10-01)
+
+`results/jenga/visual_encoder_precision_protocol.json` (SHA-256 `2ed86980f4b8c0740aea1ea07939d8465dbb59e954c454a873ee53fd31236ff6`): frozen DINOv2 (392), V-JEPA 2 ViT-g/384 and V-JEPA 2.1 ViT-g/384 on identical re-rendered V1 frames (8,810 states, true states equal to V1's), each read out by `jenga_v1_probe.py` unchanged (4,096 components). V-JEPA channels are reduced 1408 -> 384 by a channel PCA fitted on training tokens only, so all encoders get the same readout capacity. Decision: relative position and every gap <= 1.0 mm is promising; >= 30% better than DINOv2 but > 1 mm is partial; otherwise negative.

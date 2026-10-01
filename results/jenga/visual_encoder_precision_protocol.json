@@ -1,0 +1,20 @@
+{
+  "id": "visual-encoder-precision-v1",
+  "status": "frozen before execution (option 1 started at the user's request 2026-10-01; thresholds set by the agent before any probe result and reported to the user)",
+  "question": "Can a frozen modern visual world-model encoder (V-JEPA 2 / V-JEPA 2.1) represent Jenga block geometry precisely enough for counterfactual boundary monitoring? R showed decisions already degrade at 1 mm of pose error.",
+  "data": "results/program_b/vjepa/frames_384: the V1 chunk-start states (persistent-branch-margin panel episodes, reset seeds 100-109; 8,810 states, true 61-D states identical to results/jenga/v1_enc_392), one frame per state rendered 384 x 384 from the default camera",
+  "encoders": {
+    "dinov2_392": "the bundled world model's frozen DINOv2 encoder on the same frames resized to 392 (28 x 28 patches, 384 channels): the V1 baseline re-run on identical frames",
+    "vjepa2_vitg_384": "V-JEPA 2 ViT-g/16 at 384 (24 x 24 patches, 1408 channels), the family V-JEPA 2-AC is built on",
+    "vjepa2_1_vitg_384": "V-JEPA 2.1 ViT-g/16 at 384, trained for dense features"
+  },
+  "adapter": "V-JEPA inputs are the frame repeated twice (tubelet size 2), ImageNet-normalized. Its 1408 channels per patch are reduced to 384 by a channel PCA fitted on tokens from TRAINING files only, so V1's width-dependent PCA row budget gives every encoder the same 4,096-component readout capacity. DINOv2 is used natively.",
+  "readout": "eval/jenga_v1_probe.py UNCHANGED: --frames 1 --components 4096, ridge 1e-3, linear and MLP probes, validation = first 12% of sorted episode:seed ids (identical split for every encoder)",
+  "metrics": "held-out geometry from the linear probe: relative block position (common-mode removed, mm), block-to-block gap errors (mm), absolute position (mm), orientation (deg). The MLP is reported but not used for the decision (it overfit in V1).",
+  "decision": {
+    "promising": "an encoder reaches relative position <= 1.0 mm AND every gap error <= 1.0 mm: proceed to step 2 (ending separation) and consider V-JEPA 2-AC predictor fine-tuning",
+    "partial": "best V-JEPA beats DINOv2 by >= 30% on relative position but stays above 1.0 mm: report as an improvement insufficient for the R requirement; step 2 is optional",
+    "negative": "otherwise: frozen visual world-model encoders at this camera and resolution do not carry the required geometry; do not fine-tune the predictor for this purpose"
+  },
+  "scope_note": "From the default camera a 25 mm block spans about 10 pixels and a 16-pixel V-JEPA patch about 4 cm. This tests the encoders under the same viewpoint V1 used; a closer or wrist camera is a separate question."
+}
