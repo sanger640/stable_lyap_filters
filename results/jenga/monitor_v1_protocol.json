@@ -1,0 +1,73 @@
+{
+  "id": "monitor-v1-persistent-split",
+  "status": "frozen before execution (approved by user 2026-10-01)",
+  "purpose": "Test whether a much simpler, older monitor (a local, atlas-free form of basin dissent) matches Regime Monitor v0 on exact physics while being more robust to state and friction error, and while transferring to tasks where v0 failed.",
+  "motivation": {
+    "v0_audit": "NOTES 2026-10-01: v0's 64-probe candidate stage does most of the detection (95% fork recall, 15.9% quiet alarms); the commitment stage does most of the filtering, but 44% of topple-fork pairs score within +/-5 BIC units of its zero threshold, so recall swings 36-87% with the threshold. R showed commitment collapsing at 1 mm pose error and +/-10% friction. On the U1 cross-task panel, v0 caught 0/12 pushing and 0/11 insertion forks, failing at commitment.",
+    "lineage": "FTLE (state growth; failed on Jenga) -> global basin atlas + dissent count (toy pass, Jenga fail) -> per-state persistent two-mode split (this rule) -> v0 (added GP split, pair search, bisection, commitment, persistence)",
+    "prior_evidence": "the same rule on the 2026-09-17 fresh holdout with physics endings and a shared hold: 96% [79-99] fork recall at 3% quiet alarms (1x)"
+  },
+  "monitor_v1": {
+    "code": "src/counterfactual_monitor.py:persistent_mode_alarm with src/outcome_modes.py:two_mode_test and same_partition, UNCHANGED (file hashes recorded at freeze)",
+    "probes": "the same 64 execution-error probes, H = 8 and a shared 30-step hold, as v0 on each benchmark",
+    "endings": "positions (mm) of every non-robot rigid body, anonymous and in fixed slot order, at hold steps 10 and 30. No velocity, contact, rotation, robot or task feature.",
+    "test_at_each_time": "best two-group split along the endings' first principal direction; it counts only if BIC prefers two Gaussians over one AND Ashman's D > 2 AND the smaller group has >= 2 probes",
+    "persistence": "the same partition at hold 10 and hold 30, allowing at most one probe to switch sides",
+    "alarm": "a counted split at both times with the same partition",
+    "constants": {
+      "probes": 64,
+      "times": [
+        10,
+        30
+      ],
+      "ashman_d": 2,
+      "minority": 2,
+      "switch_tolerance": 1
+    },
+    "reported_with_each_decision": "minority size k at hold 30, Ashman's D, BIC difference, and the binomial sizing statement (with n = 64 and minority >= 2, an outcome reached by a fraction p of probes is detected with probability 1 - (1-p)^64 - 64 p (1-p)^63: 0.37 at p = 2%, 0.84 at 5%, 0.99 at 10%)",
+    "features_scope": "Track A (exact simulator state). A deployable version reads the same endings from perception or a world model; that is out of scope here."
+  },
+  "data": {
+    "E1_dev": "Jenga DEV benchmark: 140 states, 1x scale, endings from results/jenga/holdout_stage0_cache.npz (block positions at hold steps 10 and 30); classes from results/jenga/bench/jenga_bench.npz dev_classes, grading only",
+    "E2_robustness": "Program B reference arm R traces (results/program_b/reference): 80 held-out TRAIN neighbourhoods on the episode and configuration axes, sigma in {0, 1, 2.65, 4.44} mm plus 4 friction cousins at 2.65 mm; no labels used",
+    "E3_test_panels": {
+      "jenga_test": "214 states, 1x; endings from results/jenga/holdout3_stage0_cache.npz; 84 topple forks, 113 quiet (grading only)",
+      "upright_push_test": "results/panda_block_push/fresh_test (56 states; topple forks vs stable cohorts, grading only)",
+      "u1_test": "results/contact_benchmarks/u1 pushing and insertion TEST states (episodes 15-29); consequential forks vs quiet as graded for v0"
+    },
+    "caveat": "E3 panels were opened once to evaluate v0, and their labels are known. v1's rule predates them (2026-09-17) and is frozen here, before any v1 score on them is computed. This is a separately declared evaluation of a different monitor, not a re-selection of v0."
+  },
+  "evaluation": {
+    "E1_dev": {
+      "compare": "v1 vs the frozen v0 DEV result (topple forks 18/23 = 78%; quiet 7/89 = 7.9%)",
+      "report": "recall on topple forks, alarm rate on quiet, nudge-fork and small-split alarm counts, Wilson 95% intervals, per-state minority sizes"
+    },
+    "E2_robustness": {
+      "reference": "v1's own decision at sigma = 0 on the same states (no labels)",
+      "metrics": "retention = fraction of sigma-0 v1 alarms still raised; added = fraction of sigma-0 v1 quiet states that now alarm; cousin disagreement = fraction of states where the five 2.65 mm cousins disagree. Both axes reported separately.",
+      "v0_context": "descriptive comparison with R's v0 components on the same states (candidate re-check, nested final), noting that v0 cannot be re-run end-to-end on R without new bisection simulations"
+    },
+    "E3_test": {
+      "runs": "exactly once, after E1 and E2 pass, on all three panels",
+      "report": "recall / quiet alarms with Wilson intervals, beside v0's frozen numbers (Jenga 55/84, 4/113; upright push 14/20, 0/15; U1 pushing 0/12, 3/108; U1 insertion 0/11, 0/109)"
+    }
+  },
+  "adoption_rule": {
+    "gate_1_dev": "v1 DEV topple-fork recall >= 0.73 (v0 minus 5 points) AND quiet alarm rate <= 0.10 (v0 plus about 2 points)",
+    "gate_2_robustness": "at sigma = 2.65 mm, on BOTH axes: retention >= 0.70 AND added <= 0.10",
+    "gate_3_test": "Jenga TEST recall >= 0.55 with quiet alarms <= 0.05, AND upright-push TEST recall >= 0.60 with <= 2/15 stable alarms. U1 is reported descriptively (v0 scored 0 there).",
+    "order": "E1 and E2 first; E3 only if gates 1 and 2 pass. Stop at the first failed gate.",
+    "if_adopted": "v1 becomes the primary monitor and v0 is retained as a stricter variant for comparison",
+    "if_not": "v0 stays primary; v1 is reported as a simpler but weaker alternative with its measured trade-off"
+  },
+  "discipline": [
+    "No change to v1's code or constants after freezing; no per-benchmark settings.",
+    "Labels are for grading only and never enter the rule.",
+    "The v0 manifest and TEST results remain frozen; this protocol adds a new monitor and changes nothing about v0.",
+    "Every number is traceable to cached physics files whose SHA-256 is recorded in the result."
+  ],
+  "implementation": {
+    "script": "eval/monitor_v1_eval.py (new): loads each benchmark's cached endings, applies persistent_mode_alarm unchanged, writes results/jenga/monitor_v1_result.json",
+    "tests": "endings extraction picks hold steps 10 and 30 and non-robot positions on each benchmark layout; a synthetic two-cluster set alarms and a smooth spread does not; the v1 decision on the 2026-09-17 holdout cache reproduces the recorded 'old rule' result exactly before any new score is computed"
+  }
+}

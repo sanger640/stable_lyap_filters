@@ -6069,3 +6069,13 @@ within +/-5 of the zero threshold (median +2.7), and shifting the threshold by +
 recall from 36% to 87%. The "zero penalized evidence" decision is therefore a knife edge, which
 explains R's sensitivity to 1 mm pose error and +/-10% friction (and D18's tail sensitivity).
 3 of the 4 quiet alarms pass by a 2-of-3 pair majority, with one pair below zero.
+
+## Monitor v1 protocol frozen: the persistent two-mode split against v0 (2026-10-01)
+
+`results/jenga/monitor_v1_protocol.json` (SHA-256 `90cf852e937c346b3cd704e7bbce2df6e7d270199c981cf4143401c543ff400b`) tests the older, much simpler rule as
+a candidate primary monitor. Over the same 64 probes, it requires a two-group split of the
+object-position endings (BIC, Ashman D > 2, minority >= 2) at hold 10 and 30 with the same
+partition, using `persistent_mode_alarm` unchanged. Gates: E1 DEV recall >= 73% with quiet <= 10%;
+E2 robustness on R's traces at 2.65 mm (retain >= 70% of its own alarms, <= 10% new alarms, both
+axes); E3 run once on Jenga TEST (>= 55%, <= 5% quiet), upright-push TEST (>= 60%, <= 2/15 stable),
+and U1 (descriptive; v0 scored 0/12 and 0/11 there).
