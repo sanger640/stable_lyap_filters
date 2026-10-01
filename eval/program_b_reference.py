@@ -151,13 +151,19 @@ def simulate_source(job):
             if step in targets:
                 row = targets[step]
                 snapshot = sim.snapshot()
-                # sigma_0 runs LAST so the solver warm start the replay continues from is the
-                # unperturbed probe's, exactly as in the D4 generator (else later states drift).
-                for name, sigma, cousin in conditions()[1:] + conditions()[:1]:
+                # The D4 generator ran its 64 probes back to back (each starting from the previous
+                # probe's solver warm start) and then continued the replay from the last probe's
+                # warm start. Reproduce that exactly: sigma_0 first, remember its final warm
+                # start, run the perturbed conditions, then restore both before continuing.
+                warm_end = None
+                for name, sigma, cousin in conditions():
                     result[f"n{row}_{name}"] = counterfactuals(
                         sim, lambda: sim.restore(snapshot), neighbourhoods["actions"][row],
                         (0, row), sigma, factors[cousin]).astype(np.float32)
+                    if name == "sigma_0":
+                        warm_end = sim.data.qacc_warmstart.copy()
                 sim.restore(snapshot)
+                sim.data.qacc_warmstart[:] = warm_end
                 if len(result) == len(rows) * len(conditions()):
                     break
             sim.execute(action)
