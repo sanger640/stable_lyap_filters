@@ -6141,3 +6141,20 @@ viewpoint only. The MLP probes overfit as in V1. Results: `results/jenga/visual_
 ## Visual encoder precision addendum 1 frozen: close fixed camera (2026-10-01)
 
 `results/jenga/visual_encoder_precision_addendum_1.json` (SHA-256 `176c5e84c51b9b514ec0cb9d300f53f78b434503acc23ef43c4349080a2324fa`): the same three encoders and readout on frames from cam_fixed's direction about 3x closer (blocks about 45 px wide). Wrist camera deferred.
+
+## Close fixed camera does not help the V1 readout (2026-10-01)
+
+Addendum 1 (blocks about 45 px wide instead of 10) made every encoder WORSE. Held-out linear-probe
+relative position / gaps / absolute: DINOv2 5.41 mm / 5.6-10.4 mm / 85.5 mm (default 4.08 / 3.6-4.2 /
+29.6); V-JEPA 2 15.5 / 16.2-34.2 / 282 (default 11.8 / 12.7-24.3 / 201); V-JEPA 2.1 5.49 / 5.6-9.3 /
+76.6 (default 4.15 / 2.3-3.9 / 18.5). **Decision: negative.**
+
+Descriptive check (post hoc): 7.8% of states have a block outside the close view (430 = one
+pre-settling first chunk per file, plus 257 with a lifted block). But on the 901/968 held-out states
+with all three blocks in view, errors are unchanged (DINOv2 5.41 mm close vs 4.14 default; V-JEPA 2.1
+5.54 vs 4.24), so field of view is not the cause. The likely limit is V1's readout: one global PCA
+of all patch tokens plus a single linear map. When the blocks and gripper fill the frame, absolute
+position loses its scene anchors and precision falls. These numbers bound what this readout
+extracts, not necessarily what the encoders contain; a spatial readout (per-patch keypoint or
+attention head) would be needed to bound the encoders themselves. Breakdown:
+`results/jenga/visual_probe_in_view_breakdown.json` (SHA-256 `6338783949fc82a42cb8abb8a52aa84ee9ccb1235ff45ec07188384dfc604751`).
