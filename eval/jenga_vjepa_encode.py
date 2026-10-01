@@ -38,7 +38,7 @@ def load_vjepa(name, device):
     import src.hub.backbones as bb
     bb.VJEPA_BASE_URL = "https://dl.fbaipublicfiles.com/vjepa2"
     encoder, _ = getattr(bb, name)(pretrained=True)
-    return encoder.to(device).eval().half()
+    return encoder.to(device).eval()   # fp32 weights; autocast at inference (2.1's RoPE upcasts q/k)
 
 
 def vjepa_tokens(encoder, frames, device, batch=8):
@@ -46,8 +46,8 @@ def vjepa_tokens(encoder, frames, device, batch=8):
     for first in range(0, len(frames), batch):
         x = torch.as_tensor(frames[first:first + batch], device=device).permute(0, 3, 1, 2).float() / 255
         x = x[:, :, None].repeat(1, 1, 2, 1, 1)                     # (B, 3, T=2, H, W)
-        x = ((x - IMAGENET_MEAN.to(device)) / IMAGENET_STD.to(device)).half()
-        with torch.inference_mode():
+        x = (x - IMAGENET_MEAN.to(device)) / IMAGENET_STD.to(device)
+        with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
             out.append(encoder(x).float())
     return torch.cat(out)                                           # (N, 576, 1408)
 
