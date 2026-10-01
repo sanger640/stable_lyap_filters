@@ -6117,3 +6117,23 @@ execution-error scale, whatever the monitor. Result: `results/jenga/monitor_v1_r
 ## Uncertainty-aware monitor protocol frozen (2026-10-01)
 
 `results/jenga/uncertainty_monitor_protocol.json` (SHA-256 `f68784156471671795f9164754d55a5fe3c124bdab6817544bf730ceb503a790`). On Jenga DEV with the true simulator, the monitor sees a state misperceived by sigma_p = 1 or 2.65 mm. A naive monitor (all 64 probes from the perceived state) is compared with an uncertainty-aware one (each probe also draws its own state sample from the known perception error model), both with v1's split rule. Useful if, at 2.65 mm, the aware monitor recovers >= 70% of true topple forks while the naive one is below 50%, with quiet alarms <= 25%. Development evidence only.
+
+## Visual encoder precision: V-JEPA 2/2.1 do not beat DINOv2; all far above 1 mm (2026-10-01)
+
+Frozen protocol `visual_encoder_precision_protocol.json`. Same 8,810 re-rendered V1 frames (384 px,
+default camera, true states identical to V1), same `jenga_v1_probe.py` readout (linear, 4,096
+components, identical split). Held-out linear-probe geometry:
+
+| encoder | relative position | gaps (grasped-left / grasped-right / left-right) | absolute | orientation |
+|---|---|---|---|---|
+| DINOv2 @392 | 4.08 mm | 4.09 / 4.20 / 3.59 mm | 29.6 mm | 2.10 deg |
+| V-JEPA 2 ViT-g @384 | 11.82 mm | 12.66 / 13.30 / 24.34 mm | 200.9 mm | 4.75 deg |
+| V-JEPA 2.1 ViT-g @384 | 4.15 mm | 3.55 / 3.92 / 2.29 mm | 18.5 mm | 2.34 deg |
+
+The channel PCA (1408 -> 384) kept 98.1% / 99.5% of token variance. DINOv2's PCA row budget allowed
+3,320 components, the V-JEPA runs 4,096. The DINOv2 re-run (4.08 mm) is close to V1's 3.65 mm on
+its own renders. **Decision: negative.** No encoder reaches <= 1 mm, and the best V-JEPA (2.1) does not
+beat DINOv2 by 30%. V-JEPA 2, the backbone of V-JEPA 2-AC, is about 3x worse than DINOv2 at this
+view. From the default camera a block spans about 10 pixels, so this measures the encoders at V1's
+viewpoint only. The MLP probes overfit as in V1. Results: `results/jenga/visual_probe_*.json`
+(V-JEPA 2.1 SHA-256 `ef2a78102009aa37376ab5cecdc6d23121974708edb496b548d081b607341a3b`).
