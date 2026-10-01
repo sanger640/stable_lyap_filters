@@ -1,0 +1,12 @@
+{
+  "id": "visual-encoder-precision-addendum-2-spatial-readout",
+  "amends": "results/jenga/visual_encoder_precision_protocol.json (after addendum 1)",
+  "status": "frozen before execution (spatial readout requested by the user 2026-10-01)",
+  "reason": "The global-PCA linear readout got WORSE when the blocks got bigger in the image (addendum 1), so it may be the bottleneck rather than the encoders. A spatial readout reads each patch's features in place, which is the standard way to extract precise geometry from a frozen encoder.",
+  "inputs": "the already-encoded patch-token grids (DINOv2 28x28x384; V-JEPA 2 and 2.1 24x24x384 after the frozen channel PCA), for both the default and the close camera: 6 runs",
+  "head": "identical for every run: append two normalized (x, y) coordinate channels; 1x1 conv to 128; three residual 3x3 conv blocks (128 channels, GELU, GroupNorm 8); 16 keypoint heatmaps with a spatial softmax giving expected (x, y) per keypoint plus 16 softmax-weighted 128-D features; a 2-layer MLP (512 hidden) to the 27 block-pose numbers (9 positions, 18 rotation-6D). About 1M parameters.",
+  "training": "targets z-scored on training states; MSE; AdamW lr 1e-3, weight decay 1e-4, cosine decay; batch 64; exactly 60 epochs; seed 0; no early stopping and no checkpoint selection on held-out data",
+  "split": "identical to jenga_v1_probe: the first 12% of sorted episode:seed ids are held out",
+  "metrics": "held-out geometry_errors from jenga_v1_probe (relative position, three gaps, absolute position, orientation) on the 27 predicted numbers; contacts and gripper are not predicted and not reported",
+  "decision": "promising if any run reaches relative position <= 1.0 mm AND all three gaps <= 1.0 mm; partial if the best spatial run beats the best linear run (4.08 mm, DINOv2 default) by >= 30% but stays above 1 mm; otherwise negative. Both cameras are reported regardless."
+}

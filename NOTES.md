@@ -6158,3 +6158,7 @@ position loses its scene anchors and precision falls. These numbers bound what t
 extracts, not necessarily what the encoders contain; a spatial readout (per-patch keypoint or
 attention head) would be needed to bound the encoders themselves. Breakdown:
 `results/jenga/visual_probe_in_view_breakdown.json` (SHA-256 `6338783949fc82a42cb8abb8a52aa84ee9ccb1235ff45ec07188384dfc604751`).
+
+## Visual encoder precision addendum 2 frozen: spatial keypoint readout (2026-10-01)
+
+`results/jenga/visual_encoder_precision_addendum_2.json` (SHA-256 `1c92f20cfdfac4b7574d8bacceaee6aada6dff49a9282e79a1ea10fc49231c32`): one identical keypoint head (coordinate channels, 3 residual conv blocks, 16 spatial-softmax keypoints, MLP to the 27 pose numbers; 60 fixed epochs, seed 0, no held-out selection) on all six encoder/camera grids. Same split and decision thresholds.
