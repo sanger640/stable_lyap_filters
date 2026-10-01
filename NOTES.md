@@ -6182,3 +6182,25 @@ reaches 0.85 deg. V-JEPA 2 and 2.1 do not beat DINOv2. The free-block gap (left-
 (normalized), so held-out error is dominated by generalization to new episodes, not by fitting. Result:
 `results/jenga/visual_spatial_readout.json` (SHA-256 `a4f3ad258e4aff70ea4137dd3ff9188564bd8e53e11acd19fdd408a11aca9c83`). About 2.5 mm is the realistic
 frozen-encoder precision here, which is the sigma_p = 2.65 mm level option 2 tests.
+
+## Uncertainty-aware monitor (option 2): helps at 1 mm, over-alarms at 2.65 mm; frozen rule fails (2026-10-01)
+
+Jenga DEV, true simulator, bit-identical stage-0 replay (sigma 0 reproduces the cache exactly and
+v1's E1 result, 23/23 forks and 9/89 quiet). v1 rule, true-state classes:
+
+| condition | topple forks (23) | quiet alarms (89) | nudge forks (17) |
+|---|---|---|---|
+| exact state | 23 (100%) | 9 (10%) | 16 |
+| naive, 1 mm | 15 (65%, CI 45-81) | 14 (16%) | 14 |
+| **aware, 1 mm** | **21 (91%, CI 73-98)** | **15 (17%)** | 9 |
+| naive, 2.65 mm | 16 (70%, CI 49-84) | 14 (16%) | 12 |
+| aware, 2.65 mm | 23 (100%) | 42 (47%, CI 37-57) | 17 |
+
+v0's candidate stage collapses under awareness (88/89 and 89/89 quiet alarms): its GP split test
+treats injected state spread as a branch. **The frozen rule fails**: at 2.65 mm the naive monitor
+keeps 70% (the rule assumed below 50%), and the aware monitor's quiet alarms (47%) exceed 25%.
+Descriptively, at 1 mm the aware monitor recovers most of the forks the naive one loses (65% to 91%)
+at almost no cost in quiet alarms (16% to 17%). At 2.65 mm it becomes a conservative "uncertainty
+spans a boundary" alarm. The naive monitor degrades less on these DEV classes than R's retention
+suggested; R measured agreement with each state's own exact decision on few positives (4 per axis).
+Development evidence only. Result: `results/jenga/uncertainty_monitor_result.json` (SHA-256 `1e37e15693ef8b05b0617ecf8e07ee2f557a473fc552c1181f058e16c91fe8f4`).
