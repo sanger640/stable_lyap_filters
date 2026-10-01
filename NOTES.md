@@ -6000,3 +6000,20 @@ look showed the G0 average is dominated by resting objects. Final GNS on validat
 4.81 mm overall against 5.55 mm for "nothing moves"; 16.0 against 23.5 mm on the 64 windows with
 real motion; 11.5 against 12.9 mm on the 455 object-windows the gripper touches. Rotation error
 5.6 degrees, hand 9.5 mm, excess interpenetration 2.9 mm, 10 ms per step.
+
+## Program B G0 fails: FIGNet* seed 1 does not beat the object-level GNS (2026-10-01)
+
+Measured once on the 100 untouched generic TEST trajectories (400 two-second windows), final
+400k checkpoints, per addenda 2-4. FIGNet* seed 1 mean object position error 5.55 mm against
+GNS 4.47 mm, and excess interpenetration 2.18 mm (true trajectories 0.72 mm), above the 1 mm bar.
+**G0 fails on both criteria.**
+
+Descriptive breakdowns (FIGNet* / GNS / "nothing moves"): all objects 5.55 / 4.47 / 5.37 mm;
+the 54 windows with real motion 17.6 / 16.5 / 25.4 mm; the 466 gripper-touched object-windows
+9.42 / 9.53 / 11.20 mm; hand 6.2 / 9.1 mm; rotation 5.7 / 6.0 degrees; ms per step 50 / 4.
+FIGNet* is the better gripper predictor and ties GNS on touched objects, but it is worse overall
+(it lets resting objects creep, landing above "nothing moves") and on moving windows. Both
+models overlap objects by about 2 mm more than the true physics. Per protocol, the next step on
+failure is an in-repo FIGNet* implementation and one G0 retry; that is not started pending
+review, because both models share the overlap failure, which points at the setup rather than the
+port. Result: `results/jenga/program_b_g0_result.json` (SHA-256 `170830bd8e23d32eeb59048829e5cc45e9d19c403327a9f57b113b5a5b7d720e`).
