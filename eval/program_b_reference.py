@@ -151,7 +151,9 @@ def simulate_source(job):
             if step in targets:
                 row = targets[step]
                 snapshot = sim.snapshot()
-                for name, sigma, cousin in conditions():
+                # sigma_0 runs LAST so the solver warm start the replay continues from is the
+                # unperturbed probe's, exactly as in the D4 generator (else later states drift).
+                for name, sigma, cousin in conditions()[1:] + conditions()[:1]:
                     result[f"n{row}_{name}"] = counterfactuals(
                         sim, lambda: sim.restore(snapshot), neighbourhoods["actions"][row],
                         (0, row), sigma, factors[cousin]).astype(np.float32)
