@@ -6079,3 +6079,33 @@ partition, using `persistent_mode_alarm` unchanged. Gates: E1 DEV recall >= 73% 
 E2 robustness on R's traces at 2.65 mm (retain >= 70% of its own alarms, <= 10% new alarms, both
 axes); E3 run once on Jenga TEST (>= 55%, <= 5% quiet), upright-push TEST (>= 60%, <= 2/15 stable),
 and U1 (descriptive; v0 scored 0/12 and 0/11 there).
+
+## Monitor v1 fails its frozen gates; v0 stays primary (2026-10-01)
+
+Under `results/jenga/monitor_v1_protocol.json`, v1 (`persistent_mode_alarm` unchanged, on
+non-robot positions at hold 10 and 30) was evaluated on cached physics whose positions match the
+frozen benchmark's oracle endings exactly (max difference 0 mm). The 17 September reproduction
+check in the protocol could not be run as written: no recorded result used identical inputs (Stage
+1 used neighbour-corner features with a mm floor; the 96% Stage 2 result used DINO image latents).
+The protocol's "prior evidence" line was therefore inaccurate. The exact alignment with the frozen
+bench endings replaced it as the data check.
+
+**E1 DEV (exact physics):** topple forks **23/23** (100%, CI 86-100) against v0's 18/23; quiet alarms
+**9/89 = 10.1%** (CI 5-18) against v0's 7/89. Nudge forks 16/17, small splits 6/8. Gate 1
+(recall >= 73% and quiet <= 10%) **fails by one quiet state**. Minority sizes on topple forks range
+2-32.
+
+**E2 robustness (R traces):** v1 alarms on only 4 of 36 (episode) and 4 of 52 (configuration)
+exact-physics states. At 2.65 mm it keeps **0/4** on both axes (added alarms 6% and 8%); at 1 mm it
+keeps 2/4 and 3/4. Gate 2 **fails**. With 4 positives per axis the retention estimates are coarse.
+E3 was not run.
+
+Interpretation: v1 is more sensitive than v0 on exact physics (all DEV topple forks and most
+nudge forks, at slightly higher quiet alarms) and needs no pair search, bisection or commitment
+model. But it is no more robust to misperceived state. A shift of 2.65 mm is close to the
+execution-error scale itself (snippet median chunk maximum 3.2 mm), so the perceived state is
+effectively a different state, and a boundary that exists at the exact state need not exist there.
+Boundary proximity is local, so any monitor scored against its own exact-state decision will lose
+alarms at that error scale. This qualifies R's reading: perception error must be well below the
+execution-error scale, whatever the monitor. Result: `results/jenga/monitor_v1_result.json`
+(SHA-256 `57eb529155f2786b840de5c249236f8b98ff2321fa8342e552208b61dfad3cd3`).
