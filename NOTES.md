@@ -6046,3 +6046,26 @@ can leave them outside it. The final-alarm metric therefore partly measures the 
 of the probe pairs, not only what a re-searching monitor would see. The re-evaluated 64-probe
 candidate stage keeps 62-91% recall but gains 17-47% added positives. Result:
 `results/jenga/program_b_reference_result.json` (SHA-256 `d122f1e4d596d1f99c182bad40bbd9a98f6d15c454c01b24a507d70014b55b53`).
+
+## Monitor v0 audit: what each stage contributes on TEST (2026-10-01, descriptive)
+
+Read from the stored per-pair evidence in `results/jenga/regime_monitor_v0/test_ground_truth.json`
+(already-opened TEST; post-hoc description only, not a new evaluation or a selection).
+
+| variant | topple forks (84) | quiet alarms (113) | nudge/small (17) |
+|---|---|---|---|
+| candidate stage only | 80 (95%, CI 88-98) | 18 (15.9%, CI 10-24) | 16 |
+| + boundary scaling | 78 (93%) | 16 (14.2%) | 13 |
+| + boundary + persistence | 77 (92%) | 16 (14.2%) | 13 |
+| **v0 (+ commitment > 0)** | **55 (65%, CI 55-75)** | **4 (3.5%, CI 1-9)** | 7 |
+| commitment > -5 | 73 (87%) | 10 (8.8%) | 11 |
+| commitment > +5 | 30 (36%) | 4 (3.5%) | 5 |
+
+The 64-probe smooth-versus-branch candidate stage does most of the discrimination. Boundary
+scaling and persistence pass almost everything the candidate stage passes. Commitment is the only
+later stage that filters: it removes 12 of 16 quiet candidates and 22 topple forks. 23 of the 29
+missed topple forks fail first at commitment. 44% of topple-fork pair commitment Delta-BICs lie
+within +/-5 of the zero threshold (median +2.7), and shifting the threshold by +/-5 BIC units moves
+recall from 36% to 87%. The "zero penalized evidence" decision is therefore a knife edge, which
+explains R's sensitivity to 1 mm pose error and +/-10% friction (and D18's tail sensitivity).
+3 of the 4 quiet alarms pass by a 2-of-3 pair majority, with one pair below zero.
