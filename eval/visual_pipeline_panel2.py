@@ -86,6 +86,15 @@ def rollout_render(sim, snapshot, chunk, noise, perturbations, render):
 
 
 def worker(job):
+    """Run one episode; return (episode, None) or (episode, traceback text) so errors surface."""
+    import traceback
+    try:
+        return job[0], _worker(job)
+    except Exception:
+        return job[0], traceback.format_exc()
+
+
+def _worker(job):
     episode_id, selected, out = job
     import mujoco
     import fresh_fragility_v2 as fv
@@ -150,7 +159,7 @@ def worker(job):
     finally:
         close.close()
         sim.close()
-    return episode_id
+    return None
 
 
 def token_decisions(frames_file, encoder, device="cuda"):
@@ -187,8 +196,13 @@ def main():
             if not all((OUT / f"ep{e}_s{i}.npz").exists() for i in idx)]
     ctx = mp.get_context("spawn")
     with ctx.Pool(args.workers) as pool:
-        for number, e in enumerate(pool.imap_unordered(worker, todo), 1):
-            print(f"{number}/{len(todo)} ep{e}", flush=True)
+        failures = []
+        for number, (e, error) in enumerate(pool.imap_unordered(worker, todo), 1):
+            print(f"{number}/{len(todo)} ep{e}" + (" FAILED" if error else ""), flush=True)
+            if error:
+                failures.append(e); print(error, flush=True)
+        if failures:
+            raise SystemExit(f"failed episodes: {failures}")
 
     import torch
     import fragility_grading_dev as fg
