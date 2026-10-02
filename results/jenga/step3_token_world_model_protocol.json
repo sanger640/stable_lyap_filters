@@ -1,0 +1,52 @@
+{
+  "id": "step3-stochastic-token-world-model",
+  "status": "frozen before execution (Step 3 approved by the user 2026-10-02: 'yes freeze the protocol with channel pca 8'; frozen before any Step 3 data was generated)",
+  "research_goal": "Robot intuitive physics engine (Battaglia, Hamrick & Tenenbaum 2013): replace the exact simulator AND the explicit scene sampling with a learned stochastic model in image-token space whose random samples play the role of noisy mental simulations. The monitor must fork where physics forks, at the robot's own perception uncertainty.",
+
+  "latent": {
+    "choice": "channel PCA 8 (results/jenga/token_compression_result.json, chosen by its frozen rule)",
+    "camera_and_tokens": "close fixed camera (perception camera), 384 x 384 render, frozen DINOv2 at 392 -> 28 x 28 x 384 tokens -> per-patch projection onto 8 principal channels = 28 x 28 x 8 = 6272 numbers per frame",
+    "fit": "PCA fitted once on results/program_b/vjepa/enc_dinov2_392_close training-split tokens (no labels), then frozen; latents standardised per channel with the same training statistics",
+    "why_close_camera": "the compression pose test was on this camera; one camera for input and outcomes. Outcome reading on this camera is checked by gate D0 before any model is trained"
+  },
+
+  "training_data": {
+    "states": "chunk starts of the V1 TRAIN layouts (43 episodes x reset seeds 100-109, the perception training layouts); 10% of episodes (by sorted id, every 10th) held out for validation and gate D0. No panel layout is ever used for training",
+    "screen": "every TRAIN chunk start gets 8 futures in state only (no render): start scene = TRUE state + d_k, d_k ~ the measured perception error model (results/jenga/visual_perception_error_model.json), action error = a random bench execution-noise snippet; exact chain replay as in all panels",
+    "selection": "1500 training states: all states whose 8 futures disagree on a neighbour topple (some but not all topple, tilt >= 45 deg), capped at 750, filled with uniformly random other states (seed 20261040). Validation: 150 states selected the same way from held-out episodes",
+    "futures": "K = 8 futures per selected state, drawn as in the screen (new draws, seed 20261041)",
+    "frames": "close-camera frame of the start state (the model input) and of each future at trace indices 1, 3, ..., 37 (19 frames; includes hold 10 = 17 and hold 30 = 37); encoded to the latent",
+    "what_the_model_learns": "p(future latents | image of the true scene, actions). Because the futures start from scenes consistent with what the camera can resolve, the spread of the targets IS the robot's own uncertainty (the truth-A recipe of the fragility benchmark, learned from images)"
+  },
+
+  "model": {
+    "transition": "z_{t+1} = f(z_t, a_t, a_{t+1}, noise); one model step = 2 simulator steps; 19 steps per rollout; integrated (fed its own predictions), never a one-shot jump to the ending",
+    "network": "convolutional residual network on the 28 x 28 x 8 grid (width 128, 6 residual blocks, FiLM conditioning on the two actions and on the flow time), about 2-4 M parameters",
+    "stochastic_head": "conditional flow matching on the next-step latent residual (z_{t+1} - z_t); sampling with 16 Euler steps from Gaussian noise; each rollout draws fresh noise at every step",
+    "training": "teacher forcing on ground-truth latents plus 50% of batches with 1-step self-rollout inputs (to reduce drift); AdamW 3e-4 cosine, batch 64 rollout-steps x 8, 60 epochs over the 1500 x 8 rollouts, seed 0; checkpoint = last epoch (no checkpoint selection on any panel)",
+    "control_arm": "the SAME network trained with mean-squared error to predict the next latent deterministically (the averaging model). Run in the monitor with action errors only. Expected to collapse forks; it measures whether stochasticity is what makes the monitor work"
+  },
+
+  "monitor": {
+    "input": "one close-camera frame of the scene at the chunk start -> latent z_0. No perception head, no pose, no explicit scene sampling",
+    "rollouts": "64 rollouts; rollout j uses the panel's execution-noise snippet j (as all monitors) and its own model noise",
+    "rule": "unchanged persistent_mode_alarm on the flattened predicted latents at hold 10 (step index 17) and hold 30 (index 37)"
+  },
+
+  "gates": {
+    "D0_outcome_readable (before training, on held-out TRAIN states)": "60 held-out TRAIN chunk starts (30 topple-disagreeing in their screen, 30 not; seed 20261042), 64 truth-style futures each, rendered on the close camera at hold 10 and 30: the split rule on true close-camera channel-PCA-8 latents agrees with the split rule on non-robot state positions with kappa >= 0.70. If D0 fails, the latent is extended with the default-camera channel-PCA-8 view (14 x 14 x 8) for outcomes, D0 is rerun once on the same states, and if it fails again Step 3 stops",
+    "W1_harm (panel 4)": "world-model monitor recall on harm-fork states >= 0.80 AND alarm rate on non-harm states <= 0.20",
+    "W2_fragility (panel 4)": "kappa with fragility truth A >= 0.60",
+    "W3_stochasticity_matters (panel 4)": "world-model monitor kappa - deterministic control kappa >= 0.15",
+    "descriptive": "kappa, recall, alarm-on-robust with Wilson intervals; branching fidelity on truth-fragile states = correlation between the WM monitor's split minority fraction and truth A's; comparison with exact-physics monitors (aware v1/v2 on real perception) on the same panel; latent prediction error (reported, not gated)"
+  },
+
+  "panel": {
+    "id": "fresh panel 4: reset seed episode_id + 8000 (never used), 80 episodes drawn with seed 20261043, screened with 64 exact probes, 60 topple forks + 100 safe states selected exactly as panels 1-3",
+    "truth": "fragility truth A and B: aware sampling centred on the TRUE state with the measured error model, exact physics (as panel 3); harm fork: 2-62 of 64 truth-A rollouts topple a neighbour",
+    "sharing": "if the separately-approved visual v2 monitor is run, it may use this same panel and truths under its own frozen protocol"
+  },
+
+  "decision": "Step 3 confirmed if D0, W1, W2 and W3 pass. One training run, one panel run; no retraining or re-selection after panel 4 is read. If it fails, the result and the per-gate diagnostics are reported and the next iteration needs a new protocol and a new fresh panel.",
+  "cost": "screen about 65k state-only rollouts (about 1 h CPU, 8 workers); about 12k rendered futures + D0 3.8k (CPU hours); about 250k close-camera frames encoded (about 1 h GPU); training 2 models (a few GPU hours); panel 4 truth + screen (about 4 h CPU); the WM monitor itself is GPU minutes"
+}
