@@ -6389,6 +6389,6 @@ a second fresh panel.
 **S2 (fully visual monitor, aware v1 + token read): FAIL** on harm recall 0.77 (bar 0.80); alarm on
 non-harm 0.08 (bar 0.20) and kappa 0.70 (bar 0.60) pass. Token vs state decisions: kappa 0.83 exact, 0.86
 aware (descriptive, >= 0.70). The fully visual monitor is precise but misses ~1 in 4 harm forks; the
-token reading itself is not the main loss (it matches state-read aware v1, which also has recall 0.75):
-the shortfall is aware v1's single-hypothesis sampling. Candidate next iteration (needs its own fresh
-panel): Bayesian v2 with token reading.
+token-read and state-read aware v1 have the same fragility recall (0.75), so the likely loss is aware v1's
+single-hypothesis sampling rather than token reading (harm recall of state-read v1 was not computed, so
+this is a hypothesis). Candidate next iteration (needs its own fresh panel): Bayesian v2 with token reading.
