@@ -1,0 +1,22 @@
+{
+  "id": "visual-v2-bayesian-token-monitor-panel4",
+  "status": "frozen before execution (approved by the user 2026-10-02: 'yes launch step 3 and visual v2 now'; frozen before panel 4 was screened)",
+  "question": "Does the Bayesian v2 monitor keep its harm recall when outcomes are read from image tokens (fully visual v2)? Panel 3 showed v1's misses come from a single perception estimate, not from token reading (state-read v1 also 48/62); state-read v2 caught 56/62.",
+  "panel": "fresh panel 4 exactly as defined in results/jenga/step3_token_world_model_protocol.json: reset seed episode_id + 8000, 80 episodes drawn with seed 20261043, 64 exact probes per chunk start in the screen, 60 topple forks + 100 safe states selected with seed 20261044 exactly as panels 1-3. Shared with Step 3 (its truths and harm labels are identical by construction).",
+  "perception": "frozen close-camera DINOv2 + keypoint head (results/program_b/perception/dinov2_close_keypoint.pt), error model results/jenga/visual_perception_error_model.json, as panel 3",
+  "conditions": {
+    "exact": "64 probes from the true state (screen chain)",
+    "naive": "64 probes from s_hat",
+    "aware_v1": "probe j from s_hat + e_j",
+    "v2": "5 hypotheses h_m = s_hat + d_m, 64 probes each from h_m + e_mj; alarm if >= 3 of 5 hypotheses split",
+    "truth_A, truth_B": "64 probes from the TRUE state + error draws (independent seeds)"
+  },
+  "seeds": {"hat": 20261050, "aware": 20261051, "v2_hyp": 20261052, "v2_probe": 20261053, "truth_A": 20261054, "truth_B": 20261055},
+  "outcome_reading": "default camera frames at hold 10 and 30 of exact, aware_v1 and all 320 v2 rollouts; frozen bundled DINOv2 at 196 x 196, flattened; unchanged persistent_mode_alarm (identical to Step 2 / panel 3 token reading). Encoded inside the simulation workers; only decisions and the aware_v1 frames are stored.",
+  "primary_gate_V2": "fully visual v2 (token read, >= 3/5): harm-fork recall >= 0.80 AND alarm rate on non-harm states <= 0.20 AND kappa with truth A >= 0.60 (the S2 gate that visual v1 failed on panel 3)",
+  "descriptive": "state-read v2, visual v1, state-read v1, naive and exact with Wilson intervals; ceiling truth B vs A; per-hypothesis token vs state agreement; misses split into 'wrong side of the edge' (v2 rollouts topple <= 3 of 64 in every hypothesis) and other",
+  "harm_fork": "2-62 of the 64 truth-A rollouts topple a neighbour (tilt >= 45 deg among blocks starting below 45)",
+  "decision": "fully visual v2 confirmed iff V2 passes. One run, no re-selection.",
+  "also_saved_for_step3": "the close-camera frame of the true chunk-start state (the world-model monitor input)",
+  "cost": "about 160 states x 640 rollouts with chain replay (about 5 h CPU at 4 workers) plus about 72k frames encoded inside workers"
+}
