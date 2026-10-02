@@ -6342,3 +6342,30 @@ Protocol `results/jenga/visual_pipeline_panel3_protocol.json` (SHA-256 `b7c01b4a
 (seed + 7000, 80 episodes). S1 replicates Step 1 (aware v2 with real perception, same gates). S2
 tests the fully visual monitor (real perception, aware sampling, token-read outcomes; exact physics)
 against harm: harm-fork recall >= 0.80, alarms on non-harm <= 0.20, kappa with state truth >= 0.60.
+
+## 2026-10-02: Step 3 stage 0, token compression test (frozen protocol, development data)
+
+Protocol `results/jenga/token_compression_protocol.json` (frozen, commit 2fba119); result
+`results/jenga/token_compression_result.json`. Purpose: choose the latent space of the Step 3
+stochastic token world model. Test 1: pose readout on close-camera TRAIN tokens (pass: relative position
+<= 1.25 x full tokens). Test 2: unchanged split rule on compressed panel-2 ending tokens, two-fold fits
+(pass: kappa vs state decisions >= full - 0.10, exact and aware). Implementation fix during the run: the
+global-PCA Gram eigendecomposition moved to CPU after a GPU OOM (same exact PCA); resumed.
+
+| latent | numbers/frame (14x14) | test 1 rel. pos. mm (bar 3.18) | test 2 kappa exact / aware (bars 0.58 / 0.80) | qualifies |
+|---|---|---|---|---|
+| full tokens | 75,264 | 2.54 | 0.681 / 0.903 (reproduces Step 2 exactly) | ref |
+| global PCA 256 | 256 | 3.34 | 0.681 / 0.876 | no (test 1) |
+| autoencoder 16 | 784 | 3.65 | 0.695 / 0.863 | no (test 1) |
+| global PCA 1024 | 1,024 | 4.99 | 0.668 / 0.903 | no (test 1) |
+| **channel PCA 8** | **1,568** | **3.04** | **0.695 / 0.836** | **yes: chosen** |
+| slots 8 x 256 | 2,048 | 3.33 | 0.668 / 0.889 | no (test 1) |
+| autoencoder 64 | 3,136 | 3.95 | 0.695 / 0.903 | no (test 1) |
+| channel PCA 32 | 6,272 | 3.44 | 0.668 / 0.861 | no (test 1) |
+
+Readings: (1) fork structure in ending frames survives every compression (97-100% agreement with
+full-token decisions); test 2 does not discriminate. (2) Pose precision is the binding constraint; only
+channel PCA 8 stays within 1.25x. (3) Larger latents scored worse than smaller ones of the same family
+(channel PCA 32 vs 8, global PCA 1024 vs 256, AE 64 vs 16): this points at the fixed readout recipe
+(standardised inputs, one seed, ~7k frames) rather than at information loss, so test 1 partly measures
+readability. Not tuned after the fact. **Step 3 latent: channel PCA 8 (fixed linear, grid kept).**

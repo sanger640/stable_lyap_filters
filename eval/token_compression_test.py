@@ -90,9 +90,12 @@ class GlobalPCA:
             self.mean[ch] = mu.cpu()
             block -= mu
             gram += block @ block.T
-        vals, vecs = torch.linalg.eigh(gram.double())
+        gram = gram.cpu().double()                              # eigh on CPU: the n x n float64 copy
+        torch.cuda.empty_cache()                                # does not fit beside other GPU jobs
+        vals, vecs = torch.linalg.eigh(gram)
+        del gram
         top = torch.argsort(vals, descending=True)[:self.k]
-        u, s = vecs[:, top].float(), vals[top].clamp_min(1e-12).sqrt().float()
+        u, s = vecs[:, top].float().to(DEVICE), vals[top].clamp_min(1e-12).sqrt().float().to(DEVICE)
         self.components = torch.zeros(self.k, d)
         for ch in self._chunks(d):
             block = torch.as_tensor(x[:, ch], device=DEVICE).float() - self.mean[ch].to(DEVICE)
