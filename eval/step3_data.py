@@ -147,28 +147,28 @@ def _chain_job(job):
                     result[index] = {"topples": int(topple_count(traces, start_tilt)),
                                      "start_tilt": start_tilt.tolist()}
                 else:
-                    role = selected[index]
-                    sim.restore(snapshot)
-                    renderer.update_scene(sim.data, camera=camera)
-                    start_frame = renderer.render().copy()
-                    if role == "d0":
-                        n, seed_name, at = D0_FUTURES, "d0_futures", D0_INDEX
-                    else:
-                        n, seed_name, at = K_FUTURES, "futures", FRAME_INDEX
-                    traces, executed, frames = [], [], []
-                    for k in range(n):
-                        noise = snippets[k] if role == "d0" else snippets[
-                            np.random.default_rng([SEEDS[seed_name], *key, k]).integers(len(snippets))]
-                        t, a, f = future(sim, snapshot, chunk, noise, errors.sample(SEEDS[seed_name], *key, k),
-                                         at, renderer, camera)
-                        traces.append(t); executed.append(a); frames.extend(f)
-                    z = latent(np.concatenate([start_frame[None], np.stack(frames)]))
-                    path = Path(out) / role / f"ep{episode_id}_seed{seed}_s{index}.npz"
-                    np.savez(path.with_suffix(".tmp.npz"), z0=z[0], z=z[1:].reshape(n, len(at), 28, 28, 8),
-                             traces=np.stack(traces).astype(np.float32), actions=np.stack(executed),
-                             start_frame=start_frame, start_tilt=start_tilt, frame_index=np.array(at))
-                    path.with_suffix(".tmp.npz").replace(path)
-                    result[index] = role
+                    for role in selected[index]:
+                        sim.restore(snapshot)
+                        renderer.update_scene(sim.data, camera=camera)
+                        start_frame = renderer.render().copy()
+                        if role == "d0":
+                            n, seed_name, at = D0_FUTURES, "d0_futures", D0_INDEX
+                        else:
+                            n, seed_name, at = K_FUTURES, "futures", FRAME_INDEX
+                        traces, executed, frames = [], [], []
+                        for k in range(n):
+                            noise = snippets[k] if role == "d0" else snippets[
+                                np.random.default_rng([SEEDS[seed_name], *key, k]).integers(len(snippets))]
+                            t, a, f = future(sim, snapshot, chunk, noise, errors.sample(SEEDS[seed_name], *key, k),
+                                             at, renderer, camera)
+                            traces.append(t); executed.append(a); frames.extend(f)
+                        z = latent(np.concatenate([start_frame[None], np.stack(frames)]))
+                        path = Path(out) / role / f"ep{episode_id}_seed{seed}_s{index}.npz"
+                        np.savez(path.with_suffix(".tmp.npz"), z0=z[0], z=z[1:].reshape(n, len(at), 28, 28, 8),
+                                 traces=np.stack(traces).astype(np.float32), actions=np.stack(executed),
+                                 start_frame=start_frame, start_tilt=start_tilt, frame_index=np.array(at))
+                        path.with_suffix(".tmp.npz").replace(path)
+                        result.setdefault(index, []).append(role)
                 sim.restore(snapshot)
                 sim.data.qacc_warmstart[:] = warm0
                 if index == max(targets):
@@ -212,15 +212,15 @@ def select(screen, held):
     train_a, train_b = pick([r for r in rows if r[0] not in held], TRAIN_STATES, DISAGREE_CAP)
     held_rows = [r for r in rows if r[0] in held]
     val_a, val_b = pick(held_rows, VAL_STATES, VAL_STATES // 2)
-    used = {(r[0], r[1], r[2]) for r in val_a + val_b}
+    # D0 draws from ALL held-out states, independently of validation (it renders its own 64 futures and
+    # trains nothing); the held-out episodes hold too few disagreeing states for disjoint sets.
     d0_rng = np.random.default_rng(SEEDS["d0"])
-    rest = [r for r in held_rows if (r[0], r[1], r[2]) not in used]
-    dis = [r for r in rest if 0 < r[3] < K_SCREEN]; oth = [r for r in rest if not 0 < r[3] < K_SCREEN]
+    dis = [r for r in held_rows if 0 < r[3] < K_SCREEN]; oth = [r for r in held_rows if not 0 < r[3] < K_SCREEN]
     d0 = [dis[i] for i in d0_rng.permutation(len(dis))[:30]] + [oth[i] for i in d0_rng.permutation(len(oth))[:30]]
     roles = {}
     for name, group in (("train", train_a + train_b), ("val", val_a + val_b), ("d0", d0)):
         for e, s, i, _ in group:
-            roles.setdefault((e, s), {})[i] = name
+            roles.setdefault((e, s), {}).setdefault(i, []).append(name)
     summary = {"train": len(train_a + train_b), "train_disagree": len(train_a), "val": len(val_a + val_b),
                "val_disagree": len(val_a), "d0": len(d0), "d0_disagree": min(30, len(dis)),
                "screened_states": len(rows), "screened_disagree": sum(0 < r[3] < K_SCREEN for r in rows)}
@@ -266,11 +266,12 @@ def main():
     print(json.dumps(summary), flush=True)
     jobs = []
     for (e, s), sel in sorted(roles.items(), key=lambda x: (int(x[0][0]), x[0][1])):
-        todo = {i: r for i, r in sel.items() if not (OUT / r / f"ep{e}_seed{s}_s{i}.npz").exists()}
+        todo = {i: [r for r in rs if not (OUT / r / f"ep{e}_seed{s}_s{i}.npz").exists()] for i, rs in sel.items()}
+        todo = {i: rs for i, rs in todo.items() if rs}
         if todo:
             jobs.append((e, s, "render", todo, str(OUT)))
     # D0 chains first so the gate can be read early
-    jobs.sort(key=lambda j: "d0" not in j[3].values())
+    jobs.sort(key=lambda j: not any("d0" in rs for rs in j[3].values()))
     run_pool(jobs, args.workers, "render")
     print(json.dumps({"D0": d0_gate()}), flush=True)
 

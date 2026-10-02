@@ -1,0 +1,8 @@
+{
+  "id": "step3-addendum-1-d0-selection",
+  "date": "2026-10-02",
+  "status": "implementation correction disclosed before any rendered Step 3 data or D0 result was read",
+  "issue": "The TRAIN screen (8810 chunk starts) found only 454 states whose 8 futures disagree on a topple; the held-out episodes contain 35, and the first implementation drew validation first and D0 from the remainder, leaving 0 disagreeing states for D0 (the protocol asks 30 + 30).",
+  "correction": "D0's 30 disagreeing + 30 other held-out states are drawn from ALL held-out states with its own seed (20261042), independently of validation. Overlap with validation is allowed (39 states carry both roles): D0 renders its own 64 futures and trains nothing, so overlap cannot leak into the model or the panel. Nothing else changes. Two partially rendered D0 files from the first launch were deleted unread.",
+  "screen_summary": {"screened_states": 8810, "screened_disagree": 454, "train": 1500, "train_disagree": 419, "val": 150, "val_disagree": 35, "d0": 60, "d0_disagree": 30}
+}
