@@ -6263,3 +6263,16 @@ from the truth's. Result: `results/jenga/fresh_fragility_result.json` (SHA-256 `
 ## Fresh panel 2 protocol frozen: Bayesian aware monitor v2 (2026-10-02)
 
 `results/jenga/fresh_fragility_v2_protocol.json` (SHA-256 `a6518d3761f3670b09a375079de9474aee880b5d0c46ffd54962fb35cc16be39`). Aware v2 draws 5 hypotheses of the true scene from the perception error model around the one perceived scene, runs aware sampling around each, and alarms if at least 3 of 5 are fragile (graded readout p = fraction). New layouts (seed +6000), 80 screened episodes. Same three gates as panel 1, now for v2; aware v1, naive and exact are reported on the same states.
+
+## Visual pipeline v1 frozen: real camera perception (Step 1) and token outcomes (Step 2) (2026-10-02)
+
+Perception model: frozen DINOv2 on one close-camera frame plus the keypoint head, trained on V1 TRAIN
+layouts and saved. Held-out error 2.54 mm relative; per block: grasped middle 4.9 mm / 5.3 deg,
+neighbours 1.5 and 2.1 mm / 1.0 and 1.4 deg. On new seed+6000 layouts, spot checks give 0.6-2.3 mm
+per block. Its validation residuals define the error model (full 9x9 position covariance plus
+per-block rotation covariances): `results/jenga/visual_perception_error_model.json` (SHA-256 `9f408a2512664157b3aadcfb362654a55607eb42dbb7467c6328ecf205d2d34a`).
+Protocol `results/jenga/visual_pipeline_protocol.json` (SHA-256 `abc2739918cf66eb4dd7bb8ae8a5f2d4938fabb3a161dc66f86097a78cf821ec`), frozen before any panel-2
+result was read. On panel 2's states: naive, aware v1 and Bayesian aware v2 run from the REAL
+perceived scene with the measured error model, graded against fragility truth under that same error
+model, plus harm forks. Step 2: the split rule on DINO tokens of rendered endings must agree with
+the state-based decision (kappa >= 0.70) on both the exact-state and aware rollouts.

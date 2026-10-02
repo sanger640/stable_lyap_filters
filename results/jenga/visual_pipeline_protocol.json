@@ -1,0 +1,40 @@
+{
+  "id": "visual-pipeline-v1-real-perception-and-token-outcomes",
+  "status": "frozen before execution (plan approved by the user 2026-10-02: 'follow the sensible plan, keep iterating'; frozen before any fresh-panel-2 result was read)",
+  "research_goal": "Robot intuitive physics engine: judge fragility at the agent's own uncertainty scale from REAL camera perception, then read outcomes from visual tokens instead of object state.",
+  "panel": "fresh panel 2 (reset seed episode_id + 6000), the identical selected states of results/jenga/fresh_fragility_v2_protocol.json, reached by the identical chain replay. Panel 2's synthetic-noise results are not used for any choice here.",
+
+  "perception": {
+    "model": "results/program_b/perception/dinov2_close_keypoint.pt: frozen DINOv2 tokens of one close-fixed-camera frame (addendum 1 camera) -> keypoint head (addendum 2 recipe), trained on V1 TRAIN layouts only",
+    "error_model": "results/jenga/visual_perception_error_model.json: full 9x9 covariance of held-out block-position errors and a per-block 3x3 covariance of rotation-vector errors (validation residuals, no task label). Zero-mean sampling; the measured bias is reported, not subtracted.",
+    "perceived_scene": "s_hat_vis: the true chunk-start state with the three blocks' poses replaced by the perception model's estimate from the rendered frame; velocities and gripper kept (a single frame cannot see velocity; the gripper is proprioception)"
+  },
+
+  "step1_monitors": {
+    "naive_vis": "64 execution probes from s_hat_vis",
+    "aware_v1_vis": "probe j from s_hat_vis + e_j, e_j ~ the measured error model",
+    "aware_v2_vis": "5 hypotheses h_m = s_hat_vis + d_m (d_m ~ error model); aware sampling around each; alarm if >= 3/5 fragile",
+    "rule": "monitor v1 persistent split on non-robot positions at hold 10 and 30, unchanged"
+  },
+  "step1_ground_truth": {
+    "fragility_vis": "v1 split on aware sampling centred on the TRUE state with the SAME measured error model, two independent seeds A and B (the agent's own uncertainty scale is now the measured one, not 2.65 mm isotropic)",
+    "harm_fork": "2-62 of the 64 truth-A rollouts topple a neighbour (tilt >= 45 deg among blocks starting below 45)"
+  },
+  "step1_gates": {
+    "G1_calibration": "aware_v2_vis kappa with truth A >= 0.8 x truth A-vs-B kappa, recall of fragile >= 0.80, alarms on robust <= truth B's alarm-on-robust + 0.10",
+    "G2_beats_naive": "aware_v2_vis kappa - naive_vis kappa >= 0.15",
+    "G3_harm": "aware_v2_vis recall on harm-fork states >= 0.80"
+  },
+
+  "step2_token_outcomes": {
+    "rendering": "cam_fixed (default) frames at hold steps 10 and 30 of every exact-state probe and every aware_v1_vis rollout, 240 x 320",
+    "tokens": "the bundled frozen DINOv2 encoder at 196 x 196 (14 x 14 patches x 384), full frame, flattened; no object mask, no state",
+    "rule": "the SAME persistent_mode_alarm on the flattened token endings at hold 10 and 30",
+    "gate_T": "token decisions agree with the state-position decisions on the same rollouts with kappa >= 0.70, separately for the exact-state probes and for the aware_v1_vis rollouts"
+  },
+
+  "reporting": "all monitors (naive, aware v1, aware v2; synthetic results from panel 2 shown beside for context) with Wilson intervals; per-block perception error on the panel states (true vs estimated); token-vs-state confusion tables",
+  "decision": "Step 1 confirmed if G1, G2 and G3 pass; Step 2 confirmed if gate_T passes for both rollout sets. Each is reported separately; no re-selection.",
+  "scope": "Track A physics (exact simulator); perception and outcome reading are real visual pipelines. Generalization note: the perception head was trained on V1 TRAIN layouts and is applied to new (seed + 6000) layouts.",
+  "cost": "about 160 states x (naive 64 + aware v1 64 + aware v2 320 + truth 128) rollouts with the chain replayed, plus about 41k rendered frames: about 4 h CPU, then minutes of GPU encoding"
+}
