@@ -6369,3 +6369,26 @@ channel PCA 8 stays within 1.25x. (3) Larger latents scored worse than smaller o
 (channel PCA 32 vs 8, global PCA 1024 vs 256, AE 64 vs 16): this points at the fixed readout recipe
 (standardised inputs, one seed, ~7k frames) rather than at information loss, so test 1 partly measures
 readability. Not tuned after the fact. **Step 3 latent: channel PCA 8 (fixed linear, grid kept).**
+
+## 2026-10-02: Fresh panel 3, visual pipeline v2 (frozen protocol `visual_pipeline_panel3_protocol.json`)
+
+Result `results/jenga/visual_pipeline_panel3_result.json`. 160 states (67 truth-fragile), reset seed +7000,
+real camera perception (mean error 3.7 / 2.1 / 2.3 mm grasped / left / right). Ceiling truth B vs A:
+kappa 0.92.
+
+| monitor | kappa vs truth A | recall | alarm on robust |
+|---|---|---|---|
+| naive (real s_hat) | 0.51 | 0.61 | 0.12 |
+| aware v1 (state read) | 0.70 | 0.75 | 0.07 |
+| **aware v2 Bayesian (state read)** | **0.74** | **0.87** | **0.12** |
+| aware v1, fully visual (token read) | 0.70 | 0.75 | 0.06 |
+
+**S1 (Step 1 replication, aware v2): PASS.** kappa 0.744 >= 0.8 x 0.923 = 0.738 (narrow); recall 0.87; robust
+alarms 0.12 <= 0.13; +0.23 over naive; harm-fork recall 0.90 (CI 0.80-0.95, n = 62). Step 1 replicated on
+a second fresh panel.
+**S2 (fully visual monitor, aware v1 + token read): FAIL** on harm recall 0.77 (bar 0.80); alarm on
+non-harm 0.08 (bar 0.20) and kappa 0.70 (bar 0.60) pass. Token vs state decisions: kappa 0.83 exact, 0.86
+aware (descriptive, >= 0.70). The fully visual monitor is precise but misses ~1 in 4 harm forks; the
+token reading itself is not the main loss (it matches state-read aware v1, which also has recall 0.75):
+the shortfall is aware v1's single-hypothesis sampling. Candidate next iteration (needs its own fresh
+panel): Bayesian v2 with token reading.
