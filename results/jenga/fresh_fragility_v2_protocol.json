@@ -1,0 +1,26 @@
+{
+  "id": "fresh-fragility-confirmation-v2-bayesian",
+  "status": "frozen before execution (one more iteration requested by the user 2026-10-02; design fixed by the agent before any panel-2 data exist and reported to the user)",
+  "motivation": "Panel 1 (fresh_fragility_result.json): aware v1 beat naive (kappa 0.57 vs 0.28) and caught 88% of harm forks, but calibration failed (0.69 x ceiling; 22% alarms on robust states). A robot gets ONE perceived scene s_hat, and aware v1 centred every sample on it, 2.65 mm from the scene the truth is centred on. That centring error is the likely cause.",
+  "monitor_aware_v2": {
+    "idea": "Bayesian fragility: estimate P(the TRUE scene is fragile | s_hat) instead of the fragility of s_hat itself",
+    "procedure": "draw M = 5 hypotheses h_m = s_hat + d_m of the true scene from the known perception error model (sigma 2.65 mm, rotation sigma / 37.5 mm, gripper exact). For each hypothesis run aware sampling (64 probes: execution snippet j plus state sample h_m + e_mj from the same model) and monitor v1's persistent split rule. Graded readout p = (fragile hypotheses) / 5.",
+    "alarm": "p >= 3/5 (more likely than not). Majority is the definition of 'more likely than not', not a fitted threshold.",
+    "cost": "5 x 64 = 320 rollouts per decision"
+  },
+  "comparators_on_the_same_states": ["aware_v1 (64 rollouts around s_hat)", "naive (64 probes from s_hat)", "exact-state v1"],
+  "fresh_panel_2": {
+    "configurations": "reset seed episode_id + 6000 (never used)",
+    "screen": "a seeded random 80 of the 100 episodes (seed 20261004); 64 exact-state probes at every chunk start, chained exactly as in panel 1",
+    "selection": "all topple forks up to 60 (seeded) plus 100 seeded safe states; selection precedes any monitor or truth value",
+    "perception_draw": "s_hat is drawn once per state exactly as in panel 1 (the same s_hat feeds naive, aware v1 and aware v2)"
+  },
+  "ground_truth": "as panel 1: fragility truth A and B (v1 split on aware sampling centred on the TRUE state, sigma 2.65 mm); harm fork = 2-62 of the 64 truth-A rollouts topple a neighbour",
+  "gates_for_aware_v2": {
+    "G1_calibration": "kappa with truth A >= 0.8 x truth A-vs-B kappa, AND recall of fragile >= 0.80, AND alarms on robust <= (truth B alarm-on-robust) + 0.10",
+    "G2_beats_naive": "kappa - naive kappa >= 0.15",
+    "G3_harm": "recall on harm-fork states >= 0.80"
+  },
+  "decision": "confirmed if G1, G2, G3 all pass for aware v2. Aware v1 is graded on the same states and reported (not gated) to show whether the Bayesian readout helps. One run, no re-selection.",
+  "cost": "screen about 1,600 states x 64; panel about 160 states x (naive 64 + aware v1 64 + aware v2 320 + truth 128) with the chain replayed: about 3-4 h on <= 4 CPU workers"
+}

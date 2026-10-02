@@ -6259,3 +6259,7 @@ states where harm is possible within its uncertainty, but its agreement with fra
 data (0.69 x ceiling) is clearly below DEV's (0.93 x), and it over-alarms on robust states. Likely
 contributor: the monitor sees ONE misperceived scene per state, so its estimate is centred 2.65 mm
 from the truth's. Result: `results/jenga/fresh_fragility_result.json` (SHA-256 `4dbe416be933f605b394bddca908cad6e01171153be57cad82bc0776793d149c`).
+
+## Fresh panel 2 protocol frozen: Bayesian aware monitor v2 (2026-10-02)
+
+`results/jenga/fresh_fragility_v2_protocol.json` (SHA-256 `a6518d3761f3670b09a375079de9474aee880b5d0c46ffd54962fb35cc16be39`). Aware v2 draws 5 hypotheses of the true scene from the perception error model around the one perceived scene, runs aware sampling around each, and alarms if at least 3 of 5 are fragile (graded readout p = fraction). New layouts (seed +6000), 80 screened episodes. Same three gates as panel 1, now for v2; aware v1, naive and exact are reported on the same states.
