@@ -6276,3 +6276,27 @@ result was read. On panel 2's states: naive, aware v1 and Bayesian aware v2 run 
 perceived scene with the measured error model, graded against fragility truth under that same error
 model, plus harm forks. Step 2: the split rule on DINO tokens of rendered endings must agree with
 the state-based decision (kappa >= 0.70) on both the exact-state and aware rollouts.
+
+## Fresh panel 2: the Bayesian aware monitor v2 is MORE cautious, not better calibrated (2026-10-02)
+
+New layouts (seed + 6000), 80 episodes, 1,618 states screened: 53 topple forks and 100 safe states
+(153). Synthetic perception, sigma 2.65 mm. Against fragility truth A (74/153 fragile; ceiling kappa
+0.79, recall 0.91, robust alarms 0.11):
+
+| monitor | kappa | recall of fragile | alarms on robust |
+|---|---|---|---|
+| exact-state | 0.57 | 0.77 | 0.20 |
+| naive | 0.33 | 0.53 | 0.20 |
+| aware v1 | 0.44 | 0.82 | 0.38 |
+| **aware v2 (Bayesian, >= 3/5)** | **0.41** | **0.92** | **0.51** |
+
+Gates for v2: G1 fails, G2 fails (+0.08 over naive; needed 0.15), G3 passes (harm-fork recall 0.97,
+CI 0.89-0.99; v1 0.89). **Not confirmed.** Averaging over 5 hypotheses of the true scene widens the
+effective uncertainty (roughly sigma x sqrt 2), so the majority rule fires on about half of the
+truly robust states. Descriptive (post hoc, not adopted): the graded probability p = fragile/5
+ranks states well, AUC 0.845 against truth (p = 5/5: 42 fragile vs 4 robust; p = 3/5: 10 vs 19).
+The aware v1 result also varies between panels (kappa 0.57 on panel 1, 0.44 here). A monitor that
+sees only s_hat cannot reach the truth-vs-truth ceiling, because the truth is defined around the
+unknown s_true, so G1 as specified may be unattainable in principle; a Bayes-limited ceiling is the
+fairer reference. Results: `results/jenga/fresh_fragility_v2_result.json` (SHA-256 `bc81bbf08d7ad8cd2b7a3538cf8b63867ce5d9358da871a85ae254d3d873e00b`),
+`results/jenga/fresh_fragility_v2_graded_auc.json`.
