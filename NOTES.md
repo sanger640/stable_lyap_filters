@@ -6233,3 +6233,29 @@ evidence only. Result: `results/jenga/fragility_grading_result.json` (SHA-256 `9
 ## Fresh fragility confirmation protocol frozen (2026-10-01)
 
 `results/jenga/fresh_fragility_protocol.json` (SHA-256 `78dec2ae118d7a561e6e60f588d4dfce17771ac1bdb33ee43b1868e78daf7812`): a new panel from reset seeds episode_id + 5000 (never used), 40 seeded episodes screened, up to 60 topple forks and 100 safe states. The aware monitor at 2.65 mm is graded against fragility truth (2 seeds) and an independent harm measure (mixed neighbour topples within the agent's uncertainty). Gates: kappa >= 0.8 x ceiling, recall >= 0.80, alarms on robust <= ceiling + 0.10; aware kappa >= naive + 0.15; harm recall >= 0.80.
+
+## Fresh-panel fragility confirmation: not confirmed (G1 fails); beats naive and catches harm (2026-10-02)
+
+New layouts (reset seed episode_id + 5000), 40 seeded episodes, 812 states screened. Only 31 topple
+forks exist (cap 60 not reached), plus 100 seeded safe states: 131 panel states. Pass-2 replays
+matched the screen exactly. At sigma 2.65 mm, graded against fragility truth A (63/131 fragile):
+
+| | kappa | recall of fragile | alarms on robust |
+|---|---|---|---|
+| ceiling (truth B vs A) | 0.83 | 0.92 | 0.09 |
+| exact-state v1 | 0.50 | 0.57 (CI 45-69) | 0.07 |
+| naive | 0.28 | 0.40 (CI 29-52) | 0.12 |
+| **aware** | **0.57** | **0.79 (CI 68-88)** | **0.22 (CI 14-33)** |
+
+- **G1 (calibration) fails** on all three parts: kappa 0.69 x ceiling (needed 0.8x); recall 0.79
+  (needed 0.80, one state short); alarms on robust 0.22 (needed <= 0.09 + 0.10 = 0.19).
+- **G2 passes:** aware kappa is 0.29 above naive (needed 0.15); it roughly doubles naive's agreement.
+- **G3 passes:** of 49 harm-fork states (mixed neighbour topples within the agent's uncertainty:
+  all 31 exact topple forks plus 18 exact-state "safe" states), the aware monitor alarms on 43
+  (0.88, CI 0.76-0.94). Its alarm rate on non-harm states is 0.27.
+
+**Frozen decision: not confirmed.** The aware monitor reliably beats the naive one and mostly finds
+states where harm is possible within its uncertainty, but its agreement with fragility truth on fresh
+data (0.69 x ceiling) is clearly below DEV's (0.93 x), and it over-alarms on robust states. Likely
+contributor: the monitor sees ONE misperceived scene per state, so its estimate is centred 2.65 mm
+from the truth's. Result: `results/jenga/fresh_fragility_result.json` (SHA-256 `4dbe416be933f605b394bddca908cad6e01171153be57cad82bc0776793d149c`).
