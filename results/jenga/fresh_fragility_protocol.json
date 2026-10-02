@@ -1,0 +1,27 @@
+{
+  "id": "fresh-fragility-confirmation-v1",
+  "status": "frozen before execution (fresh-panel confirmation requested by the user 2026-10-01; gates set by the agent before any fresh data exist and reported to the user)",
+  "purpose": "Confirm on never-seen states that the uncertainty-aware monitor (the robot's 'intuitive physics engine') judges fragility at its own uncertainty scale from a misperceived scene, and check it against an independent harm measure (neighbour topples).",
+  "frozen_monitor": {
+    "rule": "monitor v1 (persistent_mode_alarm, unchanged) on non-robot positions at hold 10 and 30",
+    "aware_2.65": "the monitor sees s_hat = s_true + one perception draw (sigma 2.65 mm; rotation sigma / 37.5 mm; gripper exact); each of the 64 probes uses execution snippet j and its own state sample s_hat + e_j from the same noise model",
+    "comparators": "naive_2.65 (all probes from s_hat) and exact-state v1 (all probes from s_true)"
+  },
+  "fresh_panel": {
+    "configurations": "the 100 recorded Jenga episodes replayed with reset seed episode_id + 5000. Seed base 5000 has never been used in this project (DEV used episode_id, TEST episode_id + 1000, TRAIN seeds 100-109), so every block layout is new.",
+    "screen": "a seeded random 40 of the 100 episodes; at every chunk start (step 2, 10, ...), 64 probes at 1x from the exact state, chained exactly like the stage-0 screen (snapshot, probes back to back, restore, warm start, continue)",
+    "grading_labels": "topple of a neighbour block (tilt >= 45 deg at the end of the hold, among blocks that started below 45 deg), used only to stratify and grade: topple fork = 2-62 of 64 probes topple; safe = 0 topple",
+    "selection": "all topple forks up to 60 (seeded random if more) plus 100 seeded-random safe states; selection happens before any monitor or fragility value is computed"
+  },
+  "ground_truth": {
+    "fragility": "v1 split on aware sampling centred on the TRUE state at sigma 2.65 mm, two independent seeds A and B (A grades, A-vs-B is the ceiling)",
+    "harm_fork": "independent of the split rule: among the 64 truth-A rollouts, a neighbour topples in at least 2 and at most 62 (mixed harm outcomes within the agent's uncertainty)"
+  },
+  "gates": {
+    "G1_calibration": "aware kappa with truth A >= 0.8 x truth A-vs-B kappa, AND recall of truth-fragile states >= 0.80, AND alarm rate on truth-robust states <= (truth B's alarm rate on truth-A-robust states) + 0.10. The last bar is relative to the measurement ceiling because DEV showed truth itself scores 0.19 there with 64 samples, which made a fixed 0.20 bar unattainable.",
+    "G2_beats_naive": "aware kappa - naive kappa >= 0.15",
+    "G3_harm": "aware recall on harm-fork states >= 0.80"
+  },
+  "decision": "confirmed if G1, G2 and G3 all pass; each gate is also reported separately with Wilson intervals. One run, no re-selection.",
+  "cost": "screen about 800 states x 64 probes, then the selected panel (about 160 states) x 4 conditions x 64 probes, with the chain replayed: about 1.5-2 h on <= 4 CPU workers"
+}

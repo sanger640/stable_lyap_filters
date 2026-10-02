@@ -6229,3 +6229,7 @@ bar sat at the measurement ceiling. Of the aware monitor's 42 "quiet-state false
 are fragile: all 22/23 topple forks, but also 35/89 exact-state quiet states. The exact-state and
 naive monitors track fragility at the agent's scale much worse (kappa 0.46 and 0.39). Development
 evidence only. Result: `results/jenga/fragility_grading_result.json` (SHA-256 `9366296e4add83045ae337912199dfd5ea83a8caebb8233685eac896650692e7`).
+
+## Fresh fragility confirmation protocol frozen (2026-10-01)
+
+`results/jenga/fresh_fragility_protocol.json` (SHA-256 `78dec2ae118d7a561e6e60f588d4dfce17771ac1bdb33ee43b1868e78daf7812`): a new panel from reset seeds episode_id + 5000 (never used), 40 seeded episodes screened, up to 60 topple forks and 100 safe states. The aware monitor at 2.65 mm is graded against fragility truth (2 seeds) and an independent harm measure (mixed neighbour topples within the agent's uncertainty). Gates: kappa >= 0.8 x ceiling, recall >= 0.80, alarms on robust <= ceiling + 0.10; aware kappa >= naive + 0.15; harm recall >= 0.80.
