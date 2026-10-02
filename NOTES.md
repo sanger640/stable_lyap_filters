@@ -6208,3 +6208,24 @@ Development evidence only. Result: `results/jenga/uncertainty_monitor_result.jso
 ## Fragility-grading protocol frozen (2026-10-01)
 
 `results/jenga/fragility_grading_protocol.json` (SHA-256 `dae592bdb257bd75e497ed0ac33d68da779924145b3694cb326ce9b672d3c74c`): ground-truth fragility at the agent's own uncertainty scale (aware sampling centred on the TRUE DEV state, sigma 1 and 2.65 mm, two independent seeds), against which the option-2 aware, naive and exact-state monitors are graded. Calibrated if, at 2.65 mm, aware kappa >= 0.8 x truth A-vs-B kappa, recall of truly fragile states >= 0.80, and alarms on truly robust states <= 0.20.
+
+## Fragility grading: the aware monitor tracks true fragility nearly as well as the truth repeats itself (2026-10-01)
+
+Ground truth = v1 split on aware sampling centred on the TRUE state, with two independent seeds. 140
+DEV states; exact replay (floor 0.0 mm). Graded against truth seed A (kappa; recall of truly fragile
+states; alarm rate on truly robust states):
+
+| sigma | ceiling (truth B vs A) | exact-state v1 | naive | aware |
+|---|---|---|---|---|
+| 1 mm (54 fragile) | 0.75; 0.80; 0.06 | 0.64; 0.78; 0.14 | 0.51; 0.67; 0.16 | 0.62; 0.76; 0.14 |
+| 2.65 mm (81 fragile) | 0.71; 0.89; 0.19 | 0.46; 0.59; 0.10 | 0.39; 0.52; 0.10 | **0.65; 0.93; 0.29** |
+
+At 2.65 mm the aware monitor's kappa is 0.93 x the truth's own repeatability (gate >= 0.8: pass),
+recall of truly fragile states 0.93 (CI 0.85-0.97; gate >= 0.80: pass), but its alarm rate on truly
+robust states is 0.29 (CI 0.19-0.41; gate <= 0.20: **fail**). **Frozen decision: not calibrated, by
+one criterion.** The truth itself has 0.19 on that measure (finite sampling with 64 probes), so the
+bar sat at the measurement ceiling. Of the aware monitor's 42 "quiet-state false alarms" from option
+2, **30 are truly fragile at 2.65 mm**. Under the agent's own uncertainty, 58% of DEV states (81/140)
+are fragile: all 22/23 topple forks, but also 35/89 exact-state quiet states. The exact-state and
+naive monitors track fragility at the agent's scale much worse (kappa 0.46 and 0.39). Development
+evidence only. Result: `results/jenga/fragility_grading_result.json` (SHA-256 `9366296e4add83045ae337912199dfd5ea83a8caebb8233685eac896650692e7`).
