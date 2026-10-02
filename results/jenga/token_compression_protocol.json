@@ -1,0 +1,34 @@
+{
+  "id": "step3-stage0-token-compression",
+  "status": "frozen before execution (approved by the user 2026-10-02: 'do the compression test as per your recommendation: channel-PCA (grid kept), global PCA, a token autoencoder, and DINOSAUR slots'; frozen before any compressed-latent result was computed)",
+  "purpose": "Choose the latent space of the Step 3 stochastic token world model. A compression qualifies only if it keeps (1) the pose information perception needs and (2) the fork structure the split test reads from rendered endings. This is a SELECTION step on development data; Step 3 itself will be confirmed on a fresh panel.",
+
+  "candidates": {
+    "full": "uncompressed DINOv2 tokens (reference, not a candidate)",
+    "channel_pca_k": "per-patch linear projection of the 384 channels onto the top-k principal directions of training tokens; the patch grid is kept. k in {8, 32}",
+    "global_pca_k": "exact PCA of whole flattened frames (Gram-matrix method) onto k components. k in {256, 1024}",
+    "autoencoder_c": "convolutional token autoencoder: 1x1 conv to 256, stride-2 3x3 convs down to a 7x7 grid, 1x1 conv to c channels; mirrored transposed-conv decoder; MSE on per-channel standardised tokens; 40 epochs AdamW 1e-3 cosine. c in {16, 64} (784 and 3136 numbers)",
+    "slots": "DINOSAUR-style slot attention on frozen DINOv2 features: per-token MLP, K = 8 slots of D = 256, 3 iterations, learned per-slot initial values (deterministic, instead of DINOSAUR's random draws, so the same frame always gives the same slots); spatial-broadcast MLP decoder with alpha masks reconstructing the standardised tokens; 40 epochs AdamW 4e-4 cosine"
+  },
+  "fitting": "Every compressor is fitted without labels, only on frames of its own training split, and is then frozen. Data enters the compressors only as tokens.",
+
+  "test1_pose": {
+    "data": "results/program_b/vjepa/enc_dinov2_392_close (close fixed camera, 28 x 28 x 384 tokens, V1 TRAIN layouts); held-out split identical to the perception model (first 12% of episode:seed ids)",
+    "readout": "trained per candidate on the training split to predict the 27 pose numbers, 60 epochs batch 64 seed 0. Grid latents (full, channel_pca, autoencoder) use the existing KeypointHead; global_pca uses a 3-layer MLP (1024 hidden); slots use a permutation-invariant 2-layer transformer over the slots plus a learned summary token. Same recipe for all, no per-candidate tuning.",
+    "metric": "relative_position_mm (the 2.54 mm figure of the frozen perception model); orientation_deg reported",
+    "pass": "relative_position_mm <= 1.25 x the full-token value measured in this same run"
+  },
+
+  "test2_forks": {
+    "data": "fresh panel 2 rendered endings already produced by the visual pipeline (results/program_b/visual_pipeline/*_frames.npz: default camera, hold 10 and hold 30, exact-state probes and aware_v1_vis rollouts, 64 each), encoded exactly as in Step 2 (DINOv2 at 196 x 196 -> 14 x 14 x 384)",
+    "fitting": "two-fold by episode (sorted panel episodes, alternate assignment): compressors fitted on all ending frames of one fold, applied to the other. No labels; panel 2 has already been used for Step 1 and 2 results, so this is development data",
+    "rule": "the unchanged persistent_mode_alarm on the flattened compressed endings (hold 10, hold 30). Slots are unordered, so each rollout's slots are matched to rollout 0's slots at the same hold (Hungarian on cosine similarity) before flattening",
+    "metric": "Cohen kappa between compressed-token decisions and the state-position decisions on the same rollouts, separately for exact probes and aware rollouts; agreement with full-token decisions reported",
+    "sanity": "the full-token arm must reproduce the Step 2 values (kappa 0.681 exact, 0.903 aware)",
+    "pass": "kappa_vs_state >= full-token kappa - 0.10 for BOTH rollout sets"
+  },
+
+  "selection": "A candidate qualifies if it passes test 1 AND test 2. Among qualifiers the Step 3 latent is the one with the fewest numbers per frame (counted on the 14 x 14 outcome grid); ties go to the simpler method in the order channel_pca, global_pca, autoencoder, slots. If none qualifies, report that, and Step 3 uses full tokens restricted to a proprioceptive crop around the gripper (to be specified then, in its own protocol).",
+  "caveats": "Test 1 and test 2 use different cameras (close for perception, default for outcomes) and therefore separately fitted compressors. The Step 3 protocol will fix one camera setup. One seed per training; differences of a few tenths of a mm in test 1 are within training noise.",
+  "cost": "about 40k frames re-encoded (minutes of GPU); 9 readout trainings and 6 compressor trainings: about 2-3 h GPU. Runs beside panel 3, which is CPU-bound."
+}
