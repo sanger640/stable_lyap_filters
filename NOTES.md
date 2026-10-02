@@ -6300,3 +6300,33 @@ sees only s_hat cannot reach the truth-vs-truth ceiling, because the truth is de
 unknown s_true, so G1 as specified may be unattainable in principle; a Bayes-limited ceiling is the
 fairer reference. Results: `results/jenga/fresh_fragility_v2_result.json` (SHA-256 `bc81bbf08d7ad8cd2b7a3538cf8b63867ce5d9358da871a85ae254d3d873e00b`),
 `results/jenga/fresh_fragility_v2_graded_auc.json`.
+
+## Visual pipeline v1: Step 1 CONFIRMED with real camera perception; Step 2 narrowly fails (2026-10-02)
+
+Panel 2 states (153), exact physics. The perceived scene comes from the REAL vision model (DINOv2
+close camera + keypoint head). Per-block error on these new layouts, mean / p90: middle 2.76 / 5.46
+mm, neighbours 1.90 / 3.57 and 2.05 / 3.74 mm. Truth = fragility under the measured error model
+around the true state (58/153 fragile; ceiling kappa 0.85, recall 0.95, robust alarms 0.08):
+
+| monitor | kappa | recall of fragile | alarms on robust |
+|---|---|---|---|
+| exact-state | 0.56 | 0.84 | 0.25 |
+| naive (real s_hat) | 0.32 | 0.57 | 0.25 |
+| **aware v1 (real s_hat, measured error model)** | **0.76** | **0.86** | **0.09** |
+| **aware v2 (Bayesian, >= 3/5)** | **0.73** | **0.88 (CI 0.77-0.94)** | **0.14 (CI 0.08-0.22)** |
+
+**Step 1 gates (aware v2): G1 PASS** (kappa 0.86 x ceiling; recall 0.88; robust alarms 0.14 <=
+0.18), **G2 PASS** (+0.41 over naive), **G3 PASS** (harm-fork recall 0.90, CI 0.79-0.96, n = 52).
+**Step 1 confirmed.** Aware v1 does as well (kappa 0.76; robust alarms 0.09, at the ceiling). With a
+real perception system and its own measured, correlated error model, judging fragility at the
+agent's uncertainty scale works on fresh layouts, and acting on the single perceived scene (naive)
+does not.
+
+**Step 2 (token outcome reading): gate_T fails narrowly.** The split rule on full-frame DINO tokens
+(196 px, default camera) agrees with the state-based decision with kappa 0.90 on the aware rollouts
+but 0.68 on the exact-state probes (needed 0.70). Tokens alarm on 49 of the 73 state-based exact
+alarms, so they are under-sensitive to small exact-state splits.
+
+Caveats: physics is the exact simulator; panel 2 was also used for the synthetic-noise run (the
+visual protocol was frozen before those results were read); a single panel, and panels have varied
+(see panels 1 and 2). Result: `results/jenga/visual_pipeline_result.json` (SHA-256 `20a7d339352bad4d91f0636c25d2bac50238cd129dfda2c1cf06c807e7ae9038`).
