@@ -6330,3 +6330,15 @@ alarms, so they are under-sensitive to small exact-state splits.
 Caveats: physics is the exact simulator; panel 2 was also used for the synthetic-noise run (the
 visual protocol was frozen before those results were read); a single panel, and panels have varied
 (see panels 1 and 2). Result: `results/jenga/visual_pipeline_result.json` (SHA-256 `20a7d339352bad4d91f0636c25d2bac50238cd129dfda2c1cf06c807e7ae9038`).
+
+## Panel-2 token diagnostic, and the visual pipeline v2 protocol (panel 3) frozen (2026-10-02)
+
+Descriptive (panel 2, post hoc): of the 24 exact-state splits that the token reading missed, 22 are
+safe states with splits of only 0.1-6.6 mm (max ending displacement from the median); only 2 are
+topple forks. Every token alarm involves a split of about 49 mm or more, and tokens raised no alarm
+the state rule did not. Token reading therefore acts as a consequence-scale floor: the camera does
+not register millimetre nudges that the scale-free state rule counts as splits.
+Protocol `results/jenga/visual_pipeline_panel3_protocol.json` (SHA-256 `b7c01b4abbb95d2032a5a691e2d3a683dd5897cb262e7593830b3eed87079478`): fresh panel 3
+(seed + 7000, 80 episodes). S1 replicates Step 1 (aware v2 with real perception, same gates). S2
+tests the fully visual monitor (real perception, aware sampling, token-read outcomes; exact physics)
+against harm: harm-fork recall >= 0.80, alarms on non-harm <= 0.20, kappa with state truth >= 0.60.

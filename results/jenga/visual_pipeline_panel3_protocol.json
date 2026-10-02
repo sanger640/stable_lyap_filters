@@ -1,0 +1,21 @@
+{
+  "id": "visual-pipeline-v2-panel3",
+  "status": "frozen before execution (iteration under the user's 2026-10-02 mandate; designed after the panel-2 visual result and its descriptive token diagnostic, before any panel-3 data exist)",
+  "panel": "fresh panel 3: reset seed episode_id + 7000 (never used); a seeded random 80 episodes (seed 20261006); screen and selection exactly as panels 1-2 (64 exact probes at every chunk start; up to 60 topple forks plus 100 safe states, seeded)",
+  "perception": "unchanged from visual_pipeline_protocol.json: saved DINOv2 close-camera keypoint model; measured error model; the perceived scene replaces the three block poses",
+  "monitors": {
+    "naive_vis": "64 probes from the perceived scene; state readout",
+    "aware_v1_vis": "probe j from s_hat + e_j (measured error model); state readout",
+    "aware_v2_vis": "5 hypotheses, aware sampling around each, >= 3/5; state readout",
+    "aware_token_vis": "the SAME aware_v1_vis rollouts read from full-frame DINO tokens of rendered endings (default camera, 196 px), persistent split rule unchanged: the fully visual monitor apart from the physics",
+    "exact_state": "for reference"
+  },
+  "ground_truth": "fragility under the measured error model around the TRUE state (state readout, seeds A and B); harm fork = 2-62 of 64 truth-A rollouts topple a neighbour. A second, token-read truth (truth-A rollouts read from tokens) is reported descriptively.",
+  "gates": {
+    "S1_replication (aware_v2_vis, as in panel 2)": "kappa >= 0.8 x truth A-vs-B kappa; recall of fragile >= 0.80; alarms on robust <= truth B alarm-on-robust + 0.10; kappa - naive kappa >= 0.15; harm-fork recall >= 0.80",
+    "S2_visual_monitor (aware_token_vis)": "harm-fork recall >= 0.80 AND alarm rate on non-harm states <= 0.20 AND kappa with state truth A >= 0.60",
+    "rationale_for_S2": "The panel-2 diagnostic showed token reading ignores sub-centimetre splits that the state rule counts (22 of 24 disagreements were safe states with 0.1-6.6 mm splits), so S2 grades the visual monitor against physical harm first."
+  },
+  "decision": "S1 replicates Step 1 if all its parts pass; S2 confirms the fully visual monitor (exact physics) if all its parts pass. Reported separately; one run.",
+  "cost": "screen about 1,600 states x 64; then about 160 states x 640 rollouts plus about 41k rendered frames; about 4-5 h CPU, then GPU token encoding"
+}
