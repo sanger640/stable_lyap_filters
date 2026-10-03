@@ -12,8 +12,7 @@
 \usepackage{booktabs,amsmath,amssymb,graphicx,xcolor}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
-\title{Robots Need World Models That Know When the Future Forks:\\
-A Goal-Free Probe of Branching Fidelity}
+\title{Accurate on Average, Blind at the Fork}
 \author{Anonymous Authors}
 
 \begin{document}
@@ -28,10 +27,9 @@ futures, and alarms when they split into persistent, well-separated groups, with
 failure data or fitted thresholds. In simulated Jenga extraction with real camera perception, the
 probe tracks ground-truth fragility on three fresh panels ($\kappa$ 0.70--0.84 against a ceiling of
 0.85--0.92, versus 0.32--0.51 when perception error is ignored), including when outcomes are read
-from image tokens. Used as an evaluation of world models, it shows that learned simulators accurate
-on average erase forks: a graph-network model halves fork recall, and a stochastic token-space world
-model reaches only $\kappa$ 0.18 because its sampled spread is isotropic and ignores where futures
-branch. Robots need world models for such questions, but only ones with this \emph{branching
+from image tokens. Used to evaluate a world model, the probe exposes a failure that average error hides: a stochastic
+token-space world model that predicts futures well on average reaches only $\kappa$ 0.18, because its
+sampled spread is isotropic and ignores where futures branch. Robots need world models for such questions, but only ones with this \emph{branching
 fidelity}, which current models lack and current benchmarks do not measure.
 \end{abstract}
 
@@ -59,8 +57,8 @@ without task labels, failure data or fitted thresholds (Sec.~\ref{sec:method}). 
 real camera-based perception model on three fresh test panels, that sampling the robot's own
 perception error is what makes the judgment match ground truth, including when outcomes are read
 directly from image tokens (Sec.~\ref{sec:perception}). (3) \emph{Branching fidelity} as a world-model
-evaluation: the two learned models we tested predict well on average yet lose the forks; we diagnose
-why (Sec.~\ref{sec:wm}).
+evaluation: a token-space world model that predicts well on average still loses the forks, and a
+diagnosis shows where its uncertainty should live instead (Sec.~\ref{sec:wm}).
 
 \section{Problem setup and fork probe}\label{sec:method}
 \paragraph{Task and monitor.} A simulated Franka Panda (MuJoCo) extracts blocks from Jenga-like
@@ -147,25 +145,27 @@ aware v2, tokens & -- & -- & -- & -- & \textbf{0.83} & \textbf{0.88} \\
 \end{table}
 
 \paragraph{Reading outcomes from images.} A deployed monitor should not need object states to judge
-outcomes. Applied unchanged to flattened DINOv2 tokens of rendered endings, the split test agrees
-with the position-based test at $\kappa$ 0.86--0.90 on aware rollouts; tokens ignore harmless
-sub-centimetre splits (22 of 24 disagreements on panel 2), acting as a consequence-scale floor. The
-fully visual Bayesian probe meets its frozen gate on panel 4 (harm recall 0.88, 95\% CI 0.77--0.94;
-7\% alarms on non-harm states). Misses come from where rollouts start, not from reading images: on
-panel 3, token- and position-read v1 each miss 14 of 62 harm forks, 12 because the single estimate put
-the rollout cloud on the safe side of the edge and 2 because nearly all rollouts toppled (a
-deterministic failure). Panels differ in difficulty, so v2's extra caution is not shown to help.
+outcomes either. Applied unchanged to DINOv2 tokens of rendered endings, the split test gives almost
+the same decisions ($\kappa$ 0.86--0.90 with the position-based test), and the fully visual Bayesian
+probe meets its frozen harm gate on panel 4 (recall 0.88, 95\% CI 0.77--0.94; 7\% alarms on non-harm
+states). Remaining misses come from where rollouts start, not from reading images: on panel 3, 12 of
+14 missed harm forks arose because the single estimate put the whole rollout cloud on the safe side of
+the edge.
 
 \subsection{Branching fidelity of learned world models}\label{sec:wm}
-So far the rollouts used MuJoCo with privileged geometry. With a learned world model in its place,
-the probe becomes a test of the model: do its rollouts branch where physics branches? We tested two. A
-graph-network state model trained with a counterfactual objective ranks fragile states well (AUC
-0.97), yet under a refined probe it keeps 31\% (8--49\% over 10 seeds) of held-out topple forks
-where exact physics keeps 65.5\%. A stochastic token-space world model, with DINOv2 tokens compressed
-by a fixed per-patch PCA to $28\times28\times8$ and a flow-matching transition trained on 8 futures
-per image whose starts were sampled within perception error, also predicts well on average: both token
-models beat a no-motion baseline on 19-step latent error by 3--4$\times$. Yet it fails on fresh panel 4 ($\kappa$ 0.18, harm recall 0.18,
-Table~\ref{tab:wm}), below its own deterministic control ($\kappa$ 0.42).
+So far, every rollout ran in MuJoCo with the true geometry and masses; only the block poses came
+from the camera. A robot outside simulation needs a learned model in that role, and the fork probe
+then becomes a test of the model: given one image and the 64 perturbed chunks, do its rollouts branch
+where physics branches? We built the most direct candidate. The image is encoded with DINOv2 and
+compressed by a fixed per-patch PCA to a $28\times28\times8$ latent (chosen beforehand as the only
+compression that kept both pose information and fork structure). A flow-matching transition predicts
+the next latent from the current one and the action, with fresh noise at every step, so that repeated
+rollouts can differ. It is trained on 8 futures per image whose start scenes were sampled within the
+measured perception error, so the spread of its targets is exactly the robot's own uncertainty. A
+deterministic version with the same architecture serves as control. Both predict well on average:
+they beat a no-motion baseline on 19-step latent error by 3--4$\times$. Yet the stochastic model fails
+on fresh panel 4 ($\kappa$ 0.18, harm recall 0.18; Table~\ref{tab:wm}), below its deterministic
+control ($\kappa$ 0.42).
 
 \begin{table}[t]
 \centering
@@ -219,10 +219,12 @@ judged by likelihood or return; we ask whether their spread falls where the dyna
 A robot can judge fragility the way people do, by sampling its own perception and execution
 uncertainty through a rough simulator. For the question this workshop poses, our results suggest that
 pre-execution safety checks of this kind need a queryable world model with branching fidelity, which
-the two learned models we tested lack despite low average error, and that uncertainty belongs in the
+the world models we trained lack despite low average error, and that uncertainty belongs in the
 initial conditions rather than in per-step noise. Average-error benchmarks would rank these models
-well; we propose branching fidelity as an additional axis. \paragraph{Limitations.} Simulation, one task family; MuJoCo probes use privileged geometry;
-fragility truth shares the split test (harm is the independent check); single world-model runs.
+well; we propose branching fidelity as an additional axis. \paragraph{Limitations.} Simulation only, one task family, three tracked blocks; the MuJoCo probes use
+privileged geometry except for the perceived poses; fragility truth shares the split test with the
+monitors (harm forks are the independent check); panels vary in difficulty; the world models come from
+single training runs; and forks do not cover chunks that fail deterministically.
 
 \bibliography{references}
 \end{document}
