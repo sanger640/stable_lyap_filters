@@ -1,115 +1,114 @@
-"""Figure 1 of the workshop paper: (a) one real fork as rendered endings, (b) real vs world-model futures
-of one held-out fork state on the real futures' principal axes, (c) fragility agreement per panel.
+"""Figure 1 of the workshop paper.
 
-Inputs are committed results or local caches: panel-3 example frames (scratch extraction is not used;
-frames are read from results/program_b/visual_panel3), D0 latents and world models (results/program_b/step3),
-and kappa values from results/jenga/*panel*_result.json.
+Top: the fork probe as a pipeline, with real renders of one held-out fork (paper/fig_assets, made by
+paper/render_fork_frames.py). Bottom: that fork's 64 real latent futures next to the two token world
+models' futures for the same image and perturbed chunks, all on the real futures' principal axes.
 """
-import json
 from pathlib import Path
 import sys
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-STATE = "ep63_seed104_s74"           # most balanced real split among held-out D0 forks (31/64 minority)
-PANEL3_STATE = ("73", 34)            # panel-3 fork caught by every monitor; frames are aware-v1 endings
-INK, MUTED, ORANGE, TEAL, VIOLET, GREY = "#1b2430", "#6b7682", "#d27a1e", "#0e7a86", "#6b55c9", "#a7b0b9"
+ASSETS = Path(__file__).with_name("fig_assets")
+STATE = "ep63_seed104_s74"           # most balanced real split among held-out D0 forks (33/64 topple)
+INK, MUTED, ORANGE, TEAL, VIOLET, BOX = "#1b2430", "#6b7682", "#d27a1e", "#0e7a86", "#6b55c9", "#eef1f4"
 
 
-def topple_flags(traces, start_tilt):
-    from fresh_fragility_panel import topple_count
-    return np.array([topple_count(traces[j:j + 1], start_tilt) > 0 for j in range(len(traces))])
+def crop(path):
+    from PIL import Image
+    return np.asarray(Image.open(path))[50:505, 55:465]
 
 
-def panel_a(axes):
-    import fresh_fragility_panel as fp
-    e, i = PANEL3_STATE
-    d = ROOT / "results/program_b/visual_panel3"
-    screen = json.loads((d / "screen.json").read_text())
-    with np.load(d / f"ep{e}_s{i}.npz") as f, np.load(d / f"ep{e}_s{i}_frames.npz") as fr:
-        flags = topple_flags(f["aware"], np.array(screen[e][str(i)]["start_tilt"]))
-        up, down = int(np.flatnonzero(~flags)[0]), int(np.flatnonzero(flags)[0])
-        for ax, j, label in ((axes[0], up, "stays"), (axes[1], down, "topples")):
-            ax.imshow(fr["aware"][j, 1][38:98, 118:202], interpolation="lanczos")
-            ax.set_title(label, fontsize=7, color=ORANGE if label == "topples" else TEAL, pad=2)
-            ax.axis("off")
-    return int(flags.sum())
-
-
-def panel_b(ax):
-    import torch
+def futures():
     import step3_data as sd
     import step3_diagnostics as dg
     import step3_world_model as wm
+    from fresh_fragility_panel import topple_count
     paths = sorted((sd.OUT / "d0").glob("ep*.npz"))
     n = [p.stem for p in paths].index(STATE)
     with np.load(paths[n]) as f:
         real = f["z"][:, 1].reshape(64, -1).astype(np.float64)
-        flags = topple_flags(f["traces"], f["start_tilt"])
+        flags = np.array([topple_count(f["traces"][j:j + 1], f["start_tilt"]) > 0 for j in range(64)])
         z0, acts = f["z0"][None].astype(np.float32), f["actions"]
-    sto = wm.WorldModel.load(sd.OUT / "wm_stochastic.pt")
-    det = wm.WorldModel.load(sd.OUT / "wm_deterministic.pt")
-    s_end = dg.rollout(sto, z0, acts, "S_step", seed=20261060 + n)[1]
-    d_end = dg.rollout(det, z0, acts, "D", seed=20261060 + n)[1]
+    sto = dg.rollout(wm.WorldModel.load(sd.OUT / "wm_stochastic.pt"), z0, acts, "S_step", seed=20261060 + n)[1]
+    det = dg.rollout(wm.WorldModel.load(sd.OUT / "wm_deterministic.pt"), z0, acts, "D", seed=20261060 + n)[1]
     mean = real.mean(0)
     _, sv, vt = np.linalg.svd(real - mean, full_matrices=False)
     scale = sv[0] / np.sqrt(len(real))
     proj = lambda x: (x - mean) @ vt[:2].T / scale
-    r, s, d = proj(real), proj(s_end), proj(d_end)
-    ax.scatter(*s.T, s=7, c=VIOLET, alpha=0.55, lw=0, label="WM, stochastic")
-    ax.scatter(*r[~flags].T, s=9, c=TEAL, lw=0, label="real, stays")
-    ax.scatter(*r[flags].T, s=9, c=ORANGE, lw=0, label="real, topples")
-    ax.scatter(*d.T, s=12, c=INK, marker="x", lw=0.8, label="WM, deterministic")
-    ax.set_xlabel("real futures, PC1", fontsize=7); ax.set_ylabel("PC2", fontsize=7)
-    ax.tick_params(labelsize=6)
-    ax.legend(fontsize=5.5, frameon=False, loc="lower left", ncol=2, handletextpad=0.1, columnspacing=0.4,
-              borderaxespad=0.0, bbox_to_anchor=(-0.05, 1.0))
-    torch.cuda.empty_cache()
+    return proj(real), flags, proj(sto), proj(det)
 
 
-def panel_c(ax):
-    res = {2: json.loads((ROOT / "results/jenga/visual_pipeline_result.json").read_text()),
-           3: json.loads((ROOT / "results/jenga/visual_pipeline_panel3_result.json").read_text()),
-           4: json.loads((ROOT / "results/jenga/visual_v2_panel4_result.json").read_text())}
-    keys = {2: {"naive": "naive", "aware v1": "aware", "aware v2": "aware_v2"},
-            3: {"naive": "naive", "aware v1": "aware", "aware v2": "aware_v2", "v1 tokens": "aware_token"},
-            4: {"naive": "naive", "aware v1": "aware", "aware v2": "v2_state", "v1 tokens": "v1_token",
-                "v2 tokens": "v2_token"}}
-    names = ["naive", "aware v1", "aware v2", "v1 tokens", "v2 tokens"]
-    shown = {"naive": "no percep. sampling", "aware v1": "probe", "aware v2": "probe, 5 hyp.", "v1 tokens": "probe, images", "v2 tokens": "5 hyp., images"}
-    colours = [GREY, TEAL, "#3fa7b3", VIOLET, "#9a8be0"]
-    w = 0.16
-    for p, panel in enumerate((2, 3, 4)):
-        g = res[panel]["graded_vs_truth_A"]
-        for m, name in enumerate(names):
-            if name in keys[panel]:
-                ax.bar(p + (m - 2) * w, g[keys[panel][name]]["kappa"], w * 0.92, color=colours[m],
-                       label=shown[name] if p == 2 else None)
-        ceil = res[panel]["ceiling_A_vs_B"]["kappa"]
-        ax.hlines(ceil, p - 2.6 * w, p + 2.6 * w, colors=INK, lw=1)
-    ax.set_xticks([0, 1, 2], ["set A", "set B", "set C"], fontsize=7)
-    ax.set_ylabel(r"$\kappa$ vs truth", fontsize=7); ax.set_ylim(0, 1.3); ax.set_yticks([0, 0.5, 1.0])
-    ax.tick_params(labelsize=6)
-    ax.plot([], [], color=INK, lw=1, label="ceiling (truth B vs A)")
-    ax.legend(fontsize=5.5, frameon=False, ncol=3, loc="upper left", columnspacing=0.6, handlelength=1,
-              borderaxespad=0.0, bbox_to_anchor=(0.0, 1.03))
+def box(ax, x, y, w, h, text, size=6.3):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.6,rounding_size=1.2", fc=BOX, ec=MUTED, lw=0.6))
+    ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size, color=INK, linespacing=1.25)
+
+
+def arrow(ax, x0, x1, y):
+    ax.add_patch(FancyArrowPatch((x0, y), (x1, y), arrowstyle="-|>", mutation_scale=7, lw=0.8, color=MUTED))
+
+
+def image(fig, ax, x, y, w, h, img, label=None, colour=INK):
+    """Place an image in the schematic axes' data coordinates."""
+    (fx0, fy0), (fx1, fy1) = fig.transFigure.inverted().transform(ax.transData.transform([(x, y), (x + w, y + h)]))
+    sub = fig.add_axes([fx0, fy0, fx1 - fx0, fy1 - fy0])
+    sub.imshow(img, interpolation="lanczos", aspect="auto"); sub.set_xticks([]); sub.set_yticks([])
+    for spine in sub.spines.values():
+        spine.set_visible(True); spine.set_edgecolor(colour); spine.set_linewidth(0.8)
+    if label:
+        sub.set_title(label, fontsize=6, color=colour, pad=1.5)
 
 
 def main():
     plt.rcParams.update({"font.family": "serif", "axes.spines.top": False, "axes.spines.right": False})
-    fig = plt.figure(figsize=(5.5, 1.6))
-    gs = fig.add_gridspec(1, 4, width_ratios=[0.62, 0.62, 1.1, 1.3], wspace=0.55)
-    sub = gs[0, 0:2].subgridspec(1, 2, wspace=0.04)
-    panel_a([fig.add_subplot(sub[0, 0]), fig.add_subplot(sub[0, 1])])
-    axb, axc = fig.add_subplot(gs[0, 2]), fig.add_subplot(gs[0, 3])
-    panel_b(axb); panel_c(axc)
-    for ax, letter, x, y in ((fig.axes[0], "(a)", -0.05, 1.25), (axb, "(b)", -0.32, 1.22), (axc, "(c)", -0.2, 1.22)):
-        ax.text(x, y, letter, transform=ax.transAxes, fontsize=8, fontweight="bold")
+    fig = plt.figure(figsize=(5.5, 2.55))
+    gs = fig.add_gridspec(2, 3, height_ratios=[1.12, 1.0], hspace=0.55, wspace=0.28)
+
+    # ---- top: the probe as a pipeline (data coordinates 0..100 x 0..30; 1 x-unit ~ 1.37 y-units)
+    ax = fig.add_subplot(gs[0, :]); ax.set_xlim(0, 100); ax.set_ylim(0, 30); ax.axis("off")
+    image(fig, ax, 0, 4, 12, 16.4, crop(ASSETS / "start.png"), "camera image")
+    arrow(ax, 12.6, 15.0, 12)
+    box(ax, 15.8, 3.5, 17.5, 17, "estimate + measured\nperception error;\nchunk + measured\nexecution error\n= 64 imagined starts",
+        size=5.6)
+    arrow(ax, 34.3, 36.7, 12)
+    box(ax, 37.5, 3.5, 15.5, 17, "rollout engine:\nMuJoCo (reference)\nor world model;\nchunk, then 30-step\nimagined hold", size=5.6)
+    arrow(ax, 54.0, 56.4, 12)
+    image(fig, ax, 57.2, 4, 12, 16.4, crop(ASSETS / "end_stays.png"), "stays: 31", TEAL)
+    image(fig, ax, 70.2, 4, 12, 16.4, crop(ASSETS / "end_topples.png"), "topples: 33", ORANGE)
+    ax.text(69.7, 0.6, "64 imagined endings", ha="center", va="center", fontsize=5.8, color=INK)
+    arrow(ax, 83.0, 85.4, 12)
+    box(ax, 86.2, 3.5, 13.0, 17, "split into two\npersistent,\nseparated\ngroups?\nyes = fragile", size=5.6)
+    ax.text(0, 30.5, "(a) the fork probe", fontsize=7.5, fontweight="bold", va="top")
+
+    # ---- bottom: real vs world-model futures for the same state
+    real, flags, sto, det = futures()
+    panels = (("real futures (physics)", None), ("world model, stochastic", sto),
+              ("world model, deterministic", det))
+    for c, (title, pts) in enumerate(panels):
+        a = fig.add_subplot(gs[1, c])
+        if pts is None:
+            a.scatter(*real[~flags].T, s=6, c=TEAL, lw=0, label="stays")
+            a.scatter(*real[flags].T, s=6, c=ORANGE, lw=0, label="topples")
+            a.legend(fontsize=5.5, frameon=False, loc="upper center", ncol=2, handletextpad=0.1,
+                     columnspacing=0.6, borderaxespad=0.1)
+        else:
+            a.scatter(*real.T, s=6, c="#c9cfd5", lw=0, label="real")
+            a.scatter(*pts.T, s=6, c=VIOLET if c == 1 else INK, lw=0, label="model")
+            a.legend(fontsize=5.5, frameon=False, loc="upper center", ncol=2, handletextpad=0.1,
+                     columnspacing=0.6, borderaxespad=0.1)
+        a.set_xlim(-1.6, 1.6); a.set_ylim(-0.9, 1.35)
+        a.set_title(title, fontsize=6.5, pad=2)
+        a.tick_params(labelsize=5.5, length=2)
+        if c == 0:
+            a.set_ylabel("PC2", fontsize=6)
+            a.text(-0.42, 1.2, "(b)", transform=a.transAxes, fontsize=7.5, fontweight="bold")
+        a.set_xlabel("PC1 of real futures", fontsize=6)
     fig.savefig(Path(__file__).with_name("fig_forks.pdf"), bbox_inches="tight", pad_inches=0.02)
     fig.savefig(Path(__file__).with_name("fig_forks.png"), dpi=220, bbox_inches="tight", pad_inches=0.02)
 

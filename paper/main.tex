@@ -70,18 +70,16 @@ generalist policy cannot assume; it isolates cases where intent no longer determ
 contact-rich manipulation damage typically happens at such boundaries. A chunk that fails every time is
 not fragile and needs a task-level check.
 
-\paragraph{The fork probe.} The probe imagines 64 versions of the chunk. Version $j$ subtracts an
-execution-error snippet from the commanded positions, drawn from the robot's measured tracking
-residuals (median chunk maximum 3.2\,mm), and starts from a perturbed version of the perceived scene.
-The scene is perceived by a frozen DINOv2 encoder \citep{oquab2024dinov2} on one close-camera image
+\paragraph{The fork probe} (Fig.~\ref{fig:forks}a) imagines 64 versions of the chunk. Version $j$
+subtracts an execution-error snippet, drawn from the robot's measured tracking residuals (median chunk
+maximum 3.2\,mm), and starts from a perturbed perceived scene. The scene is perceived by a frozen DINOv2 encoder \citep{oquab2024dinov2} on one close-camera image
 with a keypoint head that regresses the poses of the three blocks in play (2.5\,mm held-out error).
 The perception error model is measured once, offline: we run the perception model on held-out
 validation images with known poses and fit a zero-mean Gaussian to its errors (a full $9\times9$
 covariance over block positions, which captures correlated errors, plus a rotation covariance per
-block). Each rollout starts from the estimate plus one draw from this model, as in the IPE. Each
-imagined rollout then holds the chunk's last command for 30 steps so the outcome settles (only in the
-monitor's imagination). The probe reads the 64 endings (object positions, or image tokens) at hold steps 10 and 30 and flags the
-chunk if, at both times, the endings projected on their first principal axis prefer two Gaussians to
+block). Each rollout starts from the estimate plus one draw from this model, as in the IPE, and
+ends with an imagined 30-step hold on the last command so the outcome settles. The probe flags the
+chunk if, at both times, the endings (object positions or image tokens) projected on their first principal axis prefer two Gaussians to
 one by BIC, are well separated (Ashman's $D>2$ \citep{ashman1994detecting}), have at least 2 rollouts in
 the smaller group, and keep the same grouping. These are fixed statistical conventions, not fitted to
 labels. A variant hedges against an unlucky estimate by drawing 5 scene hypotheses and running the
@@ -119,10 +117,10 @@ world model should reach.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_forks.pdf}
-\caption{(a) Two of 64 endings of one chunk under execution error: the neighbour stays or topples.
-(b) A held-out fork: real latent futures (colour = outcome) on their principal axes, with the token
-world models' futures for the same inputs; the deterministic model spreads along the branch axis, the
-stochastic one stays near one outcome. (c) $\kappa$ on test sets A--C; lines: ceiling.}
+\caption{(a) The fork probe on one held-out state (33 of 64 real futures topple a neighbour). (b) The
+same state's futures in latent space, on the real futures' principal axes: physics splits into two
+groups; the stochastic world model stays near one outcome (most of its spread lies off this plane); the
+deterministic one spreads along the branch axis without a clean gap.}
 \label{fig:forks}
 \end{figure}
 
@@ -222,10 +220,9 @@ A robot can judge fragility the way people do, by sampling its own perception an
 through a rough simulator. For this workshop's question, our results suggest that such checks
 need a queryable world model with branching fidelity, which our trained world model lacks despite low
 average error; here the uncertainty that matters enters through the initial conditions. Average-error
-benchmarks would rank this model well; branching fidelity is a needed additional axis. \paragraph{Limitations.} Simulation, one task family, three tracked blocks;
-privileged MuJoCo geometry; one perception error model for all images; fragility truth shares the split test (topple forks are the independent check);
-test sets vary in difficulty; single world-model training runs; chunks that fail every time are not
-flagged.
+benchmarks would rank this model well; branching fidelity is a needed additional axis. \paragraph{Limitations.} Simulation, one task, three tracked blocks; privileged
+MuJoCo geometry; one perception error model for all images; fragility truth shares the split test
+(topple forks are independent); test sets vary; single training runs; always-failing chunks are not flagged.
 
 \bibliography{references}
 \end{document}
