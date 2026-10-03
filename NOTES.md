@@ -6414,3 +6414,27 @@ panel visual v1 would ALSO have passed the same gate (0.88 / 0.09 / 0.77); panel
 (naive harm recall 0.67 vs 0.65, aware v1 state kappa 0.84 vs 0.70). So panel 4 confirms that a fully
 visual uncertainty-aware monitor can meet the harm gate, but it does NOT show that v2 fixes v1's panel-3
 shortfall; v1's 0.77 on panel 3 sits inside the panel-to-panel variation (Wilson CIs overlap).
+
+## 2026-10-03: Step 3 stochastic token world model, fresh panel 4: FAILED (frozen protocol + addendum 1)
+
+Result `results/jenga/step3_token_world_model_result.json`. Latent: close-camera channel-PCA-8 (28x28x8).
+D0 PASS (latent vs state split kappa 0.93 on 60 held-out TRAIN states). Training: 1500 TRAIN states x 8
+futures (419 topple-disagreeing), 60 epochs each; final val rollout-end MSE 0.055 (stochastic) / 0.042
+(deterministic). Panel 4: 156 states, 66 truth-fragile, 57 harm forks.
+
+| world-model monitor | kappa vs truth A | recall | robust alarms | harm recall | non-harm alarms |
+|---|---|---|---|---|---|
+| stochastic (flow matching, fresh noise every step) | 0.18 | 0.17 | 0.01 | 0.18 | 0.02 |
+| deterministic control (MSE, action noise only) | 0.42 | 0.52 | 0.11 | 0.60 | 0.10 |
+| (reference, same panel) exact physics from true state | 0.53 | 0.85 | 0.30 | | |
+| (reference) fully visual v2, MuJoCo | 0.83 | 0.83 | 0.02 | 0.88 | 0.07 |
+
+Gates: D0 pass; **W1 fail, W2 fail, W3 fail** (stochastic is 0.25 kappa BELOW the deterministic control).
+Branching fidelity (minority-fraction correlation on truth-fragile states) -0.05. Readings (not tested):
+(1) the stochastic model almost never alarms (12 alarms / 156): per-step independent noise seems to spread
+endings as a continuous cloud rather than two separated modes, so the split test (BIC + Ashman D > 2) rarely
+fires; the noise behaves like diffusion, not branching. (2) The deterministic control keeps part of the
+action-noise sensitivity of exact physics (kappa 0.42 vs exact 0.53): a learned integrated latent model does
+carry some fork structure from execution noise, but it does not reproduce perception-scale uncertainty
+(recall 0.52 vs aware monitors 0.8+). No retraining on panel 4. Next iteration needs a new protocol and a
+fresh panel.
