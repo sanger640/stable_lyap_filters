@@ -6438,3 +6438,31 @@ action-noise sensitivity of exact physics (kappa 0.42 vs exact 0.53): a learned 
 carry some fork structure from execution noise, but it does not reproduce perception-scale uncertainty
 (recall 0.52 vs aware monitors 0.8+). No retraining on panel 4. Next iteration needs a new protocol and a
 fresh panel.
+
+## 2026-10-03: Step 3 diagnostics (descriptive; held-out TRAIN states only, no panel data)
+
+`eval/step3_diagnostics.py` -> `results/jenga/step3_diagnostics.json`. 60 D0 states (35 real-latent forks),
+real 64 futures vs world-model rollouts with the same actions. Perturbed start frames re-rendered by exact
+chain replay of the data run (frame check: <= 2 grey levels on <= 1.7% of pixels, renderer noise level).
+
+| variant | alarms /60 | kappa vs real latent | spread vs real | PC1 share on forks | Ashman D on forks |
+|---|---|---|---|---|---|
+| real futures | 35 | 1 | 1 | 0.57 | 29.7 |
+| S_step (as evaluated) | 4 | 0.10 | 0.98 | 0.15 | 3.0 |
+| S_traj (one noise draw per rollout) | 0 | 0.00 | 2.59 | 0.12 | 2.8 |
+| S_half (temperature 0.5) | 2 | -0.01 | 0.10 | 0.33 | 3.1 |
+| D (deterministic, action noise only) | 14 | 0.17 | 0.04 | 0.69 | 6.0 |
+| D_pert (deterministic from rendered perturbed starts) | 21 | 0.37 | 0.44 | 0.50 | 5.9 |
+
+Validation spread over 19 steps (median between-future spread at the last step): real 260 on
+topple-disagreeing states vs 54 on others (4.8x); S_step 125 vs 99 (1.3x); D 47 vs 1.5 (32x).
+Findings: (1) the stochastic model reproduces the AMOUNT of spread but not its SHAPE or its PLACEMENT: its
+spread is isotropic (PC1 share 0.15 vs 0.57) and nearly the same on fork and non-fork states, i.e. it
+learned the average uncertainty of futures, not where futures branch; changing the sampler (per-rollout
+noise, lower temperature) does not fix it. (2) The deterministic model's tiny spread is structured (PC1
+share 0.69) and strongly state-dependent (32x larger on fork states): its dynamics amplify perturbations
+along the branch direction. (3) Moving perception uncertainty to the INPUT (D_pert) is the best variant
+(kappa 0.37 vs real), but D_pert used rendered images of perturbed scenes, which a deployed robot does not
+have; a deployable version needs a learned latent-space perturbation model. Implication for the next
+protocol: put stochasticity where physics puts it (uncertain initial conditions, amplified by learned
+deterministic dynamics) rather than as per-step generative noise.
