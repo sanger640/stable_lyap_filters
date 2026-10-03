@@ -1,4 +1,10 @@
-% CoRL 2026 Workshop on World Models -- DRAFT v0 (2026-10-03)
+% CoRL 2026 Workshop "Do Robots Need World Models? A Debate on Dynamics Learning, Planning, and
+% End-to-End Robot Learning" (https://do-robots-need-world-models.github.io) -- DRAFT v1 (2026-10-03)
+% Research-paper track. Up to 4 pages, CoRL template. Submit on OpenReview:
+% https://openreview.net/group?id=robot-learning.org/CoRL/2026/Workshop/do-robots-need-world-models
+% Deadline 2026-10-12; notification 10-26; camera-ready 11-06; workshop 11-12. Reciprocal review: one
+% author must review another submission. Archival: TBD. Not double-blind as far as the page says;
+% kept anonymous to be safe. References assumed outside the 4 pages (CoRL convention): check.
 % Compile on Overleaf with the official CoRL 2026 template: replace the \documentclass/\usepackage
 % block below with the template's (\documentclass{article} + \usepackage[preprint]{corl_2026}).
 % All numbers are from committed result files under results/jenga/ (see paper/NUMBERS.md).
@@ -9,8 +15,8 @@
 \usepackage{booktabs,amsmath,amssymb,graphicx,xcolor,hyperref}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
-\title{Does Your World Model Know When the Future Forks?\\
-Uncertainty-Aware Fork Probes for Robot Intuitive Physics}
+\title{Robots Need World Models That Know When the Future Forks:\\
+A Goal-Free Probe of Branching Fidelity}
 \author{Anonymous Authors}
 \date{}
 
@@ -18,8 +24,11 @@ Uncertainty-Aware Fork Probes for Robot Intuitive Physics}
 \maketitle
 
 \begin{abstract}
-People judge whether a tower will fall by running a few noisy mental simulations over an uncertain
-scene and checking whether the outcomes disagree \citep{battaglia2013simulation}. We bring this
+Some safety questions are counterfactual by nature: \emph{would a slightly different execution of
+this action, or a slightly different version of the scene I perceive, end differently?} A policy
+cannot answer this; a model it can query can. People answer it by running a few noisy mental
+simulations over an uncertain scene and checking whether the outcomes disagree
+\citep{battaglia2013simulation}. We bring this
 \emph{intuitive physics engine} to a robot as a goal-free \emph{fork probe}: perturb the intended
 action with the robot's own measured execution error and its scene estimate with its measured
 perception error, roll out 64 counterfactual futures, and alarm when they split into persistent,
@@ -32,7 +41,9 @@ object states (harm-fork recall 0.88). The same probe then serves as an evaluati
 models, \emph{branching fidelity}. Learned simulators that are accurate on average erase forks: a
 graph-network state model halves fork recall, and a stochastic token-space world model trained to
 sample futures reaches only $\kappa$ 0.18 because its sampled spread is isotropic and nearly the same
-on forks and non-forks. Uncertainty belongs in the initial conditions, not in per-step noise.
+on forks and non-forks. Uncertainty belongs in the initial conditions, not in per-step noise. For the debate on whether
+robots need world models, our answer is: for this kind of safety, yes, but only models with
+branching fidelity, which today's learned models lack, and benchmarks should measure it.
 \end{abstract}
 
 \section{Introduction}
@@ -41,6 +52,11 @@ manipulation, however, what often matters is whether a model knows \emph{where} 
 deviations in action or perception lead to qualitatively different outcomes: the block slides out,
 or the tower tips. A model can be accurate on average and still be wrong exactly there, because a
 fork is a low-probability, high-consequence boundary in state space.
+
+This bears directly on whether robots need world models. An end-to-end policy outputs one action;
+it does not say whether realistic deviations of that action would end in a different regime. That is
+a counterfactual query, and answering it requires a model that can be rolled out under perturbed
+actions and perturbed scenes. The question is then which properties such a model must have.
 
 Humans handle this with what \citet{battaglia2013simulation} called an intuitive physics engine
 (IPE): a few approximate, noisy simulations over an uncertain scene, whose disagreement signals
@@ -212,6 +228,19 @@ measures whether the physics itself is at a branch, which a confidently wrong mo
 failure-inducing actions \citep{motamed2026physicsiq,yang2026mirabench}. We measure a complementary
 axis: whether rollouts branch where the physics does.
 
+\section{Implications for the debate}
+\textbf{Do robots need world models?} For pre-execution safety judgments of the kind studied here,
+a queryable model is required by construction: the question is about futures the robot will not
+execute. Our results add a condition. The model must have \emph{branching fidelity}, and two
+learned families that are accurate on average do not have it. A model scoring well on average error
+can still be useless for this purpose. \textbf{Where should the model live?} Our diagnostics point to
+a specific split: uncertainty belongs in the initial conditions, sampled from the robot's measured
+perception and execution error, and the dynamics can be deterministic and approximate, as in the
+IPE. Generative per-step noise reproduced the right amount of spread in the wrong places.
+\textbf{Can current benchmarks decide?} Not on this axis. Average-error and success-rate benchmarks
+would rank our failed models well. The fork probe offers a goal-free, label-free test that can be
+run on any model that accepts perturbed actions or initial states.
+
 \section{Limitations and conclusion}
 All results are in simulation, with one task family and three tracked blocks. Our MuJoCo-based
 probes use privileged geometry and masses for everything except the perceived block poses. Panels
@@ -221,7 +250,7 @@ thresholds. Still, the results support a simple picture: a robot can judge fragi
 do, by sampling its own perception and execution uncertainty through a rough simulator. Current
 learned world models do not yet supply that simulator, because they do not preserve branching
 structure. We propose branching fidelity as a standard evaluation axis for world models used in
-manipulation.
+manipulation, alongside average prediction error and task success.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
