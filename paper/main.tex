@@ -9,7 +9,11 @@
 \documentclass{article}
 \usepackage{corl_2026}             % official CoRL 2026 submission style (anonymous); [final] for camera-ready
 \usepackage[T1]{fontenc}           % Times (ptm) under XeTeX/Tectonic; harmless under pdfLaTeX
-\usepackage{booktabs,amsmath,amssymb,graphicx,xcolor}
+\usepackage{booktabs,amsmath,amssymb,graphicx,xcolor,tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\definecolor{inkc}{HTML}{1B2430}\definecolor{mutedc}{HTML}{5D6873}\definecolor{linec}{HTML}{C3CAD1}
+\definecolor{cardc}{HTML}{F2F4F6}\definecolor{tealc}{HTML}{0E7A86}\definecolor{orangec}{HTML}{C96A14}
+\definecolor{violetc}{HTML}{6B55C9}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
 \title{Accurate on Average, Blind at the Fork}
@@ -116,11 +120,13 @@ world model should reach.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{fig_forks.pdf}
-\caption{(a) The fork probe on one held-out state (33 of 64 real futures topple a neighbour). (b) The
-same state's futures in latent space, on the real futures' principal axes: physics splits into two
-groups; the stochastic world model stays near one outcome (most of its spread lies off this plane); the
-deterministic one spreads along the branch axis without a clean gap.}
+\input{fig_probe.tex}\\[4pt]
+\includegraphics[width=0.96\linewidth]{fig_futures.pdf}
+\caption{(a) The fork probe on one held-out state, with exact renders: the robot's own uncertainty
+(64 plausible scenes, shown averaged) is rolled forward, and the averaged endings show the neighbour
+both standing and fallen (33 of 64 topple). (b) The same 64 futures in the world model's latent space, on
+the real futures' principal axes: physics splits into two groups; the stochastic world model stays in
+one cluster (most of its spread lies off this plane); the deterministic one spreads without a gap.}
 \label{fig:forks}
 \end{figure}
 

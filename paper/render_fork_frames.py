@@ -70,6 +70,19 @@ def main():
                                                       (37,), renderer, camera)
                         Image.fromarray(frames[0]).save(OUT / f"end_{name}.png")
                         report[name] = {"future": k, "max_trace_diff": float(np.abs(traces - stored["traces"][k]).max())}
+                    # ghosts: all 64 imagined starts (perception draws) and all 64 imagined endings, averaged
+                    import program_b_reference as pr
+                    starts, ends = [], []
+                    for k in range(sd.D0_FUTURES):
+                        d = errors.sample(sd.SEEDS["d0_futures"], *key, k)
+                        sim.restore(snapshot)
+                        pr.perturb_blocks(sim, *d)
+                        renderer.update_scene(sim.data, camera=camera)
+                        starts.append(renderer.render().astype(np.float32))
+                        ends.append(sd.future(sim, snapshot, chunk, snippets[k], d, (37,), renderer, camera)[2][0]
+                                    .astype(np.float32))
+                    Image.fromarray(np.mean(starts, 0).astype(np.uint8)).save(OUT / "start_ghost.png")
+                    Image.fromarray(np.mean(ends, 0).astype(np.uint8)).save(OUT / "end_ghost.png")
                     break
                 sim.restore(snapshot)
                 sim.data.qacc_warmstart[:] = warm0
