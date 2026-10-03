@@ -29,7 +29,7 @@ few noisy simulations over an uncertain scene and call it precarious when the ou
 build this check for robots as a goal-free \emph{fork probe}: sample the robot's measured perception and
 execution error, roll the intended action chunk forward 64 times, and flag it when the futures split.
 With a physics engine and a real camera-based perception model, the probe recovers fragile states on
-unseen Jenga layouts ($\kappa$ up to 0.81, against 0.42 when perception uncertainty is ignored). Without
+unseen block layouts ($\kappa$ up to 0.81, against 0.42 when perception uncertainty is ignored). Without
 the engine the probe needs a world model, and there it fails: a token-space world model that predicts
 3--4$\times$ better than a no-motion baseline reaches only $\kappa$ 0.19, because its sampled uncertainty has
 the right size but not where futures branch. Safe deployment needs world models with \emph{branching
@@ -43,8 +43,8 @@ Manipulation policies, from diffusion policies to vision-language-action models,
 short action chunks \citep{chi2023diffusion,zhao2023act,black2024pi0}. Deploying them safely requires a
 check before each chunk runs. Existing monitors address \emph{epistemic} uncertainty, flagging inputs the
 model has not seen \citep{seo2025uncertainty,xu2025failure}. We address a second kind that remains even
-for a perfect model: \emph{physical} uncertainty. In contact-rich tasks such as Jenga extraction, the same
-command can slide a block out or tip a neighbour depending on millimetres of execution error and
+for a perfect model: \emph{physical} uncertainty. When a robot picks a block standing between two
+others, the same command can lift it cleanly or tip a neighbour depending on millimetres of execution error and
 perception error. Such a chunk is precarious even if its nominal outcome is fine, because uncertainty the
 robot cannot control decides what happens.
 
@@ -64,8 +64,8 @@ real camera perception on three unseen test sets, which sets the reference a wor
 token-space world models that predict well on average yet fail it, with a diagnosis (Sec.~\ref{sec:wm}).
 
 \section{Setup and the fork probe}\label{sec:probe}
-\paragraph{Task.} A simulated Franka Panda (MuJoCo) extracts blocks from Jenga-like stacks. At each chunk
-start a policy commits to an 8-step action chunk; ours come from recorded episodes, but the probe treats
+\paragraph{Task.} Three Jenga-like blocks stand upright in a row; a simulated Franka Panda (MuJoCo) must
+pick the middle (red) block without toppling its neighbours. At each chunk start a policy commits to an 8-step action chunk; ours come from recorded episodes, but the probe treats
 the policy as a black box and sees only the chunk, one camera image and proprioception.
 
 \paragraph{Fragility.} A chunk is \emph{fragile} if the robot's uncertainty, its execution error and its
@@ -89,13 +89,13 @@ first principal axis prefer two Gaussians to one by BIC, are well separated (Ash
 \citep{ashman1994detecting}), have at least 2 members in the smaller group, and keep the same grouping;
 these are fixed statistical conventions, not fitted to labels. A variant draws 5 scene hypotheses and
 flags if at least 3 split. The probe works with any rollout engine. Our reference is MuJoCo with the
-three blocks placed at the sampled poses and everything else (geometry, masses, other blocks) taken from
+three blocks placed at the sampled poses and everything else (block geometry, masses, friction) taken from
 the simulator, which a real robot does not have; the learned alternative is a world model (Sec.~\ref{sec:wm}).
 
 \paragraph{Ground truth.} One real outcome cannot grade a monitor, since a fragile chunk may succeed by
 luck. An oracle therefore samples the 64 futures from the \emph{true} scene in exact physics and labels
 the state a fork as above. Two independent oracle runs agree at Cohen's $\kappa$ 0.99, the ceiling. Each
-evaluation uses an unseen test set of stack layouts (up to 60 topple-screened states plus 100 safe ones)
+evaluation uses an unseen test set of block layouts (up to 60 topple-screened states plus 100 safe ones)
 under a protocol frozen before the data existed.
 
 \section{Results}
