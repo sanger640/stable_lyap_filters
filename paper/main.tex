@@ -28,11 +28,11 @@ People make this judgment with an intuitive physics engine \citep{battaglia2013s
 few noisy simulations over an uncertain scene and call it precarious when the outcomes disagree. We
 build this check for robots as a goal-free \emph{fork probe}: sample the robot's measured perception and
 execution error, roll the intended action chunk forward 64 times, and flag it when the futures split.
-With a physics engine and a real camera-based perception model, the probe recovers fragile states on
-unseen block layouts ($\kappa$ up to 0.81, against 0.42 when perception uncertainty is ignored). Without
-the engine the probe needs a world model, and there it fails: a token-space world model that predicts
-3--4$\times$ better than a no-motion baseline reaches only $\kappa$ 0.19, because its sampled uncertainty has
-the right size but not where futures branch. Safe deployment needs world models with \emph{branching
+With a physics engine and a real camera-based perception model, the probe catches 88\% of forks on
+unseen layouts with 7\% false alarms, reading outcomes from images alone; ignoring perception uncertainty
+misses a third of them. Without the engine the probe needs a world model, and there it fails: a
+token-space world model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\%,
+because its sampled uncertainty has the right size but not where futures branch. Safe deployment needs world models with \emph{branching
 fidelity}, which average-error benchmarks do not measure.
 \end{abstract}
 
@@ -94,7 +94,7 @@ the simulator, which a real robot does not have; the learned alternative is a wo
 
 \paragraph{Ground truth.} One real outcome cannot grade a monitor, since a fragile chunk may succeed by
 luck. An oracle therefore samples the 64 futures from the \emph{true} scene in exact physics and labels
-the state a fork as above. Two independent oracle runs agree at Cohen's $\kappa$ 0.99, the ceiling. Each
+the state a fork as above. Two independent oracle runs give the same label on 99\% of states. Each
 evaluation uses an unseen test set of block layouts (up to 60 topple-screened states plus 100 safe ones)
 under a protocol frozen before the data existed.
 
@@ -103,10 +103,10 @@ under a protocol frozen before the data existed.
 With exact physics and the true scene, the split test flags all 23 topple forks among 112 development
 states, with 10\% alarms on the 89 quiet ones. With real perception, perception uncertainty must be
 propagated: errors of 2--4\,mm are comparable to execution noise, and a probe that trusts the estimate
-reaches $\kappa$ 0.42--0.54, while the fork probe reaches 0.70--0.81 and catches 77--91\% of forks
+catches only 65--67\% of forks, while the fork probe catches 77--91\% with 7--17\% false alarms
 (Table~\ref{tab:panels}). Reading outcomes from DINOv2 tokens of rendered endings instead of object
-positions costs almost nothing, so the probe works from images alone: on test set C, $\kappa$ 0.81 with 88\%
-of forks caught (95\% CI 0.77--0.94) and 7\% false alarms. This is the reference a world model must reach.
+positions costs almost nothing, so the probe works from images alone: on test set C it catches 88\%
+of forks (95\% CI 77--94\%) with 7\% false alarms. This is the reference a world model must reach.
 
 \begin{figure}[t]
 \centering
@@ -120,22 +120,21 @@ the world model's latent space, on the real futures' principal axes.}
 
 \begin{table}[t]
 \centering
-\caption{Fork probe with MuJoCo and real perception on unseen test sets: $\kappa$ against the fork label
-and fork recall.}
+\caption{Fork probe with MuJoCo and real perception on unseen test sets: forks caught and false
+alarms (\%) against the physical fork label.}
 \label{tab:panels}
 \small
 \begin{tabular}{lcccccc}
 \toprule
 & \multicolumn{2}{c}{Set A (153 states)} & \multicolumn{2}{c}{Set B (160)} & \multicolumn{2}{c}{Set C (156)} \\
-outcomes read from object positions & $\kappa$ & recall & $\kappa$ & recall & $\kappa$ & recall \\
+outcomes read from object positions & caught & false & caught & false & caught & false \\
 \midrule
-ceiling (two oracle runs) & 0.99 & 1.00 & 0.99 & 1.00 & 0.99 & 0.98 \\
-perception uncertainty ignored & 0.42 & 0.65 & 0.54 & 0.65 & 0.42 & 0.67 \\
-fork probe & 0.76 & 0.90 & 0.71 & 0.77 & 0.80 & 0.91 \\
-fork probe, 5 hypotheses & 0.70 & 0.90 & 0.76 & 0.90 & 0.77 & 0.89 \\
+perception uncertainty ignored & 65 & 23 & 65 & 12 & 67 & 24 \\
+fork probe & 90 & 12 & 77 & 8 & 91 & 10 \\
+fork probe, 5 hypotheses & 90 & 17 & 90 & 13 & 89 & 11 \\
 \midrule
-outcomes read from images: fork probe & 0.75 & 0.88 & 0.71 & 0.77 & 0.78 & 0.88 \\
-\phantom{outcomes read from images:} 5 hypotheses & -- & -- & -- & -- & \textbf{0.81} & \textbf{0.88} \\
+outcomes read from images: fork probe & 88 & 12 & 77 & 8 & 88 & 9 \\
+\phantom{outcomes read from images:} 5 hypotheses & -- & -- & -- & -- & \textbf{88} & \textbf{7} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -144,14 +143,14 @@ outcomes read from images: fork probe & 0.75 & 0.88 & 0.71 & 0.77 & 0.78 & 0.88 
 Without privileged geometry a learned model must take MuJoCo's role, and the probe becomes its test:
 given one image and the 64 perturbed chunks, do its rollouts branch where physics branches? Since
 outcomes can be read from image tokens, a token-space world model can be probed like the simulator. Our
-model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (the split test
-on this latent agrees with the position-based test at $\kappa$ 0.93 on held-out real futures) and predicts
+model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (on held-out real
+futures the split test on this latent catches 97\% of forks) and predicts
 the next latent from the current one and the action with a flow-matching transition, drawing fresh noise
 at every step. It is trained on 8 futures per image whose start scenes were sampled within the measured
 perception error, so its target spread is the robot's own uncertainty; a deterministic version of the
 same network is the control. Both beat a no-motion baseline on 19-step latent error by 3--4$\times$, yet
-on test set C the stochastic model reaches $\kappa$ 0.19 and catches 18\% of forks, and the deterministic
-one 0.52 and 60\%, against 0.81 for the engine (Table~\ref{tab:wm}).
+on test set C the stochastic model catches 18\% of forks and the deterministic one 60\%, against 88\% for
+the engine (Table~\ref{tab:wm}).
 
 \begin{table}[t]
 \centering
@@ -160,14 +159,14 @@ one 0.52 and 60\%, against 0.81 for the engine (Table~\ref{tab:wm}).
 \small
 \begin{tabular}{lccccc}
 \toprule
-rollouts from & $\kappa$ & recall & spread & main axis & fork ratio \\
+rollouts from & caught & false & spread & main axis & fork ratio \\
 \midrule
-reference (MuJoCo; real futures) & 0.81 & 0.88 & 1.00 & 0.57 & 4.8 \\
-token world model, stochastic & 0.19 & 0.18 & 0.98 & 0.15 & 1.3 \\
-token world model, deterministic & 0.52 & 0.60 & 0.04 & 0.69 & 32 \\
-deterministic, uncertain starts (held-out only) & 0.29$^\dagger$ & -- & 0.28 & 0.55 & -- \\
+reference (MuJoCo; real futures) & 88\% & 7\% & 1.00 & 0.57 & 4.8 \\
+token world model, stochastic & 18\% & 2\% & 0.98 & 0.15 & 1.3 \\
+token world model, deterministic & 60\% & 10\% & 0.04 & 0.69 & 32 \\
+deterministic, uncertain starts & 48\%$^\dagger$ & 3\%$^\dagger$ & 0.28 & 0.55 & -- \\
 \bottomrule
-\multicolumn{6}{l}{\footnotesize $^\dagger$ agreement with real-future splits on held-out states; it failed this pre-test, so set C was not run.}
+\multicolumn{6}{l}{\footnotesize $^\dagger$ on the 60 held-out states; it failed this pre-test, so set C was not run.}
 \end{tabular}
 \end{table}
 
@@ -181,8 +180,8 @@ misplaced. The deterministic model's tiny spread is aligned with the branch axis
 forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. We tested
 this in a second, pre-registered iteration: a learned operator perturbs the start latent by sampled
 physical perception error, and deterministic dynamics are trained on full rollouts from each future's
-own start. It fails its held-out pre-test ($\kappa$ 0.29), and even with exactly rendered perturbed starts
-it reaches only 0.19: the learned dynamics amplify start uncertainty too weakly (spread 0.28$\times$) and
+own start. It fails its held-out pre-test, catching 48\% of forks, and even with exactly rendered perturbed
+starts only 45\%: the learned dynamics amplify start uncertainty too weakly (spread 0.28$\times$) and
 form two groups on only half the real forks. The bottleneck is the dynamics, not the uncertainty input.
 
 \section{Related work}
