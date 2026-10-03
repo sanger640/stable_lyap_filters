@@ -6466,3 +6466,32 @@ along the branch direction. (3) Moving perception uncertainty to the INPUT (D_pe
 have; a deployable version needs a learned latent-space perturbation model. Implication for the next
 protocol: put stochasticity where physics puts it (uncertain initial conditions, amplified by learned
 deterministic dynamics) rather than as per-step generative noise.
+
+## 2026-10-03: Step 3 iteration 2 (uncertain start + learned deterministic dynamics): P1 FAILS, panel 5 not graded
+
+Protocol `results/jenga/step3b_uncertain_start_protocol.json`; result `results/jenga/step3b_p1_result.json`.
+Run interrupted by a power loss at 13:02 (journal stops mid-stream; no panic/OOM/thermal; earlier sessions
+ended the same way); A_no_fix3 retrained from scratch (epoch-1 loss identical to 5 decimals); panel-5
+generation run 1 had lost 39 episodes to GPU OOM (training 13 GB + 6 workers) and was restarted at 3
+workers after P1; it was stopped when P1 failed (protocol: panel 5 is not run if P1 fails).
+
+P1 on 60 held-out D0 states (64 real futures each; real-latent alarms 35):
+
+| variant | alarms | kappa vs real latent | spread vs real | PC1 share at forks |
+|---|---|---|---|---|
+| full (G starts) | 16 | **0.29** | 0.28 | 0.55 |
+| full, Gaussian starts | 16 | 0.35 | 0.27 | 0.47 |
+| full, oracle rendered starts | 17 | 0.19 | 0.38 | 0.43 |
+| full, no start perturbation | 17 | 0.32 | 0.01 | 0.79 |
+| no fix 1 (true z0 pairing) | 13 | 0.27 | 0.16 | 0.41 |
+| no fix 2 (teacher forcing) | 22 | 0.20 | 0.23 | 0.38 |
+| no fix 3 (rendered starts only) | 13 | 0.27 | 0.24 | 0.44 |
+
+G relative error 0.48 (median ||G - rendered||^2 / ||rendered - z0||^2). **P1 fails (0.29 < 0.60).**
+Readings: (1) even with oracle rendered perturbed starts the dynamics reach only kappa 0.19 and alarm on
+17 of 35 forks: the bottleneck is the learned dynamics, not the start sampler; (2) perturbing the start
+adds spread (0.01 -> 0.28) but not agreement (0.32 -> 0.29); (3) the three training fixes change little
+(0.20-0.27 without each vs 0.29 with all); (4) iteration-1's deterministic model with rendered perturbed
+starts reached 0.37 in the diagnostics, so iteration 2 is not an improvement. Learned latent dynamics at
+this data scale (1,500 states x 8 futures, 419 disagreeing) under-amplify perturbations (spread 0.27-0.38x)
+and separate futures into two groups on about half the real forks.
