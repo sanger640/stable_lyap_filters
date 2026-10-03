@@ -6495,3 +6495,25 @@ adds spread (0.01 -> 0.28) but not agreement (0.32 -> 0.29); (3) the three train
 starts reached 0.37 in the diagnostics, so iteration 2 is not an improvement. Learned latent dynamics at
 this data scale (1,500 states x 8 futures, 419 disagreeing) under-amplify perturbations (spread 0.27-0.38x)
 and separate futures into two groups on about half the real forks.
+
+## 2026-10-03: Re-analysis against one physical answer key (descriptive; frozen runs, no new simulation)
+
+`eval/fork_label_reanalysis.py` -> `results/jenga/fork_label_reanalysis.json`. A state is a FORK if 2-62 of the
+64 oracle (truth-A) rollouts topple a neighbour; the ceiling compares oracle run A's fork labels with run
+B's. All monitor decisions recomputed with their frozen rules from stored rollouts; world-model set-C
+decisions reproduced with the evaluation seeds and matched the stored alarm totals (12 and 44).
+Test set A/B/C = fresh panels 2/3/4. kappa vs fork label (recall on forks, false-alarm rate):
+
+| monitor | A (153, 52 forks) | B (160, 62) | C (156, 57) |
+|---|---|---|---|
+| ceiling (oracle B vs A) | 0.99 | 0.99 | 0.99 |
+| no perception sampling | 0.42 (0.65, 0.23) | 0.54 (0.65, 0.12) | 0.42 (0.67, 0.24) |
+| fork probe (aware v1) | 0.76 (0.90, 0.12) | 0.71 (0.77, 0.08) | 0.80 (0.91, 0.10) |
+| 5 hypotheses (v2) | 0.70 (0.90, 0.17) | 0.76 (0.90, 0.13) | 0.77 (0.89, 0.11) |
+| probe, images | 0.75 (0.88, 0.12) | 0.71 (0.77, 0.08) | 0.78 (0.88, 0.09) |
+| 5 hypotheses, images | -- | -- | 0.81 (0.88, 0.07) |
+| token WM stochastic | -- | -- | 0.19 (0.18, 0.02) |
+| token WM deterministic | -- | -- | 0.52 (0.60, 0.10) |
+
+The physical fork label is almost perfectly repeatable (0.99, vs 0.85-0.92 for split-test truth); conclusions
+unchanged. The original protocol results (split-test truth) remain the frozen record.
