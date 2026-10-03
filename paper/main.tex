@@ -195,19 +195,17 @@ know; the fork probe measures whether the physics is at a branch.
 \citep{parmar2021fundamental} and audits find poor physical grounding and optimism under
 failure-inducing actions \citep{motamed2026physicsiq,yang2026mirabench}. We add a complementary axis.
 
-\section{Implications for the debate, limitations and conclusion}
-\textbf{Do robots need world models?} For pre-execution safety judgments, a queryable model is needed
-by construction, and it must have branching fidelity, which two learned families accurate on average
-lack. \textbf{Where should the model live?} Uncertainty belongs in the initial conditions, sampled
-from measured perception and execution error; the dynamics can be deterministic and approximate.
-\textbf{Can current benchmarks decide?} Not on this axis: average-error and success benchmarks would
-rank our failed models well, while the fork probe runs on any model that accepts perturbed actions or
-states. \textbf{Limitations.} Simulation only, one task family, three tracked blocks; the MuJoCo
-probes use privileged geometry except for the perceived poses; panels vary in difficulty; the split
-test's conventions act like fixed thresholds. Still, a robot can judge fragility the way people do,
-by sampling its own uncertainty through a rough simulator; learned world models do not yet supply that
-simulator. We propose branching fidelity as a standard evaluation axis alongside prediction error and
-task success.
+\section{Conclusion and limitations}
+A robot can judge fragility the way people do, by sampling its own perception and execution
+uncertainty through a rough simulator. For the question this workshop poses, our results suggest
+that pre-execution safety judgments need a queryable world model, but one with branching fidelity,
+which two learned families accurate on average lack. They also suggest where uncertainty should live
+in such a model: in the initial conditions, sampled from measured error, with deterministic and
+approximate dynamics. Average-error and success benchmarks would rank our failed models well; we
+propose branching fidelity, measured with the goal-free fork probe, as an additional evaluation axis.
+\textbf{Limitations.} Simulation only, one task family, three tracked blocks; the MuJoCo probes use
+privileged geometry except for the perceived poses; panels vary in difficulty; and the split test's
+statistical conventions act like fixed thresholds.
 
 \bibliography{references}
 \end{document}
