@@ -1,5 +1,8 @@
 # Active plan — after D21
 
+> **2026-10-03:** the active world-model line is now `docs/PLAN_BRANCHING_WM.md` (general visual world
+> models with branching fidelity; whole-clip generators allowed). The sections below are the earlier state-model plan.
+
 ## Objective
 
 Develop a universal, task-label-free monitor that warns when realistic action uncertainty places a
