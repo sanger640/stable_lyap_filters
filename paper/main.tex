@@ -109,10 +109,9 @@ a learned model instead of the simulator?
 \centering
 \includegraphics[width=\linewidth]{fig_forks.pdf}
 \caption{(a) Two of 64 endings of one panel-3 chunk under execution error: the neighbour stays or
-topples. (b) A held-out fork (most balanced real split): real latent futures (colour = outcome) on their
-principal axes, with the token world models' futures for the same image and actions; the deterministic
-model spreads along the branch axis, the stochastic one stays near one outcome with its spread mostly
-off this plane. (c) Agreement with fragility truth on three fresh panels; lines mark the ceiling.}
+topples. (b) A held-out fork: real latent futures (colour = outcome) on their principal axes, with the
+token world models' futures for the same inputs; the deterministic model spreads along the branch axis,
+the stochastic one stays near one outcome. (c) Agreement with fragility truth on three fresh panels; lines mark the ceiling.}
 \label{fig:forks}
 \end{figure}
 
@@ -153,12 +152,11 @@ states). Remaining misses come from where rollouts start, not from reading image
 the edge.
 
 \subsection{Branching fidelity of learned world models}\label{sec:wm}
-So far, every rollout ran in MuJoCo with the true geometry and masses; only the block poses came
-from the camera. A robot outside simulation needs a learned model in that role, and the fork probe
-then becomes a test of the model: given one image and the 64 perturbed chunks, do its rollouts branch
-where physics branches? We built the most direct candidate. The image is encoded with DINOv2 and
-compressed by a fixed per-patch PCA to a $28\times28\times8$ latent (chosen beforehand as the only
-compression that kept both pose information and fork structure). A flow-matching transition predicts
+So far, rollouts ran in MuJoCo with the true geometry; only the block poses came from the camera.
+Outside simulation a learned model must take that role, and the fork probe becomes its test: given one
+image and the 64 perturbed chunks, do its rollouts branch where physics branches? Our candidate encodes the image with DINOv2,
+compressed by a fixed per-patch PCA to a $28\times28\times8$ latent (chosen beforehand to keep pose
+and fork information). A flow-matching transition predicts
 the next latent from the current one and the action, with fresh noise at every step, so that repeated
 rollouts can differ. It is trained on 8 futures per image whose start scenes were sampled within the
 measured perception error, so the spread of its targets is exactly the robot's own uncertainty. A
@@ -169,8 +167,7 @@ control ($\kappa$ 0.42).
 
 \begin{table}[t]
 \centering
-\caption{Token world models: $\kappa$, harm on fresh panel 4; diagnostics on 60 held-out states
-(spread vs real; PC1: share on the main axis at forks; ratio: spread on forks / non-forks).}
+\caption{Token world models: panel 4 ($\kappa$, harm) and diagnostics on 60 held-out states.}
 \label{tab:wm}
 \small
 \begin{tabular}{lccccc}
@@ -185,46 +182,49 @@ token WM, deterministic & 0.42 & 0.60 & 0.04 & 0.69 & 32 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Why the stochastic model fails.} It reproduces the \emph{amount} of spread but not its
-\emph{shape} or \emph{placement}: the spread is isotropic and nearly the same on forks and non-forks,
-so the model learned the average uncertainty of futures, not where they branch. Other samplers are worse. The deterministic model's spread is tiny but aligned
+\paragraph{Why the stochastic model fails.} Table~\ref{tab:wm} compares total spread, its share on the
+main axis (PC1) and its fork/non-fork ratio with real futures. The model reproduces the \emph{amount} of spread but not its
+\emph{shape} or \emph{placement}: the spread is isotropic and nearly equal on forks and non-forks, the
+average uncertainty of futures rather than where they branch; other samplers are worse. The deterministic model's spread is tiny but aligned
 with the branch axis and 32$\times$ larger on forks (Fig.~\ref{fig:forks}b); started from rendered
-perturbed scenes it doubles agreement with real futures ($\kappa$ 0.17$\to$0.37). As in the IPE,
-uncertainty should enter through the initial conditions and be amplified by roughly right dynamics,
-not be added as per-step generative noise. A second iteration (a learned operator perturbing the start
+perturbed scenes it doubles agreement with real futures ($\kappa$ 0.17$\to$0.37). Per-step noise is not wrong in general
+(diffusion weather ensembles stay well dispersed \citep{price2025gencast}); ours was misplaced. Here, as in the IPE, the uncertainty that
+matters is in the initial conditions, and roughly right dynamics amplify it along the branch. A second iteration (a learned operator perturbing the start
 latent by physical perception error, then deterministic dynamics) is under evaluation \todo{result}.
 
 \section{Related work}
 \paragraph{Simulation under uncertainty.} Beyond the IPE and counterfactual accounts of physical
-support \citep{zhou2023mental}, robotics has long run Monte Carlo rollouts over pose, friction or
-model parameters to score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing} or to build
-safety filters \citep{johansson2025safety,wang2026manidreams}; these judge outcomes with a task
-predicate or constraint. \citet{zapolsky2016particle} proposed detecting divergent behaviour from
-particle traces but evaluated task-failure detection. Learned stability classifiers need labels
-\citep{lerer2016learning}. We perturb with the robot's own measured errors and judge only the
-structure of the outcome set, a Monte Carlo test of proximity to a basin boundary \citep{menck2013basin}.
-\paragraph{Runtime monitors.} Latent safety filters use learned failure classifiers, including on
-Jenga \citep{nakamura2025generalizing,seo2025uncertainty}, and failure detectors use policy-side
-uncertainty calibrated on successes \citep{xu2025failure,agia2024unpacking}. These measure what a model does
-not know; the fork probe measures whether the physics is at a branch.
-\paragraph{World models and their uncertainty.} Learned simulators are accurate on rigid contact
-\citep{sanchezgonzalez2020learning,allen2023fignet}, and latent world models support planning
-\citep{zhou2025dinowm,assran2025vjepa2,hafner2025dreamerv3}, but stiff contact is hard to learn
-\citep{parmar2021fundamental}, and audits find poor physical grounding and optimism under
-failure-inducing actions \citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}. Stochastic
-and ensemble models represent uncertainty \citep{chua2018pets,lakshminarayanan2017ensembles} but are
-judged by likelihood or return; we ask whether their spread falls where the dynamics branch.
+support \citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model
+parameters to score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing} or to build safety
+filters \citep{johansson2025safety,wang2026manidreams}. Closest to our setup, \citet{cannizzaro2024cobra}
+sample measured perception and placement noise through a simulator to predict whether a block tower
+stands, and \citet{goyal2026stability} perturbs action chunks with policy-scale noise to measure, offline,
+how fast deviations grow. These score a task predicate, labels \citep{lerer2016learning} or a growth rate;
+\citet{zapolsky2016particle} proposed goal-free detection of divergent particle traces but evaluated
+task failure. We judge only whether the outcome set splits, a Monte Carlo test of proximity to a basin
+boundary \citep{menck2013basin}.
+\paragraph{Runtime monitors.} Latent safety filters use learned failure classifiers, also on Jenga
+\citep{nakamura2025generalizing,seo2025uncertainty}; failure detectors use policy uncertainty calibrated
+on successes \citep{xu2025failure,agia2024unpacking}. Both measure what a model does not know, not
+whether the physics is at a branch.
+\paragraph{World models and their uncertainty.} Learned simulators and latent world models
+\citep{sanchezgonzalez2020learning,allen2023fignet,zhou2025dinowm,assran2025vjepa2,hafner2025dreamerv3}
+struggle with stiff contact \citep{parmar2021fundamental}, and audits find poor physical grounding and
+optimism under failure-inducing actions \citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}. \citet{yu2026evaluated}
+propose evaluating world models on interventional action branches by per-branch error; our models
+have low error yet lose the forks. Stochastic and ensemble models
+\citep{chua2018pets,lakshminarayanan2017ensembles} are judged by likelihood or return, not by where
+their spread falls.
 
 \section{Conclusion and limitations}
 A robot can judge fragility the way people do, by sampling its own perception and execution
 uncertainty through a rough simulator. For the question this workshop poses, our results suggest that
 pre-execution safety checks of this kind need a queryable world model with branching fidelity, which
-the world models we trained lack despite low average error, and that uncertainty belongs in the
-initial conditions rather than in per-step noise. Average-error benchmarks would rank these models
-well; we propose branching fidelity as an additional axis. \paragraph{Limitations.} Simulation only, one task family, three tracked blocks; the MuJoCo probes use
-privileged geometry except for the perceived poses; fragility truth shares the split test with the
-monitors (harm forks are the independent check); panels vary in difficulty; the world models come from
-single training runs; and forks do not cover chunks that fail deterministically.
+the world models we trained lack despite low average error, and that, in this setting, the uncertainty that
+matters enters through the initial conditions. Average-error benchmarks would rank these models
+well; branching fidelity is a needed additional axis. \paragraph{Limitations.} Simulation, one task family, three tracked blocks; MuJoCo probes use
+privileged geometry beyond the perceived poses; fragility truth shares the split test (harm forks are the
+independent check); panels vary; single world-model runs; deterministic failures are not flagged.
 
 \bibliography{references}
 \end{document}
