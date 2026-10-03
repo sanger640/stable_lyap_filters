@@ -81,6 +81,7 @@ def panel_c(ax):
             4: {"naive": "naive", "aware v1": "aware", "aware v2": "v2_state", "v1 tokens": "v1_token",
                 "v2 tokens": "v2_token"}}
     names = ["naive", "aware v1", "aware v2", "v1 tokens", "v2 tokens"]
+    shown = {"naive": "no percep. sampling", "aware v1": "probe", "aware v2": "probe, 5 hyp.", "v1 tokens": "probe, images", "v2 tokens": "5 hyp., images"}
     colours = [GREY, TEAL, "#3fa7b3", VIOLET, "#9a8be0"]
     w = 0.16
     for p, panel in enumerate((2, 3, 4)):
@@ -88,10 +89,10 @@ def panel_c(ax):
         for m, name in enumerate(names):
             if name in keys[panel]:
                 ax.bar(p + (m - 2) * w, g[keys[panel][name]]["kappa"], w * 0.92, color=colours[m],
-                       label=name if p == 2 else None)
+                       label=shown[name] if p == 2 else None)
         ceil = res[panel]["ceiling_A_vs_B"]["kappa"]
         ax.hlines(ceil, p - 2.6 * w, p + 2.6 * w, colors=INK, lw=1)
-    ax.set_xticks([0, 1, 2], ["panel 2", "panel 3", "panel 4"], fontsize=7)
+    ax.set_xticks([0, 1, 2], ["set A", "set B", "set C"], fontsize=7)
     ax.set_ylabel(r"$\kappa$ vs truth", fontsize=7); ax.set_ylim(0, 1.3); ax.set_yticks([0, 0.5, 1.0])
     ax.tick_params(labelsize=6)
     ax.plot([], [], color=INK, lw=1, label="ceiling (truth B vs A)")

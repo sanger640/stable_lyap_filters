@@ -13,3 +13,4 @@
 | Diagnostics: spread 0.98, PC1 0.15 vs 0.57, D 0.04/0.69, D_pert 0.37 vs D 0.17, fork/non-fork 1.3x / 4.8x / 32x | results/jenga/step3_diagnostics.json |
 | Iteration 2 | TODO: results/jenga/step3b_p1_result.json, step3b_panel5_result.json |
 | Figure 1 (a) panel-3 state 73:34 aware endings; (b) D0 state ep63_seed104_s74 (most balanced real split, minority 31/64), models wm_stochastic/wm_deterministic, seeds as step3_diagnostics; (c) kappa from panel 2/3/4 result files | paper/make_figure.py |
+| Naming in paper v5: test set A/B/C = fresh panels 2/3/4; "fork probe" = aware v1; "5 hypotheses" = Bayesian aware v2; "no perception sampling" = naive; "topple fork" = harm fork; 112 development states = DEV (23 topple forks, 89 quiet); latent-vs-state split agreement 0.93 = gate D0 | results/jenga/token_compression_result.json, results/program_b/step3/d0_result.json |
