@@ -6394,3 +6394,23 @@ each way). Of the 14 misses, 12 are "cloud on the wrong side" (v1's 64 rollouts 
 times while truth A topples 2-54) and 2 are near-certain topples (61-63 of 64 topple: minority < 2, so no
 split). Bayesian v2 (state read) catches all 48 plus 8 of the 14 (56/62) at 13 vs 8 alarms on 98 non-harm
 states. Candidate next iteration (needs its own fresh panel): Bayesian v2 with token reading.
+
+## 2026-10-02: Fresh panel 4, fully visual Bayesian v2 (frozen protocol `visual_v2_panel4_protocol.json`)
+
+Result `results/jenga/visual_v2_panel4_result.json`. Reset seed +8000; screen 1606 states, panel 156 (56
+topple forks available, all taken, + 100 safe); 57 harm forks, 66 truth-fragile; ceiling truth B vs A kappa 0.92.
+
+| monitor | reads | kappa vs truth A | recall | robust alarms | harm recall | non-harm alarms |
+|---|---|---|---|---|---|---|
+| naive | state | 0.42 | 0.64 | 0.22 | 0.67 | 0.24 |
+| aware v1 | state | 0.84 | 0.88 | 0.04 | 0.91 | 0.10 |
+| aware v1 | tokens | 0.77 | 0.82 | 0.06 | 0.88 | 0.09 |
+| v2 Bayesian | state | 0.82 | 0.86 | 0.06 | 0.89 | 0.11 |
+| **v2 Bayesian** | **tokens** | **0.83** | **0.83** | **0.02** | **0.88 (CI 0.77-0.94)** | **0.07** |
+
+**Gate V2 (fully visual v2): PASS** (harm recall 0.88 >= 0.80; non-harm alarms 0.07 <= 0.20; kappa 0.83 >=
+0.60). Per-hypothesis token vs state split agreement 0.92. Caveat that matters for interpretation: on this
+panel visual v1 would ALSO have passed the same gate (0.88 / 0.09 / 0.77); panel 4 is easier than panel 3
+(naive harm recall 0.67 vs 0.65, aware v1 state kappa 0.84 vs 0.70). So panel 4 confirms that a fully
+visual uncertainty-aware monitor can meet the harm gate, but it does NOT show that v2 fixes v1's panel-3
+shortfall; v1's 0.77 on panel 3 sits inside the panel-to-panel variation (Wilson CIs overlap).
