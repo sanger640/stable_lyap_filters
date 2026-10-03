@@ -101,7 +101,7 @@ def panel_c(ax):
 
 def main():
     plt.rcParams.update({"font.family": "serif", "axes.spines.top": False, "axes.spines.right": False})
-    fig = plt.figure(figsize=(5.5, 1.75))
+    fig = plt.figure(figsize=(5.5, 1.6))
     gs = fig.add_gridspec(1, 4, width_ratios=[0.62, 0.62, 1.1, 1.3], wspace=0.55)
     sub = gs[0, 0:2].subgridspec(1, 2, wspace=0.04)
     panel_a([fig.add_subplot(sub[0, 0]), fig.add_subplot(sub[0, 1])])
