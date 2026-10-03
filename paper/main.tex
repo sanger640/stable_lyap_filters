@@ -59,7 +59,7 @@ diagnosis shows why (Sec.~\ref{sec:wm}).
 
 \section{Setup and the fork probe}\label{sec:probe}
 \paragraph{Task.} A simulated Franka Panda (MuJoCo) extracts blocks from Jenga-like stacks. At every
-chunk start a policy commits to an 8-step action chunk, held for 30 further steps. Our chunks come from
+chunk start a policy commits to an 8-step action chunk. Our chunks come from
 recorded extraction episodes, but the probe treats the policy as a black box and sees only the
 commanded chunk, one camera image and proprioception, so it applies to any chunked policy.
 
@@ -79,7 +79,9 @@ The perception error model is measured once, offline: we run the perception mode
 validation images with known poses and fit a zero-mean Gaussian to its errors (a full $9\times9$
 covariance over block positions, which captures correlated errors, plus a rotation covariance per
 block). Each rollout starts from the estimate plus one draw from this model, as in the IPE. The probe
-then reads the 64 endings (object positions, or image tokens) at hold steps 10 and 30 and flags the
+extends each imagined rollout by holding the chunk's last command for 30 steps, so that the outcome
+settles (the hold exists only in the monitor's imagination, not in the policy's execution). It then
+reads the 64 endings (object positions, or image tokens) at hold steps 10 and 30 and flags the
 chunk if, at both times, the endings projected on their first principal axis prefer two Gaussians to
 one by BIC, are well separated (Ashman's $D>2$ \citep{ashman1994detecting}), have at least 2 rollouts in
 the smaller group, and keep the same grouping. These are fixed statistical conventions, not fitted to
