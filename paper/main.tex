@@ -5,122 +5,106 @@
 % Deadline 2026-10-12; notification 10-26; camera-ready 11-06; workshop 11-12. Reciprocal review: one
 % author must review another submission. Archival: TBD. Not double-blind as far as the page says;
 % kept anonymous to be safe. References assumed outside the 4 pages (CoRL convention): check.
-% Compile on Overleaf with the official CoRL 2026 template: replace the \documentclass/\usepackage
-% block below with the template's (\documentclass{article} + \usepackage[preprint]{corl_2026}).
-% All numbers are from committed result files under results/jenga/ (see paper/NUMBERS.md).
+% Build: cd paper && tectonic -X compile main.tex  (corl_2026.sty, corlabbrvnat.bst: official kit).
 \documentclass{article}
-% \usepackage{corl_2026}            % <- official template (anonymous submission mode)
-\usepackage[margin=1in]{geometry}   % <- remove when using the template
-\usepackage[numbers]{natbib}
-\usepackage{booktabs,amsmath,amssymb,graphicx,xcolor,hyperref}
+\usepackage{corl_2026}             % official CoRL 2026 submission style (anonymous); [final] for camera-ready
+\usepackage{booktabs,amsmath,amssymb,graphicx,xcolor}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
 \title{Robots Need World Models That Know When the Future Forks:\\
 A Goal-Free Probe of Branching Fidelity}
 \author{Anonymous Authors}
-\date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Some safety questions are counterfactual by nature: \emph{would a slightly different execution of
-this action, or a slightly different version of the scene I perceive, end differently?} A policy
-cannot answer this; a model it can query can. People answer it by running a few noisy mental
-simulations over an uncertain scene and checking whether the outcomes disagree
-\citep{battaglia2013simulation}. We bring this
-\emph{intuitive physics engine} to a robot as a goal-free \emph{fork probe}: perturb the intended
-action with the robot's own measured execution error and its scene estimate with its measured
-perception error, roll out 64 counterfactual futures, and alarm when they split into persistent,
-well-separated groups. The probe needs no task label, failure data or fitted threshold. In a
-simulated Jenga extraction task with real camera perception (frozen DINOv2), the probe tracks
-ground-truth fragility at the robot's own uncertainty scale on three fresh test panels
-($\kappa$ 0.70--0.84 against a truth-vs-truth ceiling of 0.85--0.92, versus 0.32--0.51 when
-perception error is ignored), and it still works when outcomes are read from image tokens instead of
-object states (harm-fork recall 0.88). The same probe then serves as an evaluation axis for world
-models, \emph{branching fidelity}. Learned simulators that are accurate on average erase forks: a
-graph-network state model halves fork recall, and a stochastic token-space world model trained to
-sample futures reaches only $\kappa$ 0.18 because its sampled spread is isotropic and nearly the same
-on forks and non-forks. Uncertainty belongs in the initial conditions, not in per-step noise. For the debate on whether
-robots need world models, our answer is: for this kind of safety, yes, but only models with
-branching fidelity, which today's learned models lack, and benchmarks should measure it.
+Some safety questions are counterfactual: would a slightly different execution of this action, or a
+slightly different version of the perceived scene, end in a different regime? Following the human
+intuitive physics engine \citep{battaglia2013simulation}, we answer them with a goal-free
+\emph{fork probe} that samples the robot's measured execution and perception error, rolls out 64
+futures, and alarms when they split into persistent, well-separated groups, with no task labels,
+failure data or fitted thresholds. In simulated Jenga extraction with real camera perception, the
+probe tracks ground-truth fragility on three fresh panels ($\kappa$ 0.70--0.84 against a ceiling of
+0.85--0.92, versus 0.32--0.51 when perception error is ignored), including when outcomes are read
+from image tokens. Used as an evaluation of world models, it shows that learned simulators accurate
+on average erase forks: a graph-network model halves fork recall, and a stochastic token-space world
+model reaches only $\kappa$ 0.18 because its sampled spread is isotropic and ignores where futures
+branch. Robots need world models for such questions, but only ones with this \emph{branching
+fidelity}, which current models lack and current benchmarks do not measure.
 \end{abstract}
 
+\keywords{World models, intuitive physics, runtime safety}
+
 \section{Introduction}
-Average prediction error is the standard yardstick for learned dynamics and world models. For safe
-manipulation, however, what often matters is whether a model knows \emph{where} small, realistic
-deviations in action or perception lead to qualitatively different outcomes: the block slides out,
-or the tower tips. A model can be accurate on average and still be wrong exactly there, because a
-fork is a low-probability, high-consequence boundary in state space.
+World models are usually judged by average prediction error. For safe manipulation, what often
+matters is whether a model knows \emph{where} small, realistic deviations in action or perception
+lead to qualitatively different outcomes: the block slides out, or the tower tips. Such a fork is a
+narrow, high-consequence boundary, so a model can be accurate on average and still wrong exactly
+there. Asking whether a deviation would end in a different regime is a counterfactual query about
+futures the robot will not execute; an end-to-end policy does not answer it, a queryable model can.
 
-This bears directly on whether robots need world models. An end-to-end policy outputs one action;
-it does not say whether realistic deviations of that action would end in a different regime. That is
-a counterfactual query, and answering it requires a model that can be rolled out under perturbed
-actions and perturbed scenes. The question is then which properties such a model must have.
-
-Humans handle this with what \citet{battaglia2013simulation} called an intuitive physics engine
-(IPE): a few approximate, noisy simulations over an uncertain scene, whose disagreement signals
-precariousness. Both perceptual noise in initial conditions and noise in the dynamics are needed to
-explain human judgments \citep{smith2013sources,sanborn2013reconciling}. We ask whether a robot can
-use the same recipe at runtime, and what it demands of the robot's perception and world model.
-
-\textbf{Contributions.} (1) A goal-free, label-free \emph{fork probe}: 64 counterfactual rollouts of
-the intended action chunk under measured execution error, with a structure-only alarm (a persistent,
-well-separated two-group split). (2) An \emph{uncertainty-aware} version that also samples scenes
-within the robot's measured perception error, graded against a ground truth of fragility at the
-robot's own uncertainty. With real camera perception it is confirmed on three fresh panels and also
-works fully visually. (3) The probe as a world-model evaluation, \emph{branching fidelity}: learned
-simulators lose forks, and a diagnosis of why a stochastic token-space world model fails.
+Humans answer it with an intuitive physics engine (IPE) \citep{battaglia2013simulation}: a few
+approximate, noisy simulations over an uncertain scene, whose disagreement signals precariousness;
+both perceptual and dynamics noise are needed to explain human judgments
+\citep{smith2013sources,sanborn2013reconciling}. We give a robot the same recipe and ask what it
+demands of perception and of the world model. \textbf{Contributions:} (1) a goal-free, label-free
+\emph{fork probe} with a structure-only alarm; (2) an \emph{uncertainty-aware} probe that samples the
+robot's measured perception error, confirmed with real camera perception on three fresh panels and
+working fully visually; (3) \emph{branching fidelity} as a world-model evaluation, showing that
+learned simulators lose forks, with a diagnosis of why.
 
 \section{The fork probe}
-\textbf{Setting.} A Franka Panda extracts a block from a Jenga-like stack in MuJoCo. At each chunk
-start the policy commits to an 8-step action chunk, followed by a 30-step hold. The probe answers,
-before execution: \emph{do realistic executions of this chunk lead to qualitatively different
-futures?}
+\textbf{Setting and probe.} A Franka Panda extracts a block from a Jenga-like stack in MuJoCo. At
+each chunk start the policy commits to an 8-step action chunk, followed by a 30-step hold. The probe
+draws 64 execution-error snippets from the robot's measured tracking residuals (median chunk maximum
+3.2\,mm), subtracts them from the commanded positions, and rolls out. It alarms if, at hold steps 10
+\emph{and} 30, the endings (object positions, or below, image tokens) projected on their first
+principal axis prefer two Gaussians to one by BIC, are well separated (Ashman's $D>2$
+\citep{ashman1994detecting}), have at least 2 rollouts in the minority, and keep the same partition.
+These are generic statistical conventions, not fitted to labels.
 
-\textbf{Probe and split test.} We draw 64 execution-error snippets from the robot's measured
-tracking residuals (median chunk maximum 3.2\,mm) and subtract them from the commanded positions.
-Each rollout yields the object positions (or, below, image tokens) at hold steps 10 and 30. The
-alarm fires if, at \emph{both} times, the endings projected on their first principal axis prefer two
-Gaussians to one by BIC, are well separated (Ashman's $D>2$ \citep{ashman1994detecting}), have at
-least 2 rollouts in the minority, and keep the same partition (at most one rollout switches). Every
-constant is a generic statistical convention; none is fitted to labels.
+\textbf{Uncertainty-aware probe (the IPE).} The robot perceives $\hat s$, not the true scene $s$:
+a frozen DINOv2 encoder \citep{oquab2024dinov2} on one close-camera frame plus a keypoint head
+regresses the poses of the three blocks in play (held-out error 2.5\,mm). Its validation residuals
+define an error model (full $9\times9$ position covariance plus rotation covariances). The
+\emph{naive} probe starts all rollouts at $\hat s$; the \emph{aware} probe (v1) starts rollout $j$
+at $\hat s+e_j$ with $e_j$ drawn from the error model; the \emph{Bayesian} probe (v2) draws 5
+hypotheses $\hat s+d_m$, runs an aware probe around each, and alarms if at least 3 split.
 
-\textbf{Uncertainty-aware probe (the IPE).} A robot does not know the true scene $s$; it perceives
-$\hat s$. Perception here is a frozen DINOv2 encoder \citep{oquab2024dinov2} on one close-camera
-frame, plus a keypoint head regressing the poses of the three blocks in play (held-out relative
-error 2.5\,mm). Its validation residuals define an error model: a full $9\times9$ position
-covariance plus per-block rotation covariances. The \emph{naive} probe starts all 64 rollouts at
-$\hat s$. The \emph{aware} probe (v1) starts rollout $j$ at $\hat s + e_j$, $e_j$ drawn from the
-error model. The \emph{Bayesian} probe (v2) draws 5 hypotheses $\hat s + d_m$, runs an aware probe
-around each, and alarms if at least 3 of 5 split.
-
-\textbf{Ground truth.} \emph{Fragility truth} applies the aware recipe around the \emph{true} state
-in exact physics: a state is fragile if futures split within the robot's own uncertainty. Running it
-with two independent seeds (A, B) gives the attainable ceiling: truth B agrees with truth A at
-$\kappa$ 0.85--0.92, not 1, because edge cases flip between draws. A state is a \emph{harm fork}
-if 2--62 of the 64 truth-A rollouts topple a neighbouring block ($\geq45^\circ$). Labels are used
-only for grading. Each confirmation uses a \emph{fresh panel}: new stack layouts (new reset seeds),
-screened with exact probes, up to 60 topple forks plus 100 safe states, under a protocol frozen
-before data.
+\textbf{Ground truth.} \emph{Fragility truth} applies the aware recipe around the \emph{true} state:
+a state is fragile if futures split within the robot's own uncertainty. Two independent seeds (A, B)
+agree at $\kappa$ 0.85--0.92, the attainable ceiling. A \emph{harm fork} is a state where 2--62 of
+64 truth-A rollouts topple a neighbouring block. Each confirmation uses a \emph{fresh panel} of new
+stack layouts (up to 60 topple forks plus 100 safe states) under a protocol frozen before data.
 
 \section{Results}
-\textbf{The probe sees physical forks.} With exact physics and the true state, the split test
-alarms on all 23 development topple forks at 10\% alarms on quiet states. An earlier, more elaborate
-detector with action-space boundary refinement (used for the state-model comparison in
-Table~\ref{tab:wm}) reaches 65.5\% of 84 held-out topple forks at 3.5\% quiet alarms.
+\textbf{The probe sees physical forks.} With exact physics and the true state, the split test alarms
+on all 23 development topple forks at 10\% alarms on quiet states.
 
-\textbf{Perception error at the scale of execution noise hides forks; sampling it restores them.}
-Perception errors of 2--4\,mm are comparable to execution noise, so the perceived scene is
-effectively a different scene and the naive probe misjudges fragility (Table~\ref{tab:panels}).
-Sampling the robot's own measured error turns the probe into a calibrated judge: aware probes reach
-76--91\% of the truth-vs-truth ceiling, against 38--55\% for naive.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_forks.pdf}
+\caption{(a) Two of 64 rendered endings of one panel-3 state: the same action chunk under realistic
+execution error leaves the neighbour standing or topples it. (b) A held-out training fork (the most
+balanced real split): real latent futures (colour = outcome) on their two principal axes, with the
+token world models' futures for the same image and actions. The deterministic model spreads along
+the real branch axis; the stochastic model's samples stay near one outcome, with most of their spread
+outside this plane. (c) Agreement with fragility truth on three fresh panels; bars show the
+truth-vs-truth ceiling.}
+\label{fig:forks}
+\end{figure}
+
+\textbf{Sampling the robot's own perception error restores calibrated judgments.} Perception errors
+of 2--4\,mm are comparable to execution noise, so the perceived scene is effectively a different
+scene and the naive probe misjudges fragility. Aware probes reach 76--91\% of the ceiling, naive
+38--55\% (Table~\ref{tab:panels}, Fig.~\ref{fig:forks}c).
 
 \begin{table}[t]
 \centering
-\caption{Uncertainty-aware fork probes with real camera perception on three fresh panels (exact
-physics). $\kappa$ against fragility truth A; harm = recall on harm forks. ``Tokens'': outcomes read
-from DINOv2 tokens of rendered endings instead of object positions (fully visual).}
+\caption{Fork probes with real camera perception on three fresh panels (exact physics). $\kappa$
+against fragility truth A; harm = recall on harm forks; ``tokens'' = outcomes read from DINOv2 tokens
+of rendered endings (fully visual).}
 \label{tab:panels}
 \small
 \begin{tabular}{lcccccc}
@@ -138,120 +122,92 @@ aware v2, tokens & -- & -- & -- & -- & \textbf{0.83} & \textbf{0.88} \\
 \end{tabular}
 \end{table}
 
-\textbf{Reading outcomes from tokens costs little.} Applied unchanged to the flattened DINOv2 tokens
-of rendered endings, the split test agrees with the position-based test at $\kappa$ 0.86--0.90 on
-aware rollouts. Tokens ignore sub-centimetre splits that the scale-free position test counts (22 of
-24 disagreements on panel 2 were harmless 0.1--6.6\,mm splits), so the camera acts as a natural
-consequence-scale floor. The fully visual Bayesian probe meets its frozen gate on panel 4 (harm
-recall 0.88, 7\% alarms on non-harm states, $\kappa$ 0.83). Its misses come from where rollouts
-start, not from reading images: on panel 3, token-read and position-read v1 miss the same number of
-harm forks (14/62). In 12 of them, the 2\,mm error of the single estimate put the whole cloud of
-rollouts on the safe side of the edge. Panels differ in difficulty (aware v1 $\kappa$ 0.70 vs 0.84),
-so the extra caution of v2 is not shown to be better calibrated than v1.
+\textbf{Reading outcomes from tokens costs little.} The unchanged split test on flattened DINOv2
+tokens of rendered endings agrees with the position-based test at $\kappa$ 0.86--0.90 on aware
+rollouts; tokens ignore harmless sub-centimetre splits (22 of 24 disagreements on panel 2), acting as
+a consequence-scale floor. The fully visual Bayesian probe meets its frozen gate on panel 4 (harm
+recall 0.88, 7\% alarms on non-harm states, $\kappa$ 0.83). Misses come from where rollouts start,
+not from reading images: on panel 3, token- and position-read v1 each miss 14 of 62 harm forks,
+12 of them because the single estimate put the whole rollout cloud on the safe side of the edge.
+Panels differ in difficulty, so v2's extra caution is not shown to be better calibrated than v1.
 
-\textbf{Branching fidelity of learned world models.} We replace the exact simulator by learned
-models and keep everything else fixed (Table~\ref{tab:wm}). A graph-network state model trained
-with a counterfactual objective ranks fragile states well (AUC 0.97), yet under the same refined
-probe it keeps only 31\% of topple forks (8--49\% across 10 seeds) where physics keeps 65.5\%.
-Next, a stochastic world model in token space: DINOv2 tokens compressed by a fixed per-patch PCA
-($28\times28\times8$, chosen beforehand as the only compression keeping both pose information and
-fork structure), with a flow-matching transition trained on 8 futures per image. The futures started
-from scenes sampled within perception error, so the target spread is the robot's own uncertainty.
-On fresh panel 4 it fails ($\kappa$ 0.18, harm recall 0.18), below its own deterministic control
-($\kappa$ 0.42).
+\textbf{Branching fidelity of learned world models.} Replacing the simulator by learned models, with
+everything else fixed, loses forks (Table~\ref{tab:wm}). A graph-network state model trained with a
+counterfactual objective ranks fragile states well (AUC 0.97), yet under a refined probe keeps 31\%
+of topple forks where physics keeps 65.5\%. A stochastic token-space world model (DINOv2 tokens
+compressed by a fixed per-patch PCA to $28\times28\times8$, a flow-matching transition trained on 8
+futures per image whose starts were sampled within perception error) fails on fresh panel 4
+($\kappa$ 0.18, harm recall 0.18), below its own deterministic control ($\kappa$ 0.42).
 
 \begin{table}[t]
 \centering
-\caption{Branching fidelity. Top: fork recall / quiet alarms under the refined probe, true state.
-Bottom: fresh panel 4, image input, versus the fully visual MuJoCo probe; diagnostics on 60
-held-out training states with 64 real futures (spread = total spread relative to real; PC1 = share
-of spread on the main axis at real forks; fork/non-fork = spread ratio).}
+\caption{Branching fidelity. Left: refined probe, true state, 84 held-out topple forks. Right: fresh
+panel 4 from images, and diagnostics on 60 held-out training states (spread relative to real; PC1 =
+share of spread on the main axis at real forks; ratio = spread on forks / non-forks).}
 \label{tab:wm}
 \small
 \begin{tabular}{lcc}
 \toprule
-dynamics (state input) & topple-fork recall & quiet alarms \\
+dynamics & recall & quiet \\
 \midrule
 exact physics & 65.5\% & 3.5\% \\
-GNN, counterfactual loss (10 seeds) & 31.1\% (8--49) & 2.0\% \\
+GNN (10 seeds) & 31.1\% & 2.0\% \\
 \bottomrule
-\end{tabular}
-
-\vspace{4pt}
+\end{tabular}\hfill
 \begin{tabular}{lccccc}
 \toprule
-dynamics (image input) & $\kappa$ & harm & spread & PC1 & fork/non-fork \\
+dynamics (image input) & $\kappa$ & harm & spread & PC1 & ratio \\
 \midrule
-real futures & -- & -- & 1.00 & 0.57 & 4.8$\times$ \\
-MuJoCo, aware v2 tokens & 0.83 & 0.88 & -- & -- & -- \\
-token WM, stochastic (per-step noise) & 0.18 & 0.18 & 0.98 & 0.15 & 1.3$\times$ \\
-token WM, deterministic & 0.42 & 0.60 & 0.04 & 0.69 & 32$\times$ \\
-\todo{iteration 2: uncertain start + deterministic} & & & & & \\
+real futures & -- & -- & 1.00 & 0.57 & 4.8 \\
+MuJoCo + v2 tokens & 0.83 & 0.88 & -- & -- & -- \\
+token WM, stochastic & 0.18 & 0.18 & 0.98 & 0.15 & 1.3 \\
+token WM, deterministic & 0.42 & 0.60 & 0.04 & 0.69 & 32 \\
+\todo{iteration 2} & & & & & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Why the stochastic model fails.} It reproduces the \emph{amount} of spread (0.98$\times$
-real) but not its \emph{shape} or \emph{placement}. The spread is isotropic (15\% on the main axis
-versus 57\% for real forks) and nearly the same on forks and non-forks (1.3$\times$ versus
-4.8$\times$). It learned the average uncertainty of futures, not where futures branch. Other
-samplers (one draw per rollout, half temperature) are worse. The deterministic model's spread is
-tiny but structured (69\% on one axis, 32$\times$ larger on forks): its learned dynamics amplify
-perturbations along the branch direction. Starting it from rendered perturbed scenes doubles
-agreement with real futures ($\kappa$ 0.17$\to$0.37). This matches the IPE: uncertainty should enter
-through initial conditions and be amplified by roughly right dynamics, not be added as per-step
-generative noise. A second iteration built on this (a learned operator that perturbs the start
-latent by physical perception error, followed by deterministic dynamics trained on full rollouts)
-is under evaluation \todo{result}.
+\textbf{Why the stochastic model fails.} It reproduces the \emph{amount} of spread but not its
+\emph{shape} or \emph{placement}: the spread is isotropic and nearly the same on forks and
+non-forks, so it learned the average uncertainty of futures, not where they branch; other samplers
+are worse. The deterministic model's spread is tiny but aligned with the branch axis and 32$\times$
+larger on forks (Fig.~\ref{fig:forks}b); started from rendered perturbed scenes it doubles agreement
+with real futures ($\kappa$ 0.17$\to$0.37). As in the IPE, uncertainty should enter through initial
+conditions and be amplified by roughly right dynamics, not be added as per-step noise. A second
+iteration built on this (a learned operator perturbing the start latent by physical perception
+error, then deterministic dynamics trained on full rollouts) is under evaluation \todo{result}.
 
 \section{Related work}
-\textbf{Simulation under uncertainty.} Beyond the IPE \citep{battaglia2013simulation} and
-counterfactual accounts of physical support \citep{zhou2023mental}, robotics has long run Monte
-Carlo rollouts over pose, friction or model parameters to score grasps and pushes
-\citep{mahler2017dexnet,agboh2018pushing} or to wrap planners with safety filters
-\citep{johansson2025safety,wang2026manidreams}. These define safety through a task predicate or
-constraint. \citet{zapolsky2016particle} proposed detecting divergent robot behaviour from particle
-traces, but their experiments detect task failure and leave goal-free detection to future work. Our
-probe perturbs the robot's own action with measured residuals and alarms on outcome structure alone,
-a Monte Carlo test for proximity to a basin boundary \citep{menck2013basin}.
+\textbf{Simulation under uncertainty.} Beyond the IPE and counterfactual accounts of physical
+support \citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model
+parameters to score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing} or to build safety
+filters \citep{johansson2025safety,wang2026manidreams}, always against a task predicate or constraint.
+\citet{zapolsky2016particle} proposed detecting divergent behaviour from particle traces but detect
+task failure in experiments. Our probe uses the robot's own measured residuals and outcome structure
+alone, a Monte Carlo test of proximity to a basin boundary \citep{menck2013basin}.
+\textbf{Runtime monitors.} Latent safety filters use learned failure classifiers, including on Jenga
+\citep{nakamura2025generalizing,seo2025uncertainty}; failure detectors use policy uncertainty
+calibrated on successes \citep{xu2025failure,agia2024unpacking}. These measure what a model does not
+know; the fork probe measures whether the physics is at a branch.
+\textbf{Physical fidelity of world models.} Learned simulators are accurate on rigid contact
+\citep{sanchezgonzalez2020learning,allen2023fignet} and latent world models support planning
+\citep{zhou2025dinowm,assran2025vjepa2}, but stiff contact is hard to learn
+\citep{parmar2021fundamental} and audits find poor physical grounding and optimism under
+failure-inducing actions \citep{motamed2026physicsiq,yang2026mirabench}. We add a complementary axis.
 
-\textbf{Runtime monitors.} Latent safety filters perform reachability against a learned failure
-classifier, including on Jenga extraction \citep{nakamura2025generalizing,seo2025uncertainty}, and
-failure detectors use policy-side uncertainty calibrated on successes
-\citep{xu2025failure,agia2024unpacking}. These measure what the model does not know. The fork probe
-measures whether the physics itself is at a branch, which a confidently wrong model would not flag.
+\section{Implications for the debate, limitations and conclusion}
+\textbf{Do robots need world models?} For pre-execution safety judgments, a queryable model is needed
+by construction, and it must have branching fidelity, which two learned families accurate on average
+lack. \textbf{Where should the model live?} Uncertainty belongs in the initial conditions, sampled
+from measured perception and execution error; the dynamics can be deterministic and approximate.
+\textbf{Can current benchmarks decide?} Not on this axis: average-error and success benchmarks would
+rank our failed models well, while the fork probe runs on any model that accepts perturbed actions or
+states. \textbf{Limitations.} Simulation only, one task family, three tracked blocks; the MuJoCo
+probes use privileged geometry except for the perceived poses; panels vary in difficulty; the split
+test's conventions act like fixed thresholds. Still, a robot can judge fragility the way people do,
+by sampling its own uncertainty through a rough simulator; learned world models do not yet supply that
+simulator. We propose branching fidelity as a standard evaluation axis alongside prediction error and
+task success.
 
-\textbf{Physical fidelity of world models.} Learned simulators reach high accuracy on rigid contact
-\citep{sanchezgonzalez2020learning,allen2023fignet}, and latent world models support planning
-\citep{zhou2025dinowm,assran2025vjepa2}, yet stiff contact is hard to learn
-\citep{parmar2021fundamental}. Recent audits find poor physical grounding and optimism under
-failure-inducing actions \citep{motamed2026physicsiq,yang2026mirabench}. We measure a complementary
-axis: whether rollouts branch where the physics does.
-
-\section{Implications for the debate}
-\textbf{Do robots need world models?} For pre-execution safety judgments of the kind studied here,
-a queryable model is required by construction: the question is about futures the robot will not
-execute. Our results add a condition. The model must have \emph{branching fidelity}, and two
-learned families that are accurate on average do not have it. A model scoring well on average error
-can still be useless for this purpose. \textbf{Where should the model live?} Our diagnostics point to
-a specific split: uncertainty belongs in the initial conditions, sampled from the robot's measured
-perception and execution error, and the dynamics can be deterministic and approximate, as in the
-IPE. Generative per-step noise reproduced the right amount of spread in the wrong places.
-\textbf{Can current benchmarks decide?} Not on this axis. Average-error and success-rate benchmarks
-would rank our failed models well. The fork probe offers a goal-free, label-free test that can be
-run on any model that accepts perturbed actions or initial states.
-
-\section{Limitations and conclusion}
-All results are in simulation, with one task family and three tracked blocks. Our MuJoCo-based
-probes use privileged geometry and masses for everything except the perceived block poses. Panels
-vary in difficulty, so single-panel comparisons between close monitors are not conclusive. The split
-test's statistical conventions are fixed but not label-free in spirit; a reviewer may call them
-thresholds. Still, the results support a simple picture: a robot can judge fragility the way people
-do, by sampling its own perception and execution uncertainty through a rough simulator. Current
-learned world models do not yet supply that simulator, because they do not preserve branching
-structure. We propose branching fidelity as a standard evaluation axis for world models used in
-manipulation, alongside average prediction error and task success.
-
-\bibliographystyle{plainnat}
 \bibliography{references}
 \end{document}

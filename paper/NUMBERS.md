@@ -13,3 +13,4 @@
 | Token WM: stochastic 0.18/0.18, deterministic 0.42/0.60 | results/jenga/step3_token_world_model_result.json |
 | Diagnostics: spread 0.98, PC1 0.15 vs 0.57, D 0.04/0.69, D_pert 0.37 vs D 0.17, fork/non-fork 1.3x / 4.8x / 32x | results/jenga/step3_diagnostics.json |
 | Iteration 2 | TODO: results/jenga/step3b_p1_result.json, step3b_panel5_result.json |
+| Figure 1 (a) panel-3 state 73:34 aware endings; (b) D0 state ep63_seed104_s74 (most balanced real split, minority 31/64), models wm_stochastic/wm_deterministic, seeds as step3_diagnostics; (c) kappa from panel 2/3/4 result files | paper/make_figure.py |
