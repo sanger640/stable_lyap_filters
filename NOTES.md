@@ -6517,3 +6517,26 @@ Test set A/B/C = fresh panels 2/3/4. kappa vs fork label (recall on forks, false
 
 The physical fork label is almost perfectly repeatable (0.99, vs 0.85-0.92 for split-test truth); conclusions
 unchanged. The original protocol results (split-test truth) remain the frozen record.
+
+## 2026-10-03: Step-vs-ramp diagnostic (descriptive; held-out D0 states)
+
+`eval/step_vs_ramp.py` -> `results/jenga/step_vs_ramp.json`. 31 D0 fork states (2-62/64 real topples). Push
+score = out-of-fold logistic score of the 42 sampled error numbers predicting the REAL topple label
+(median AUC 0.85); outcome = hold-30 ending on the real first principal axis, scaled stays=-1/topples=+1;
+fit tanh((push - s0)/tau). Models get exactly the real futures' inputs (rendered perturbed starts + actions).
+
+| | real | iter-1 deterministic | iter-2 deterministic |
+|---|---|---|---|
+| transition width tau (median) | 1.0 | 2.8 | 3.0 |
+| futures in the middle band (abs y < 0.5) | 0% | 3% | 2% |
+| outcome spread (std of y) | 0.88 | 0.43 | 0.32 |
+| threshold shift vs real (push std) | 0 | 2.0 | 2.4 |
+| share on the topple side | 38% | 26% | 12% |
+| same side as the real future | 100% | 67% | 70% ("always stays" = 62%) |
+
+Reading: the "smooth ramp" hypothesis is only partly supported (3x wider transition) and is not the main
+failure. The models mostly do not know WHICH futures topple: compressed toward "stays", threshold shifted
+by 2+ push std, side agreement near the always-stays baseline. Consistent with W2a (a discrete head jumped,
+but not at the boundary). Implication: prioritise levers that teach fork location (fork-rich paired data,
+set-level and action-sensitivity losses, whole-clip generation) over discontinuous architectures alone.
+Caveat: the push score is imperfect (AUC 0.85), which widens the real curve too.
