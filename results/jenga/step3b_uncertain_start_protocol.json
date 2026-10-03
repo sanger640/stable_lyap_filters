@@ -1,0 +1,46 @@
+{
+  "id": "step3-iteration-2-uncertain-start-learned-dynamics",
+  "status": "frozen before execution (approved by the user 2026-10-03: 'yes'; frozen before any iteration-2 data was generated). Motivated only by held-out-TRAIN diagnostics (results/jenga/step3_diagnostics.json); panel 4 is not reused.",
+  "hypothesis": "Forks come from uncertain initial conditions amplified by dynamics (Battaglia: noisy perception, rough deterministic simulation). A deterministic latent dynamics model started from 64 camera-plausible perturbed start latents will branch where physics branches, unlike per-step generative noise, which the diagnostics showed to be isotropic and state-blind.",
+
+  "latent": "unchanged: close-camera DINOv2 392 -> fixed channel PCA 8 (results/program_b/step3/channel_pca8.pt), 28 x 28 x 8, standardised",
+
+  "data": {
+    "states": "the identical iteration-1 selection (results/program_b/step3/selection.json: 1500 train, 150 val, 60 D0 on held-out TRAIN episodes)",
+    "futures": "identical seeds to iteration 1 (perception draws d_k and execution-noise snippets), so the physical futures are the same draws",
+    "new": "for every future k: the close-camera frame of its PERTURBED start scene (rendered after the perturbation, before the first action) encoded to z0_k, and the physical perturbation d_k (3 x 3 positions, 3 x 3 rotation vectors) saved; true-start latent z0 kept",
+    "regenerated": "all files are regenerated from a fresh chain run (no splicing with iteration-1 files)"
+  },
+
+  "components": {
+    "G_perturbation_operator": "deterministic network G(z0, d) -> z0' (conv residual net on the 28 x 28 x 8 grid, FiLM-conditioned on the 18-D standardised perturbation), MSE to z0_k - z0; 40 epochs AdamW 1e-3 cosine, seed 0. At run time d_j ~ the measured perception error model, so all randomness is physical perception error with a known distribution",
+    "G_gaussian_baseline": "state-independent Gaussian: top-64 principal directions of (z0_k - z0) over training pairs with their variances; z0' = z0 + sample",
+    "dynamics": "the iteration-1 deterministic transition architecture (width 128, 6 FiLM residual blocks), trained with all three fixes: (fix 1) each future starts from its own start latent; (fix 2) full 19-step unrolled training on its own predictions with a loss at every step (hold-10 and hold-30 steps weight 2), backpropagation through the unroll, Gaussian input noise of 0.1 x the per-step residual std; (fix 3) start latent = rendered z0_k or G(z0, d_k) with probability 1/2 each. 30 epochs over the 1500 x 8 rollouts, batch 32 rollouts, AdamW 3e-4 cosine, seed 0, last epoch kept",
+    "ablations (same budget, each removes one fix)": {
+      "A_no_fix1": "start = true z0 for every future (iteration-1 pairing), fixes 2 and 3 otherwise kept (G not used in training)",
+      "A_no_fix2": "one-step teacher forcing only (no unroll, no input noise), fixes 1 and 3 kept",
+      "A_no_fix3": "starts = rendered z0_k only, fixes 1 and 2 kept"
+    }
+  },
+
+  "monitor": "one close-camera frame -> z0; d_j ~ perception error model (j = 1..64); z0_j = G(z0, d_j); deterministic dynamics with execution-noise snippet j for 19 steps; unchanged persistent_mode_alarm on latent endings at hold 10 and hold 30",
+
+  "pre_panel_check (held-out TRAIN D0 states, 64 real futures each)": {
+    "reported": "G latent error vs rendered z0_k; for each variant (full, Gaussian start, oracle rendered starts, no-G deterministic, three ablations): alarms, kappa vs real-latent decisions, spread ratio, PC1 share on real forks",
+    "P1_gate": "full pipeline (G starts) kappa vs real-latent decisions >= 0.60 on the 60 D0 states. If P1 fails, panel 5 is not run; the result and diagnostics are reported."
+  },
+
+  "panel": {
+    "id": "fresh panel 5: reset seed episode_id + 9000 (never used), 80 episodes drawn with seed 20261070, 64 exact probes per chunk start in the screen, up to 60 topple forks + 100 safe states selected with seed 20261071 as panels 1-4",
+    "truth": "truth A / truth B (seeds 20261074 / 20261075) as panel 4: aware sampling around the TRUE state with the measured error model, exact physics; harm fork = 2-62 of 64 truth-A rollouts topple a neighbour",
+    "monitor_seeds": "perturbation draws d_j: 20261072; execution noise: the bench snippets j"
+  },
+  "gates (panel 5)": {
+    "W1_harm": "harm-fork recall >= 0.80 AND alarm rate on non-harm states <= 0.20",
+    "W2_fragility": "kappa with truth A >= 0.60",
+    "W3_uncertain_start_matters": "kappa - (same dynamics started from z0 for all 64 rollouts, action noise only) >= 0.15"
+  },
+  "controls (panel 5, descriptive)": "no-G deterministic, Gaussian-start, iteration-1 stochastic model, MuJoCo exact / naive; oracle rendered-perturbed-start version (needs rendered perturbed panel frames: computed with the panel's own truth-A perturbations, reported as an upper bound only)",
+  "decision": "Step 3 iteration 2 confirmed iff P1, W1, W2 and W3 pass. One training per variant, one panel run; no re-selection after panel 5 is read.",
+  "cost": "data regeneration about 3 h CPU (6 workers) plus encoding; G about 1 h GPU; 4 dynamics trainings about 2-3 h GPU each; panel 5 about 3 h CPU"
+}
