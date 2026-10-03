@@ -1,0 +1,45 @@
+{
+  "id": "branching-wm-phase1",
+  "status": "frozen before execution (approved by the user 2026-10-03: 'start phase 1 of the branching plan'; plan docs/PLAN_BRANCHING_WM.md; whole-clip generators approved; frozen before any Phase-1 data was generated)",
+  "question": "Which levers make a learned visual world model branch where physics branches: fork-rich paired data, a set-level objective, whole-clip generation, an action-sensitivity loss?",
+  "motivation": "Step-vs-ramp diagnostic (results/jenga/step_vs_ramp.json): current models misplace the fork threshold (side agreement 67-70% vs 62% always-stays) more than they smooth it.",
+
+  "latent": "unchanged: close-camera DINOv2 392 -> fixed channel PCA 8 (results/program_b/step3/channel_pca8.pt), 28x28x8, standardised",
+  "task": "three upright Jenga-like blocks; pick the middle red block without toppling the neighbours",
+
+  "data": {
+    "current": "the iteration-2 training set (results/program_b/step3b/train: 1,500 TRAIN states x 8 futures, 419 with topple-disagreeing screens)",
+    "enriched": {
+      "screen": "new TRAIN chains: the 38 training episodes (held-out episodes excluded) x reset seeds 110-149, 8 state-only futures per chunk start exactly as eval/step3_data.py (seeds 20261080 screen)",
+      "selection": "ALL chunk starts whose 8 screen futures disagree on a topple (1-7 of 8) + an equal number of other starts (seed 20261081); together with the current set",
+      "futures": "16 futures per disagreeing state, 8 per other state (seed 20261082), rendered and encoded like iteration 2 (per-future perturbed start latent z0k, d_k, 19 latent frames)"
+    },
+    "held_out_selection_set_H": "held-out TRAIN episodes (every 10th, as before) x reset seeds 100-149: 80 states whose screen disagrees + 80 others (seed 20261083), 64 futures each (perception draw + bench snippet j, as D0), hold-10/30 latents and per-future start latents; label = fork (2-62 of 64 topple). Used ONLY for model selection",
+    "fresh_panel": "panel 6 (reset +10000, 80 episodes, seed 20261090, selection as panels 1-5) only for the selected model, and only if the selection gate passes"
+  },
+
+  "models": {
+    "WC-flow": "whole-clip conditional flow matching: one sample = the full 19-step latent trajectory, conditioned on the observed start latent z0 and the executed 38-step action sequence; network = factorised space-time residual conv net (2D 3x3 spatial + 1D temporal convs, width 96, 8 blocks, FiLM on actions and flow time); 16 Euler steps at sampling",
+    "WC-energy": "whole-clip generator with the same network body mapping (z0, actions, Gaussian noise) to a trajectory in one pass, trained with the energy score over sets: for each training state, 8 model samples vs the state's real futures (ES = E||X - Y|| - 0.5 E||X - X'||, on hold-weighted latent trajectories)",
+    "SW-det": "step-wise deterministic dynamics of iteration 2 (dyn_full recipe: own-start pairing, 19-step unrolled loss, input noise, G/rendered start mix; G kept frozen from iteration 2)",
+    "conditioning_note": "WC models see the observed (unperturbed) image latent and must GENERATE the perception-scale spread; SW-det receives sampled perturbed starts (G) as in iteration 2",
+    "training_budget": "every model: 30,000 optimizer steps, batch 32 states (WC-energy: 32 states x 8 samples), AdamW 3e-4 cosine, seed 0, last step kept"
+  },
+
+  "cells": {
+    "A": "WC-flow on current data",
+    "B": "WC-flow on enriched data",
+    "C": "WC-energy on current data",
+    "D": "WC-energy on enriched data",
+    "E": "SW-det on enriched data (data lever for the iteration-2 recipe; compare with iteration 2's dyn_full on current data)",
+    "F": "the best of A-D (selection rule below) retrained with an added action-sensitivity loss: for pairs of futures of the same state, the predicted difference of their hold-30 latents must match the real difference (squared error, weight 1, on the deterministic mean path for WC-flow / sample pairs sharing noise for WC-energy)"
+  },
+
+  "monitor_on_H": "for each state: 64 rollouts (each with its own execution snippet j and its own model noise; SW-det: its G start from perception draw j) -> unchanged split test on hold-10/30 latents",
+  "metrics_on_H": "forks caught and false-alarm rate vs the fork label; side agreement with real futures and threshold shift (step-vs-ramp analysis); spread ratio, main-axis share and fork/non-fork ratio vs real futures; always-stays and always-alarm baselines reported",
+  "selection_rule": "rank cells by (forks caught - false-alarm rate) on H; ties by side agreement. F is built on the best of A-D by this rule.",
+  "gate_for_panel_6": "best cell (of A-F) catches >= 80% of H forks with <= 20% false alarms. If none passes, Phase 1 ends with the factorial result reported and no panel is run.",
+  "panel_6_gates": "forks caught >= 80% AND false alarms <= 20% on the fresh panel; reference = MuJoCo probe on the same panel",
+  "decision": "Factorial effects (data, objective, generator, action sensitivity) are reported descriptively on H; the only confirmatory claim is the selected model on panel 6.",
+  "cost": "screen ~4 h CPU; enriched rendering ~8 h CPU+GPU encoding; H ~1 h; 6 trainings ~2-4 h GPU each; run sequentially (no GPU sharing; panel/data workers <= 4) after the 2026-10-03 power-loss and OOM episodes"
+}
