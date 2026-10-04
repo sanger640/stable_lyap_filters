@@ -28,6 +28,7 @@ DEVICE = "cuda"
 T, H, W, C = 19, 28, 28, 8
 WIDTH, BLOCKS, STEPS, BATCH, LR, EULER = 96, 8, 30_000, 32, 3e-4, 16
 ENERGY_FUTURES, HOLD_WEIGHT = 4, 2.0                          # 4 futures x 2 samples = 8 samples per state
+ENERGY_BATCH = 8                                              # addendum 1: compute-matched energy cells
 CELLS = {"A": ("flow", "current"), "B": ("flow", "enriched"), "C": ("energy", "current"),
          "D": ("energy", "enriched"), "E": ("swdet", "enriched")}
 
@@ -166,7 +167,7 @@ def train_clip(cell, kind, which, action_sensitivity=False, seed=0):
     w = weights()[None, :, None, None, None]
     log = []
     for step in range(STEPS):
-        idx = np.random.randint(len(states), size=BATCH)
+        idx = np.random.randint(len(states), size=BATCH if kind == "flow" else ENERGY_BATCH)
         model.net.train()
         if kind == "flow":
             ks = [np.random.randint(len(states[i]["z"])) for i in idx]
@@ -340,6 +341,14 @@ def evaluate(cell, model, rows):
             "mean_side_agreement_on_forks": float(np.mean(side))}
 
 
+def undertrained(cell):
+    """Addendum 1: mean loss over the last 3,000 steps more than 2% below the 3,000 before."""
+    log = json.loads((OUT / f"model_{cell}_log.json").read_text())
+    last = np.mean([r["loss"] for r in log if 27_000 < r["step"] <= 30_000])
+    before = np.mean([r["loss"] for r in log if 24_000 < r["step"] <= 27_000])
+    return bool(last < before - 0.02 * abs(before)), float(last), float(before)
+
+
 def score(r):
     return r["caught"] - r["false_alarm"], r["mean_side_agreement_on_forks"]
 
@@ -362,6 +371,8 @@ def main():
             continue
         model = wm.WorldModel.load(OUT / f"model_{cell}.pt") if kind == "swdet" else ClipModel.load(OUT / f"model_{cell}.pt")
         results[cell] = evaluate(cell, model, rows)
+        flag, last, before = undertrained(cell)
+        results[cell].update({"possibly_undertrained": flag, "loss_last_3k": last, "loss_prev_3k": before})
         print(cell, results[cell], flush=True)
         RESULT.write_text(json.dumps(results, indent=1) + "\n")
 

@@ -1,0 +1,9 @@
+{
+  "id": "branching-wm-phase1-addendum-1-compute-matching",
+  "date": "2026-10-03",
+  "status": "frozen before any Phase-1 model was trained (approved by the user: 'do option 2 with the rule')",
+  "reason": "Measured cost: the energy-score cells (C, D) take ~2.4 s per step at 32 states x 8 samples (~20 GPU h each) versus ~0.5 s for flow cells; equal steps would give them ~4x the compute, confounding the objective comparison, and keep the machine under heavy load for ~3 days.",
+  "change": "Energy-score cells (C, D, and F if built on C or D) use 8 states per step (still 4 futures x 2 samples = 8 samples per state) for the same 30,000 steps, i.e. roughly the same GPU time as the flow cells. All other settings unchanged.",
+  "undertraining_rule": "For every cell, if the mean training loss over steps 27,001-30,000 is more than 2% lower than over steps 24,001-27,000, the cell is reported as possibly under-trained and its H result is treated as a lower bound, not a verdict; this does not change the selection rule or the gate.",
+  "unchanged": "data, cells, selection rule on H, gate for panel 6, panel-6 gates"
+}
