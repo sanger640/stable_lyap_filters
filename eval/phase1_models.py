@@ -355,7 +355,7 @@ def score(r):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("train", "select"))
+    parser.add_argument("stage", choices=("train", "select", "train_f"))
     parser.add_argument("--cell", default=None)
     args = parser.parse_args()
     if not json.loads(PROTOCOL.read_text())["status"].startswith("frozen"):
@@ -366,6 +366,20 @@ def main():
         return
     rows = h_states()
     results = json.loads(RESULT.read_text()) if RESULT.exists() else {}
+    if args.stage == "train_f":
+        best = max("ABCD", key=lambda c: score(results[c]))
+        kind, which = CELLS[best]
+        model = train_clip("F", kind, which, action_sensitivity=True)
+        results["F"] = evaluate("F", model, rows)
+        flag, last, before = undertrained("F")
+        results["F"].update({"built_on": best, "possibly_undertrained": flag, "loss_last_3k": last,
+                             "loss_prev_3k": before})
+        ranked = sorted([c for c in results if c in "ABCDEF"], key=lambda c: score(results[c]), reverse=True)
+        results["selected"] = ranked[0]
+        results["gate_for_panel_6"] = bool(results[ranked[0]]["caught"] >= 0.80 and results[ranked[0]]["false_alarm"] <= 0.20)
+        RESULT.write_text(json.dumps(results, indent=1) + "\n")
+        print(json.dumps({k: results[k] for k in ("selected", "gate_for_panel_6")}), flush=True)
+        return
     for cell, (kind, which) in CELLS.items():
         if cell in results or not (OUT / f"model_{cell}.pt").exists():
             continue
