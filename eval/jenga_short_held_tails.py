@@ -229,14 +229,33 @@ class DirectJengaSim:
 
 
 def extract_sim(archive, destination):
-    with tarfile.open(archive) as bundle:
-        root = Path(destination).resolve()
-        for member in bundle.getmembers():
-            target = (root / member.name).resolve()
-            if root not in target.parents and target != root:
-                raise ValueError(f"unsafe simulator archive member {member.name}")
-        bundle.extractall(destination)
-    return Path(destination) / "panda_express" / "franka_emika_panda" / "panda_jenga_setup.xml"
+    """Return the scene XML of the simulator archive, extracted ONCE into a shared cache keyed by the
+    archive's size and mtime (identical files to a fresh extraction). Callers still pass a fresh temp
+    `destination`; it is removed if empty, so jobs no longer leak a 36 MB copy each (2026-10-05: 153 GB)."""
+    import os
+    import shutil
+    archive = Path(archive)
+    info = archive.stat()
+    cache = Path(tempfile.gettempdir()) / f"jenga_sim_cache_{info.st_size}_{int(info.st_mtime)}"
+    xml = cache / "panda_express" / "franka_emika_panda" / "panda_jenga_setup.xml"
+    if not xml.exists():
+        staging = Path(tempfile.mkdtemp(prefix="jenga_sim_staging_"))
+        with tarfile.open(archive) as bundle:
+            root = staging.resolve()
+            for member in bundle.getmembers():
+                target = (root / member.name).resolve()
+                if root not in target.parents and target != root:
+                    raise ValueError(f"unsafe simulator archive member {member.name}")
+            bundle.extractall(staging)
+        try:
+            os.rename(staging, cache)                     # atomic; a concurrent winner keeps its copy
+        except OSError:
+            shutil.rmtree(staging, ignore_errors=True)
+    try:
+        Path(destination).rmdir()                         # the caller's fresh temp dir, if still empty
+    except OSError:
+        pass
+    return xml
 
 
 def projection_basis(path, dimension=16):
