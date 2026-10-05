@@ -1,0 +1,26 @@
+{
+  "id": "branching-wm-phase1b",
+  "status": "frozen before execution (user approved the draft 2026-10-05: 'continue'; frozen before any Phase-1b data was generated)",
+  "question": "Can the initial-condition route (cell E: sampled perturbed starts + deterministic learned dynamics) reach the panel-6 gate, and does a pure object-centric state help compared with the general image latent?",
+  "basis": "Phase 1 (results/jenga/phase1_selection.json): generative cells 0-3% forks caught; E 69% caught / 8% false alarms on H (iteration-2 recipe on current data: 52% / 7%), flagged possibly under-trained.",
+  "task": "three upright Jenga-like blocks; pick the middle red block without toppling the neighbours",
+  "selection_set": "H from Phase 1 (160 held-out states, 75 forks, 64 real futures each); unchanged",
+  "data": {
+    "existing": "Phase-1 enriched training set (current 1,500 + new 3,266 states) and H",
+    "more_forks": "additional TRAIN chains: the 38 training episodes x reset seeds 150-189, screened and selected exactly as Phase 1 (all topple-disagreeing states + equal others; 16/8 futures), seeds 20261100-20261102",
+    "start_state_recovery": "exact replay of every Phase-1/1b training chain and of H (same visited states, same futures in the same order, no rendering) that saves the true 61-D start state at each selected chunk start; a state is used only if its replayed futures match the stored traces (max abs difference < 1e-6), otherwise excluded and counted"
+  },
+  "arms": {
+    "a1_longer": "E recipe (step-wise deterministic, 50/50 G or rendered perturbed starts, 19-step unrolled loss with input noise, hold weighting) on the Phase-1 enriched data, 90,000 steps (3x E)",
+    "a2_longer_more_data": "a1 on Phase-1 enriched + more_forks data, 90,000 steps",
+    "b_action_sensitivity": "E recipe on Phase-1 enriched data, 30,000 steps, plus an action-sensitivity loss: for pairs of futures of the same state, the predicted hold-30 latent difference must match the real difference (weight 1)",
+    "c_object_centric": "same deterministic step-wise recipe, but the state is the 61-D object-centric simulator state (three block poses and velocities, robot proprioception) instead of the 28x28x8 image latent; the start is the true start state with the three block poses shifted by the same perception-error draw d_k; network: MLP with the same unrolled loss/input noise/hold weighting, 30,000 steps on Phase-1 enriched data; outcome read on non-robot block positions (as the MuJoCo probe). Purpose: a descriptive comparison of a pure object-centric latent vs the general image latent, NOT a deployable monitor (block poses would come from perception)",
+    "d_theory_check": "Phase-1 whole-clip flow (cell B architecture and data) conditioned on each future's perturbed start latent z0k instead of the observed z0, 30,000 steps. Prediction of the 'hidden cause' theory: it approaches E"
+  },
+  "combined_arm": "pre-declared: if a2 beats a1 on H use a2's data, else a1's; add the action-sensitivity loss if b beats E on H; train 90,000 steps. Only built if at least one of a1/a2/b beats E.",
+  "evaluation_on_H": "as Phase 1: 64 rollouts per state (image arms: G start from perception draw j; object-centric: true start shifted by draw j; d: z0k_j), each with execution snippet j; unchanged split test; forks caught, false alarms, side agreement, spread diagnostics, under-training rule (addendum 1); E and the iteration-2 reference reported beside",
+  "selection_rule": "rank image-latent arms (a1, a2, b, combined, d) by (forks caught - false alarms) on H; the object-centric arm c is reported separately (it uses privileged start state) and is not eligible for panel 6",
+  "gate_for_panel_6": "best image-latent arm catches >= 80% of H forks with <= 20% false alarms",
+  "panel_6": "fresh panel (reset +10000, 80 episodes, seed 20261090, selection as panels 1-5); gates: >= 80% forks caught and <= 20% false alarms; MuJoCo probe on the same panel as reference",
+  "budget": "jobs run one at a time on the GPU; more_forks data ~12 h CPU+GPU; start-state recovery ~4 h CPU; a1/a2 ~7.5 h each, b ~3 h, c < 1 h, d ~4 h, combined ~7.5 h"
+}
