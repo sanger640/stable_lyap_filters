@@ -6540,3 +6540,33 @@ by 2+ push std, side agreement near the always-stays baseline. Consistent with W
 but not at the boundary). Implication: prioritise levers that teach fork location (fork-rich paired data,
 set-level and action-sensitivity losses, whole-clip generation) over discontinuous architectures alone.
 Caveat: the push score is imperfect (AUC 0.85), which widens the real curve too.
+
+## 2026-10-05: Branching-WM Phase 1 complete (frozen protocol + addendum 1): best cell E, gate NOT passed
+
+Protocol `results/jenga/phase1_branching_protocol.json` (+ addendum 1: compute-matched energy cells,
+under-training rule). Data: 1,720 new TRAIN chains (31,240 states) gave 1,633 topple-disagreeing states
+(+1,633 others; 16/8 futures); held-out selection set H = 160 states (75 forks), 64 real futures each.
+Results on H (`results/jenga/phase1_selection.json`; forks caught / false alarms; main-axis share of spread,
+real ~0.57; side agreement on forks, always-stays ~0.62):
+
+| cell | model / data | caught | false | main axis | side | under-trained flag |
+|---|---|---|---|---|---|---|
+| A | whole-clip flow / current | 1% | 1% | 0.09 | 0.63 | yes |
+| B | whole-clip flow / enriched | 3% | 0% | 0.09 | 0.64 | no |
+| C | whole-clip energy score / current | 0% | 0% | 0.08 | 0.65 | yes |
+| D | whole-clip energy score / enriched | 0% | 0% | 0.07 | 0.64 | yes |
+| **E** | **step-wise deterministic + sampled perturbed starts / enriched** | **69%** | **8%** | **0.48** | **0.77** | yes |
+| F | B + action-sensitivity loss | 0% | 0% | 0.10 | 0.63 | yes |
+| ref | iteration-2 recipe (dyn_full) / current, same H | 52% | 7% | 0.45 | 0.73 | -- |
+
+Selected: E; gate for panel 6 (>= 80% caught, <= 20% false): **not passed**, so no panel 6.
+Readings: (1) every noise-driven generative model (whole-clip flow or energy score, with or without 4x fork
+data, with or without the action-sensitivity loss) reproduces the iteration-1 failure: about the right
+amount of spread, spread almost isotropically (7-10% on the fork axis), essentially no forks flagged.
+(2) Uncertainty in the initial conditions (sampled perturbed starts) + deterministic learned dynamics
+is the only route that finds forks, and fork-rich data improves it substantially on the same H
+(52% -> 69% caught at 7-8% false alarms). (3) E is flagged possibly under-trained. Theory (not tested):
+the generative models must discover the hidden 18-D pose cause from 8-16 futures per image and minimise
+loss with generic per-patch variation; the deterministic route is given the cause explicitly (IPE design).
+Next: Phase 1b on the E recipe (new protocol): longer training, more fork data, action sensitivity on E,
+conditioning a generator on z0k, object-centric latents.
