@@ -45,8 +45,8 @@ check before each chunk runs. Existing monitors address \emph{epistemic} uncerta
 model has not seen \citep{seo2025uncertainty,xu2025failure}. We address a second kind that remains even
 for a perfect model: \emph{physical} uncertainty. When a robot picks a block standing between two
 others, the same command can lift it cleanly or tip a neighbour depending on millimetres of execution error and
-perception error. Such a chunk is precarious even if its nominal outcome is fine, because uncertainty the
-robot cannot control decides what happens.
+perception error. Such a chunk is risky even if its nominal outcome is fine: whether it succeeds depends on errors the
+robot cannot control.
 
 People handle this with an \emph{intuitive physics engine} (IPE): a few approximate simulations over an
 uncertain scene, whose disagreement signals precariousness
@@ -94,14 +94,13 @@ the simulator, which a real robot does not have; the learned alternative is a wo
 
 \paragraph{Ground truth.} One real outcome cannot grade a monitor, since a fragile chunk may succeed by
 luck. An oracle therefore samples the 64 futures from the \emph{true} scene in exact physics and labels
-the state a fork as above. Two independent oracle runs give the same label on 99\% of states. Each
-evaluation uses an unseen test set of block layouts (up to 60 topple-screened states plus 100 safe ones)
-under a protocol frozen before the data existed.
+the state a fork as above. Two independent oracle runs give the same label on 99\% of states. Every evaluation uses unseen block layouts (about 60 screened forks plus 100
+safe states) under a protocol frozen before the data existed.
 
 \section{Results}
 \subsection{Propagating uncertainty through a physics engine works}\label{sec:validation}
-With exact physics and the true scene, the split test flags all 23 topple forks among 112 development
-states, with 10\% alarms on the 89 quiet ones. With real perception, perception uncertainty must be
+On the 112 states used to design the split test (exact physics, true scene), it flags all 23 topple
+forks and 10\% of the 89 states without one. With real perception, perception uncertainty must be
 propagated: errors of 2--4\,mm are comparable to execution noise, and a probe that trusts the estimate
 catches only 65--67\% of forks, while the fork probe catches 77--91\% with 7--17\% false alarms
 (Table~\ref{tab:panels}). Reading outcomes from DINOv2 tokens of rendered endings instead of object
@@ -170,52 +169,54 @@ deterministic, uncertain starts & 48\%$^\dagger$ & 3\%$^\dagger$ & 0.28 & 0.55 &
 \end{tabular}
 \end{table}
 
-\paragraph{Where the uncertainty went wrong.} Table~\ref{tab:wm} compares with real futures the total
-spread of the 64 endings, its share on the main axis, and its ratio on fork versus other states. The
-stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
+\paragraph{Where the uncertainty went wrong.} Compared with real futures (Table~\ref{tab:wm}: total spread,
+share on the main axis, ratio on forks vs other states), the stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
 the spread is isotropic and nearly the same on forks and non-forks, the average uncertainty of futures
 rather than where they branch (Fig.~\ref{fig:forks}b); other samplers are worse. Per-step noise is not
 wrong in general (diffusion weather ensembles stay well dispersed \citep{price2025gencast}); here it was
 misplaced. The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
-forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. We tested
-this in a second, pre-registered iteration: a learned operator perturbs the start latent by sampled
-physical perception error, and deterministic dynamics are trained on full rollouts from each future's
-own start. It fails its held-out pre-test, catching 48\% of forks, and even with exactly rendered perturbed
-starts only 45\%: the learned dynamics amplify start uncertainty too weakly (spread 0.28$\times$) and
-form two groups on only half the real forks. The bottleneck is the dynamics, not the uncertainty input.
+forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. A second,
+pre-registered iteration tested this: a learned operator perturbs the start latent by sampled perception
+error, and deterministic dynamics roll it out. It catches only 48\% of held-out forks, and 45\% even
+with exactly rendered perturbed starts: the learned dynamics amplify start uncertainty too weakly
+(spread 0.28$\times$). The bottleneck is the dynamics, not the uncertainty input.
 
 \section{Related work}
-\paragraph{Simulation under uncertainty.} Beyond the IPE and counterfactual accounts of physical support
-\citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model parameters to
+\paragraph{Simulation under uncertainty.} Beyond the IPE \citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model parameters to
 score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing} or to build safety filters
 \citep{johansson2025safety,wang2026manidreams}. \citet{cannizzaro2024cobra} sample measured perception
 and placement noise through a simulator to predict whether a block tower stands, and
 \citet{goyal2026stability} perturbs action chunks to measure, offline, how fast deviations grow. These
-score a task predicate, labels \citep{lerer2016learning} or a growth rate; \citet{zapolsky2016particle}
-proposed goal-free detection of divergent particle traces but evaluated task failure. We judge only
-whether the outcome set splits, a Monte Carlo test of proximity to a basin boundary \citep{menck2013basin}.
-\paragraph{Uncertainty-aware monitors.} Latent safety filters use learned failure classifiers and
-epistemic uncertainty, also on Jenga \citep{nakamura2025generalizing,seo2025uncertainty}; failure
-detectors use policy uncertainty calibrated on successes \citep{xu2025failure,agia2024unpacking}. These
-measure what a model does not know, not whether the physics is at a branch.
+score a task predicate, labels \citep{lerer2016learning} or a growth rate. Closest in spirit,
+\citet{zapolsky2016particle} sample model and sensor parameters to find divergent particle traces when
+validating robot plans offline; they propose detecting divergence without a goal but, in their
+experiments, detect it through task failure or by inspection. Our probe instead runs before every chunk,
+samples the robot's own measured execution and perception errors, and applies an automatic test for
+whether the outcomes split, a Monte Carlo test of proximity to a basin boundary \citep{menck2013basin}.
+\paragraph{Uncertainty-aware monitors.} Latent safety filters (also on Jenga) and failure detectors use
+failure classifiers, epistemic or policy uncertainty \citep{nakamura2025generalizing,seo2025uncertainty,xu2025failure,agia2024unpacking}:
+what a model does not know, not whether the physics is at a branch.
 \paragraph{World models and their uncertainty.} Learned simulators and latent world models
 \citep{sanchezgonzalez2020learning,allen2023fignet,zhou2025dinowm,assran2025vjepa2,hafner2025dreamerv3}
-struggle with stiff contact \citep{parmar2021fundamental}, and audits find poor physical grounding and
-optimism under failure-inducing actions \citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}.
-\citet{yu2026evaluated} propose evaluating world models on interventional action branches by per-branch
-error; our models have low error yet lose the forks. Stochastic and ensemble models
-\citep{chua2018pets,lakshminarayanan2017ensembles} are judged by likelihood or return, not by where their
-spread falls.
+struggle with stiff contact \citep{parmar2021fundamental}; audits find weak physical grounding
+\citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}.
+\citet{yu2026evaluated} propose evaluating world models on interventional action branches, by
+prediction error and action-effect agreement per branch; our models predict individual futures well yet
+lose the forks, so a test of branching is needed alongside. Stochastic and ensemble models
+\citep{chua2018pets,lakshminarayanan2017ensembles} are evaluated by likelihood, calibration or return,
+none of which checks whether their spread splits where the dynamics branch.
 
 \section{Conclusion and limitations}
 A robot can judge fragility the way people do, by propagating its own measured uncertainty through a rough
 simulator. For safe deployment, our results suggest three things. Physical uncertainty must be
 propagated, not just estimated. Doing so without a simulator needs a world model with branching
-fidelity, which our learned models lack despite low average error, so benchmarks should measure it. And
-until learned dynamics have it, the practical design is the IPE's: learned perception and measured
-uncertainty feeding an approximate physics engine. \paragraph{Limitations.} Simulation, one task, three
-tracked blocks; privileged MuJoCo geometry; one perception error model for all images; test sets vary;
-single training runs; chunks that fail every time are not flagged.
+fidelity, which our learned models lack despite low average error, so benchmarks should measure it. Until learned dynamics have it, our results favour the IPE's own
+design, learned perception and measured uncertainty feeding an approximate physics engine, which leaves
+estimating the engine's scene (shapes, masses, friction) from sensors as the open problem.
+\paragraph{Limitations.} All results are in simulation, on one task with three blocks. The engine probe uses
+the simulator's true block shapes, masses and friction, which a real robot would have to estimate. Perception error is modelled by one Gaussian for all images, not per image. Test sets differ in
+difficulty, so small gaps between probe variants are not conclusive; each world model was trained once.
+Finally, the probe flags forks only; chunks that always fail need a task-level check.
 
 \bibliography{references}
 \end{document}

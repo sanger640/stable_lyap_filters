@@ -41,7 +41,7 @@ def main():
                          "axes.linewidth": 0.6, "xtick.color": MUTED, "ytick.color": MUTED,
                          "axes.spines.top": False, "axes.spines.right": False})
     real, flags, sto, det = futures()
-    fig, axes = plt.subplots(1, 3, figsize=(5.45, 1.42), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(5.45, 1.25), sharey=True)
     specs = [("real futures (exact physics)", None, None, "two groups"),
              ("world model, stochastic", sto, VIOLET, "one cluster"),
              ("world model, deterministic", det, INK, "no gap")]
