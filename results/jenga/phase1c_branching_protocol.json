@@ -1,0 +1,29 @@
+{
+  "id": "branching-wm-phase1c-transformer",
+  "status": "frozen before execution (approved by the user 2026-10-06: 'do option 1 first, option 2 a follow but requires my approval'; revised before any training after the user questioned the 1-frame history: 'why use a 1-frame history'; frozen before any Phase-1c model was trained)",
+  "question": "Does a transformer dynamics model (DINO-WM's predictor architecture) locate forks better than the convolutional step model inside the working initial-condition recipe?",
+  "basis": "Phase 1/1b: the initial-condition recipe with the conv step model reaches 69% forks caught / 8% false alarms on H (cell E); longer training (a1) 72% / 15%; step-vs-ramp shows the main failure is a misplaced fork threshold, which long-range attention might address.",
+  "gate_for_panel_6": "unchanged from Phase 1: >= 80% of H forks caught with <= 20% false alarms; if passed, panel 6 as specified in results/jenga/phase1_branching_protocol.json",
+  "option_2_conditional": {
+    "what": "fine-tune the user's pretrained DINO-WM checkpoint (data/jenga/world_model.pt; default camera, full DINO tokens, 3-frame history) in the initial-condition recipe, after re-rendering and re-encoding the training futures and H with the default camera",
+    "requires": "explicit approval from the user after the Option-1 result; NOT run under this protocol's approval"
+  },
+  "cost": "Option 1: ~4-6 GPU hours, existing data, run after the Phase-1b chain finishes (one GPU job at a time)",
+  "option_1_arms": {
+    "vit3": {
+      "architecture": "the repo's DINO-WM ViTPredictor class (src/models/dinowm/vit.py) with the checkpoint's settings: width 404, depth 6, 16 heads, head size 64, MLP 2048; num_patches 196; num_frames 3 (DINO-WM's history window, causal attention across frames)",
+      "tokens": "the 28x28x8 channel-PCA latent grouped into 2x2 patches -> 196 tokens of 32 numbers, linearly embedded to 384, concatenated with a 20-number action embedding (DINO-WM concatenates action and proprio embeddings to reach 404); output head maps each token back to its 2x2x8 residual",
+      "recipe": "identical to cell E: deterministic step model, 50/50 G or rendered perturbed starts, 19-step unrolled loss with input noise 0.1 x residual std, hold-10/30 weight 2, AdamW 3e-4 cosine, batch 32, 30,000 steps, seed 0, Phase-1 enriched data, last step kept",
+      "evaluation": "Phase-1 held-out set H (160 states, 75 forks) with the Phase-1 evaluation (G starts from perception draw j, execution snippet j; unchanged split test); forks caught, false alarms, side agreement, spread diagnostics, under-training rule (Phase-1 addendum 1)",
+      "comparison": "cell E (same recipe, conv step model): 69% / 8%",
+      "history": "a window of the last 3 latents. At the start the two missing past frames are copies of the start latent (blocks are at rest at a chunk start); during the 19-step rollout the window is filled with the model's own predictions, as DINO-WM rolls out. Training uses the same window inside the unrolled loss."
+    },
+    "conv3": {
+      "architecture": "cell E's convolutional step model (step3_world_model.Transition body: width 128, 6 FiLM residual blocks) with the same 3-latent history window concatenated along channels",
+      "recipe": "identical to vit3 (and to cell E apart from the history window)",
+      "purpose": "separates the effect of history from the effect of the transformer"
+    }
+  },
+  "comparison": "E (conv, 1 frame): 69% / 8%; vit3 vs conv3 isolates the architecture; conv3 vs E isolates history",
+  "selection_rule": "rank E, vit3, conv3 by (forks caught - false alarms) on H, as Phase 1"
+}

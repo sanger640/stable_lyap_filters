@@ -28,13 +28,13 @@ LONG, SHORT, BATCH = 90_000, 30_000, 32
 
 
 # ------------------------------------------------------- initial-condition latent recipe (cell E)
-def train_ic(name, folders, steps, sensitivity=False, seed=0):
+def train_ic(name, folders, steps, sensitivity=False, seed=0, model_cls=None):
     """Cell-E recipe; with `sensitivity`, half of each batch is 16 states x 2 futures and the predicted
     hold-30 latent difference of each pair must match the real difference."""
     import step3b_models as sm
     path = OUT / f"model_{name}.pt"
     if path.exists():
-        return wm.WorldModel.load(path)
+        return (model_cls or wm.WorldModel).load(path)
     torch.manual_seed(seed); np.random.seed(seed)
     states = p1.load_states(folders)
     g = sm.G.load(sm.DATA / "G.pt")
@@ -42,7 +42,7 @@ def train_ic(name, folders, steps, sensitivity=False, seed=0):
     seq = torch.cat([torch.cat([s["z0k"][:, None], s["z"]], 1) for s in states[:400]])
     pairs = torch.cat([s["actions"].reshape(len(s["z"]), wm.STEPS, -1) for s in states[:400]])
     stats = wm.Stats(seq, pairs)
-    model = wm.WorldModel("deterministic", stats, pairs.shape[-1])
+    model = (model_cls or wm.WorldModel)("deterministic", stats, pairs.shape[-1])
     opt = torch.optim.AdamW(model.net.parameters(), lr=wm.LR, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps)
     wts = torch.ones(wm.STEPS, device=DEVICE); wts[[wm.HOLD10, wm.HOLD30]] = sm.HOLD_WEIGHT
