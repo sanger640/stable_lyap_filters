@@ -23,5 +23,14 @@
   "budget": "calibration and H evaluation: minutes of GPU, run alongside vit3 without stopping it; fresh panel (only if R1 passes and no panel 6 exists) ~6 h, asked before running",
   "not_in_scope": "lighting/shadow-invariant latents and proprioception input (Phase 1d) are separate protocols",
   "dropped_arms": "R2 (robot+shadow mask) and R3 dropped by the user before freezing; a mask, if needed later, would come from a learned self-motion map (robot moving alone), not from the light direction",
-  "result_file": "results/jenga/wm_readout_fix_result.json"
+  "result_file": "results/jenga/wm_readout_fix_result.json",
+  "amendment_1": {
+    "date": "2026-10-06",
+    "status": "recorded before any result: the first run crashed on its first calibration state (attribute-name bug) before computing any separation",
+    "reason": "user: the label-calibrated floor would undermine the task-agnostic claim (it needs Jenga topple labels and a task-specific scale). User decision: 'go ahead with the model's error route as the floor'",
+    "replaces": "arms.R1_gap_floor and calibration",
+    "R1_model_error_floor": "R0 and the hold-30 best-split separation (two_mode_test.separation_rms_mm, i.e. ||mean_a - mean_b|| / sqrt(D//3)) > 1.0 x the model's own hold-30 prediction error",
+    "model_error": "mean over a validation set never used to train the model of ||predicted hold-30 latent - real hold-30 latent|| / sqrt(D//3) (same units as the separation), with the model run exactly as it is deployed: wm_det_iter1 from the observed latent z0 with each future's executed actions, on results/program_b/step3/val (150 states x 8 futures); cell_E from G(z0, d_k) with each future's executed actions, on results/program_b/step3b/val (150 states x 8 futures). No outcome labels are used; multiplier 1.0 fixed in advance; nothing tuned on H",
+    "unchanged": "models, H evaluation, success rule (false alarms -50% or more, at most 2 of 75 forks lost), confirmation on a fresh panel"
+  }
 }
