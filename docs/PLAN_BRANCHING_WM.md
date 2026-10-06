@@ -49,6 +49,27 @@ TYPES. Also a Route-A baseline (foundation-model reconstruction with sampled unc
 **Phase 3 (large models).** Fine-tune and benchmark pretrained visual WMs (V-JEPA 2-AC; Cosmos-class if
 compute allows) with the recipe; report branching fidelity next to average error.
 
+## Queued (agreed with the user 2026-10-06)
+
+Status: Phase 1 cell E 69% / 8% on H; Phase 1b plateau (a1 72% / 15%, a2 68% / 13%; more fork data stopped
+helping); Phase 1c running (conv3 = E + 3-frame history; vit3 = DINO-WM ViT predictor design, from scratch,
+3-frame history). All image-latent models so far get executed actions only, NO proprioception (the arm is
+visible only in the image latent; the original DINO-WM checkpoint took a 10-D proprio input).
+
+1. **Phase 1d: proprioception input.** Add the robot's proprioceptive state (joint / end-effector position
+   and velocity at each step) as an explicit input next to the actions, on the best Phase-1c arm. Allowed
+   under the universal-monitor rule. Rationale: arm velocity at contact may decide a topple.
+2. **Pretrained V-JEPA 2-AC fine-tuning** (user request: "lets also do a vjepa 2 ac (already pretrained)
+   fine tuning on our data including procep"). The real pretrained weights (V-JEPA 2 ViT-g encoder + AC
+   predictor), fine-tuned in the initial-condition recipe (perturbed starts, fork-rich data, unrolled
+   rollout loss) with actions AND proprioception mapped to its action/state tokens. Needs: re-rendering
+   the training futures and H at its resolution, encoding with ViT-g, its own perturbed starts (perception
+   error drawn in its token space), and the Phase-1 evaluation on H. Known risk: V-JEPA 2's encoder
+   localises blocks ~3x worse than DINOv2 (11.8 vs 4.1 mm, NOTES 2026-10-01). Own frozen protocol; run
+   after Phase 1c; estimated 2-3 days of compute.
+3. **DINO-WM option 2** (fine-tune the user's own checkpoint, default camera, full tokens, with proprio):
+   needs the user's explicit approval after the vit3 result. Shares the re-rendering step with item 2.
+
 ## Standing rules
 Frozen protocols before data; fresh panels for confirmation; select on branching fidelity; report the
 always-stays / always-alarm baselines next to every agreement number.
