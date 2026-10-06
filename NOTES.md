@@ -6570,3 +6570,26 @@ the generative models must discover the hidden 18-D pose cause from 8-16 futures
 loss with generic per-patch variation; the deterministic route is given the cause explicitly (IPE design).
 Next: Phase 1b on the E recipe (new protocol): longer training, more fork data, action sensitivity on E,
 conditioning a generator on z0k, object-centric latents.
+
+## 2026-10-06: Branching-WM Phase 1b complete (frozen protocol): nothing beats cell E; gate not passed
+
+Protocol `results/jenga/phase1b_branching_protocol.json`; result `results/jenga/phase1b_selection.json`. Data run 1
+died on a full disk (153 GB of leaked simulator extractions in /tmp; fixed in extract_sim, commit 393288f);
+rerun complete; start-state recovery exact on all 8,282 states. On H (160 states, 75 forks):
+
+| arm | change vs cell E | caught | false | flag |
+|---|---|---|---|---|
+| E (Phase 1) | -- | 69% | 8% | under-trained |
+| a1 | 3x training steps | 72% | 15% | -- |
+| a2 | 3x steps + 1.8x fork data (3,730 fork states) | 68% | 13% | under-trained |
+| b | + action-sensitivity loss | 53% | 6% | under-trained |
+| c | object-centric 61-D state (privileged start; not eligible) | 56% | 8% | -- |
+| d | whole-clip flow conditioned on perturbed starts (hidden-cause check) | 0% | 0% | -- |
+
+Combined arm not built (no arm beat E on caught - false). Selected a1; gate (>= 80% / <= 20%) not passed.
+Readings: (1) the data curve flattens: 419 forks 52% -> 2,052 forks 69% -> 3,730 forks 68%; (2) longer
+training trades false alarms for recall; (3) a pure object-centric state does not beat the image latent;
+(4) the 'hidden cause' explanation fails its test: a generative model given the perturbed starts still
+spreads isotropically and flags nothing, so the problem is sampling noise inside the dynamics model, not only
+the missing cause. All image-latent step models so far were single-frame (no velocity information);
+Phase 1c tests a 3-frame history (conv3) and DINO-WM's ViT predictor (vit3).
