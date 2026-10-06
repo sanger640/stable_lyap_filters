@@ -6615,3 +6615,19 @@ error, mostly through its shadow, which the scale-free split test accepts. Candi
 a frozen protocol, calibrated on H, confirmed on a fresh panel): a minimum-gap floor calibrated on safe states; a
 robot+robot-shadow mask from proprioception/kinematics; partialling out robot-region variation explained by the
 sampled execution error; lighting/shadow-invariant latents; proprioception input (Phase 1d).
+
+## 2026-10-06: WM readout fix R1 (model-error floor) on H: passes for cell E, fails for the paper's iteration-1 WM
+
+Protocol `results/jenga/wm_readout_fix_protocol.json` + amendment 1 (recorded before any result): R1 = split-test alarm
+AND hold-30 separation > the model's own mean hold-30 prediction error on its validation set (no labels; same units;
+multiplier 1). Result `results/jenga/wm_readout_fix_result.json`. H = 160 states, 75 forks, 85 safe.
+
+| model | floor | R0 caught / false | R1 caught / false | forks lost | false alarms removed | pass |
+|---|---|---|---|---|---|---|
+| cell E | 0.31 | 69.3% / 8.2% (52, 7) | 66.7% / 2.4% (50, 2) | 2 | 5 of 7 | **yes** |
+| iteration-1 deterministic WM | 0.40 | 46.7% / 9.4% (35, 8) | 34.7% / 2.4% (26, 2) | 9 | 6 of 8 | no |
+
+cell E R0 reproduces the stored Phase-1 alarms exactly. Reading: the floor removes most false alarms for both models;
+it costs only 2 forks for cell E (whose uncertain starts make real forks large) but 9 for the iteration-1 model, whose
+real-fork splits are under-amplified to below its own error. Per protocol, R1 on cell E is confirmed only on a fresh
+panel (not run yet; needs the user's go-ahead). Gate (80% / 20%) still not reached.
