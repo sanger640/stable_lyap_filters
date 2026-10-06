@@ -1,0 +1,27 @@
+{
+  "id": "wm-readout-fix",
+  "status": "frozen before execution (draft 2026-10-06; user decision 2026-10-06: 'yea just do r1 ditch r2 and r3 for now'; frozen before any calibration or H evaluation)",
+  "question": "Does a minimum-gap floor in the world-model split test remove the self-induced false alarms without losing forks?",
+  "motivation": "results/jenga/wm_false_alarm_anatomy.json (diagnosis on set C, the test set): 9/10 false alarms of the deterministic token WM are tiny splits (median gap 1.8 vs 29.5 for true alarms) made of the same execution-error snippets across states and concentrated on the robot's shadow (22% of the difference on 12% of the image). Because the fix was motivated on set C, set C is NOT used to tune or confirm it.",
+  "task": "three upright Jenga-like blocks; pick the middle red block without toppling the neighbours",
+  "models": {
+    "wm_det_iter1": "the paper's deterministic token WM (data/.../wm_deterministic.pt): start = observed image latent, execution error only (as in the paper)",
+    "cell_E": "Phase-1 cell E (uncertain starts + deterministic dynamics), evaluated as in Phase 1 (G starts from perception draw j, execution snippet j)"
+  },
+  "arms": {
+    "R0": "unchanged split test (reference)",
+    "R1_gap_floor": "split test plus a minimum separation: the best two-group split must have late (hold-30) separation > tau_model, in the split test's own units (two_mode_test separation). tau_model = 99th percentile of the late separation over the calibration states (see calibration). Nothing else changes."
+  },
+  "calibration": {
+    "states": "200 training-domain states from results/program_b/phase1/train with 8 futures (the 'other' role) and 0/8 real futures toppling a neighbour, drawn with seed 20261110; never H, never panels 1-6, never set C",
+    "procedure": "run each model's 64-future probe exactly as its evaluation does (wm_det_iter1: observed latent + snippets; cell_E: G starts + snippets) and record the late separation of the best split, with and without the mask; tau = 99th percentile",
+    "probe": "64 futures per state as each model is evaluated: perception draws errors.sample(20261110, episode, seed, index, j) and execution snippet j applied to the planned chunk (recovered exactly from the stored executed actions and their recorded snippet indices); wm_det_iter1 from the observed latent z0, cell_E from G(z0, draw j)"
+  },
+  "evaluation_on_H": "Phase-1 held-out set H (160 states, 75 forks), unchanged split test otherwise; report forks caught, false alarms, and alarms removed by each arm split into forks vs safe states; R0 must reproduce the stored numbers (cell E 69% / 8%)",
+  "success_rule": "R1 passes on H for a model if it lowers false alarms by >= 50% relative to R0 AND loses at most 2 of the 75 forks",
+  "confirmation": "a passing arm is confirmed only on a fresh panel never used before (reset +10000 panel 6 if it is generated for the Phase-1c gate, else a new panel 7: reset +11000, 80 episodes, seed 20261111, selection as panels 1-5), with the same success rule against R0 on that panel. Set C results with the fix may be reported only as 'post hoc, motivated on this set'.",
+  "budget": "calibration and H evaluation: minutes of GPU, run alongside vit3 without stopping it; fresh panel (only if R1 passes and no panel 6 exists) ~6 h, asked before running",
+  "not_in_scope": "lighting/shadow-invariant latents and proprioception input (Phase 1d) are separate protocols",
+  "dropped_arms": "R2 (robot+shadow mask) and R3 dropped by the user before freezing; a mask, if needed later, would come from a learned self-motion map (robot moving alone), not from the light direction",
+  "result_file": "results/jenga/wm_readout_fix_result.json"
+}
