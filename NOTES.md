@@ -6593,3 +6593,25 @@ training trades false alarms for recall; (3) a pure object-centric state does no
 spreads isotropically and flags nothing, so the problem is sampling noise inside the dynamics model, not only
 the missing cause. All image-latent step models so far were single-frame (no velocity information);
 Phase 1c tests a 3-frame history (conv3) and DINO-WM's ViT predictor (vit3).
+
+## 2026-10-06: Anatomy of the deterministic token WM's false alarms on set C (descriptive)
+
+`eval/wm_false_alarm_anatomy.py` -> `results/jenga/wm_false_alarm_anatomy.{json,png}`. Re-runs the paper's deterministic
+WM on set C (44 alarms reproduced), takes the split test's own two groups at hold 30, and locates the difference
+between the group means on exact MuJoCo segmentation masks (chain replay; RGB within 2/255 of the stored frame),
+both at the start frame and at the end of the hold (one nominal future).
+
+| (medians) | gap between groups | robot | robot's shadow on table | neighbours | lit table |
+|---|---|---|---|---|---|
+| 10 false alarms: energy / area | 1.8 | 1% / 8% | **22% / 12%** | 8% / 5% | 47% / 72% |
+| 34 true alarms: energy / area | 29.5 | 1% / 27% | 5% / 9% | **18% / 5%** | 73% / 57% |
+
+The same execution-error snippets form the minority across false alarms (mean Jaccard 0.38 vs 0.10 = 95th
+percentile of a random-membership null). Per state: 6/10 shadow-dominated or mixed shadow/robot (spots on the shadow
+of the fingers), 1 robot-dominated (50:154), 2 mixed, and 1 genuine imagined topple (43:146, gap 28.6: the WM topples
+an already-tilted left neighbour that never falls in reality).
+Reading: 9/10 false alarms are tiny splits (17x smaller than real forks) driven by the robot's own execution
+error, mostly through its shadow, which the scale-free split test accepts. Candidate fixes (not yet run; would need
+a frozen protocol, calibrated on H, confirmed on a fresh panel): a minimum-gap floor calibrated on safe states; a
+robot+robot-shadow mask from proprioception/kinematics; partialling out robot-region variation explained by the
+sampled execution error; lighting/shadow-invariant latents; proprioception input (Phase 1d).
