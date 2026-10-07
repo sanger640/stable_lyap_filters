@@ -29,13 +29,13 @@ few noisy simulations over an uncertain scene and call it precarious when the ou
 build this check for robots as a goal-free \emph{fork probe}: sample the robot's measured perception and
 execution error, roll the intended action chunk forward 64 times, and flag it when the futures split.
 With a physics engine and a real camera-based perception model, the probe catches 88\% of forks on
-unseen layouts with 7\% false alarms, reading outcomes from images alone. Without the engine the probe needs a world model, and there it fails: a
-token-space world model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\%,
-because its sampled futures spread by the right amount but in every direction rather than along the
-branch; five further generative variants catch at most 3\%, while starting each future from a perturbed
-scene and rolling it out deterministically reaches 69\%, a ceiling that more data, frame history and a DINO-WM transformer
-do not lift. Safe deployment needs world models with \emph{branching fidelity}, which average-error
-benchmarks do not measure.
+unseen layouts with 7\% false alarms. With a learned world model in place of the engine, a stochastic
+token-space model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\% of forks,
+and five further generative variants at most 3\%: their sampled futures spread in every direction rather
+than along the branch. Deterministic dynamics that start each future from a perturbed scene, as the
+intuitive physics engine does, come relatively close (69\% with 8\% false alarms on held-out states) but
+plateau despite more data, frame history and a DINO-WM transformer. World models for safe deployment need
+this \emph{branching fidelity}, which average-error benchmarks do not measure.
 \end{abstract}
 
 \keywords{World models, intuitive physics, uncertainty, safe deployment}
@@ -62,8 +62,8 @@ the real dynamics branch, a property prediction error does not measure.
 measured perception and execution uncertainty through a rollout engine and flags splits, with no task
 labels, failure data or fitted thresholds (Sec.~\ref{sec:probe}). (2) Validation with a physics engine and
 real camera perception on three unseen test sets, which sets the reference a world model must reach
-(Sec.~\ref{sec:validation}). (3) \emph{Branching fidelity} as a world-model evaluation, and two learned
-token-space world models that predict well on average yet fail it, with a diagnosis (Sec.~\ref{sec:wm}).
+(Sec.~\ref{sec:validation}). (3) \emph{Branching fidelity} as a world-model evaluation: generative world
+models that predict well on average fail it, while uncertain starts with deterministic dynamics come close (Sec.~\ref{sec:wm}).
 
 \section{Setup and the fork probe}\label{sec:probe}
 \paragraph{Task.} Three Jenga-like blocks stand upright in a row; a simulated Franka Panda (MuJoCo) must
@@ -137,7 +137,7 @@ outcomes read from images: fork probe & 88 & 12 & 77 & 8 & 88 & 9 \\
 \end{tabular}
 \end{table}
 
-\subsection{Propagating uncertainty through learned world models fails}\label{sec:wm}
+\subsection{Learned world models: generative ones fail, uncertain starts come close}\label{sec:wm}
 Without privileged geometry a learned model must take MuJoCo's role, and the probe becomes its test:
 given one image and the 64 perturbed chunks, do its rollouts branch where physics branches? Our
 model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (applied to real
