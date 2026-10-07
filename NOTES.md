@@ -6655,3 +6655,20 @@ forks. Cell E R0: 71.6% caught / 7.5% false (48 forks, 7 false alarms). R1 (floo
 error 0.31, unchanged from H): 68.7% / 3.2% (46 forks, 3 false alarms): false alarms -57%, 2 forks lost -> R1 confirmed.
 Also the first fresh-panel number for cell E: 72% / 8% with independent draws, in line with H (69% / 8%), so cell E
 did not overfit H. Gate (80%) still not reached.
+
+## 2026-10-07: Model-error floor on a1, a2, conv3, vit3 (EXPLORATORY, protocol addendum 3; H only)
+
+`eval/wm_readout_fix_more.py` -> `results/jenga/wm_readout_fix_more_result.json`. Each model's floor = its own mean
+hold-30 validation error (step3b/val); R0 reproduces every stored H alarm count.
+
+| model | floor | R0 caught / false (forks, FA) | R1 caught / false (forks, FA) | frozen rule |
+|---|---|---|---|---|
+| a1 (3x training) | 0.31 | 72.0% / 15.3% (54, 13) | 70.7% / 7.1% (53, 6) | pass |
+| a2 (+ fork data) | 0.31 | 68.0% / 12.9% (51, 11) | 66.7% / 4.7% (50, 4) | pass |
+| conv3 (3 frames) | 0.32 | 70.7% / 11.8% (53, 10) | 66.7% / 7.1% (50, 6) | fail (3 forks lost, FA -40%) |
+| vit3 (DINO-WM ViT) | 0.31 | 68.0% / 11.8% (51, 10) | 68.0% / 5.9% (51, 5) | pass (no fork lost) |
+| cell E (frozen, for reference) | 0.31 | 69.3% / 8.2% (52, 7) | 66.7% / 2.4% (50, 2) | pass; confirmed on panel 7 |
+
+Reading: the floor halves false alarms for every deterministic uncertain-start model at a cost of 0-3 forks; all
+floors are ~0.31 (the models share an error level). Even with the floor, every variant stays at 67-71% caught: the
+floor fixes false alarms, not the recall plateau. Descriptive only; nothing confirmed beyond cell E.
