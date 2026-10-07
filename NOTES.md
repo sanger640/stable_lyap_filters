@@ -6631,3 +6631,18 @@ cell E R0 reproduces the stored Phase-1 alarms exactly. Reading: the floor remov
 it costs only 2 forks for cell E (whose uncertain starts make real forks large) but 9 for the iteration-1 model, whose
 real-fork splits are under-amplified to below its own error. Per protocol, R1 on cell E is confirmed only on a fresh
 panel (not run yet; needs the user's go-ahead). Gate (80% / 20%) still not reached.
+
+## 2026-10-07: Phase 1c complete: neither history nor DINO-WM's transformer beats cell E; gate not passed
+
+Protocol `results/jenga/phase1c_branching_protocol.json`; result `results/jenga/phase1c_selection.json`. On H
+(160 states, 75 forks), same recipe and budget as cell E (30k steps):
+
+| arm | model | caught | false | spread ratio | main-axis share | side agreement |
+|---|---|---|---|---|---|---|
+| E | conv, 1 frame | 69% | 8% | 0.35 | 0.48 | 0.77 |
+| conv3 | conv, 3-frame history | 71% | 12% | 0.36 | 0.49 | 0.77 |
+| vit3 | DINO-WM ViTPredictor (20M), 3-frame history | 68% | 12% | 0.39 | 0.50 | 0.76 |
+
+Ranking E > conv3 > vit3 (caught - false). Neither arm flagged under-trained. Reading: architecture and history are
+not the bottleneck; every deterministic initial-condition variant (Phase 1, 1b, 1c) lands at 68-72% caught with
+8-15% false alarms. Panel 6 not triggered. Option 2 (fine-tune the user's DINO-WM checkpoint) still needs approval.
