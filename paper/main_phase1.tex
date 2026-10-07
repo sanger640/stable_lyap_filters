@@ -47,7 +47,8 @@ check before each chunk runs. Existing monitors address \emph{epistemic} uncerta
 model has not seen \citep{seo2025uncertainty,xu2025failure}. We address a second kind that remains even
 for a perfect model: \emph{physical} uncertainty. When a robot picks a block standing between two
 others, the same command can lift it cleanly or tip a neighbour depending on millimetres of execution error and
-perception error. Such a chunk is risky even if its nominal outcome is fine.
+perception error. Such a chunk is risky even if its nominal outcome is fine: whether it succeeds depends on errors the
+robot cannot control.
 
 People handle this with an \emph{intuitive physics engine} (IPE): a few approximate simulations over an
 uncertain scene, whose disagreement signals precariousness
@@ -73,7 +74,7 @@ the policy as a black box and sees only the chunk, one camera image and proprioc
 error in perceiving the scene, can send the outcome into qualitatively different regimes. This needs no
 goal or failure label, which a monitor around a generalist policy cannot assume. For our task we measure it physically: a state
 is a \emph{fork} if between 2 and 62 of 64 futures sampled from this uncertainty topple a
-neighbouring block.
+neighbouring block. A chunk that fails every time is not a fork and needs a task-level check.
 
 \paragraph{Uncertainty model.} Execution error comes from the robot's measured tracking residuals
 (median chunk maximum 3.2\,mm). Perception is a frozen DINOv2 encoder \citep{oquab2024dinov2} on one
