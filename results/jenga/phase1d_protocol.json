@@ -1,0 +1,18 @@
+{
+  "id": "branching-wm-phase1d-proprio-rebalance",
+  "status": "frozen before execution (user approved 2026-10-07: 'sure go ahead' to a Phase-1d protocol with proprioception as the main arm and a rebalanced-training arm; frozen before any Phase-1d model was trained)",
+  "question": "Do proprioceptive inputs and/or training rebalanced toward toppling futures let the deterministic initial-condition model catch the contact-triggered forks it currently misses?",
+  "basis": "results/jenga/cellE_miss_analysis.json: on H, cell E catches 52/75 forks; 18/23 misses have essentially no futures on the topple side; caught forks are lean-triggered (neighbour start tilt median 10.3 deg, onset step 0-1), missed forks contact-triggered (median 4.2 deg, onset ~step 7). Phase 1b/1c: data, training length, history and DINO-WM's predictor all plateau at 68-72%.",
+  "base_recipe": "cell E exactly (convolutional step model, 50/50 G or rendered perturbed starts, 19-step unrolled loss with input noise, hold-10/30 weight 2, AdamW 3e-4 cosine, batch 32, 30,000 steps, seed 0, Phase-1 enriched data)",
+  "deployability_rule": "inputs may only use what the robot knows before executing the chunk: the image, its proprioception at the chunk start, and the commanded chunk. The robot's actual future proprioception is NOT an input (contact pushes the gripper, which would leak the outcome).",
+  "arms": {
+    "P_proprio": "base recipe; each model step's conditioning = the two (noisy executed) actions as now PLUS the start proprioception (gripper xyz and closed flag from the recovered start state) PLUS each action's commanded target minus the start gripper position (6 numbers); 18 conditioning inputs instead of 8, normalised as now",
+    "R_rebalance": "base recipe; training futures sampled so that futures whose neighbour topples (from the stored traces) make up 50% of every batch (uniform within each group)",
+    "PR_both": "P and R together"
+  },
+  "data": "no new episodes. Start proprioception from the recovered start states (*.start.npy, exact replay verified 2026-10-05) for training and H; for the step3b validation set (needed for the floor) the same exact recovery replay is run on its chains before training, verified against the stored traces (max abs difference < 1e-6)",
+  "evaluation_on_H": "Phase-1 evaluation on H (160 states, 75 forks; G starts from perception draw j, execution snippet j), R0 (plain split test) and R1 (model-error floor = the model's mean hold-30 error on step3b/val, as in the readout-fix protocol). Also report catch rates for lean-triggered forks (max neighbour start tilt >= 10 deg) and contact-triggered forks (< 10 deg), and side agreement.",
+  "selection_rule": "rank P, R, PR and cell E by (forks caught - false alarms) under R0",
+  "gate_for_panel_6": ">= 80% of H forks caught with <= 20% false alarms (R0) for the best arm; panel 6 would then be generated with the start state saved (needed for proprioception) and asked for before running",
+  "budget": "validation-start recovery ~15 min CPU; three arms ~3 h GPU each, one at a time; evaluation minutes"
+}
