@@ -84,8 +84,8 @@ model is measured once, offline, as a zero-mean Gaussian fitted to its errors on
 known poses (a full $9\times9$ position covariance capturing correlated errors, plus rotation covariances).
 
 \paragraph{Fork probe and rollout engine} (Fig.~\ref{fig:forks}a). The probe imagines 64 versions of the
-chunk, each starting from the perceived scene plus one perception-error draw and executing the chunk
-minus one execution-error snippet, followed by a 30-step imagined hold so the outcome settles. It flags
+chunk. Each starts from the perceived scene shifted by one sampled perception error and runs the chunk
+with one sampled execution error; a 30-step imagined hold then lets the outcome settle. It flags
 the chunk if, at hold steps 10 and 30, the endings (object positions or image tokens) projected on their
 first principal axis prefer two Gaussians to one by BIC, are well separated (Ashman's $D>2$
 \citep{ashman1994detecting}), have at least 2 members in the smaller group, and keep the same grouping;
