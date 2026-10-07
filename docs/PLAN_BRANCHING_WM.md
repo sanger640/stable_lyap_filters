@@ -70,6 +70,22 @@ visible only in the image latent; the original DINO-WM checkpoint took a 10-D pr
 3. **DINO-WM option 2** (fine-tune the user's own checkpoint, default camera, full tokens, with proprio):
    needs the user's explicit approval after the vit3 result. Shares the re-rendering step with item 2.
 
+## Later roadmap (agreed with the user 2026-10-07; NOT the current research goal)
+
+Gate: start only after DETECTION is good (a learned monitor that passes the fork gate on a fresh panel).
+
+1. **Safety filter (detect + repair, task-preserving).** Leave the policy alone unless the probe alarms; then search
+   candidate variants of the intended chunk (small shifts of the approach path, slower execution, grasp offset or
+   approach angle), run the probe on each, and pick the closest candidate whose 64 futures are **unimodal** (user's
+   choice of criterion; goal-free, no failure labels). Fallbacks: slow down, retract, **look again** (a second view
+   shrinks perception uncertainty, which can dissolve the fork). Optionally guide a diffusion policy's sampling with
+   the fork score. Related: latent safety filters (Nakamura et al. 2025; Seo et al. 2025), which need failure labels.
+2. **Real-world data for the monitor's world model (unsupervised, safe, generalising).** Safe envelope first
+   (compliant control, speed/force limits, stop on force spikes, light/foam objects, fenced workspace); self-resetting
+   play with repeated execution of the same chunk from re-made scenes (real outcome distributions, no labels);
+   fork-seeking exploration where the model is unsure whether futures split; randomised objects, layouts, lighting
+   and camera; pretrain on existing robot data (DROID, Open-X) and simulation/real-to-sim, fine-tune on real data.
+
 ## Standing rules
 Frozen protocols before data; fresh panels for confirmation; select on branching fidelity; report the
 always-stays / always-alarm baselines next to every agreement number.
