@@ -6672,3 +6672,18 @@ hold-30 validation error (step3b/val); R0 reproduces every stored H alarm count.
 Reading: the floor halves false alarms for every deterministic uncertain-start model at a cost of 0-3 forks; all
 floors are ~0.31 (the models share an error level). Even with the floor, every variant stays at 67-71% caught: the
 floor fixes false alarms, not the recall plateau. Descriptive only; nothing confirmed beyond cell E.
+
+## 2026-10-07: Which forks does cell E miss? (descriptive, `eval/cellE_miss_analysis.py`)
+
+On H (75 forks, 52 caught, 23 missed):
+- **Missed forks are a missing branch, not a misplaced one.** For 18/23 misses, 0-2 of cell E's 64 futures fall beyond
+  the real threshold (model says "all stay"); never "all topple". Spread along the real fork axis: 5% of the real
+  spread on misses vs 73% on catches. Split-test verdicts on misses: no two groups at hold 30 (17), not persistent (5).
+- **Misses are contact-triggered topples; catches are lean-triggered.** Caught forks: neighbour already leaning at
+  the start (median start tilt 10.3 deg; 56% >= 10 deg), topple onset at step 0-1. Missed forks: neighbour nearly
+  upright (median 4.2 deg; 26% >= 10 deg), topple onset ~step 7 (end of the chunk, when the arm makes contact).
+- Balance: hardest are forks with few topples (2-8/64): 9/14 on H, 12/20 on panel 7; no left/right bias; misses sit
+  earlier in the episode (median step 58 vs 74).
+Reading: uncertain starts work when the cause of the topple is in the start state (a leaning block), and fail when the
+topple is caused by the arm's contact during the chunk, which the model must predict from actions alone. This points
+to Phase 1d (proprioception) and to rebalancing training toward contact-triggered toppling futures.
