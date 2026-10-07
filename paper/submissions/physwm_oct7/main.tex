@@ -16,7 +16,7 @@
 \definecolor{violetc}{HTML}{6B55C9}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
-\title{Accurate on Average, Blind at the Fork}
+\title{Branching Fidelity: Testing World Models as Intuitive Physics Engines for Robot Safety}
 \author{Anonymous Authors}
 
 \begin{document}
@@ -32,7 +32,7 @@ With a physics engine and a real camera-based perception model, the probe catche
 unseen layouts with 7\% false alarms. With a learned world model in place of the engine, a stochastic
 token-space model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\% of forks,
 and five further generative variants at most 3\%: their sampled futures spread in every direction rather
-than along the branch. Deterministic DINO-WM-style dynamics on DINOv2 features that start each
+than along the branch. Deterministic DINO-WM-style dynamics that start each
 future from a perturbed scene, as the intuitive physics engine does, come relatively close (69\% with 8\%
 false alarms on held-out states; 68\% with DINO-WM's predictor architecture) but plateau there. World models for safe deployment need
 this \emph{branching fidelity}, which average-error benchmarks do not measure.
@@ -151,7 +151,7 @@ the engine (Table~\ref{tab:wm}).
 
 \begin{table}[t]
 \centering
-\caption{World models on test set C; spread diagnostics on held-out states with 64 real futures each.}
+\caption{World models on test set C. Spread relative to real futures, its share on the main axis, and its ratio on forks vs other states (held-out states, 64 real futures each).}
 \label{tab:wm}
 \small
 \begin{tabular}{lccccc}
@@ -168,8 +168,7 @@ uncertain starts + deterministic, 4$\times$ forks & 69\%$^\dagger$ & 8\%$^\dagge
 \end{tabular}
 \end{table}
 
-\paragraph{Where the uncertainty went wrong.} Compared with real futures (Table~\ref{tab:wm}: total spread,
-share on the main axis, ratio on forks vs other states), the stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
+\paragraph{Where the uncertainty went wrong.} Compared with real futures (Table~\ref{tab:wm}), the stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
 its futures spread equally in all directions and almost as much on safe states as on forks: it
 reproduces the average uncertainty, not where futures branch (Fig.~\ref{fig:forks}b). The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
 forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. In
@@ -189,12 +188,11 @@ score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing} or to build sa
 \citep{johansson2025safety,wang2026manidreams}. \citet{cannizzaro2024cobra} sample measured perception
 and placement noise through a simulator to predict whether a block tower stands, and
 \citet{goyal2026stability} measure offline how fast perturbed chunks diverge. These
-predict a task outcome, a learned stability label \citep{lerer2016learning} or a divergence rate, rather
-than testing whether outcomes split. Closest in spirit,
+predict a task outcome, a learned stability label \citep{lerer2016learning} or a divergence rate. Closest in spirit,
 \citet{zapolsky2016particle} sample model and sensor parameters to find divergent traces when validating
 plans offline, detecting divergence through task failure or inspection. Our probe runs before every
-chunk with the robot's measured errors and an automatic split test, a Monte Carlo test of proximity to a
-basin boundary \citep{menck2013basin}.
+chunk with measured errors and an automatic split test, a Monte Carlo test of proximity to a basin
+boundary \citep{menck2013basin}.
 \paragraph{Uncertainty-aware monitors.} Latent safety filters (also on Jenga) and failure detectors use
 failure classifiers, epistemic or policy uncertainty \citep{nakamura2025generalizing,seo2025uncertainty,xu2025failure,agia2024unpacking}:
 what a model does not know, not whether the physics is at a branch.
@@ -209,16 +207,14 @@ lose the forks, so branching must be tested too. Stochastic and ensemble models
 none of which checks whether their spread splits where the dynamics branch.
 
 \section{Conclusion and limitations}
-A robot can judge fragility as people do, by propagating its own measured uncertainty through a rough
-simulator and checking whether the futures split. For safe deployment, physical uncertainty must be
-propagated, not just estimated. A physics engine with the scene's true parameters sets the bar, 88\% of
+A robot can judge fragility as people do, by propagating its own measured uncertainty, not just
+estimating it, through a rough simulator and checking whether the futures split. A physics engine with the scene's true parameters sets the bar, 88\% of
 forks from one image. To be useful for safety monitoring and fine manipulation, learned world models
 should reach it, which takes branching fidelity: rollouts that split where the physics splits. Ours lack
 it despite low average error, and uncertain starts recover much of it but plateau near 70\%, so
 benchmarks should measure branching fidelity alongside average error. Closing the remaining gap is the next step:
 richer latents, proprioceptive inputs, fine-tuned pretrained world models such as V-JEPA 2-AC, and a
-real robot.
-\paragraph{Limitations.} Simulation, one task with three blocks; the engine probe uses the simulator's
+real robot. \emph{Limitations:} simulation, one task with three blocks; the engine probe uses the simulator's
 true shapes, masses and friction; one Gaussian models perception error for all images; test sets differ in
 difficulty; each world model was trained once; and the probe flags forks, not certain failures.
 
