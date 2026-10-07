@@ -6646,3 +6646,12 @@ Protocol `results/jenga/phase1c_branching_protocol.json`; result `results/jenga/
 Ranking E > conv3 > vit3 (caught - false). Neither arm flagged under-trained. Reading: architecture and history are
 not the bottleneck; every deterministic initial-condition variant (Phase 1, 1b, 1c) lands at 68-72% caught with
 8-15% false alarms. Panel 6 not triggered. Option 2 (fine-tune the user's DINO-WM checkpoint) still needs approval.
+
+## 2026-10-07: WM readout fix R1 CONFIRMED on fresh panel 7 (cell E)
+
+`eval/wm_readout_fix_panel7.py` -> `results/jenga/wm_readout_fix_panel7_result.json` (protocol addendum 2: panel 7 =
+reset +11000, 80 episodes, seed 20261111; monitor perception draws independent of the truth draws). 160 states, 67
+forks. Cell E R0: 71.6% caught / 7.5% false (48 forks, 7 false alarms). R1 (floor = cell E's own hold-30 validation
+error 0.31, unchanged from H): 68.7% / 3.2% (46 forks, 3 false alarms): false alarms -57%, 2 forks lost -> R1 confirmed.
+Also the first fresh-panel number for cell E: 72% / 8% with independent draws, in line with H (69% / 8%), so cell E
+did not overfit H. Gate (80%) still not reached.
