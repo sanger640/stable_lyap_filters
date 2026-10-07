@@ -32,9 +32,9 @@ With a physics engine and a real camera-based perception model, the probe catche
 unseen layouts with 7\% false alarms. With a learned world model in place of the engine, a stochastic
 token-space model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\% of forks,
 and five further generative variants at most 3\%: their sampled futures spread in every direction rather
-than along the branch. Deterministic dynamics that start each future from a perturbed scene, as the
-intuitive physics engine does, come relatively close (69\% with 8\% false alarms on held-out states) but
-plateau despite more data, frame history and a DINO-WM transformer. World models for safe deployment need
+than along the branch. Deterministic DINO-WM-style dynamics on DINOv2 features that start each
+future from a perturbed scene, as the intuitive physics engine does, come relatively close (69\% with 8\%
+false alarms on held-out states; 68\% with DINO-WM's predictor architecture) but plateau there. World models for safe deployment need
 this \emph{branching fidelity}, which average-error benchmarks do not measure.
 \end{abstract}
 
