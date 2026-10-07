@@ -31,9 +31,9 @@ execution error, roll the intended action chunk forward 64 times, and flag it wh
 With a physics engine and a real camera-based perception model, the probe catches 88\% of forks on
 unseen layouts with 7\% false alarms, reading outcomes from images alone. Without the engine the probe needs a world model, and there it fails: a
 token-space world model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\%,
-because its sampled uncertainty has the right size but not where futures branch; five further generative
-variants catch at most 3\%, while sampling perception uncertainty into the start and simulating
-deterministically reaches 69\%, a ceiling that more data, frame history and a DINO-WM transformer
+because its sampled futures spread by the right amount but in every direction rather than along the
+branch; five further generative variants catch at most 3\%, while starting each future from a perturbed
+scene and rolling it out deterministically reaches 69\%, a ceiling that more data, frame history and a DINO-WM transformer
 do not lift. Safe deployment needs world models with \emph{branching fidelity}, which average-error
 benchmarks do not measure.
 \end{abstract}
@@ -72,47 +72,46 @@ the policy as a black box and sees only the chunk, one camera image and proprioc
 
 \paragraph{Fragility.} A chunk is \emph{fragile} if the robot's uncertainty, its execution error and its
 error in perceiving the scene, can send the outcome into qualitatively different regimes. This needs no
-goal or failure label, which a monitor around a generalist policy cannot assume, and it isolates exactly
-the cases where intent no longer determines the outcome. For our task we measure it physically: a state
-is a \emph{fork} if some but not all of 64 futures sampled from this uncertainty (2--62) topple a
+goal or failure label, which a monitor around a generalist policy cannot assume. For our task we measure it physically: a state
+is a \emph{fork} if between 2 and 62 of 64 futures sampled from this uncertainty topple a
 neighbouring block. A chunk that fails every time is not a fork and needs a task-level check.
 
 \paragraph{Uncertainty model.} Execution error comes from the robot's measured tracking residuals
 (median chunk maximum 3.2\,mm). Perception is a frozen DINOv2 encoder \citep{oquab2024dinov2} on one
-close-camera image with a keypoint head for the three blocks in play (2.5\,mm held-out error); its error
+close-camera image with a small head that predicts the three blocks' poses (2.5\,mm held-out error); its error
 model is measured once, offline, as a zero-mean Gaussian fitted to its errors on held-out images with
 known poses (a full $9\times9$ position covariance capturing correlated errors, plus rotation covariances).
 
 \paragraph{Fork probe and rollout engine} (Fig.~\ref{fig:forks}a). The probe imagines 64 versions of the
 chunk. Each starts from the perceived scene shifted by one sampled perception error and runs the chunk
 with one sampled execution error; a 30-step imagined hold then lets the outcome settle. It flags
-the chunk if, at hold steps 10 and 30, the endings (object positions or image tokens) projected on their
-first principal axis prefer two Gaussians to one by BIC, are well separated (Ashman's $D>2$
-\citep{ashman1994detecting}), have at least 2 members in the smaller group, and keep the same grouping;
-these are fixed statistical conventions, not fitted to labels. A variant draws 5 scene hypotheses and
-flags if at least 3 split. The probe works with any rollout engine. Our reference is MuJoCo with the
+the chunk if the 64 endings (object positions or image features) form two persistent groups: projected on
+their main axis of variation at hold steps 10 and 30, they fit two Gaussians better than one (BIC), the
+groups are well separated (Ashman's $D>2$ \citep{ashman1994detecting}), the smaller has at least 2
+members, and the grouping is the same at both times; these are fixed statistical conventions, not fitted
+to labels. A variant repeats this for 5 sampled scene estimates and flags if at least 3 split. The probe works with any rollout engine. Our reference is MuJoCo with the
 three blocks placed at the sampled poses and everything else (block geometry, masses, friction) taken from
 the simulator, which a real robot does not have; the learned alternative is a world model (Sec.~\ref{sec:wm}).
 
 \paragraph{Ground truth.} One real outcome cannot grade a monitor, since a fragile chunk may succeed by
 luck. An oracle therefore samples the 64 futures from the \emph{true} scene in exact physics and labels
-the state a fork as above. Two independent oracle runs give the same label on 99\% of states. Every evaluation uses unseen block layouts (about 60 screened forks plus 100
-safe states) under a protocol frozen before the data existed.
+the state a fork as above. Two independent oracle runs give the same label on 99\% of states. Each test set has unseen block layouts, about 60 forks and 100 safe states
+found by screening, and its protocol was frozen before the data existed.
 
 \section{Results}
 \subsection{Propagating uncertainty through a physics engine works}\label{sec:validation}
-On the 112 states used to design the split test (exact physics, true scene), it flags all 23 topple
-forks and 10\% of the 89 states without one. With real perception, perception uncertainty must be
-propagated: errors of 2--4\,mm are comparable to execution noise, and a probe that trusts the estimate
-catches only 65--67\% of forks, while the fork probe catches 77--91\% with 7--17\% false alarms
-(Table~\ref{tab:panels}). Reading outcomes from DINOv2 tokens of rendered endings instead of object
-positions costs almost nothing, so the probe works from images alone: on test set C it catches 88\%
+We first check the split test where everything is known: run in exact physics from the true scene, it
+flags all 23 forks among the 112 states used to design it, and 10\% of the other 89. With real perception,
+its error must be propagated, not just estimated: perception errors (2--4\,mm) are as large as execution
+errors, so a probe that trusts the pose estimate catches only 65--67\% of forks, while sampling the
+perception error catches 77--91\% with 7--17\% false alarms (Table~\ref{tab:panels}). The split can also be judged from images instead of object positions, by
+applying the test to DINOv2 features of the rendered imagined endings; this changes little, and on test set C it catches 88\%
 of forks (95\% CI 77--94\%) with 7\% false alarms. This is the reference a world model must reach.
 
 \begin{figure}[t]
 \centering
-\input{fig_probe.tex}\\[4pt]
-\includegraphics[width=0.96\linewidth]{fig_futures.pdf}
+\input{fig_probe.tex}\\[1pt]
+\includegraphics[width=0.93\linewidth]{fig_futures.pdf}
 \caption{(a) The fork probe on one held-out state (exact renders; images average all 64 samples).
 (b) The same 64 futures in the world model's latent space, on the real futures' principal axes.}
 \label{fig:forks}
@@ -141,11 +140,11 @@ outcomes read from images: fork probe & 88 & 12 & 77 & 8 & 88 & 9 \\
 \subsection{Propagating uncertainty through learned world models fails}\label{sec:wm}
 Without privileged geometry a learned model must take MuJoCo's role, and the probe becomes its test:
 given one image and the 64 perturbed chunks, do its rollouts branch where physics branches? Our
-model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (on held-out real
-futures the split test on this latent catches 97\% of forks) and predicts
+model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (applied to real
+futures, the split test on this latent still catches 97\% of forks) and predicts
 the next latent from the current one and the action with a flow-matching transition, drawing fresh noise
-at every step. It is trained on 8 futures per image whose start scenes were sampled within the measured
-perception error, so its target spread is the robot's own uncertainty; a deterministic version of the
+at every step. Each training image comes with 8 real futures whose start scenes were perturbed by sampled
+perception error, so the spread it learns is the robot's own uncertainty; a deterministic version of the
 same network is the control. Both beat a no-motion baseline on 19-step latent error by 3--4$\times$, yet
 on test set C the stochastic model catches 18\% of forks and the deterministic one 60\%, against 88\% for
 the engine (Table~\ref{tab:wm}).
@@ -171,11 +170,11 @@ uncertain starts + deterministic, 4$\times$ forks & 69\%$^\dagger$ & 8\%$^\dagge
 
 \paragraph{Where the uncertainty went wrong.} Compared with real futures (Table~\ref{tab:wm}: total spread,
 share on the main axis, ratio on forks vs other states), the stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
-the spread is isotropic and nearly the same on forks and non-forks, the average uncertainty of futures
-rather than where they branch (Fig.~\ref{fig:forks}b). (Per-step noise suits high-dimensional uncertainty, as in weather \citep{price2025gencast}.) The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
+its futures spread equally in all directions and almost as much on safe states as on forks: it
+reproduces the average uncertainty, not where futures branch (Fig.~\ref{fig:forks}b). The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
 forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. In a
 pre-registered factorial on 160 held-out states, generative models producing whole clips, with an
-energy-score loss, 4$\times$ more fork data or an action-sensitivity loss catch 0--3\% of forks, equally isotropic. Putting the
+energy-score loss, 4$\times$ more fork data or an action-sensitivity loss catch 0--3\% of forks, with the same all-direction spread. Putting the
 uncertainty into the initial conditions works instead: a learned operator perturbs the start latent by
 sampled perception error and deterministic dynamics roll it out, catching 52\% of forks at 7\% false
 alarms, and 69\% at 8\% with 4$\times$ more fork data. Giving a generative model the same perturbed starts
@@ -188,12 +187,12 @@ score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing} or to build sa
 \citep{johansson2025safety,wang2026manidreams}. \citet{cannizzaro2024cobra} sample measured perception
 and placement noise through a simulator to predict whether a block tower stands, and
 \citet{goyal2026stability} measure offline how fast perturbed chunks diverge. These
-score a task predicate, labels \citep{lerer2016learning} or a growth rate. Closest in spirit,
-\citet{zapolsky2016particle} sample model and sensor parameters to find divergent particle traces when
-validating robot plans offline; they propose detecting divergence without a goal but, in their
-experiments, detect it through task failure or by inspection. Our probe instead runs before every chunk,
-samples the robot's own measured execution and perception errors, and applies an automatic test for
-whether the outcomes split, a Monte Carlo test of proximity to a basin boundary \citep{menck2013basin}.
+predict a task outcome, a learned stability label \citep{lerer2016learning} or a divergence rate, rather
+than testing whether outcomes split. Closest in spirit,
+\citet{zapolsky2016particle} sample model and sensor parameters to find divergent traces when validating
+plans offline, detecting divergence through task failure or inspection. Our probe runs before every
+chunk with the robot's measured errors and an automatic split test, a Monte Carlo test of proximity to a
+basin boundary \citep{menck2013basin}.
 \paragraph{Uncertainty-aware monitors.} Latent safety filters (also on Jenga) and failure detectors use
 failure classifiers, epistemic or policy uncertainty \citep{nakamura2025generalizing,seo2025uncertainty,xu2025failure,agia2024unpacking}:
 what a model does not know, not whether the physics is at a branch.
@@ -209,11 +208,11 @@ none of which checks whether their spread splits where the dynamics branch.
 
 \section{Conclusion and limitations}
 A robot can judge fragility as people do, by propagating its own measured uncertainty through a rough
-simulator. For safe deployment: physical uncertainty must be propagated,
-not just estimated; without a simulator this needs world models with branching fidelity, which our
-generative models lack despite low average error and uncertain starts partly recover, so benchmarks
-should measure it; and until learned dynamics have it, our results favour the IPE's design, learned
-perception and measured uncertainty feeding an approximate physics engine whose scene (shapes, masses,
+simulator. For safe deployment, physical uncertainty must be propagated,
+not just estimated. Without a simulator, world models need branching fidelity, which our generative
+models lack despite low average error and which uncertain starts only partly restore, so benchmarks
+should measure it. Until learned dynamics have it, our results favour the IPE's design: learned
+perception and measured uncertainty feeding an approximate physics engine, whose scene (shapes, masses,
 friction) must still be estimated from sensors.
 \paragraph{Limitations.} Simulation, one task with three blocks; the engine probe uses the simulator's
 true shapes, masses and friction; one Gaussian models perception error for all images; test sets differ in
