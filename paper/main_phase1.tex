@@ -208,12 +208,12 @@ none of which checks whether their spread splits where the dynamics branch.
 
 \section{Conclusion and limitations}
 A robot can judge fragility as people do, by propagating its own measured uncertainty through a rough
-simulator. For safe deployment, physical uncertainty must be propagated,
-not just estimated. Without a simulator, world models need branching fidelity, which our generative
-models lack despite low average error and which uncertain starts only partly restore, so benchmarks
-should measure it. Until learned dynamics have it, our results favour the IPE's design: learned
-perception and measured uncertainty feeding an approximate physics engine, whose scene (shapes, masses,
-friction) must still be estimated from sensors.
+simulator and checking whether the futures split. For safe deployment, physical uncertainty must be
+propagated, not just estimated. A physics engine with the scene's true parameters sets the bar, 88\% of
+forks from one image. To be useful for safety monitoring and fine manipulation, learned world models
+should reach it, which takes branching fidelity: rollouts that split where the physics splits. Ours lack
+it despite low average error, and uncertain starts recover much of it but plateau near 70\%, so
+benchmarks should measure branching fidelity alongside average error.
 \paragraph{Limitations.} Simulation, one task with three blocks; the engine probe uses the simulator's
 true shapes, masses and friction; one Gaussian models perception error for all images; test sets differ in
 difficulty; each world model was trained once; pretrained world models (V-JEPA 2-AC, Cosmos) are
