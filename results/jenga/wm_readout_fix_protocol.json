@@ -32,5 +32,12 @@
     "R1_model_error_floor": "R0 and the hold-30 best-split separation (two_mode_test.separation_rms_mm, i.e. ||mean_a - mean_b|| / sqrt(D//3)) > 1.0 x the model's own hold-30 prediction error",
     "model_error": "mean over a validation set never used to train the model of ||predicted hold-30 latent - real hold-30 latent|| / sqrt(D//3) (same units as the separation), with the model run exactly as it is deployed: wm_det_iter1 from the observed latent z0 with each future's executed actions, on results/program_b/step3/val (150 states x 8 futures); cell_E from G(z0, d_k) with each future's executed actions, on results/program_b/step3b/val (150 states x 8 futures). No outcome labels are used; multiplier 1.0 fixed in advance; nothing tuned on H",
     "unchanged": "models, H evaluation, success rule (false alarms -50% or more, at most 2 of 75 forks lost), confirmation on a fresh panel"
+  },
+  "addendum_2": {
+    "date": "2026-10-07",
+    "status": "recorded before panel 7 is generated (user: 'do panel 7 for floor fix')",
+    "panel_7": "generated with eval/step3b_panel5.py unchanged except constants: reset +11000, 80 episodes, selection seed 20261111 (forks 2-62/64 up to 60, safe 0/64 up to 100, as panels 1-5); truth_A seed 20261114, truth_B 20261115",
+    "monitor_draws": "cell E's 64 perception draws on panel 7 are independent of the truth draws (seed 20261112), as on panel 5 (deployable setting); on H they were paired with the real futures. tau = cell E's floor from the H run (0.3098), unchanged",
+    "rule": "R1 confirmed if false alarms <= 50% of R0's and at most 2 forks lost relative to R0 on panel 7; reported beside: exact-start MuJoCo probe and the second oracle run"
   }
 }
