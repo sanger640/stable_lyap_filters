@@ -177,10 +177,10 @@ clips, use an energy-score loss, see 4$\times$ more fork data or add an action-s
 0--3\% of forks, with the same all-direction spread. Putting the uncertainty into the initial conditions
 works instead: a learned operator perturbs the start latent by sampled perception error and the
 deterministic network rolls it out, catching 52\% of forks at 7\% false alarms, and 69\% at 8\% with
-4$\times$ more fork data. Giving a generative model the same perturbed starts does not help (0\%): noise in
-the learned dynamics erases forks. This recipe plateaus at 68--72\% with 3$\times$ longer training,
-more fork data, a 3-frame history, or DINO-WM's transformer predictor \citep{zhou2025dinowm} instead of
-the convolutional network.
+4$\times$ more fork data. This recipe plateaus at 68--72\% with 3$\times$ longer training, more fork
+data, a 3-frame history, or DINO-WM's transformer predictor \citep{zhou2025dinowm} instead of the
+convolutional network. With the same perturbed starts, a generative model still catches 0\%, so the
+noise in its dynamics, not the missing starts, erases the forks.
 
 \section{Related work}
 \paragraph{Simulation under uncertainty.} Beyond the IPE \citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model parameters to
