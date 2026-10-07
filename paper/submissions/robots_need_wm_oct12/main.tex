@@ -63,7 +63,7 @@ measured perception and execution uncertainty through a rollout engine and flags
 labels, failure data or fitted thresholds (Sec.~\ref{sec:probe}). (2) Validation with a physics engine and
 real camera perception on three unseen test sets, the reference a world model must reach
 (Sec.~\ref{sec:validation}). (3) \emph{Branching fidelity} as a world-model evaluation: generative world
-models that predict well on average fail it, while uncertain starts with deterministic dynamics come close (Sec.~\ref{sec:wm}).
+models that predict well on average fail it, while deterministic ones come close (Sec.~\ref{sec:wm}).
 
 \section{Setup and the fork probe}\label{sec:probe}
 \paragraph{Task.} Three Jenga-like blocks stand upright in a row; a simulated Franka Panda (MuJoCo) must
@@ -137,7 +137,7 @@ outcomes read from images: fork probe & 88 & 12 & 77 & 8 & 88 & 9 \\
 \end{tabular}
 \end{table}
 
-\subsection{Learned world models: generative ones fail, uncertain starts come close}\label{sec:wm}
+\subsection{Learned world models: generative ones fail, deterministic ones come close}\label{sec:wm}
 Without privileged geometry a learned model must take MuJoCo's role:
 given one image and the 64 perturbed chunks, do its rollouts branch where physics branches? Our
 model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (applied to real
@@ -164,7 +164,7 @@ token world model, deterministic & 60\% & 10\% & 0.04 & 0.69 & 32 \\
 5 generative variants (Sec.~\ref{sec:wm}) & 0--3\%$^\dagger$ & 0--1\%$^\dagger$ & 1.1--1.6 & 0.07--0.10 & -- \\
 uncertain starts + deterministic, 4$\times$ forks & 69\%$^\dagger$ & 8\%$^\dagger$ & 0.35 & 0.48 & -- \\
 \bottomrule
-\multicolumn{6}{l}{\footnotesize $^\dagger$ on 160 held-out training-domain states (75 forks), not set C; none passed the gate to run on a fresh set.}
+\multicolumn{6}{l}{\footnotesize $^\dagger$ on 160 held-out training-domain states (75 forks), not set C.}
 \end{tabular}
 \end{table}
 
@@ -211,7 +211,8 @@ A robot can judge fragility as people do, by propagating its own measured uncert
 estimating it, through a rough simulator and checking whether the futures split. A physics engine with the scene's true parameters sets the bar, 88\% of
 forks from one image. To be useful for safety monitoring and fine manipulation, learned world models
 should reach it, which takes branching fidelity: rollouts that split where the physics splits. Ours lack
-it despite low average error, and uncertain starts recover much of it but plateau near 70\%, so
+it despite low average error; deterministic dynamics recover much of it, reaching about 70\% with uncertain
+starts and fork-rich data, but plateau there, so
 benchmarks should measure branching fidelity alongside average error. Closing the remaining gap is the next step:
 richer latents, proprioceptive inputs, fine-tuned pretrained world models such as V-JEPA 2-AC, and a
 real robot. \emph{Limitations:} simulation, one task with three blocks; the engine probe uses the simulator's
