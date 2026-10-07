@@ -33,8 +33,9 @@ unseen layouts with 7\% false alarms, reading outcomes from images alone. Withou
 token-space world model that predicts 3--4$\times$ better than a no-motion baseline catches only 18\%,
 because its sampled uncertainty has the right size but not where futures branch; five further generative
 variants catch at most 3\%, while sampling perception uncertainty into the start and simulating
-deterministically reaches 69\%. Safe deployment needs world models with \emph{branching
-fidelity}, which average-error benchmarks do not measure.
+deterministically reaches 69\%, a ceiling that more data, frame history and a DINO-WM transformer
+do not lift. Safe deployment needs world models with \emph{branching fidelity}, which average-error
+benchmarks do not measure.
 \end{abstract}
 
 \keywords{World models, intuitive physics, uncertainty, safe deployment}
@@ -53,9 +54,9 @@ People handle this with an \emph{intuitive physics engine} (IPE): a few approxim
 uncertain scene, whose disagreement signals precariousness
 \citep{battaglia2013simulation,smith2013sources,sanborn2013reconciling}. Our goal is to give robots the
 same ability, which needs two things: an honest model of the robot's own uncertainty, and a model to
-simulate with. Outside simulation the second must be learned, which makes the debate on whether robots
-need world models concrete: a world model is useful here only if its rollouts branch where the real
-dynamics branch, a property prediction error does not measure.
+simulate with. Outside simulation the second must be learned, which gives the physical fidelity of world
+models a concrete, safety-relevant test: a world model is useful here only if its rollouts branch where
+the real dynamics branch, a property prediction error does not measure.
 
 \paragraph{Contributions.} (1) A \emph{fork probe}: a pre-execution check that propagates the robot's
 measured perception and execution uncertainty through a rollout engine and flags splits, with no task
@@ -171,14 +172,15 @@ uncertain starts + deterministic, 4$\times$ forks & 69\%$^\dagger$ & 8\%$^\dagge
 \paragraph{Where the uncertainty went wrong.} Compared with real futures (Table~\ref{tab:wm}: total spread,
 share on the main axis, ratio on forks vs other states), the stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
 the spread is isotropic and nearly the same on forks and non-forks, the average uncertainty of futures
-rather than where they branch (Fig.~\ref{fig:forks}b); other samplers are worse. (Per-step noise suits high-dimensional uncertainty, as in weather \citep{price2025gencast}.) The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
-forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. A
-pre-registered factorial on 160 held-out states tested four levers. Generative models trained to produce
-whole future clips at once, with a set-level energy-score loss, with 4$\times$ more fork data, or with an
-action-sensitivity loss, all catch 0--3\% of forks with the same isotropic spread. Putting the
+rather than where they branch (Fig.~\ref{fig:forks}b). (Per-step noise suits high-dimensional uncertainty, as in weather \citep{price2025gencast}.) The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
+forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. In a
+pre-registered factorial on 160 held-out states, generative models producing whole clips, with an
+energy-score loss, 4$\times$ more fork data or an action-sensitivity loss catch 0--3\% of forks, equally isotropic. Putting the
 uncertainty into the initial conditions works instead: a learned operator perturbs the start latent by
 sampled perception error and deterministic dynamics roll it out, catching 52\% of forks at 7\% false
-alarms, and 69\% at 8\% with 4$\times$ more fork data. Generative models must infer the hidden pose error; the IPE design supplies it.
+alarms, and 69\% at 8\% with 4$\times$ more fork data. Giving a generative model the same perturbed starts
+does not help (0\%): noise in the learned dynamics erases forks. The deterministic recipe plateaus at
+68--72\% with 3$\times$ training, more fork data, frame history or DINO-WM's predictor \citep{zhou2025dinowm}.
 
 \section{Related work}
 \paragraph{Simulation under uncertainty.} Beyond the IPE \citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model parameters to
@@ -215,8 +217,8 @@ perception and measured uncertainty feeding an approximate physics engine whose 
 friction) must still be estimated from sensors.
 \paragraph{Limitations.} Simulation, one task with three blocks; the engine probe uses the simulator's
 true shapes, masses and friction; one Gaussian models perception error for all images; test sets differ in
-difficulty; each world model was trained once; large pretrained world models (V-JEPA 2-AC, Cosmos) are
-untested, since zero-shot use would measure domain mismatch; and the probe flags forks, not certain failures.
+difficulty; each world model was trained once; pretrained world models (V-JEPA 2-AC, Cosmos) are
+untested; and the probe flags forks, not certain failures.
 
 \paragraph{Use of generative AI.} Generative AI tools (Claude) assisted with code, figures, literature
 search and drafting. The authors designed the study, checked all results and references, and take full
