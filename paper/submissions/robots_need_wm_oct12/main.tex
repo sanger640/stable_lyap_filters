@@ -47,8 +47,7 @@ check before each chunk runs. Existing monitors address \emph{epistemic} uncerta
 model has not seen \citep{seo2025uncertainty,xu2025failure}. We address a second kind that remains even
 for a perfect model: \emph{physical} uncertainty. When a robot picks a block standing between two
 others, the same command can lift it cleanly or tip a neighbour depending on millimetres of execution error and
-perception error. Such a chunk is risky even if its nominal outcome is fine: whether it succeeds depends on errors the
-robot cannot control.
+perception error. Such a chunk is risky even if its nominal outcome is fine.
 
 People handle this with an \emph{intuitive physics engine} (IPE): a few approximate simulations over an
 uncertain scene, whose disagreement signals precariousness
@@ -61,7 +60,7 @@ dynamics branch, a property prediction error does not measure.
 \paragraph{Contributions.} (1) A \emph{fork probe}: a pre-execution check that propagates the robot's
 measured perception and execution uncertainty through a rollout engine and flags splits, with no task
 labels, failure data or fitted thresholds (Sec.~\ref{sec:probe}). (2) Validation with a physics engine and
-real camera perception on three unseen test sets, which sets the reference a world model must reach
+real camera perception on three unseen test sets, the reference a world model must reach
 (Sec.~\ref{sec:validation}). (3) \emph{Branching fidelity} as a world-model evaluation: generative world
 models that predict well on average fail it, while uncertain starts with deterministic dynamics come close (Sec.~\ref{sec:wm}).
 
@@ -74,7 +73,7 @@ the policy as a black box and sees only the chunk, one camera image and proprioc
 error in perceiving the scene, can send the outcome into qualitatively different regimes. This needs no
 goal or failure label, which a monitor around a generalist policy cannot assume. For our task we measure it physically: a state
 is a \emph{fork} if between 2 and 62 of 64 futures sampled from this uncertainty topple a
-neighbouring block. A chunk that fails every time is not a fork and needs a task-level check.
+neighbouring block.
 
 \paragraph{Uncertainty model.} Execution error comes from the robot's measured tracking residuals
 (median chunk maximum 3.2\,mm). Perception is a frozen DINOv2 encoder \citep{oquab2024dinov2} on one
@@ -90,8 +89,8 @@ their main axis of variation at hold steps 10 and 30, they fit two Gaussians bet
 groups are well separated (Ashman's $D>2$ \citep{ashman1994detecting}), the smaller has at least 2
 members, and the grouping is the same at both times; these are fixed statistical conventions, not fitted
 to labels. A variant repeats this for 5 sampled scene estimates and flags if at least 3 split. The probe works with any rollout engine. Our reference is MuJoCo with the
-three blocks placed at the sampled poses and everything else (block geometry, masses, friction) taken from
-the simulator, which a real robot does not have; the learned alternative is a world model (Sec.~\ref{sec:wm}).
+blocks at the sampled poses and their geometry, masses and friction from the simulator, which a real robot
+lacks; the learned alternative is a world model (Sec.~\ref{sec:wm}).
 
 \paragraph{Ground truth.} One real outcome cannot grade a monitor, since a fragile chunk may succeed by
 luck. An oracle therefore samples the 64 futures from the \emph{true} scene in exact physics and labels
@@ -138,14 +137,14 @@ outcomes read from images: fork probe & 88 & 12 & 77 & 8 & 88 & 9 \\
 \end{table}
 
 \subsection{Learned world models: generative ones fail, uncertain starts come close}\label{sec:wm}
-Without privileged geometry a learned model must take MuJoCo's role, and the probe becomes its test:
+Without privileged geometry a learned model must take MuJoCo's role:
 given one image and the 64 perturbed chunks, do its rollouts branch where physics branches? Our
 model compresses DINOv2 tokens by a fixed per-patch PCA to a $28\times28\times8$ latent (applied to real
-futures, the split test on this latent still catches 97\% of forks) and predicts
-the next latent from the current one and the action with a flow-matching transition, drawing fresh noise
-at every step. Each training image comes with 8 real futures whose start scenes were perturbed by sampled
-perception error, so the spread it learns is the robot's own uncertainty; a deterministic version of the
-same network is the control. Both beat a no-motion baseline on 19-step latent error by 3--4$\times$, yet
+futures, the split test on this latent still catches 97\% of forks). A convolutional network (six residual
+blocks conditioned on the action) predicts the next latent from the current one: the stochastic version
+is a flow-matching transition drawing fresh noise at every step, the deterministic control predicts it
+directly. Each training image comes with 8 real futures whose start scenes were perturbed by sampled
+perception error, so the spread the stochastic model learns is the robot's own uncertainty. Both beat a no-motion baseline on 19-step latent error by 3--4$\times$, yet
 on test set C the stochastic model catches 18\% of forks and the deterministic one 60\%, against 88\% for
 the engine (Table~\ref{tab:wm}).
 
@@ -172,14 +171,16 @@ uncertain starts + deterministic, 4$\times$ forks & 69\%$^\dagger$ & 8\%$^\dagge
 share on the main axis, ratio on forks vs other states), the stochastic model has the right \emph{amount} of uncertainty but not its \emph{shape} or \emph{placement}:
 its futures spread equally in all directions and almost as much on safe states as on forks: it
 reproduces the average uncertainty, not where futures branch (Fig.~\ref{fig:forks}b). The deterministic model's tiny spread is aligned with the branch axis and 32$\times$ larger on
-forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. In a
-pre-registered factorial on 160 held-out states, generative models producing whole clips, with an
-energy-score loss, 4$\times$ more fork data or an action-sensitivity loss catch 0--3\% of forks, with the same all-direction spread. Putting the
-uncertainty into the initial conditions works instead: a learned operator perturbs the start latent by
-sampled perception error and deterministic dynamics roll it out, catching 52\% of forks at 7\% false
-alarms, and 69\% at 8\% with 4$\times$ more fork data. Giving a generative model the same perturbed starts
-does not help (0\%): noise in the learned dynamics erases forks. The deterministic recipe plateaus at
-68--72\% with 3$\times$ training, more fork data, frame history or DINO-WM's predictor \citep{zhou2025dinowm}.
+forks, suggesting, as in the IPE, that uncertainty should enter through the initial conditions. In
+follow-up experiments fixed in advance, on 160 held-out states, generative models that produce whole
+clips, use an energy-score loss, see 4$\times$ more fork data or add an action-sensitivity loss catch
+0--3\% of forks, with the same all-direction spread. Putting the uncertainty into the initial conditions
+works instead: a learned operator perturbs the start latent by sampled perception error and the
+deterministic network rolls it out, catching 52\% of forks at 7\% false alarms, and 69\% at 8\% with
+4$\times$ more fork data. Giving a generative model the same perturbed starts does not help (0\%): noise in
+the learned dynamics erases forks. This recipe plateaus at 68--72\% with 3$\times$ longer training,
+more fork data, a 3-frame history, or DINO-WM's transformer predictor \citep{zhou2025dinowm} instead of
+the convolutional network.
 
 \section{Related work}
 \paragraph{Simulation under uncertainty.} Beyond the IPE \citep{zhou2023mental}, robotics runs Monte Carlo rollouts over pose, friction or model parameters to
