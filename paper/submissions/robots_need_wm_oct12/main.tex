@@ -202,7 +202,7 @@ struggle with stiff contact \citep{parmar2021fundamental}; audits find weak phys
 \citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}.
 \citet{yu2026evaluated} propose evaluating world models on interventional action branches, by
 prediction error and action-effect agreement per branch; our models predict individual futures well yet
-lose the forks, so a test of branching is needed alongside. Stochastic and ensemble models
+lose the forks, so branching must be tested too. Stochastic and ensemble models
 \citep{chua2018pets,lakshminarayanan2017ensembles} are evaluated by likelihood, calibration or return,
 none of which checks whether their spread splits where the dynamics branch.
 
@@ -213,11 +213,12 @@ propagated, not just estimated. A physics engine with the scene's true parameter
 forks from one image. To be useful for safety monitoring and fine manipulation, learned world models
 should reach it, which takes branching fidelity: rollouts that split where the physics splits. Ours lack
 it despite low average error, and uncertain starts recover much of it but plateau near 70\%, so
-benchmarks should measure branching fidelity alongside average error.
+benchmarks should measure branching fidelity alongside average error. Closing the remaining gap is the next step:
+richer latents, proprioceptive inputs, fine-tuned pretrained world models such as V-JEPA 2-AC, and a
+real robot.
 \paragraph{Limitations.} Simulation, one task with three blocks; the engine probe uses the simulator's
 true shapes, masses and friction; one Gaussian models perception error for all images; test sets differ in
-difficulty; each world model was trained once; pretrained world models (V-JEPA 2-AC, Cosmos) are
-untested; and the probe flags forks, not certain failures.
+difficulty; each world model was trained once; and the probe flags forks, not certain failures.
 
 \paragraph{Use of generative AI.} Generative AI tools (Claude) assisted with code, figures, literature
 search and drafting. The authors designed the study, checked all results and references, and take full
