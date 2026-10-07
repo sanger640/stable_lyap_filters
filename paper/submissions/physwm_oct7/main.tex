@@ -100,13 +100,13 @@ found by screening, and its protocol was frozen before the data existed.
 
 \section{Results}
 \subsection{Propagating uncertainty through a physics engine works}\label{sec:validation}
-We first check the split test where everything is known: run in exact physics from the true scene, it
-flags all 23 forks among the 112 states used to design it, and 10\% of the other 89. With real perception,
-its error must be propagated, not just estimated: perception errors (2--4\,mm) are as large as execution
-errors, so a probe that trusts the pose estimate catches only 65--67\% of forks, while sampling the
-perception error catches 77--91\% with 7--17\% false alarms (Table~\ref{tab:panels}). The split can also be judged from images instead of object positions, by
-applying the test to DINOv2 features of the rendered imagined endings; this changes little, and on test set C it catches 88\%
-of forks (95\% CI 77--94\%) with 7\% false alarms. This is the reference a world model must reach.
+First, the split test alone: from the true scene in exact physics, it flags all 23 forks among the 112
+design states and 10\% of the other 89. Second, real perception: a probe that trusts the pose estimate
+catches only 65--67\% of forks, because perception errors (2--4\,mm) are as large as execution errors;
+sampling the perception error raises this to 77--91\% with 7--17\% false alarms (Table~\ref{tab:panels}).
+Third, images only: judging the split from DINOv2 features of the rendered endings instead of object
+positions changes little, catching 88\% of forks (95\% CI 77--94\%) with 7\% false alarms on test set C.
+This is the reference a world model must reach.
 
 \begin{figure}[t]
 \centering
