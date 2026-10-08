@@ -46,6 +46,10 @@ def screen_job(job):
 
 def _screen(job):
     episode_id, seed = job
+    done = OUT / "screen" / f"ep{episode_id}_seed{seed}.json"
+    if done.exists():                                  # resumable: one file per finished chain
+        return {int(k): v for k, v in json.loads(done.read_text()).items()}
+    import torch
     import mujoco
     import uncertainty_monitor_dev as um
     import visual_pipeline_panel3 as p3
@@ -78,6 +82,7 @@ def _screen(job):
                                         errors.sample(SEEDS_1F["screen"], *key, k), sd.D0_INDEX, renderer, camera)
                     traces.append(t); frames.extend(f)
                 z = latent(np.stack(frames)).astype(np.float64).reshape(sd.K_SCREEN, 2, -1)
+                torch.cuda.empty_cache()                       # workers share the GPU; keep each one small
                 alarm = bool(persistent_mode_alarm(z[:, 0], z[:, 1]).alarm)
                 result[index] = {"alarm": alarm, "topples_reporting_only": int(topple_count(traces, start_tilt))}
                 sim.restore(snapshot)
@@ -88,6 +93,8 @@ def _screen(job):
     finally:
         renderer.close()
         sim.close()
+    tmp = done.with_suffix(".tmp")
+    tmp.write_text(json.dumps(result)); tmp.replace(done)
     return result
 
 
@@ -125,6 +132,7 @@ def main():
     if not json.loads(PROTOCOL.read_text())["status"].startswith("frozen"):
         raise SystemExit("protocol not frozen")
     (OUT / "train").mkdir(parents=True, exist_ok=True)
+    (OUT / "screen").mkdir(parents=True, exist_ok=True)
     chains_all, held = sd.train_chains()
     episodes = sorted({e for e, _ in chains_all}, key=int)
     screen_file = OUT / "screen.json"
