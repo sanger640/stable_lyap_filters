@@ -1,6 +1,6 @@
 {
   "id": "branching-wm-phase2-generality",
-  "status": "DRAFT v0 (2026-10-08) - not frozen; design choices marked OPEN need the user's decision",
+  "status": "design decisions fixed (user 2026-10-08: 'go ahead with your recommendations for p 2'); stage P2-0 frozen below; the scene generator and panels are frozen in a later amendment before any Phase-2 scene data is generated",
   "question": "Does the image-only fork monitor (DINOv2 latent -> learned dynamics -> 64 futures -> goal-free split test) catch forks on scene TYPES it was never trained on, with an uncertainty model that knows nothing about the objects?",
   "why": "The task-agnostic claim has only been tested on one scene (three upright blocks, pick the middle one). The G operator injects perception error as pose noise on exactly three named blocks, which cannot exist for an arbitrary scene.",
   "scenes": {
@@ -36,5 +36,23 @@
     "train + evaluate (~0.5 day GPU)",
     "panels: in-family and held-out (~0.5 day CPU)"
   ],
-  "out_of_scope": "real images; V-JEPA 2-AC (separate protocol, can use the GPU while Phase 2 data generates on the CPU)"
+  "out_of_scope": "real images; V-JEPA 2-AC (separate protocol, can use the GPU while Phase 2 data generates on the CPU)",
+  "decisions": {
+    "OPEN_1_families": "train on F1 rows + F2 stacks; F3 leaning is the held-out family; F4 clutter later",
+    "OPEN_2_harm_thresholds": "non-target object tilt >= 45 deg, falls off the table, or moves >= 30 mm",
+    "OPEN_3_uncertainty": "learned object-free sampler G* (recommended); the cheaper latent-noise sampler is kept as a pre-declared comparator in P2-0 because the step3b P1 check (results/jenga/step3b_p1_result.json) found a global latent-PCA Gaussian sampler on par with G",
+    "OPEN_4_gates": "held-out family >= 70% caught with <= 20% false alarms; in-family >= 80% / <= 20% (R0)"
+  },
+  "P2_0": {
+    "status": "frozen before execution (2026-10-08), before any G* training",
+    "question": "Can the 3-block G operator (18-number pose noise on named blocks) be replaced by an object-free start sampler without losing US's H accuracy?",
+    "samplers": {
+      "Gstar": "PerturbNet body (as G: 4 FiLM blocks, width 96) with its 18-number pose input replaced by eps ~ N(0, I_32); trained on the Phase-1 enriched training states (z0 -> rendered perturbed starts z0k) with the energy score per state: 8 G* samples vs 8 of the state's real z0k (random subset), ES = mean||X-Y|| - 0.5 mean||X-X'|| on flattened latents; batch 16 states, 8,000 steps, AdamW 1e-3 cosine, weight decay 1e-4, seed 0",
+      "Gauss": "z0 + mean + top-64 principal directions of (z0k - z0) over the same training states with their measured standard deviations (eval/step3b_models.fit_gaussian refit on the enriched data); no network"
+    },
+    "step_A": "evaluation-only swap: the Phase-1e US model unchanged; on H and for its floor (step3b/val), the 64 starts come from the sampler (seeded per state, 20261130) instead of G(z0, d). R0, R1, lean/contact as Phase 1e",
+    "pass": "H score (caught - false, R0) within 0.03 of US with G (0.672). If both pass, Phase 2 uses the higher-scoring sampler. Also reported: energy score and spread ratio (sampler vs real rendered starts) on step3b/val",
+    "step_B": "only if neither passes A: retrain US (fast recipe, seed 0) with the sampler replacing G in the 50/50 start mix, evaluate as A, same pass rule",
+    "panel_7": "the passing sampler (if any) is also run with US on panel 7, descriptively"
+  }
 }
