@@ -6704,3 +6704,16 @@ Ranking R > PR > E > P (caught - false). Gate (80%) not passed. Reading: the mis
 is partly a data-imbalance effect; rebalancing lifts contact-triggered forks 23 -> 26/40 and halves false alarms.
 Exact proprioception adds nothing (the image already places the arm well enough). First learned monitor above the
 68-72% plateau, still short of the engine's 88% (set C) and of the gate.
+
+## 2026-10-08: Arm R holds up on fresh panel 7 (Phase 1d addendum 1)
+
+`eval/phase1d_panel7.py` -> `results/jenga/phase1d_panel7_result.json`. Panel 7: 160 states, 67 forks (24 lean-, 43
+contact-triggered); independent monitor draws; cell E reproduces its stored panel-7 numbers exactly.
+
+| model | R0 caught / false | lean | contact | R1 (floor) |
+|---|---|---|---|---|
+| cell E | 71.6% / 7.5% (48, 7) | 20/24 | 28/43 | 68.7% / 3.2% |
+| **R** | **79.1% / 7.5% (53, 7)** | 22/24 | **31/43** | 74.6% / 4.3% |
+
+R gains 5 forks (3 contact, 2 lean) at the same false-alarm rate; 79% is one fork short of the 80% gate line (95% CI
+68-87%). The H gain (69 -> 75%) replicates on fresh data (72 -> 79%). Not a gate decision.
