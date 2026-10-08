@@ -16,5 +16,13 @@
   "success_reading": "U or US 'matches R' if its H score (caught - false) is within 0.03 of R's (0.700); then the rebalancing result can be stated as task-agnostic",
   "gate_for_panel_6": "unchanged: >= 80% of H forks caught with <= 20% false alarms (R0); a fresh panel 6 would be generated only after asking",
   "out_of_scope": "the fork-rich DATA SELECTION behind cell E (screened with topple counts) is also label-based; a label-free version (screen scenes whose real futures split) is a separate, later protocol",
-  "budget": "mode detection ~10 min; U and US ~2.5 h each, one at a time; evaluation minutes"
+  "budget": "mode detection ~10 min; U and US ~2.5 h each, one at a time; evaluation minutes",
+  "amendment_1": {
+    "date": "2026-10-08",
+    "status": "recorded before any Phase-1e model finished (the first U run was stopped at step ~2,000 at the user's request: 'stop it and do option 1 and 2 and 4 and then start training'; its partial model was deleted)",
+    "recipe_change": "eval/fast_train.py: data packed on the GPU (option 1), torch.compile on the network (option 2), batch 128 x 7,500 steps (same 960,000 samples as 32 x 30,000) with learning rate x2 (sqrt scaling) (option 4); per-step gradient checkpointing (memory only). Model, loss, start mixing, input noise and hold weighting unchanged",
+    "arms": "U and US as frozen, plus R_fast = arm R's label-based rebalancing retrained with the same fast recipe, as the like-for-like reference (the comparison U/US vs R uses R_fast; Phase-1d R and cell E are reported beside, marked 'old recipe')",
+    "rules_adapted": "under-training rule on the last 10% vs the previous 10% of steps; the 0.03 'matches R' margin now refers to R_fast; everything else unchanged",
+    "benchmark": "60-step test: 0.78 s per 128-sample step compiled (about 1.2x the old throughput; the GPU is compute-bound)"
+  }
 }

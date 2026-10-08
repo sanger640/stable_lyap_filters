@@ -111,7 +111,7 @@ def train(name, siblings, states, modes_list, seed=0):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("modes", "U", "US"))
+    parser.add_argument("stage", choices=("modes", "U", "US", "R_fast"))
     args = parser.parse_args()
     if not json.loads(PROTOCOL.read_text())["status"].startswith("frozen"):
         raise SystemExit("protocol not frozen")
@@ -126,20 +126,27 @@ def main():
         (OUT / "modes_summary.json").write_text(json.dumps(summary, indent=1) + "\n")
         print(json.dumps(summary, indent=1), flush=True)
         return
+    import fast_train as ft
     modes = json.loads(MODES.read_text())
-    model = train(args.stage, args.stage == "US", states, [set(modes[n]) for n in names])
+    rare = np.array([k in set(modes[n]) for n, s in zip(names, states) for k in range(len(s["z"]))])
+    has_rare = np.array([bool(modes[n]) for n, s in zip(names, states) for _ in range(len(s["z"]))])
+    top = np.array([bool(t) for s in states for t in s["top"]])
+    pools = {"U": (np.flatnonzero(rare), np.flatnonzero(~rare)),
+             "US": (np.flatnonzero(rare), np.flatnonzero(~rare & has_rare)),
+             "R_fast": (np.flatnonzero(top), np.flatnonzero(~top))}[args.stage]
+    sampler = lambda rng, b: np.concatenate([rng.choice(pools[0], b // 2), rng.choice(pools[1], b - b // 2)])
+    model = ft.train(args.stage, OUT, states, sampler)
     tau, n_val = p1d.floor(model, False)
     results = json.loads(RESULT.read_text()) if RESULT.exists() else {
         k: v for k, v in json.loads(p1d.RESULT.read_text()).items() if k in ("E_reference", "R")}
     results[args.stage] = p1d.evaluate(model, False, tau) | {"validation_futures": n_val}
-    log = [r for r in json.loads((OUT / f"model_{args.stage}_log.json").read_text()) if "step" in r]
-    last = np.mean([r["loss"] for r in log if STEPS - 3000 < r["step"] <= STEPS])
-    before = np.mean([r["loss"] for r in log if STEPS - 6000 < r["step"] <= STEPS - 3000])
-    results[args.stage]["possibly_undertrained"] = bool(last < before - 0.02 * abs(before))
+    results[args.stage]["possibly_undertrained"] = ft.undertrained(json.loads((OUT / f"model_{args.stage}_log.json").read_text()))
+    results[args.stage]["recipe"] = "fast (amendment 1)"
     score = lambda a: results[a]["R0"]["caught"] - results[a]["R0"]["false_alarm"]
     arms = [a for a in ("U", "US") if a in results]
     results["ranking_R0"] = sorted(arms, key=score, reverse=True)
-    results["matches_R_within_0.03"] = {a: bool(abs(score(a) - score("R")) <= 0.03 or score(a) > score("R")) for a in arms}
+    if "R_fast" in results:
+        results["matches_R_fast_within_0.03"] = {a: bool(score(a) >= score("R_fast") - 0.03) for a in arms}
     best = results[results["ranking_R0"][0]]["R0"]
     results["gate_for_panel_6"] = bool(best["caught"] >= 0.80 and best["false_alarm"] <= 0.20)
     RESULT.write_text(json.dumps(results, indent=1) + "\n")
