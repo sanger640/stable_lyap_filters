@@ -24,5 +24,11 @@
     "arms": "U and US as frozen, plus R_fast = arm R's label-based rebalancing retrained with the same fast recipe, as the like-for-like reference (the comparison U/US vs R uses R_fast; Phase-1d R and cell E are reported beside, marked 'old recipe')",
     "rules_adapted": "under-training rule on the last 10% vs the previous 10% of steps; the 0.03 'matches R' margin now refers to R_fast; everything else unchanged",
     "benchmark": "60-step test: 0.78 s per 128-sample step compiled (about 1.2x the old throughput; the GPU is compute-bound)"
+  },
+  "addendum_1": {
+    "date": "2026-10-08",
+    "status": "recorded before running (user: 'do r_fast and at the same time do panel-7 check'); R_fast still training",
+    "what": "held-out check of US on panel 7. US is the better of U and US on H under the frozen selection rule (R0 caught - false: US 0.672, U 0.639); the choice does not depend on R_fast. Same grading as eval/phase1d_panel7.py (G starts from independent monitor draws, seed 20261112; R0 and R1 with US's own floor 0.3646; frozen 10-deg lean/contact rule). Cell E re-run through the same code path as a reproducibility check against its stored panel-7 numbers; R's stored panel-7 numbers (old recipe) reported beside.",
+    "status_of_result": "descriptive held-out evidence; does not choose between arms. Panel 6 is not generated without asking the user."
   }
 }
