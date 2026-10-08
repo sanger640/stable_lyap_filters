@@ -14,5 +14,11 @@
   "evaluation_on_H": "Phase-1 evaluation on H (160 states, 75 forks; G starts from perception draw j, execution snippet j), R0 (plain split test) and R1 (model-error floor = the model's mean hold-30 error on step3b/val, as in the readout-fix protocol). Also report catch rates for lean-triggered forks (max neighbour start tilt >= 10 deg) and contact-triggered forks (< 10 deg), and side agreement.",
   "selection_rule": "rank P, R, PR and cell E by (forks caught - false alarms) under R0",
   "gate_for_panel_6": ">= 80% of H forks caught with <= 20% false alarms (R0) for the best arm; panel 6 would then be generated with the start state saved (needed for proprioception) and asked for before running",
-  "budget": "validation-start recovery ~15 min CPU; three arms ~3 h GPU each, one at a time; evaluation minutes"
+  "budget": "validation-start recovery ~15 min CPU; three arms ~3 h GPU each, one at a time; evaluation minutes",
+  "addendum_1": {
+    "date": "2026-10-08",
+    "status": "recorded before running (user: 'yea go ahead with the panel check')",
+    "what": "held-out check of arm R (selected on H) on panel 7 (results/program_b/panel7; never used to train or select any Phase-1d arm; previously used only to confirm the cell-E floor). Same grading as eval/wm_readout_fix_panel7.py: G starts from independent monitor draws (seed 20261112), R0 and R1 (R's own floor 0.3299); lean/contact split by the frozen 10-deg start-tilt rule. Cell E's panel-7 numbers (72%/8%) are the comparison.",
+    "status_of_result": "held-out evidence for R; not a gate decision (gate unchanged: >= 80% caught, <= 20% false)"
+  }
 }
