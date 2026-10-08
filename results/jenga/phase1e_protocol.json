@@ -1,0 +1,20 @@
+{
+  "id": "branching-wm-phase1e-label-free-rebalancing",
+  "status": "frozen before execution (redrafted 2026-10-08; user: 'sure go ahead'; frozen before mode detection or any Phase-1e training)",
+  "question": "Can the training rebalancing that lifted the monitor (arm R) be done WITHOUT task labels or simulator state, by oversampling the rare outcome mode found by the goal-free split test on each training state's own real futures?",
+  "basis": "Phase 1d: arm R (50% toppling futures per batch, chosen with Jenga topple labels) 74.7% / 4.7% on H, 79.1% / 7.5% on fresh panel 7, vs cell E 69.3% / 8.2% and 71.6% / 7.5%. The monitor is label-free at run time, but R's training used a task-specific label; this protocol tests a task-agnostic replacement.",
+  "mode_detection": "for every training state (Phase-1 enriched data: 4,766 states, 8 or 16 real futures each), apply the unchanged split test (persistent_mode_alarm) to the real futures' latents at hold 10 and hold 30. If it alarms, the smaller hold-30 group is the state's RARE MODE and the other futures its MAJORITY MODE; otherwise all futures are 'no split'. Uses only image latents: no topple label, no block state, no task knowledge. Topple labels are used afterwards ONLY to report how rare modes relate to topples (descriptive).",
+  "base_recipe": "cell E exactly (30,000 steps, seed 0), differing only in how futures are sampled into batches",
+  "arms": {
+    "U_unsupervised": "50% of every batch drawn uniformly from rare-mode futures, 50% uniformly from all other futures (majority and no-split)",
+    "US_siblings": "50% rare-mode futures; the other 50% drawn from the majority mode of states that have a rare mode (the sibling branch of the same start)"
+  },
+  "references": "cell E (no rebalancing) and arm R (label-based rebalancing), both already evaluated through the same code path",
+  "evaluation_on_H": "as Phase 1d: R0 and R1 (each model's own validation-error floor), lean/contact catch rates (frozen 10-deg rule; reporting only), side agreement",
+  "selection_rule": "rank U and US by (forks caught - false alarms) under R0 on H; report beside E and R",
+  "held_out_check": "the better of U and US on panel 7, graded as Phase 1d addendum 1 (descriptive; panel 7 does not choose between arms)",
+  "success_reading": "U or US 'matches R' if its H score (caught - false) is within 0.03 of R's (0.700); then the rebalancing result can be stated as task-agnostic",
+  "gate_for_panel_6": "unchanged: >= 80% of H forks caught with <= 20% false alarms (R0); a fresh panel 6 would be generated only after asking",
+  "out_of_scope": "the fork-rich DATA SELECTION behind cell E (screened with topple counts) is also label-based; a label-free version (screen scenes whose real futures split) is a separate, later protocol",
+  "budget": "mode detection ~10 min; U and US ~2.5 h each, one at a time; evaluation minutes"
+}
