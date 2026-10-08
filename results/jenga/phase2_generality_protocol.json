@@ -63,7 +63,7 @@
       "candidates": {
         "Gauss_global": "P2-0 Gauss unchanged (reference)",
         "Gauss_TE": "translation-equivariant: zero-mean stationary Gaussian field on the 28x28x8 grid; per-location 8x8 channel covariance and spatial correlation (radially averaged over lags 0-4 cells) estimated from (z0k - z0) on the training states; sampled by convolving white noise with the fitted kernel",
-        "Gauss_TE_masked": "Gauss_TE with each location's amplitude scaled by how far z0 at that location is from the table-background latent (median over training images of locations far from all objects is NOT used; instead the per-location distance ||z0 - m|| with m = the median latent over all locations of all training images, normalised to [0,1] by its 5th/95th percentiles), so noise concentrates where there is something to mis-perceive; no object detection, count or pose"
+        "Gauss_TE_masked": "Gauss_TE with each location's amplitude scaled by a background score: a(x) = clip((||z0(x) - m|| - q5) / (q95 - q5), 0, 1), where m is the median latent over all locations of all training images and q5/q95 are percentiles of ||z0 - m|| over the same; noise concentrates where the image differs from plain table. No object detection, count or pose"
       },
       "test": "as P2-0 step A on H with the Phase-1e US model (evaluation-only swap, own floor); pass = within 0.03 of US with G (0.672)",
       "use": "the best passing location-independent candidate (Gauss_TE or Gauss_TE_masked) becomes the Phase-2 sampler, refit on Phase-2 training families. If neither passes, Phase 2 proceeds with Gauss_TE_masked and reports the 3-block shortfall (no further sampler search)",
