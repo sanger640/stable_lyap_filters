@@ -6687,3 +6687,20 @@ On H (75 forks, 52 caught, 23 missed):
 Reading: uncertain starts work when the cause of the topple is in the start state (a leaning block), and fail when the
 topple is caused by the arm's contact during the chunk, which the model must predict from actions alone. This points
 to Phase 1d (proprioception) and to rebalancing training toward contact-triggered toppling futures.
+
+## 2026-10-08: Phase 1d complete: topple-rebalanced training (R) is the best learned monitor so far; proprioception does not help
+
+Protocol `results/jenga/phase1d_protocol.json`; result `results/jenga/phase1d_result.json`. On H (160 states, 75 forks;
+40 contact-triggered, 35 lean-triggered by the frozen 10-deg rule):
+
+| arm | R0 caught / false | lean | contact | + floor (R1) | flag |
+|---|---|---|---|---|---|
+| E (reference, same path) | 69.3% / 8.2% | 29/35 | 23/40 | 65.3% / 2.4% | -- |
+| P (start proprioception) | 66.7% / 14.1% | 27/35 | 23/40 | 65.3% / 4.7% | possibly under-trained |
+| **R (50% toppling futures per batch)** | **74.7% / 4.7%** | 30/35 | **26/40** | 73.3% / 2.4% | -- |
+| PR (both) | 72.0% / 9.4% | 30/35 | 24/40 | 70.7% / 4.7% | -- |
+
+Ranking R > PR > E > P (caught - false). Gate (80%) not passed. Reading: the missed-branch bias ("everything stays")
+is partly a data-imbalance effect; rebalancing lifts contact-triggered forks 23 -> 26/40 and halves false alarms.
+Exact proprioception adds nothing (the image already places the arm well enough). First learned monitor above the
+68-72% plateau, still short of the engine's 88% (set C) and of the gate.
