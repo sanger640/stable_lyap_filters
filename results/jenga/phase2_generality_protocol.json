@@ -1,0 +1,40 @@
+{
+  "id": "branching-wm-phase2-generality",
+  "status": "DRAFT v0 (2026-10-08) - not frozen; design choices marked OPEN need the user's decision",
+  "question": "Does the image-only fork monitor (DINOv2 latent -> learned dynamics -> 64 futures -> goal-free split test) catch forks on scene TYPES it was never trained on, with an uncertainty model that knows nothing about the objects?",
+  "why": "The task-agnostic claim has only been tested on one scene (three upright blocks, pick the middle one). The G operator injects perception error as pose noise on exactly three named blocks, which cannot exist for an arbitrary scene.",
+  "scenes": {
+    "generator": "procedural MJCF scenes on the existing Panda table (vendor/panda_express_sim): 2-6 free objects; shapes box / cylinder / slab with sampled sizes, masses, friction; random layouts with a reachable target",
+    "families": {
+      "F1_rows": "rows of upright objects with gaps 0-15 mm (generalises the 3-block task)",
+      "F2_stacks": "2-3 object stacks, target on top or at the bottom",
+      "F3_leaning": "one object leaning on another or on a wall",
+      "F4_clutter": "loose clutter, objects touching at random"
+    },
+    "actions": "scripted pick and push primitives toward the target (approach, descend, grasp/push, lift/hold) with randomised offsets, so each chunk start has a nominal 8-step chunk; bench execution-noise snippets as now",
+    "OPEN_1": "which families to build first (proposal: F1 + F2 for training, F3 held out; F4 later)"
+  },
+  "fork_label_for_grading_only": "generic harm event in 2-62 of 64 oracle futures: any NON-target object tilts >= 45 deg, falls off the table, or moves >= 30 mm (OPEN_2: thresholds). Oracle futures from the true state + perception draws on every object's pose + execution snippets, as now.",
+  "object_free_uncertainty": {
+    "problem": "G(z0, d) needs d = per-block pose noise for 3 known blocks",
+    "proposal": "G* : (z0, eps) -> perturbed start latent, eps ~ N(0, I) of fixed size, trained on (true-state latent, rendered perturbed-start latent) pairs with an energy-score / set loss so that its 64 samples match the spread of 64 real perturbed renders; at run time only the image latent and noise go in (no object count, poses or names). Perception error during training data generation is still applied per object in the simulator (that is how the real spread is produced).",
+    "check": "on the 3-block task, G* in place of G must keep US within 0.03 of its H score before Phase 2 uses it (a separate pre-test, P2-0)",
+    "OPEN_3": "alternative: noise directly in latent space scaled by measured per-location latent error (cheaper, cruder)"
+  },
+  "training": "Phase-1e US recipe (deterministic conv step model, label-free rare-mode rebalancing) with label-free curation from Phase 1f if it passed; same latent (DINOv2 ViT-S/14 392 -> channel PCA 8, PCA refit on the training families only)",
+  "evaluation": {
+    "in_family": "fresh panels from the training families with unseen parameters",
+    "held_out_family": "panel from the held-out family (never used for training, PCA fitting or selection)",
+    "references": "MuJoCo exact-start probe (oracle state), second oracle run, always-stay / always-alarm baselines, and the 3-block-only US model (to show what training diversity adds)",
+    "metrics": "forks caught and false alarms (R0, R1), per family"
+  },
+  "gates": "OPEN_4 (proposal): held-out family >= 70% caught with <= 20% false alarms, and in-family >= 80% / <= 20%",
+  "stages_and_cost": [
+    "P2-0: G* on the 3-block task (training G* ~2 h GPU, US evaluation ~0.5 h)",
+    "scene generator + scripted primitives + harm label (engineering, ~1-2 days)",
+    "screen, select (label-free as Phase 1f) and render training data for 2 families (~1-2 days CPU)",
+    "train + evaluate (~0.5 day GPU)",
+    "panels: in-family and held-out (~0.5 day CPU)"
+  ],
+  "out_of_scope": "real images; V-JEPA 2-AC (separate protocol, can use the GPU while Phase 2 data generates on the CPU)"
+}

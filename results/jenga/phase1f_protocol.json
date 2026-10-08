@@ -1,0 +1,17 @@
+{
+  "id": "branching-wm-phase1f-label-free-curation",
+  "status": "DRAFT (2026-10-08) - not frozen; awaiting user approval",
+  "question": "Does the US monitor keep its accuracy when the training scenes are chosen without topple labels, by whether their own rendered futures split (image latents + the unchanged split test)?",
+  "basis": "Phase 1e: US (label-free rebalancing) 81.3/14.1 on H, 82.1/8.6 on panel 7, matches R_fast within 0.03. But the training states themselves were curated with topple counts: step3b/train (step3_data.select: up to 750 topple-disagreeing screens of 1,500) and phase1/train (all topple-disagreeing screens + equal others). The training pipeline is therefore label-free only from the sampler onward.",
+  "label_free_screen": "new TRAIN chains: the same 38 training episodes (held-out episodes excluded) x reset seeds 190-229 (unused: phase 1 used 110-149, phase 1b 150-189), screen seed 20261120. At every chunk start: 8 futures exactly as eval/step3_data.py (true start + perception draw + bench execution snippet), each rendered with the close camera ONLY at hold 10 and hold 30 (trace indices 17, 37, as gate D0) and encoded to the channel-PCA-8 latent. Selection signal = persistent_mode_alarm on the 8 futures' hold-10/30 latents (unchanged test). No topple count, block pose or task rule is computed for selection.",
+  "selection": "4,766 states (the size of the current enriched set): all alarming starts up to 2,383 (if more, a uniform random 2,383; seed 20261121) + uniform random other starts to fill 4,766. Selected states get 16 futures if alarming, 8 otherwise (seed 20261122), rendered and encoded exactly like Phase 1 (z0, z0k, d_k, 19 latent frames, traces kept for reporting only).",
+  "arm": {
+    "L": "US recipe exactly (fast recipe, Phase 1e amendment 1; rare-mode detection re-run on L's data; 50% rare-mode futures / 50% sibling majority), seed 0, trained on the label-free set only"
+  },
+  "comparison": "US (Phase 1e, topple-curated data), same recipe and seed",
+  "evaluation": "H and panel 7 as Phase 1e (R0, R1 with L's own floor, lean/contact). Panel 6 is NOT reused for selection; it may be reported descriptively after its Phase-1e grading is published.",
+  "success_reading": "curation is label-free without loss if L's H score (caught - false, R0) is within 0.03 of US's (0.672); panel 7 reported beside",
+  "descriptive": "overlap of the image-split selection with topple disagreement (from the stored traces, reporting only); alarm rate of the screen; how many selected alarming states have no topple in any screen future (non-topple splits, e.g. sliding or the target block)",
+  "remaining_non_agnostic_parts": "the G start operator (18-number pose noise on 3 blocks) and the step3b/val floor set (topple-curated; used only for the floor's mean error) are unchanged here; G is addressed in Phase 2",
+  "budget": "screen ~6 h CPU (8 futures x ~30k starts, 2 renders each) + encoding ~0.5 h GPU; futures for 4,766 states ~10-12 h CPU+GPU; training ~1.6 h; evaluation ~0.5 h. About 1 day wall clock; CPU stages can overlap other GPU work"
+}
