@@ -54,5 +54,50 @@
     "pass": "H score (caught - false, R0) within 0.03 of US with G (0.672). If both pass, Phase 2 uses the higher-scoring sampler. Also reported: energy score and spread ratio (sampler vs real rendered starts) on step3b/val",
     "step_B": "only if neither passes A: retrain US (fast recipe, seed 0) with the sampler replacing G in the 50/50 start mix, evaluate as A, same pass rule",
     "panel_7": "the passing sampler (if any) is also run with US on panel 7, descriptively"
+  },
+  "amendment_1_DRAFT": {
+    "date": "2026-10-08",
+    "status": "DRAFT - not frozen; awaiting user approval (user: 'go ahead with the phase 2 scene generator draft')",
+    "P2_0b_start_sampler_for_varied_layouts": {
+      "why": "P2-0 selected Gauss (score 0.709 vs G 0.672), but its 64 noise directions span the whole 28x28 grid and were fit where the three blocks sit in the 3-block camera view; they cannot move with objects in new layouts",
+      "candidates": {
+        "Gauss_global": "P2-0 Gauss unchanged (reference)",
+        "Gauss_TE": "translation-equivariant: zero-mean stationary Gaussian field on the 28x28x8 grid; per-location 8x8 channel covariance and spatial correlation (radially averaged over lags 0-4 cells) estimated from (z0k - z0) on the training states; sampled by convolving white noise with the fitted kernel",
+        "Gauss_TE_masked": "Gauss_TE with each location's amplitude scaled by how far z0 at that location is from the table-background latent (median over training images of locations far from all objects is NOT used; instead the per-location distance ||z0 - m|| with m = the median latent over all locations of all training images, normalised to [0,1] by its 5th/95th percentiles), so noise concentrates where there is something to mis-perceive; no object detection, count or pose"
+      },
+      "test": "as P2-0 step A on H with the Phase-1e US model (evaluation-only swap, own floor); pass = within 0.03 of US with G (0.672)",
+      "use": "the best passing location-independent candidate (Gauss_TE or Gauss_TE_masked) becomes the Phase-2 sampler, refit on Phase-2 training families. If neither passes, Phase 2 proceeds with Gauss_TE_masked and reports the 3-block shortfall (no further sampler search)",
+      "run_when": "after Phase-1f screening frees the GPU (single process, minutes)"
+    },
+    "simulator": {
+      "base": "the existing Panda scene (vendor/panda_express_sim panda_jenga_setup.xml): same robot, table, controller (DirectJengaSim execute/_control), 0.1 s control step, physics options",
+      "scene_builder": "eval/phase2_scenes.py writes one MJCF per scene from a seed: the three named blocks are replaced by N free bodies obj0..objN-1 (obj0 = target); all objects must lie inside the close-camera view (lookat 0.5, 0, 0.46; distance 0.30) with >= 60% of each object's pixels visible in the true-start render (checked by segmentation render; scenes failing it are re-drawn with the next seed)",
+      "objects": "shape box / cylinder / slab; box half-sizes x 8-16 mm, y 8-14 mm, z 20-45 mm; cylinder radius 8-14 mm, half-height 20-45 mm; slab half-sizes 25-40 x 12-18 x 5-8 mm; mass 25-120 g; sliding friction 0.5-1.0 (MuJoCo default torsional/rolling); colours drawn per object from a fixed 8-colour palette (the target is NOT always red)",
+      "settling": "after building, 1.0 s of physics with the robot at its home pose; scenes in which any object moves > 5 mm or tilts > 5 deg during settling (unstable by construction) are re-drawn, EXCEPT F3 where the leaning contact must persist (re-drawn if it slips > 5 mm)"
+    },
+    "families": {
+      "F1_rows": "2-5 upright boxes or cylinders in a row along y, gaps 0-15 mm, row yaw +-10 deg, small per-object yaw/position jitter as the 3-block reset (+-2 mm, +-3 deg); target = a random object of the row",
+      "F2_stacks": "1-2 stacks of 2-3 objects (box or slab bases, box/cylinder/slab on top, offset 0-8 mm), plus 0-2 upright neighbours within 0-20 mm; target = a top object (pick) or a stack/neighbour object (push)",
+      "F3_leaning_HELD_OUT": "one object leaning 10-30 deg on an upright neighbour or on a fixed low wall, plus 0-2 further neighbours; target = leaning, supporting or neighbouring object. Never used for training, PCA, sampler fitting, selection or tuning"
+    },
+    "actions": {
+      "format": "4-D commands (xyz target, gripper +1 close / -1 open) at 10 Hz, as the Jenga replays",
+      "primitives": "PICK: move above target (approach height 60-120 mm), descend to grasp height, close, lift 80 mm; PUSH: move to a pre-push point 20-40 mm behind the target on a random horizontal direction, lower, push 30-80 mm through the target, retract. Waypoints interpolated at 5-12 mm per step (sampled speed)",
+      "randomisation": "grasp/push offset +-12 mm, approach yaw of the push direction +-25 deg, descent depth +-8 mm; these make some chunks brush or bump neighbours, which is where forks come from",
+      "episodes": "one primitive per scene (PICK or PUSH, family-dependent), 40-90 commands; chunk starts every 8 commands (chunk_starts), oracle/latent futures as now (8-command chunk + 30-step hold on the last target)"
+    },
+    "uncertainty_for_oracle_and_training_futures": "per-object pose noise drawn from the measured perception error model pooled over the three Jenga blocks (position covariance per block's 3x3 block of the 9x9, rotation covariance averaged over blocks), independently per object; bench execution-noise snippets as now",
+    "harm_and_fork_labels": "(grading only) harm in a future = any NON-target object tilts >= 45 deg from its start tilt, leaves the table top, or its centre moves >= 30 mm; fork = harm in 2-62 of 64 oracle futures; safe = 0/64",
+    "latent": "AMENDS the frozen 'PCA refit on the training families only': keep the existing channel PCA 8 (fit on 3-block images) so the 3-block US model runs unchanged as a reference; reported beside: the PCA's explained channel variance on Phase-2 images. Reason: a refit would make the 3-block reference impossible and adds a second change at once",
+    "pilot": "before any frozen data: 30 scenes per family from pilot seeds (never reused) to check (a) camera visibility, (b) settling, (c) fork rate per chunk start. Only the action randomisation ranges and family sizes may be adjusted, to reach a fork rate of 3-30% of screened chunk starts in each family; adjustments are recorded in amendment 2 together with the frozen seeds before data generation",
+    "training_data": "Phase-1f method (image split test on 8 hold-10/30 rendered futures, alarming up to half + others) if Phase-1f L passes its 0.03 rule; otherwise the harm-disagreement screen (sim-only, used ONLY for selection) with the caveat stated. 2,400 states per training family (F1, F2), 16/8 futures as Phase 1",
+    "selection_set_and_panels": {
+      "H2": "160 states (80 forks + 80 safe where available) from held-out F1+F2 seeds, for floors and any selection",
+      "panel_in_family": "fresh F1+F2 panel, up to 60 forks + 100 safe, generated only after the model is fixed",
+      "panel_held_out_F3": "fresh F3 panel, same size, generated only after the model is fixed"
+    },
+    "models_graded": "US recipe trained on F1+F2 (primary, with the P2-0b sampler); the 3-block US model zero-shot (reference); MuJoCo exact-start probe; second oracle run; always-stay / always-alarm",
+    "gates": "as decided: in-family >= 80% caught with <= 20% false alarms; held-out F3 >= 70% / <= 20% (R0), for the primary model",
+    "cost": "scene builder + primitives + harm label + pilot ~1-1.5 days engineering; screen/render ~1 day CPU (7 workers, GPU not shared with another encoding pool); training ~2 h; H2 and panels ~0.5 day"
   }
 }
