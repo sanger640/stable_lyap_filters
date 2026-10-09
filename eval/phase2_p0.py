@@ -88,7 +88,49 @@ def fit_gauss(states):
     return saved
 
 
-def sampler(name, net=None, gauss=None):
+def fit_te(states, radius=4):
+    """P2-0b: stationary (translation-equivariant) Gaussian field fitted to (z0k - z0): spectral density per frequency
+    (8x8), from the circular cross-covariance truncated to |lag| <= radius and radially averaged."""
+    path = OUT / "Gauss_TE.pt"
+    if path.exists():
+        return torch.load(path)
+    P = torch.zeros(28, 28, 8, 8, dtype=torch.complex128, device=DEVICE); n = 0
+    for s in states:
+        d = (s["z0k"].float() - s["z0"][None].float()).to(DEVICE).permute(0, 3, 1, 2).double()      # (K, 8, 28, 28)
+        f = torch.fft.fft2(d).permute(0, 2, 3, 1)                                                  # (K, 28, 28, 8)
+        P += torch.einsum("kabi,kabj->abij", f, f.conj()); n += len(d)
+    P /= n * 28 * 28
+    c = torch.fft.ifft2(P.permute(2, 3, 0, 1)).real.permute(2, 3, 0, 1)                            # cov(lag) (28,28,8,8)
+    lag = torch.fft.fftfreq(28, 1 / 28, device=DEVICE).double()
+    r = torch.sqrt(lag[:, None] ** 2 + lag[None, :] ** 2)
+    rb = torch.round(r).long()
+    iso = torch.zeros_like(c)
+    for b in range(radius + 1):
+        m = rb == b
+        iso[m] = c[m].mean(0)
+    iso = 0.5 * (iso + iso.transpose(-1, -2).flip(0, 1).roll((1, 1), (0, 1)))      # c(-l) = c(l)^T
+    S = torch.fft.fft2(iso.permute(2, 3, 0, 1)).permute(2, 3, 0, 1)
+    S = 0.5 * (S + S.conj().transpose(-1, -2))
+    w, v = torch.linalg.eigh(S)
+    root = v @ torch.diag_embed(w.clamp_min(0).sqrt().to(v.dtype)) @ v.conj().transpose(-1, -2)
+    saved = {"root": root.cpu(), "lag0_cov": c[0, 0].cpu(), "iso_lag0_cov": iso[0, 0].cpu()}
+    torch.save(saved, path)
+    return saved
+
+
+def fit_mask(states):
+    path = OUT / "Gauss_TE_mask.pt"
+    if path.exists():
+        return torch.load(path)
+    z = torch.cat([s["z0"][None].float() for s in states]).reshape(-1, 8)
+    m = z.median(0).values
+    dist = (z - m).norm(dim=1)
+    saved = {"m": m, "q5": torch.quantile(dist[::7], 0.05), "q95": torch.quantile(dist[::7], 0.95)}
+    torch.save(saved, path)
+    return saved
+
+
+def sampler(name, net=None, gauss=None, te=None, mask=None):
     """-> starts(z0 (28,28,8) on DEVICE, n, seed) -> (n, 28, 28, 8)."""
     @torch.no_grad()
     def gstar(z0, n, seed):
@@ -100,7 +142,19 @@ def sampler(name, net=None, gauss=None):
         g = torch.Generator(device=DEVICE).manual_seed(seed)
         eps = torch.randn(n, sm.GAUSS_DIMS, device=DEVICE, generator=g) * gauss["sd"].to(DEVICE)
         return z0[None].float() + (gauss["mean"].to(DEVICE) + eps @ gauss["basis"].to(DEVICE)).reshape(n, 28, 28, 8)
-    return {"Gstar": gstar, "Gauss": gs}[name]
+    @torch.no_grad()
+    def gte(z0, n, seed, masked=False):
+        g = torch.Generator(device=DEVICE).manual_seed(seed)
+        w = torch.randn(n, 28, 28, 8, device=DEVICE, generator=g).double()
+        f = torch.fft.fft2(w.permute(0, 3, 1, 2)).permute(0, 2, 3, 1)                              # (n,28,28,8)
+        x = torch.einsum("abij,nabj->nabi", te["root"].to(DEVICE), f)
+        x = torch.fft.ifft2(x.permute(0, 3, 1, 2)).real.permute(0, 2, 3, 1).float()
+        if masked:
+            a = (((z0.float() - mask["m"].to(DEVICE)).norm(dim=-1) - mask["q5"]) / (mask["q95"] - mask["q5"])).clamp(0, 1)
+            x = x * a[None, :, :, None]
+        return z0[None].float() + x
+    return {"Gstar": gstar, "Gauss": gs, "Gauss_TE": gte,
+            "Gauss_TE_masked": lambda z0, n, seed: gte(z0, n, seed, True)}[name]
 
 
 @torch.no_grad()
@@ -154,8 +208,10 @@ def evaluate(model, starts, tau):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("A",))
-    parser.parse_args()
+    parser.add_argument("stage", choices=("A", "b0"))
+    args = parser.parse_args()
+    if args.stage == "b0":
+        return main_b0()
     if not json.loads(PROTOCOL.read_text())["P2_0"]["status"].startswith("frozen"):
         raise SystemExit("P2-0 not frozen")
     OUT.mkdir(parents=True, exist_ok=True)
@@ -180,6 +236,39 @@ def main():
     results["step_B_needed"] = not passing
     RESULT.write_text(json.dumps(results, indent=1) + "\n")
     print(json.dumps({k: results[k] for k in ("selected_sampler", "step_B_needed")}), flush=True)
+
+
+def main_b0():
+    """P2-0b (amendment 1): location-independent samplers Gauss_TE and Gauss_TE_masked, evaluation-only swap with US."""
+    if not json.loads(PROTOCOL.read_text())["amendment_1"]["status"].startswith("frozen"):
+        raise SystemExit("amendment 1 not frozen")
+    states = p1d.load(p1b.FOLDERS_ENRICHED, proprio=False)
+    te, mask = fit_te(states), fit_mask(states)
+    del states
+    check = sampler("Gauss_TE", te=te)(torch.zeros(28, 28, 8, device=DEVICE), 4000, 1)
+    emp = torch.cov(check.reshape(-1, 8).T.double()).cpu()
+    model = wm.WorldModel.load(ROOT / "results/program_b/phase1e/model_US.pt")
+    us = json.loads((ROOT / "results/jenga/phase1e_result.json").read_text())["US"]
+    score = lambda r: r["R0"]["caught"] - r["R0"]["false_alarm"]
+    res = {"US_with_G_score": round(score(us), 4),
+           "US_with_Gauss_global": json.loads(RESULT.read_text())["US_with_Gauss"],
+           "TE_sampler_check": {"target_lag0_var_trace": float(te["iso_lag0_cov"].trace()),
+                                "sampled_lag0_var_trace": float(emp.trace())}}
+    out = ROOT / "results/jenga/phase2_p0b_result.json"
+    for name in ("Gauss_TE", "Gauss_TE_masked"):
+        starts = sampler(name, te=te, mask=mask)
+        tau, fit = floor_and_fit(model, starts)
+        r = evaluate(model, starts, tau) | fit
+        r["score"] = round(score(r), 4)
+        r["passes_within_0.03"] = bool(score(r) >= score(us) - 0.03)
+        res[f"US_with_{name}"] = r
+        out.write_text(json.dumps(res, indent=1) + "\n")
+        print(name, json.dumps(r), flush=True)
+    passing = [n for n in ("Gauss_TE", "Gauss_TE_masked") if res[f"US_with_{n}"]["passes_within_0.03"]]
+    res["phase2_sampler"] = (max(passing, key=lambda n: res[f"US_with_{n}"]["score"]) if passing
+                             else "Gauss_TE_masked (no candidate passed; shortfall reported)")
+    out.write_text(json.dumps(res, indent=1) + "\n")
+    print(res["phase2_sampler"], flush=True)
 
 
 if __name__ == "__main__":
