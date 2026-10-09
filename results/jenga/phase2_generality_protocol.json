@@ -99,5 +99,20 @@
     "models_graded": "US recipe trained on F1+F2 (primary, with the P2-0b sampler); the 3-block US model zero-shot (reference); MuJoCo exact-start probe; second oracle run; always-stay / always-alarm",
     "gates": "as decided: in-family >= 80% caught with <= 20% false alarms; held-out F3 >= 70% / <= 20% (R0), for the primary model",
     "cost": "scene builder + primitives + harm label + pilot ~1-1.5 days engineering; screen/render ~1 day CPU (7 workers, GPU not shared with another encoding pool); training ~2 h; H2 and panels ~0.5 day"
+  },
+  "amendment_2": {
+    "date": "2026-10-09",
+    "status": "frozen 2026-10-09 (user: 'go with option 1 and freeze it'), after the pilot and before any Phase-2 data",
+    "pilot_result": "results/jenga/phase2_pilot.json: F1 30/30 valid, fork rate 14%; F3 14/30 valid (16 slid > 5 mm while settling; re-drawn per amendment 1), fork rate 16%; F2 2/30 valid because stacked objects hide the ones below from the near top-down close camera (27/30 failed the 60% visibility rule)",
+    "change": "visibility rule: every object >= 60% of its unoccluded pixels visible, EXCEPT an object that supports another (in contact with another object whose centre is higher), which needs >= 10%. Judged on the settled true start (after the 1.0 s settling), since support contacts only exist then. Applies to all families",
+    "action_ranges": "unchanged (F1 and F3 fork rates are inside 3-30%); F2 is re-piloted with the new rule on the same pilot seeds; if its fork rate falls outside 3-30%, only F2's action ranges may be adjusted, recorded before data generation",
+    "known_biases": "F3 keeps only leaners that do not slide during settling (skews toward higher friction and smaller lean); reported with the F3 results",
+    "seeds": {
+      "train_scenes": "F1 and F2 scene seeds 0-1499 each (screened as Phase 1f: 8 futures per chunk start rendered at hold 10/30, image split test; selection seed 20261210; 2,400 states per family: alarming up to 1,200 + others; futures 16/8, seed 20261211)",
+      "H2": "F1+F2 scene seeds 500000-500599, 64 oracle futures per screened state (seed 20261212), 80 forks + 80 safe (selection seed 20261213)",
+      "panel_in_family": "F1+F2 scene seeds 600000-600599 (truth seeds 20261214/20261215, monitor draws 20261216); up to 60 forks + 100 safe",
+      "panel_held_out_F3": "F3 scene seeds 700000-700999 (truth 20261217/20261218, monitor 20261219); up to 60 forks + 100 safe",
+      "rule": "a scene failing visibility or settling is skipped (its seed is not reused); counts of skipped scenes are reported"
+    }
   }
 }

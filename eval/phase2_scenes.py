@@ -310,6 +310,24 @@ def tilt_deg(quats):
 
 
 # ------------------------------------------------------------------------------------------- visibility
+def supporting(sim):
+    """Objects that support another (amendment 2): in contact with another object whose centre is higher."""
+    ids = {b: k for k, b in enumerate(sim.tracked_block_ids)}
+    out = np.zeros(len(ids), bool)
+    for c in sim.data.contact[:sim.data.ncon]:
+        a, b = int(sim.model.geom_bodyid[c.geom1]), int(sim.model.geom_bodyid[c.geom2])
+        if a in ids and b in ids:
+            lower = a if sim.data.xpos[a][2] < sim.data.xpos[b][2] else b
+            out[ids[lower]] = True
+    return out
+
+
+def visible_ok(sim, vis, alone):
+    """Amendment 2: >= 60% visible, or >= 10% for an object that supports another (stacks)."""
+    need = np.where(supporting(sim), 0.10, 0.60)
+    return bool(np.all(np.asarray(vis) >= need) and min(alone) > 0)
+
+
 def visibility(sim):
     """Fraction of each object's unoccluded pixels that are visible in the close-camera true-start render."""
     import mujoco
@@ -445,10 +463,10 @@ def _pilot_scene(family, seed):
     scene = sample_scene(family, seed)
     sim = make_sim(scene)
     sim.reset()
+    ok, disp, dtilt = settle(sim, family)              # visibility is judged on the settled start (contacts exist)
     vis, alone = visibility(sim)
-    ok, disp, dtilt = settle(sim, family)
     row = {"n_objects": len(scene["objects"]), "primitive": scene["primitive"], "min_visible": float(min(vis)),
-           "visible_ok": bool(min(vis) >= 0.6 and min(alone) > 0), "settle_ok": bool(ok),
+           "visible_ok": visible_ok(sim, vis, alone), "settle_ok": bool(ok),
            "settle_disp_mm": disp, "settle_dtilt_deg": dtilt}
     if not (row["visible_ok"] and ok):
         return row
