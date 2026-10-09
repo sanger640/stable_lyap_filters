@@ -33,7 +33,7 @@ RANGES = {   # amendment 1; the pilot may adjust only the action ranges ("action
     "mass": (0.025, 0.120), "friction": (0.5, 1.0),
     "action": {"offset_mm": 12.0, "push_yaw_deg": 25.0, "depth_mm": 8.0, "approach_mm": (60.0, 120.0),
                "step_mm": (5.0, 12.0), "push_mm": (30.0, 80.0), "prepush_mm": (20.0, 40.0)},
-    "action_F2": {"offset_mm": 8.0, "push_mm": (30.0, 60.0)},   # amendment 2 pilot adjustment (F2 fork rate 35% > 30%)
+    "action_F2": {"offset_mm": 5.0, "push_mm": (30.0, 45.0)},   # amendment 2 pilot adjustment, last step (35%, then 32% > 30%)
     "F1": {"n": (2, 5), "gap_mm": (0.0, 15.0), "row_yaw_deg": 10.0, "max_row_mm": 150.0},
     "F2": {"stacks": (1, 2), "height": (2, 3), "offset_mm": 8.0, "neighbours": (0, 2), "neighbour_gap_mm": (0.0, 20.0)},
     "F3": {"lean_deg": (10.0, 30.0), "neighbours": (0, 2), "wall_prob": 0.3},
