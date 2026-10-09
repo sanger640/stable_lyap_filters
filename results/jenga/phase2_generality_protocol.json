@@ -121,5 +121,14 @@
       "change": "F2 only: grasp/push offset +-12 -> +-8 mm, push distance 30-80 -> 30-60 mm; F2 re-piloted on the same pilot seeds; if still > 30%, offset +-5 mm and push 30-45 mm (last allowed step), then proceed regardless and report the rate",
       "outcome": "F2 fork rate 35% (offset +-12, push 30-80), 32% (+-8, 30-60), 35% (+-5, 30-45; final): stacks are intrinsically fork-rich; per the rule, data generation proceeds with the last step's ranges and the rate is reported. Training-data selection uses the pre-declared fallback (generic harm disagreement among 8 screen futures, sim-only) because Phase 1f's L failed its 0.03 rule; screen seed 20261209"
     }
+  },
+  "amendment_3": {
+    "date": "2026-10-09",
+    "status": "recorded before H2 is screened and before any Phase-2 model is trained (implementation details of the frozen design; user: 'go ahead with next steps')",
+    "start_sampler": "Gauss_TE (P2-0b winner, 0.666 vs 0.672), refit on the Phase-2 training deltas (z0k - z0); used (a) in training in place of G in the 50/50 start mix and (b) for the 64 monitor starts on H2 and the panels (seeded per state, 20261220). The 3-block US reference is graded zero-shot with the same Phase-2 Gauss_TE",
+    "training": "US2 = Phase-1e US recipe exactly (fast recipe; label-free rare-mode rebalancing, 50% rare mode / 50% sibling majority), seed 0, on the 4,800 F1+F2 training states",
+    "H2": "F1+F2 seeds 500000-500599; 64 oracle futures per chunk start (pose error draw j seed 20261212, bench snippet j); fork = harm in 2-62/64, safe = 0/64; 80 + 80 drawn with seed 20261213; selected states rendered (true start + 64 futures at hold 10/30, executed actions); monitor actions = the 64 executed chunks (paired with the real futures, as H in Phase 1)",
+    "floor": "no separate validation set exists for Phase 2: each model's floor tau = its mean hold-30 error against H2's real futures (unpaired sampler starts, as in P2-0); label-free",
+    "grading": "R0 and R1 overall and per family; score = caught - false alarm (R0). H2 is the selection set; the gates are judged only on the fresh panels"
   }
 }

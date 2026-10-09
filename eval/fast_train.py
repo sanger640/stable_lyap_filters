@@ -33,8 +33,9 @@ class Packed:
         return (self.z0[self.state_of[idx]].float(), self.z0k[idx].float(), self.d[idx], self.z[idx].float(), self.a[idx])
 
 
-def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True, log_every=250):
-    """sampler(rng, batch) -> numpy indices into the flat future list."""
+def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True, log_every=250, start_fn=None):
+    """sampler(rng, batch) -> numpy indices into the flat future list. start_fn(z0) -> sampled starts replaces the
+    3-block G operator in the 50/50 start mix (Phase 2: object-free Gauss-TE)."""
     import step3b_models as sm
     path = out_dir / f"model_{name}.pt"
     if path.exists():
@@ -61,7 +62,8 @@ def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True,
         act = model._act(act)
         use_g = torch.rand(BATCH, device=DEVICE) < 0.5
         with torch.no_grad():
-            start = torch.where(use_g[:, None, None, None], g(z0, dd), rend)
+            sampled = g(z0, dd) if start_fn is None else start_fn(z0)
+            start = torch.where(use_g[:, None, None, None], sampled, rend)
         model.net.train()
         with torch.autocast("cuda", dtype=torch.bfloat16):
             cur, loss = start, 0.0
