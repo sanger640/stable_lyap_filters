@@ -141,8 +141,13 @@ class WorldModel:
 
     @classmethod
     def load(cls, path):
+        global WIDTH
         saved = torch.load(path, map_location=DEVICE, weights_only=False)
-        m = cls(saved["kind"], Stats.load(saved["stats"]), saved["action_dim"])
+        default, WIDTH = WIDTH, int(saved["state_dict"]["stem.weight"].shape[0])   # wider nets (Phase 2 amendment 4)
+        try:
+            m = cls(saved["kind"], Stats.load(saved["stats"]), saved["action_dim"])
+        finally:
+            WIDTH = default
         m.net.load_state_dict(saved["state_dict"]); m.net.eval()
         return m
 
