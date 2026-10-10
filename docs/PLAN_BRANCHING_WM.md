@@ -15,6 +15,7 @@ general learned visual world model. Question: how do we make such models branch 
 | The compressed latent keeps forks (kappa 0.93), so representation is not the main bottleneck | gate D0 |
 | Label-free rebalancing (US: oversample each state's own rare outcome mode) matches topple-label rebalancing; passes the gate on fresh panels 7 (82/9) and 6 (85/11) | phase1e_result, phase1e_panel{7,6}_result |
 | Object-free start sampler (Gauss: latent noise along fitted directions) replaces the 3-block pose operator G with no loss (0.709 vs 0.672); learned G* does not (0.584) | phase2_p0_result |
+| Phase 2 (rows/stacks, H2): the persistent split test is task-tuned: on REAL futures it catches only 19/78 forks (hold-10 and hold-30 groups differ in multi-factor scenes); hold-30-only catches 69/78 (30% false). US2 also underfits (loss 2x US, spread 0.3x real even from exact starts) | phase2_h2_result, amendment_4 |
 | DO NOT RETRY AS IS: selecting training states by the image split test (Phase 1f) fails (score 0.546 vs 0.672; contact forks 17/40 vs 28/40): 83% of image splits involve no topple (target, sliding, arm), so harm forks become rare in the data. A label-free screen would need to ignore the target/arm or target harm-like splits; separate protocol if ever | phase1f_result |
 
 Main bottleneck: the learned dynamics do not know WHERE the fork is. Making jumps (discontinuous

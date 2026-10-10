@@ -130,5 +130,33 @@
     "H2": "F1+F2 seeds 500000-500599; 64 oracle futures per chunk start (pose error draw j seed 20261212, bench snippet j); fork = harm in 2-62/64, safe = 0/64; 80 + 80 drawn with seed 20261213; selected states rendered (true start + 64 futures at hold 10/30, executed actions); monitor actions = the 64 executed chunks (paired with the real futures, as H in Phase 1)",
     "floor": "no separate validation set exists for Phase 2: each model's floor tau = its mean hold-30 error against H2's real futures (unpaired sampler starts, as in P2-0); label-free",
     "grading": "R0 and R1 overall and per family; score = caught - false alarm (R0). H2 is the selection set; the gates are judged only on the fresh panels"
+  },
+  "amendment_4_DRAFT": {
+    "date": "2026-10-09",
+    "status": "DRAFT - not frozen; awaiting user approval",
+    "basis": {
+      "H2_result": "US2 5.1% caught / 6.1% false; 3-block US zero-shot 6.4% / 2.4% (results/jenga/phase2_h2_result.json)",
+      "readout": "the frozen persistent split test on H2's REAL futures catches 19/78 forks (8/82 false); misses are mostly 'not persistent' (47): the two groups at hold 10 are not the same futures as at hold 30 (multi-factor scenes: e.g. grasp success at hold 10, a neighbour falling by hold 30). Hold-30-only on real futures: 69/78, 25/82 false; hold-10-only: 71/78, 22/82 (exploratory, H2)",
+      "dynamics": "US2 underfits: final training loss 0.072 vs US 0.037; on its own training fork states its hold-30 error is 1.3x the real futures' spread, and even from the exact rendered perturbed starts its futures spread only 0.28-0.33x the real ones (F1, F2); Gauss-TE start noise has the right size (0.97-1.09x the real perturbed starts)"
+    },
+    "part_A_readout": {
+      "candidates": {
+        "P": "frozen persistent test (reference)",
+        "H30": "two-group test at hold 30 only (BIC, Ashman D > 2, minority >= 2)",
+        "H30_floor": "H30 and hold-30 separation > the model's own floor (as R1); on real futures the floor is 0, i.e. = H30",
+        "BOTH": "two-group test passes at hold 10 AND at hold 30, partitions free to differ"
+      },
+      "selection": "on H2 real futures (the readout's ceiling), rank by caught - false; the winner must also keep US's score on the 3-block H within 0.03 of the frozen test's 0.672 (so Phase 1 conclusions are not changed by the new readout); if none qualifies, keep P and report",
+      "note": "H2 real-future numbers above were looked at before this draft; H2 is the selection set, the panels decide"
+    },
+    "part_B_dynamics": {
+      "arms": {
+        "US2_long": "US2 recipe, 3x steps (22,500 at batch 128)",
+        "US2_wide": "US2 recipe, network width 192 (from 128), 7,500 steps"
+      },
+      "selection": "rank US2, US2_long, US2_wide by H2 score (caught - false) under the part-A readout; also report fork spread ratio vs real on H2",
+      "budget": "US2_long ~5 h, US2_wide ~3 h GPU, one at a time"
+    },
+    "then": "if the best arm passes in-family >= 80% / <= 20% on H2, generate the two fresh panels (in-family and held-out F3) as frozen in amendment 2; otherwise report and stop for a decision"
   }
 }
