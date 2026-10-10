@@ -107,12 +107,14 @@ def train_arm(arm):
     if arm == "US2_wide":
         wm.WIDTH = 192
         ft.train(arm, pm.OUT, states, sampler, start_fn=sampler_te)
-    else:
+    elif arm == "US2_long":
         ft.train(arm, pm.OUT, states, sampler, steps=3 * ft.STEPS, start_fn=sampler_te)
+    else:                                                   # amendment 5
+        ft.train(arm, pm.OUT, states, sampler, steps=9 * ft.STEPS, start_fn=sampler_te)
     print("trained", arm, flush=True)
 
 
-def grade():
+def grade(key="B_grade_H2"):
     import torch
     import fast_train as ft
     import step3_world_model as wm
@@ -121,7 +123,7 @@ def grade():
     res = load_result()
     rule = res["A_selected_readout"]
     te = pm.GaussTE(torch.load(pm.OUT / "Gauss_TE_phase2.pt"))
-    arms = {a: pm.OUT / f"model_{a}.pt" for a in ("US2", "US2_wide", "US2_long")}
+    arms = {a: pm.OUT / f"model_{a}.pt" for a in ("US2", "US2_wide", "US2_long", "US2_xlong")}
     arms["US_3block_zero_shot"] = ROOT / "results/program_b/phase1e/model_US.pt"
     models = {a: wm.WorldModel.load(p) for a, p in arms.items() if p.exists()}
     files = sorted((pm.OUT / "h2").glob("*.npz"))
@@ -155,23 +157,23 @@ def grade():
             steps = json.loads(log.read_text())[0]["steps"]
             out[a]["possibly_undertrained"] = ft.undertrained(json.loads(log.read_text()), steps)
             out[a]["final_loss"] = [r["loss"] for r in json.loads(log.read_text()) if "step" in r][-1]
-    trained = [a for a in ("US2", "US2_wide", "US2_long") if a in out]
+    trained = [a for a in ("US2", "US2_wide", "US2_long", "US2_xlong") if a in out]
     out["ranking"] = sorted(trained, key=lambda a: out[a]["all"]["score"], reverse=True)
     best = out[out["ranking"][0]]["all"]
     out["best_passes_in_family_bar_on_H2"] = bool(best["caught"] >= 0.80 and best["false_alarm"] <= 0.20)
-    res["B_grade_H2"] = out
+    res[key] = out
     save(res)
     print(json.dumps(out, indent=1), flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("readout", "wide", "long", "grade"))
+    parser.add_argument("stage", choices=("readout", "wide", "long", "grade", "xlong", "grade5"))
     args = parser.parse_args()
     if not json.loads(PROTOCOL.read_text())["amendment_4"]["status"].startswith("frozen"):
         raise SystemExit("amendment 4 not frozen")
     {"readout": readout, "wide": lambda: train_arm("US2_wide"), "long": lambda: train_arm("US2_long"),
-     "grade": grade}[args.stage]()
+     "grade": grade, "xlong": lambda: train_arm("US2_xlong"), "grade5": lambda: grade("amendment5_grade_H2")}[args.stage]()
 
 
 if __name__ == "__main__":

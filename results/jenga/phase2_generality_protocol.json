@@ -158,5 +158,14 @@
       "budget": "US2_long ~5 h, US2_wide ~3 h GPU, one at a time"
     },
     "then": "if the best arm passes in-family >= 80% / <= 20% on H2, generate the two fresh panels (in-family and held-out F3) as frozen in amendment 2; otherwise report and stop for a decision"
+  },
+  "amendment_5": {
+    "date": "2026-10-10",
+    "status": "frozen 2026-10-10 (user: 'go with option 1, freeze and launch it'), before training",
+    "basis": "amendment 4 part B on H2 (BOTH readout): US2_long (22,500 steps) 34.6% caught / 15.9% false (score 0.188), flagged still undertrained (loss 0.059, falling); US2_wide no gain; ceiling on real futures 84.6% / 22.0%",
+    "arm": "US2_xlong = US2 recipe exactly (Gauss-TE starts, label-free rare-mode rebalancing, fast recipe, width 128, seed 0), 67,500 steps (9x US2) with the cosine schedule over the full run",
+    "grading": "H2 with the BOTH readout and each model's own floor (as amendment 4 grade), next to US2, US2_wide, US2_long; ranking by score",
+    "rule": "if the best arm reaches >= 80% caught with <= 20% false alarms on H2, generate the two fresh panels (amendment 2 seeds); otherwise report and stop for a decision",
+    "budget": "~14 h GPU"
   }
 }
