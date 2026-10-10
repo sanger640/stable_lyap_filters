@@ -47,11 +47,11 @@ def h2_screen_job(job):
         return family, seed, None, traceback.format_exc()
 
 
-def _futures(sim, snap, chunk, n_obj, key, snippets, pos_cov, rot_cov, render_at=(), render=None):
+def _futures(sim, snap, chunk, n_obj, key, snippets, pos_cov, rot_cov, render_at=(), render=None, seed=None):
     """64 oracle futures: snippet j, pose error draw j. -> traces, executed actions, frames, errors."""
     traces, executed, frames = [], [], []
     for j in range(64):
-        err = ps.draw_error(n_obj, pos_cov, rot_cov, SEEDS["h2_futures"], *key, j)
+        err = ps.draw_error(n_obj, pos_cov, rot_cov, SEEDS["h2_futures"] if seed is None else seed, *key, j)
         sim.restore(snap); sim.perturb(*err)
         a = np.asarray(chunk, np.float32).copy(); a[:, :3] -= snippets[j]
         ex = list(a) + [chunk[-1]] * 30
@@ -154,6 +154,51 @@ def h2(workers_screen, workers_render):
     print(json.dumps(summary), flush=True)
     pdata.pool_run(h2_render_job, [(f, s, idx) for (f, s), idx in sorted(by.items())], workers_render, "h2 render")
     print("h2 done", flush=True)
+
+
+# ------------------------------------------------------------------------------------------- fresh panels (screen only)
+PANELS = {"in": (("F1", "F2"), range(600_000, 600_600), 20261214), "F3": (("F3",), range(700_000, 701_000), 20261217)}
+
+
+def panel_screen_job(job):
+    """Oracle (truth A) harm counts at every chunk start of one panel scene; CPU only, nothing is rendered or graded."""
+    import traceback
+    panel, family, seed = job
+    done = OUT / f"panel_{panel}_screen" / f"{family}_{seed}.json"
+    try:
+        if done.exists():
+            return (panel, family), seed, json.loads(done.read_text()), None
+        import uncertainty_monitor_dev as um
+        prep = pdata.prepare(family, seed)
+        if prep is None:
+            res = {"skipped": True}
+        else:
+            scene, sim, acts, starts = prep
+            snippets = np.load(um.BENCH)["snippets"]
+            pos_cov, rot_cov = ps.pooled_error_model()
+            res = {"skipped": False, "harm_counts": {}}
+            for index, act in enumerate(acts):
+                if index in starts:
+                    snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
+                    start = sim.object_state()
+                    key = ({"F1": 1, "F2": 2, "F3": 3}[family], seed, index)
+                    traces, _, _ = _futures(sim, snap, acts[index:index + 8], len(scene["objects"]), key, snippets,
+                                            pos_cov, rot_cov, seed=PANELS[panel][2])
+                    res["harm_counts"][index] = int(sum(ps.harm(t, start) for t in traces))
+                    sim.restore(snap); sim.data.qacc_warmstart[:] = warm
+                sim.execute(act)
+        tmp = done.with_suffix(".tmp"); tmp.write_text(json.dumps(res)); tmp.replace(done)
+        return (panel, family), seed, res, None
+    except Exception:
+        return (panel, family), seed, None, traceback.format_exc()
+
+
+def panel_screen(workers):
+    for p in PANELS:
+        (OUT / f"panel_{p}_screen").mkdir(parents=True, exist_ok=True)
+    jobs = [(p, f, s) for p, (fams, seeds, _) in PANELS.items() for f in fams for s in seeds]
+    pdata.pool_run(panel_screen_job, jobs, workers, "panel screen")
+    print("panel screen done", flush=True)
 
 
 # ------------------------------------------------------------------------------------------- training
@@ -271,12 +316,14 @@ def grade():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("h2screen", "h2", "train", "grade"))
+    parser.add_argument("stage", choices=("h2screen", "h2", "train", "grade", "panelscreen"))
     parser.add_argument("--screen-workers", type=int, default=14)
     parser.add_argument("--render-workers", type=int, default=5)
     args = parser.parse_args()
     if "amendment_3" not in json.loads(PROTOCOL.read_text()):
         raise SystemExit("amendment 3 (training/grading details) not recorded")
+    if args.stage == "panelscreen":
+        return panel_screen(args.screen_workers)
     if args.stage == "h2screen":                            # CPU only; may overlap with GPU encoding jobs
         (OUT / "h2_screen").mkdir(parents=True, exist_ok=True)
         pdata.pool_run(h2_screen_job, [(f, s) for f in ("F1", "F2") for s in H2_SEEDS], args.screen_workers, "h2 screen")
