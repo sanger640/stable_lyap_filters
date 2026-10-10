@@ -5,6 +5,7 @@ Same model, loss, start mixing (50/50 G or rendered starts), input noise and hol
 step count, learning rate, compilation and per-step gradient checkpointing (memory only) differ.
 """
 import json
+import os
 import time
 
 import numpy as np
@@ -25,12 +26,16 @@ class Packed:
         self.state_of = torch.tensor([si for si, s in enumerate(states) for _ in range(len(s["z"]))], device=DEVICE)
         self.z0 = torch.stack([s["z0"] for s in states]).to(DEVICE)                     # (S,28,28,8) fp16
         self.z0k = torch.cat([s["z0k"] for s in states]).to(DEVICE)                     # (F,28,28,8) fp16
-        self.z = torch.cat([s["z"] for s in states]).to(DEVICE)                         # (F,19,28,28,8) fp16
+        # FAST_TRAIN_Z_ON_CPU=1 keeps the large future tensor in pinned host memory (16 GB GPUs); same values, gathered per batch
+        self.z_cpu = os.environ.get("FAST_TRAIN_Z_ON_CPU") == "1"
+        z = torch.cat([s["z"] for s in states])                                         # (F,19,28,28,8) fp16
+        self.z = z.pin_memory() if self.z_cpu else z.to(DEVICE)
         self.d = torch.cat([s["d"] for s in states]).to(DEVICE)                         # (F,18)
         self.a = torch.cat([s["actions"] for s in states]).to(DEVICE)                   # (F,19,A)
 
     def batch(self, idx):
-        return (self.z0[self.state_of[idx]].float(), self.z0k[idx].float(), self.d[idx], self.z[idx].float(), self.a[idx])
+        z = self.z[idx.cpu()].to(DEVICE, non_blocking=True) if self.z_cpu else self.z[idx]
+        return (self.z0[self.state_of[idx]].float(), self.z0k[idx].float(), self.d[idx], z.float(), self.a[idx])
 
 
 def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True, log_every=250, start_fn=None):
