@@ -171,5 +171,16 @@
     "addendum_seed_replicate": "2026-10-10, approved by the user ('approve 1-3') before launch: US2_long retrained with seed 1 (identical recipe, 22,500 steps) on the RTX 5080 (future tensor kept in pinned host memory, FAST_TRAIN_Z_ON_CPU=1; values unchanged), graded on H2 with BOTH beside the seed-0 arms. Descriptive only: it measures seed variation and does not change the amendment-5 rule (which uses the seed-0 arms)",
     "addendum_panels_if_pass": "2026-10-10, approved by the user ('approve 1-3'): if the best seed-0 arm passes the amendment-5 rule on H2, the two fresh panels are selected, rendered and graded automatically; otherwise stop and report",
     "addendum_panel_details": "2026-10-10, recorded before any panel is selected or rendered: selection seeds 20261221 (in-family) / 20261222 (F3); primary model = the best seed-0 arm on H2; references: 3-block US zero-shot, second oracle run (truth_B seeds 20261215 / 20261218), exact-start probe (no pose error, 64 bench snippets); monitor = 64 Gauss-TE starts (seeds 20261216 / 20261219), executed chunk with snippet j, BOTH readout; BOTH+floor (H2 floor) reported beside; gates on BOTH"
+  },
+  "amendment_6_DRAFT": {
+    "date": "2026-10-10",
+    "status": "DRAFT - not frozen; for the user's decision after US2_xlong (approved as 'draft only')",
+    "motivation": "US2 underfits the Phase-2 scenes and improves with training length (US2 0.0 -> US2_long 0.19 on H2); each step unrolls all 19 model steps with checkpointing, so steps are expensive",
+    "arm": {
+      "US2_trunc": "US2 recipe, but each training sample unrolls a random window of K = 10 model steps: with probability 1/2 the window starts at step 0 from the sampled/rendered start (as now, keeping the start-uncertainty -> outcome mapping), otherwise at a uniform step t0 in 1..9 from the real latent z[t0-1] plus the usual input noise; loss on the window's steps with the same hold weights. ~1.9x cheaper per step; trained for the same wall-clock as US2_xlong would need for 3x US2_long's samples"
+    },
+    "risk": "windows started from real latents train on real rather than self-predicted states (exposure bias); the step-0 half keeps full-horizon rollouts from uncertain starts",
+    "selection": "H2 score under BOTH beside US2_long and US2_xlong; same amendment-5 rule for panels",
+    "decide_after": "US2_xlong's learning curve: if xlong is still improving at 67,500 steps, cheaper steps are worth it; if it plateaued below the bar, more steps of any kind are unlikely to help and a different dynamics model (pretrained V-JEPA 2-AC, transformer predictor) is the better next step"
   }
 }
