@@ -183,5 +183,30 @@
     "risk": "windows started from real latents train on real rather than self-predicted states (exposure bias); the step-0 half keeps full-horizon rollouts from uncertain starts",
     "selection": "H2 score under BOTH beside US2_long and US2_xlong; same amendment-5 rule for panels",
     "decide_after": "US2_xlong's learning curve: if xlong is still improving at 67,500 steps, cheaper steps are worth it; if it plateaued below the bar, more steps of any kind are unlikely to help and a different dynamics model (pretrained V-JEPA 2-AC, transformer predictor) is the better next step"
+  },
+  "amendment_7": {
+    "date": "2026-10-11",
+    "status": "frozen before running (user: 'do 1. and 3 do ibot and after that ask me about the transformer')",
+    "motivation": "Toso et al. 2026 (arXiv 2610.07540, App. A.2): frozen DINOv2 amplifies small physical perturbations ~25x (iBOT ~1x) and its predictors cannot hold an equilibrium; our Phase-2 predictor underfits and collapses futures (spread 0.3x real) while the loss keeps falling",
+    "diagnostic": {
+      "frames": "the H2 renders made for the V-JEPA test (true start, 64 perturbed starts with monitor draws seed 20261230, 64 real futures after 18 and 36 commands)",
+      "encoders": {
+        "DINO_fixedPCA": "current latent (DINOv2 ViT-S/14 392 -> fixed channel PCA 8 fit on 3-block images)",
+        "DINO_refitPCA": "DINOv2 tokens, channel PCA 8 refit on the H2 true-start frames",
+        "IBOT_PCA": "iBOT ViT-S/16 teacher (448 px, 28x28 patch tokens, ImageNet normalisation) -> channel PCA 8 fit on the H2 true-start frames"
+      },
+      "metrics": {
+        "gain": "median over states of (||z_start_k - z_true|| / object position perturbation rms mm), divided by the median latent distance between different states' true starts (scene scale)",
+        "linearity": "median per-state Spearman correlation between ||z_start_k - z_true|| and the perturbation size",
+        "ceiling": "BOTH readout on the real futures (forks caught, false alarms, score)"
+      },
+      "rule": "iBOT qualifies for retraining if its normalised gain is <= 0.5x DINO_fixedPCA's OR its linearity is >= 0.2 higher, AND its real-future BOTH score is >= DINO_fixedPCA's - 0.05"
+    },
+    "retrain_if_qualified": {
+      "data": "the same 4,800 Phase-2 training states and seeds re-rendered and encoded with iBOT -> channel PCA 8 (fit on 600 training true-start frames, seed 20261240); H2 re-rendered the same way (true start + 64 futures at hold 10/30)",
+      "model": "US2_long recipe (22,500 steps, seed 0, Gauss-TE refit on iBOT deltas, rare modes re-detected) on the iBOT latents",
+      "comparison": "H2 with BOTH and own floor beside US2_long seeds 0/1 (0.188 / 0.276) and US2_xlong (0.266); 'helps' if above 0.28 + 0.05",
+      "then": "ask the user about the transformer predictor (option B)"
+    }
   }
 }
