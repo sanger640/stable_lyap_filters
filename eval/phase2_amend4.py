@@ -109,6 +109,11 @@ def train_arm(arm):
         ft.train(arm, pm.OUT, states, sampler, start_fn=sampler_te)
     elif arm == "US2_long":
         ft.train(arm, pm.OUT, states, sampler, steps=3 * ft.STEPS, start_fn=sampler_te)
+    elif arm == "US2_harm":                                 # diagnostic: label-based harm rebalancing
+        top = np.array([bool(t) for s in states for t in s["top"]])
+        hp = (np.flatnonzero(top), np.flatnonzero(~top))
+        harm_sampler = lambda rng, b: np.concatenate([rng.choice(hp[0], b // 2), rng.choice(hp[1], b - b // 2)])
+        ft.train(arm, pm.OUT, states, harm_sampler, steps=3 * ft.STEPS, start_fn=sampler_te)
     elif arm == "US2_long_s1":                              # amendment 5 addendum: seed replicate
         ft.train(arm, pm.OUT, states, sampler, seed=1, steps=3 * ft.STEPS, start_fn=sampler_te)
     else:                                                   # amendment 5
@@ -125,7 +130,7 @@ def grade(key="B_grade_H2"):
     res = load_result()
     rule = res["A_selected_readout"]
     te = pm.GaussTE(torch.load(pm.OUT / "Gauss_TE_phase2.pt"))
-    arms = {a: pm.OUT / f"model_{a}.pt" for a in ("US2", "US2_wide", "US2_long", "US2_xlong", "US2_long_s1")}
+    arms = {a: pm.OUT / f"model_{a}.pt" for a in ("US2", "US2_wide", "US2_long", "US2_xlong", "US2_long_s1", "US2_harm")}
     arms["US_3block_zero_shot"] = ROOT / "results/program_b/phase1e/model_US.pt"
     models = {a: wm.WorldModel.load(p) for a, p in arms.items() if p.exists()}
     files = sorted((pm.OUT / "h2").glob("*.npz"))
@@ -170,13 +175,14 @@ def grade(key="B_grade_H2"):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("readout", "wide", "long", "grade", "xlong", "grade5", "long_s1", "grade_s1"))
+    parser.add_argument("stage", choices=("readout", "wide", "long", "grade", "xlong", "grade5", "long_s1", "grade_s1", "harm", "grade_harm"))
     args = parser.parse_args()
     if not json.loads(PROTOCOL.read_text())["amendment_4"]["status"].startswith("frozen"):
         raise SystemExit("amendment 4 not frozen")
     {"readout": readout, "wide": lambda: train_arm("US2_wide"), "long": lambda: train_arm("US2_long"),
      "grade": grade, "xlong": lambda: train_arm("US2_xlong"), "grade5": lambda: grade("amendment5_grade_H2"),
-     "long_s1": lambda: train_arm("US2_long_s1"), "grade_s1": lambda: grade("amendment5_seed_replicate_grade_H2")}[args.stage]()
+     "long_s1": lambda: train_arm("US2_long_s1"), "grade_s1": lambda: grade("amendment5_seed_replicate_grade_H2"),
+     "harm": lambda: train_arm("US2_harm"), "grade_harm": lambda: grade("harm_rebalancing_diagnostic_grade_H2")}[args.stage]()
 
 
 if __name__ == "__main__":
