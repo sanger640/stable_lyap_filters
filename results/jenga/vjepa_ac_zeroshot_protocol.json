@@ -1,0 +1,13 @@
+{
+  "id": "vjepa2-ac-zero-shot-H2",
+  "status": "frozen 2026-10-11 before any V-JEPA rollout (user: 'go ahead with 1 and 3'; item 3 = V-JEPA 2-AC zero-shot start)",
+  "question": "Does a large pretrained action-conditioned world model (V-JEPA 2-AC, ViT-g encoder + AC predictor, DROID-trained, frozen) branch where physics does on the Phase-2 selection set H2, compared with our best Phase-2 model (US2_xlong)?",
+  "states": "H2 (160 states: F1+F2, 78-80 forks, 80 safe)",
+  "starts": "for a fair comparison both models start from the SAME 64 rendered perturbed starts per state: pose-error draws on every object from the pooled perception error model (monitor seed 20261230, independent of the truth draws); V-JEPA encodes them at 256x256 (its resolution), our model from DINOv2 392 -> channel PCA 8 of the 384x384 render. This is an oracle-start setting (rendered perturbations) for both",
+  "actions": "executed chunk with bench snippet j (as H2) then 30 hold commands; V-JEPA steps every 3 commands (12 predictor steps, autoregressive, full context): action = commanded target delta (xyz), zero rotation delta, gripper closedness delta (DROID convention 0 open / 1 closed); state integrated with its compute_new_pose from the start end-effector pose (site position, xyz Euler of the site frame, closedness)",
+  "readout": "BOTH (amendment 4) on the predicted tokens (layer-normed, as the official example) at the hold-10 and hold-30 frames (after 18 and 36 commands); our model: BOTH on its latents at the same times (model steps 9 and 18)",
+  "ceilings": "BOTH on the REAL futures (H2 truth draws, rendered after 18 and 36 commands) encoded by each encoder",
+  "metrics": "forks caught, false alarms, score; fork spread ratio (model futures vs real futures, same encoder)",
+  "reading": "descriptive (zero-shot, no training on our data); V-JEPA's camera, robot frame and action scale differ from DROID, so a failure bounds 'off-the-shelf' use, not fine-tuned use",
+  "budget": "render ~1 h CPU; encode ~30 min; V-JEPA rollouts ~2-3 h on the 3090"
+}
