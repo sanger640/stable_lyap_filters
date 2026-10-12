@@ -256,5 +256,14 @@
     "status": "recorded before computing (user: 'do part c now'); descriptive, does not replace the frozen harm label or any gate",
     "label": "any-outcome fork: for each future, the binary events per object (INCLUDING the target): tilt change >= 45 deg, leaves the table, centre moves >= 30 mm (end of hold); a state is an any-outcome fork if some (object, event) occurs in 2-62 of its 64 oracle futures; safe if no (object, event) varies (each occurs in 0 or 64)",
     "graded": "H2 real-future upper limit and the existing models (US2_long seeds 0/1, US2_xlong, T, T_pix, C0, SL_low) with BOTH, under both labels; also the confusion of the two labels"
+  },
+  "amendment_11": {
+    "date": "2026-10-12",
+    "status": "frozen before any new data (user: 'data scale up you can start')",
+    "question": "Is training-data scarcity across varied layouts the bottleneck? (never varied in Phase 2; Phase 1 used ~4,800 states for ONE layout)",
+    "data": "3x the Phase-2 training set: the existing 4,800 states plus 9,600 new ones from new scene seeds 1500-6499 per family (F1, F2), screened and selected exactly as eval/phase2_data.py (8 screen futures, harm disagreement 1-7 of 8 up to half, the rest others; 16/8 futures; screen seed 20261209, select seed 20261260, futures seed 20261211 keyed by scene seed so the new states never collide with the old); 4,800 new per family",
+    "model": "US2 recipe exactly (deterministic conv, label-free rare-mode rebalancing re-detected on the combined data, Gauss-TE starts refit on the combined deltas? NO: Gauss-TE kept fixed as amendment 3 so only the data changes), seed 0, 67,500 steps (US2_xlong's budget) -> US2_x3data",
+    "comparison": "US2_xlong (same steps, 1x data, 0.266 on H2); 'data helps' if US2_x3data scores >= 0.266 + 0.10 on H2 (BOTH); also reported under the any-outcome label",
+    "compute": "screen/render on the 3090 machine's CPUs (rendering pools never share the GPU with another encoding pool); data copied to the 5080 machine (1.7 TB disk) and read from a disk memmap during training (values identical to in-memory)"
   }
 }
