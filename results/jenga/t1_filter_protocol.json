@@ -1,0 +1,15 @@
+{
+  "id": "t1-safety-filter",
+  "status": "frozen 2026-10-12 before any data (user: 'yes start the paper plan work'; paper experiment E3)",
+  "question": "Used as a safety filter, does the T1 learned monitor (US + G starts + H30_floor readout, confirmed on panels 6/7) reduce topples, compared with no filter and with a physics-engine filter?",
+  "states": "fresh panel (never used): 60 episodes, reset +12000, selection seed 20261300; chunk starts screened with the 64 exact probes; up to 60 forks (2-62/64) + 40 safe (0/64)",
+  "candidates": "25 variants of the intended 8-step chunk: constant xy offsets of all targets, dx, dy in {-6,-3,0,3,6} mm; tried in order of increasing offset size (ties by value)",
+  "outcome": "for every state x candidate, 64 truth futures (perception draw truth_A seed 20261302 + bench snippet j) -> topple probability",
+  "policies": {
+    "none": "execute the intended chunk",
+    "ours": "the smallest-offset candidate on which the monitor does not alarm (monitor draws seed 20261301); abstain if all 25 alarm",
+    "engine": "same rule with the alarm 'topples in 2-62 of 64 truth_B futures' (independent draws, seed 20261303): a physics-engine filter with the true uncertainty model"
+  },
+  "metrics": "per group (forks / safe): mean topple probability for each policy (acting states; and counting abstentions as no topple), abstention count, number of changed actions, mean offset",
+  "reading": "descriptive; headline = topple probability on fork states: none vs ours vs engine, with abstention and deviation reported beside"
+}
