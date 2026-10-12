@@ -265,5 +265,13 @@
     "model": "US2 recipe exactly (deterministic conv, label-free rare-mode rebalancing re-detected on the combined data, Gauss-TE starts refit on the combined deltas? NO: Gauss-TE kept fixed as amendment 3 so only the data changes), seed 0, 67,500 steps (US2_xlong's budget) -> US2_x3data",
     "comparison": "US2_xlong (same steps, 1x data, 0.266 on H2); 'data helps' if US2_x3data scores >= 0.266 + 0.10 on H2 (BOTH); also reported under the any-outcome label",
     "compute": "screen/render on the 3090 machine's CPUs (rendering pools never share the GPU with another encoding pool); data copied to the 5080 machine (1.7 TB disk) and read from a disk memmap during training (values identical to in-memory)"
+  },
+  "amendment_12": {
+    "date": "2026-10-12",
+    "status": "frozen before running (user: 'sure do 1 and 2'); runs after amendment 11 finishes",
+    "basis": "amendment 10: hybrid 38.5% / 6.1% (score 0.324, misses the 0.326 bar by 0.002) with spread 0.83x real and the lowest false-alarm rate in Phase 2",
+    "arm": "HYB_x3 = the amendment-10 hybrid exactly, but (a) the frozen deterministic stream is US2_x3data (amendment 11) and (b) the residual head is trained on the 3x data (amendment-11 memmaps, same label-free rare-mode rebalancing), 40,000 steps (2x amendment 10), otherwise identical",
+    "grading": "H2, BOTH, beside HYB (0.324) and US2_x3data; 'helps' if >= 0.324 + 0.05; amendment-5 rule for panels",
+    "compute": "5080 machine (where the memmaps live)"
   }
 }
