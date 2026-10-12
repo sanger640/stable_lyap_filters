@@ -1,0 +1,11 @@
+{
+  "id": "t2-push-monitor",
+  "status": "frozen 2026-10-12 before any T2 data (user: 'do 1 and 2'; paper experiment E4)",
+  "task": "T2: push a box (+y, small jitter) past one or two tall, narrow cylinders (40-60 mm high, 0-20 mm clearance); fixed task structure, randomised sizes/poses/masses/friction (eval/t2_push.py, pilot 3: fork rate 17%, always-harm 15%)",
+  "fork_label": "harm (any non-target object tilts >= 45 deg, leaves the table, or moves >= 30 mm) in 2-62 of 64 oracle futures; any-outcome label reported beside",
+  "training_data": "scene seeds 0-2999 screened with 8 futures per chunk start (as eval/phase2_data.py, family code 4); 4,800 states: harm-disagreeing up to 2,400 + others (select seed 20261320); 16/8 futures",
+  "selection_set_H_T2": "scene seeds 500000-500799, 64 oracle futures per chunk start (seed 20261212, family code 4); 80 forks + 80 safe (seed 20261321)",
+  "model": "US recipe at the US2_long budget: deterministic conv step model, label-free rare-mode rebalancing, Gauss-TE starts fitted on T2 deltas, 22,500 steps, seed 0 (US2_long code path with T2 data)",
+  "grading": "H_T2 with the BOTH readout (primary) and hold-30 + floor (descriptive); score = caught - false; a fresh T2 panel and a T2 filter follow in a later addendum if H_T2 reaches >= 80% / <= 20%",
+  "compute": "3090 machine (CPU screening, GPU encoding pools never alongside another GPU job)"
+}

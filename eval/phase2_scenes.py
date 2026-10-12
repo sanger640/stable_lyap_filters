@@ -88,6 +88,9 @@ def _row(rng, n, origin, yaw, gap, shapes=("box", "cylinder")):
 
 def sample_scene(family, seed):
     """-> scene dict (objects with obj0 = target, optional static wall, primitive). Deterministic in seed."""
+    if family == "T2":                                      # task T2 (push past tall objects), eval/t2_push.py
+        import t2_push
+        return t2_push.sample_t2(seed)
     rng = np.random.default_rng([20261200, {"F1": 1, "F2": 2, "F3": 3}[family], seed])
     wall = None
     if family == "F1":

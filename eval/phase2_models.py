@@ -23,6 +23,7 @@ sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 
 import phase2_data as pdata  # noqa: E402
 import phase2_scenes as ps  # noqa: E402
+from phase2_data import FAMILY_CODE  # noqa: E402
 
 PROTOCOL = ROOT / "results/jenga/phase2_generality_protocol.json"
 OUT = ROOT / "results/program_b/phase2"
@@ -77,7 +78,7 @@ def _h2_screen(family, seed):
         if index in starts:
             snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
             start = sim.object_state()
-            key = ({"F1": 1, "F2": 2}[family], seed, index)
+            key = (FAMILY_CODE[family], seed, index)
             traces, _, _ = _futures(sim, snap, acts[index:index + 8], len(scene["objects"]), key, snippets, pos_cov, rot_cov)
             out[index] = int(sum(ps.harm(t, start) for t in traces))
             sim.restore(snap); sim.data.qacc_warmstart[:] = warm
@@ -115,7 +116,7 @@ def _h2_render(job):
                     snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
                     start = sim.object_state()
                     true_start = render()
-                    key = ({"F1": 1, "F2": 2}[family], seed, index)
+                    key = (FAMILY_CODE[family], seed, index)
                     traces, executed, frames = _futures(sim, snap, acts[index:index + 8], len(scene["objects"]), key,
                                                         snippets, pos_cov, rot_cov, D_INDEX, render)
                     z = latent(np.concatenate([true_start[None], np.stack(frames)]))
@@ -181,7 +182,7 @@ def panel_screen_job(job):
                 if index in starts:
                     snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
                     start = sim.object_state()
-                    key = ({"F1": 1, "F2": 2, "F3": 3}[family], seed, index)
+                    key = (FAMILY_CODE[family], seed, index)
                     traces, _, _ = _futures(sim, snap, acts[index:index + 8], len(scene["objects"]), key, snippets,
                                             pos_cov, rot_cov, seed=PANELS[panel][2])
                     res["harm_counts"][index] = int(sum(ps.harm(t, start) for t in traces))

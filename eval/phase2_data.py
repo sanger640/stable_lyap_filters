@@ -24,6 +24,8 @@ PROTOCOL = ROOT / "results/jenga/phase2_generality_protocol.json"
 OUT = ROOT / "results/program_b/phase2"
 SEEDS = {"screen": 20261209, "select": 20261210, "futures": 20261211}
 TRAIN_SEEDS = range(0, 1500)
+FAMILY_CODE = {"F1": 1, "F2": 2, "F3": 3, "T2": 4}      # seed-key code per family (F1/F2/F3 values unchanged)
+FAMILIES = ("F1", "F2")                                  # families selected by select(); T2 data patches this
 PER_FAMILY, DISAGREE_CAP, K_SCREEN = 2400, 1200, 8
 FUTURES = {"t16": 16, "t8": 8}
 FRAME_INDEX = tuple(range(1, 38, 2))                      # as eval/step3_data.py (hold 10 = 17, hold 30 = 37)
@@ -73,7 +75,7 @@ def _screen(family, seed):
             start = sim.object_state()
             harms = []
             for k in range(K_SCREEN):
-                rng = np.random.default_rng([SEEDS["screen"], {"F1": 1, "F2": 2}[family], seed, index, k])
+                rng = np.random.default_rng([SEEDS["screen"], FAMILY_CODE[family], seed, index, k])
                 harms.append(ps.harm(ps.future(sim, snap, acts[index:index + 8], snippets[rng.integers(len(snippets))],
                                                ps.draw_error(n, pos_cov, rot_cov, SEEDS["screen"], seed, index, k)), start))
             out[index] = int(sum(harms))
@@ -85,7 +87,7 @@ def _screen(family, seed):
 def select(screens):
     rng = np.random.default_rng(SEEDS["select"])
     roles, summary = {}, {}
-    for family in ("F1", "F2"):
+    for family in FAMILIES:
         rows = [(seed, int(i), c) for (f, seed), r in screens.items() if f == family and not r["skipped"]
                 for i, c in r["harm_counts"].items()]
         dis = [r for r in rows if 0 < r[2] < K_SCREEN]
@@ -138,7 +140,7 @@ def _render(job):
                     n = FUTURES[roles[index]]
                     traces, executed, starts_k, frames, pos, rot, harms = [], [], [], [], [], [], []
                     for k in range(n):
-                        key = ({"F1": 1, "F2": 2}[family], seed, index, k)
+                        key = (FAMILY_CODE[family], seed, index, k)
                         noise = snippets[np.random.default_rng([SEEDS["futures"], *key]).integers(len(snippets))]
                         err = ps.draw_error(n_obj, pos_cov, rot_cov, SEEDS["futures"], *key)
                         sim.restore(snap); sim.perturb(*err)
