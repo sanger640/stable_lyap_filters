@@ -101,23 +101,45 @@ def det_endpoints(det, z0, act_norm):
     return torch.stack(ends, 1)                          # (B, 2, 28, 28, 8)
 
 
-def train(seed=0, log_every=250):
+class MemmapData:
+    """Amendment-12 data source: the amendment-11 memmaps (old + new training futures)."""
+
+    def __init__(self, pack):
+        import torch
+        self.z = np.load(pack / "z.npy", mmap_mode="r"); self.act = np.load(pack / "actions.npy", mmap_mode="r")
+        self.z0 = torch.from_numpy(np.load(pack / "z0.npy")).cuda(); self.state_of = np.load(pack / "state_of.npy")
+        rare, has_rare = np.load(pack / "rare.npy"), np.load(pack / "has_rare.npy")
+        self.pools = (np.flatnonzero(rare), np.flatnonzero(~rare & has_rare))
+
+    def batch(self, idx):
+        import torch
+        i = np.sort(idx.cpu().numpy())
+        z0 = self.z0[torch.as_tensor(self.state_of[i], device="cuda")].float()
+        target = torch.from_numpy(np.ascontiguousarray(self.z[i])).cuda().float()
+        act = torch.from_numpy(np.ascontiguousarray(self.act[i])).cuda()
+        return z0, None, None, target, act
+
+
+def train(seed=0, log_every=250, name="HYB", det_name="US2_xlong", pack=None):
     import torch
     from torch import nn
     import fast_train as ft
     import step3_world_model as wm
-    path = OUT / "model_HYB.pt"
+    path = OUT / f"model_{name}.pt"
     if path.exists():
         return
-    states, names = pm.load_train()
-    modes = json.loads((OUT / "modes.json").read_text())
-    rare = np.array([k in set(modes[n]) for n, s in zip(names, states) for k in range(len(s["z"]))])
-    has_rare = np.array([bool(modes[n]) for n, s in zip(names, states) for _ in range(len(s["z"]))])
-    pools = (np.flatnonzero(rare), np.flatnonzero(~rare & has_rare))
-    data = ft.Packed(states)
-    action_dim = states[0]["actions"].shape[-1]
-    del states
-    det = wm.WorldModel.load(OUT / "model_US2_xlong.pt"); det.net.eval()
+    if pack is None:
+        states, names = pm.load_train()
+        modes = json.loads((OUT / "modes.json").read_text())
+        rare = np.array([k in set(modes[n]) for n, s in zip(names, states) for k in range(len(s["z"]))])
+        has_rare = np.array([bool(modes[n]) for n, s in zip(names, states) for _ in range(len(s["z"]))])
+        pools = (np.flatnonzero(rare), np.flatnonzero(~rare & has_rare))
+        data = ft.Packed(states)
+        action_dim = states[0]["actions"].shape[-1]
+        del states
+    else:
+        data = MemmapData(pack); pools = data.pools; action_dim = data.act.shape[-1]
+    det = wm.WorldModel.load(OUT / f"model_{det_name}.pt"); det.net.eval()
     for p in det.net.parameters():
         p.requires_grad_(False)
     torch.manual_seed(seed); rng = np.random.default_rng(seed)
@@ -136,7 +158,8 @@ def train(seed=0, log_every=250):
         real = torch.stack([target[:, wm.HOLD10], target[:, wm.HOLD30]], 1)
         scales.append(float((real - zd).std()))
     rscale = float(np.mean(scales))
-    log, t0 = [{"steps": STEPS, "batch": BATCH, "lr": LR, "alpha": ALPHA, "params": params, "residual_scale": rscale}], time.time()
+    log, t0 = [{"steps": STEPS, "batch": BATCH, "lr": LR, "alpha": ALPHA, "params": params, "residual_scale": rscale,
+                "det": det_name, "data": "pack" if pack else "train"}], time.time()
     print(json.dumps(log[0]), flush=True)
     for step in range(STEPS):
         idx = torch.as_tensor(np.concatenate([rng.choice(pools[0], BATCH // 2), rng.choice(pools[1], BATCH // 2)]), device="cuda")
@@ -158,9 +181,9 @@ def train(seed=0, log_every=250):
         if (step + 1) % log_every == 0:
             log.append({"step": step + 1, "loss": float(loss), "seconds": round(time.time() - t0, 1)})
             print(f"HYB step {step + 1}: flow loss {float(loss):.4f} ({time.time() - t0:.0f}s)", flush=True)
-    torch.save({"state_dict": head.state_dict(), "action_dim": action_dim, "residual_scale": rscale}, path)
-    (OUT / "model_HYB_log.json").write_text(json.dumps(log) + "\n")
-    print("trained HYB", flush=True)
+    torch.save({"state_dict": head.state_dict(), "action_dim": action_dim, "residual_scale": rscale, "det": det_name}, path)
+    (OUT / f"model_{name}_log.json").write_text(json.dumps(log) + "\n")
+    print("trained", name, flush=True)
 
 
 def sample(head, det, z0, act_norm, rscale, generator):
@@ -177,13 +200,13 @@ def sample(head, det, z0, act_norm, rscale, generator):
     return zd + x * rscale
 
 
-def grade():
+def grade(name="HYB", result=RESULT):
     import torch
     import step3_world_model as wm
     from phase2_amend4 import alarm, score
-    s = torch.load(OUT / "model_HYB.pt", map_location="cuda")
+    s = torch.load(OUT / f"model_{name}.pt", map_location="cuda")
     head = build_head(s["action_dim"]).cuda(); head.load_state_dict(s["state_dict"]); head.eval()
-    det = wm.WorldModel.load(OUT / "model_US2_xlong.pt"); det.net.eval()
+    det = wm.WorldModel.load(OUT / f"model_{s.get('det', 'US2_xlong')}.pt"); det.net.eval()
     fork, fam, al, spread = [], [], [], []
     for n_state, path in enumerate(sorted((OUT / "h2").glob("*.npz"))):
         with np.load(path) as f:
@@ -200,22 +223,32 @@ def grade():
             spread.append(float(e30.std(0).sum() / real30.std(0).sum()))
         torch.cuda.empty_cache()
     fork, fam, al = np.array(fork), np.array(fam), np.array(al)
-    out = {"readout": "BOTH", "HYB": {"all": score(al, fork), "F1": score(al[fam == "F1"], fork[fam == "F1"]),
+    out = {"readout": "BOTH", "model": name, "HYB": {"all": score(al, fork), "F1": score(al[fam == "F1"], fork[fam == "F1"]),
                                       "F2": score(al[fam == "F2"], fork[fam == "F2"]),
                                       "fork_spread_ratio_median": float(np.median(spread))}}
-    out["hybrid_helps"] = bool(out["HYB"]["all"]["score"] >= 0.276 + 0.05)
+    out["hybrid_helps"] = bool(out["HYB"]["all"]["score"] >= (0.276 if name == "HYB" else 0.324) + 0.05)
     out["passes_in_family_bar_on_H2"] = bool(out["HYB"]["all"]["caught"] >= 0.80 and out["HYB"]["all"]["false_alarm"] <= 0.20)
-    RESULT.write_text(json.dumps(out, indent=1) + "\n")
+    result.write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps(out, indent=1), flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("train", "grade"))
+    parser.add_argument("stage", choices=("train", "grade", "train_x3", "grade_x3"))
     args = parser.parse_args()
-    if not json.loads((ROOT / "results/jenga/phase2_generality_protocol.json").read_text())["amendment_10"]["status"].startswith("frozen"):
-        raise SystemExit("amendment 10 not frozen")
-    train() if args.stage == "train" else grade()
+    prot = json.loads((ROOT / "results/jenga/phase2_generality_protocol.json").read_text())
+    if not prot["amendment_10"]["status"].startswith("frozen") or not prot["amendment_12"]["status"].startswith("frozen"):
+        raise SystemExit("amendments 10/12 not frozen")
+    global STEPS
+    if args.stage == "train":
+        train()
+    elif args.stage == "grade":
+        grade()
+    elif args.stage == "train_x3":                       # amendment 12
+        STEPS = 40_000
+        train(name="HYB_x3", det_name="US2_x3data", pack=OUT / "pack_x3")
+    else:
+        grade("HYB_x3", ROOT / "results/jenga/phase2_hybrid_x3_result.json")
 
 
 if __name__ == "__main__":
