@@ -221,5 +221,21 @@
     "data": "the existing 4,800 Phase-2 training states; future frames re-rendered with the identical seeds and future order as eval/phase2_data.py and verified against the stored traces (max abs difference < 1e-6 required, else the arm is not run)",
     "grading": "H2 with the BOTH readout and each model's own floor, beside US2_long seeds 0/1 (0.188 / 0.276) and US2_xlong (0.266); 'transformer helps' if T or T_pix scores > 0.276 + 0.05; amendment-5 rule for panels (>= 80% / <= 20% on H2)",
     "compute": "T on the 3090, T_pix on the 5080 (frames copied over), in parallel"
+  },
+  "amendment_9": {
+    "date": "2026-10-12",
+    "status": "frozen before any code runs (user: 'sure build and run the set-level objective')",
+    "basis": "amendment 8: transformers reach the lowest training loss (0.039) yet do not branch better (T 0.06, T_pix 0.19 vs conv 0.19-0.28); per-family breakdown shows a uniform ~half-of-ceiling gap. Per-future regression from paired starts smears across forks; sampled (Gauss-TE) starts used by the monitor never receive a direct training signal",
+    "set_loss": "each step, S = 8 training states (4 drawn uniformly from states whose own futures have a rare mode -- label-free -- and 4 uniformly from all states); for each, M = 8 of its real futures (uniform without replacement) give the real set Y (hold-10 and hold-30 latents) and their executed actions; the model is rolled 19 steps from 8 Gauss-TE starts (one per real future's actions) giving X. Set term = energy distance per state: mean||X-Y|| - 0.5 mean_{i!=j}||X_i-X_j|| - 0.5 mean_{i!=j}||Y_i-Y_j||, divided by sqrt(D), averaged over hold 10 and hold 30 and the S states",
+    "objective": "per-future US recipe loss (unchanged batch of 128) + lambda * set term",
+    "arms": {
+      "C0": "control: lambda = 0",
+      "SL_low": "lambda such that lambda x (initial set term) = 0.5 x (initial per-future loss)",
+      "SL_high": "lambda such that lambda x (initial set term) = 5 x (initial per-future loss)"
+    },
+    "calibration": "initial values measured on 20 training batches with the starting model before any update (seed 0); recorded in the result",
+    "training": "all arms fine-tune US2_long (seed 0, the 0.188 model) for 7,500 steps at batch 128, AdamW lr 1.5e-4 (fast recipe lr / 4) cosine, seed 0, same rare-mode rebalancing, Gauss-TE / rendered start mix, input noise and hold weights",
+    "grading": "H2 with BOTH and own floor; 'set loss helps' if the better SL arm scores >= C0 + 0.10 (above the observed seed spread 0.09); panels only under the amendment-5 rule (>= 80% / <= 20% on H2)",
+    "compute": "C0 on the 3090, SL_low then SL_high on the 5080"
   }
 }
