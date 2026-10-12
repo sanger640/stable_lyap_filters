@@ -18,9 +18,9 @@ sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 import phase2_scenes as ps  # noqa: E402
 
 T2 = {"box_half": ((0.016, 0.022), (0.016, 0.022), (0.014, 0.022)), "box_mass": (0.08, 0.20),
-      "tall_r": (0.008, 0.012), "tall_hh": (0.035, 0.055), "tall_mass": (0.02, 0.06), "clear_mm": (0.0, 15.0),
-      "push_jitter_deg": 10.0, "action": {"offset_mm": 6.0, "push_mm": (40.0, 70.0), "prepush_mm": (15.0, 25.0)}}
-PILOT_BASE = 980_000
+      "tall_r": (0.007, 0.010), "tall_hh": (0.020, 0.030), "tall_mass": (0.02, 0.06), "clear_mm": (0.0, 20.0),
+      "push_jitter_deg": 6.0, "action": {"offset_mm": 4.0, "push_mm": (40.0, 70.0), "prepush_mm": (15.0, 25.0)}}
+PILOT_BASE = 980_200                  # pilot 3 (pilots 1-2: tall objects 70-110 mm high were swept by the hand -> ~40% always-harm)
 
 
 def sample_t2(seed):
