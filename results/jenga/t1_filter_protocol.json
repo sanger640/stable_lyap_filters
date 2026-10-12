@@ -11,5 +11,16 @@
     "engine": "same rule with the alarm 'topples in 2-62 of 64 truth_B futures' (independent draws, seed 20261303): a physics-engine filter with the true uncertainty model"
   },
   "metrics": "per group (forks / safe): mean topple probability for each policy (acting states; and counting abstentions as no topple), abstention count, number of changed actions, mean offset",
-  "reading": "descriptive; headline = topple probability on fork states: none vs ours vs engine, with abstention and deviation reported beside"
+  "reading": "descriptive; headline = topple probability on fork states: none vs ours vs engine, with abstention and deviation reported beside",
+  "addendum_v2": {
+    "date": "2026-10-12",
+    "status": "recorded before running (user: 'do 1 and 2')",
+    "basis": "v1: ours 32.1% -> 26.1% topple on 37 forks; engine filter 36.4% because 'no split' accepts actions whose futures all topple (10/37). Futures that agree are not necessarily safe; and a pure least-change rule would favour missed grasps",
+    "rule_v2": {
+      "ours": "among candidates the monitor does not flag, pick the one whose predicted hold-30 futures (mean of the 64) are closest to the centroid of the MAJORITY group of the intended action's own predicted futures (split-test groups at offset 0; if the intended action is not flagged it is executed as before); ties by smaller offset; abstain if all flagged",
+      "engine": "same structure with the truth_B futures: among candidates whose truth_B topple count is 0-1 or 63-64 (no split), keep those whose majority outcome (topple / stay) equals the intended action's truth_B majority; pick the smallest offset"
+    },
+    "task_deviation": "truth rollouts re-run with the same draws recording the target block's end position; deviation of a candidate = median over the 64 paired futures of the distance between its target end position and the intended action's (offset 0)",
+    "metrics": "as v1 plus median task deviation (mm) for the executed candidates, per policy; v1 policies re-reported beside"
+  }
 }
