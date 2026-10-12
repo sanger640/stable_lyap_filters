@@ -360,7 +360,7 @@ def visibility(sim):
 # ------------------------------------------------------------------------------------------- primitives
 def primitive_actions(sim, scene):
     """4-D commands (xyz, gripper +1 close / -1 open / 0 hold) for the scene's PICK or PUSH, randomised."""
-    a = dict(RANGES["action"], **RANGES.get(f"action_{scene['family']}", {}))
+    a = dict(RANGES["action"], **RANGES.get(f"action_{scene['family']}", {}), **scene.get("action_override", {}))
     rng = np.random.default_rng(scene["action_seed"])
     tgt = scene["objects"][0]
     pos = sim.object_state()[0, :3]
@@ -385,6 +385,8 @@ def primitive_actions(sim, scene):
         go(np.r_[above[:2], grasp_z + 0.08], 0.0)
     else:
         yaw = np.radians(rng.uniform(-a["push_yaw_deg"], a["push_yaw_deg"])) + rng.choice([0.0, np.pi / 2, -np.pi / 2])
+        if "push_yaw" in scene:                                 # T2 task: fixed nominal direction (random draws above kept)
+            yaw = scene["push_yaw"] + np.radians(rng.uniform(-scene["push_jitter_deg"], scene["push_jitter_deg"]))
         u = np.array([np.cos(yaw), np.sin(yaw)])               # push direction (0 = away from the robot, +x)
         reach = float(np.abs(half_extent(tgt)[:2]).max())
         pre = pos[:2] + off - u * (reach + rng.uniform(*a["prepush_mm"]) / 1000)
