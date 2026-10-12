@@ -237,5 +237,18 @@
     "training": "all arms fine-tune US2_long (seed 0, the 0.188 model) for 7,500 steps at batch 128, AdamW lr 1.5e-4 (fast recipe lr / 4) cosine, seed 0, same rare-mode rebalancing, Gauss-TE / rendered start mix, input noise and hold weights",
     "grading": "H2 with BOTH and own floor; 'set loss helps' if the better SL arm scores >= C0 + 0.10 (above the observed seed spread 0.09); panels only under the amendment-5 rule (>= 80% / <= 20% on H2)",
     "compute": "C0 on the 3090, SL_low then SL_high on the 5080"
+  },
+  "amendment_10": {
+    "date": "2026-10-12",
+    "status": "frozen before any code runs (user: 'build the hybrid model')",
+    "basis": "amendment 9 interim: the set-level loss spreads futures (0.29x -> 0.50x real) and catches more forks (36% -> 53%) but doubles false alarms (15% -> 33%); spread is not targeted at forks. Foresight Diffusion (Zhang et al., ICLR 2026) shows deterministic predictive streams should carry prediction while a generative stream adds variability; FlowWM (Porcher et al. 2026) shows feature-space flow matching needs a wide projection head and a noise-shifted timestep schedule",
+    "model": {
+      "predictive_stream": "US2_xlong (deterministic conv step model), frozen; for future k it rolls the TRUE start latent z0 with that future's executed actions and gives z_det at hold 10 and hold 30",
+      "generative_head": "conditional flow matching on the residual r = z_real - z_det at hold 10 and hold 30 (2 x 28x28x8): tokens = 196 locations (2x2 patches; noisy residual 64 dims + conditioning z0 32 + z_det 64 dims) -> linear to width 384; 4 DiT blocks, 6 heads, AdaLN-Zero on the flow time and the embedded 19-step action sequence; wide projection head (LayerNorm -> 1024 -> 1024 -> 64, GELU); linear path, velocity target r - noise; training times shifted toward noise with the Esser shift, alpha = 8",
+      "training": "Phase-2 training states, futures sampled with the label-free rare-mode rebalancing (50% rare mode / 50% sibling majority), batch 128, 20,000 steps, AdamW 3e-4 with 500 warm-up steps then cosine, weight decay 1e-4, seed 0, bf16",
+      "monitor": "per H2 state, 64 samples: z_det from the true start latent and executed chunk j, plus a residual sampled with 20 Euler steps on the shifted schedule (seed 20261250 + state index); BOTH readout on the 64 hold-10/hold-30 futures"
+    },
+    "grading": "H2 with BOTH; beside US2_xlong (0.266), US2_long seeds (0.188 / 0.276), C0 and SL arms; report spread ratio; 'hybrid helps' if score >= 0.276 + 0.05; panels only if >= 80% caught / <= 20% false on H2",
+    "compute": "3090 (free after C0)"
   }
 }
