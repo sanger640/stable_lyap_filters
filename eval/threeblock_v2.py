@@ -139,6 +139,13 @@ def stage_grade():
     res1e = json.loads((ROOT / "results/jenga/phase1e_result.json").read_text())
     us, tau = wm.WorldModel.load(ROOT / "results/program_b/phase1e/model_US.pt"), res1e["US"]["tau"]
     gop = sm.G.load(sm.DATA / "G.pt")
+    import phase2_hybrid as hy
+    hyb = None
+    hp = ROOT / "results/program_b/t1_hybrid/model_HYB_T1.pt"
+    if hp.exists():
+        s_ = torch.load(hp, map_location="cuda")
+        head = hy.build_head(s_["action_dim"]).cuda(); head.load_state_dict(s_["state_dict"]); head.eval(); us.net.eval()
+        hyb = (head, s_["residual_scale"], json.loads((ROOT / "results/jenga/hybrid_T1_result.json").read_text())["tau_H"])
     rows, unit = [], {"states": 0, "still_futures": 0, "still_with_event": 0, "states_with_still_event": 0}
     with torch.no_grad():
         for name in states():
@@ -157,12 +164,19 @@ def stage_grade():
             z0 = torch.as_tensor(f["z0"], device="cuda").float()
             e10, e30 = sm.roll(us, gop(z0[None].expand(64, -1, -1, -1), torch.as_tensor(d).float()), p1d.augment(f["actions"], None, False))
             real = f["z"].astype(np.float64).reshape(64, 2, -1)
+            extra = {}
+            if hyb is not None:
+                g = torch.Generator(device="cuda").manual_seed(hy.MONITOR_SEED + len(rows))
+                act = us._act(torch.as_tensor(p1d.augment(f["actions"], None, False), device="cuda"))
+                fut = hy.sample(hyb[0], us, z0[None].expand(64, -1, -1, -1).contiguous(), act, hyb[1], g)
+                h10 = fut[:, 0].reshape(64, -1).double().cpu().numpy(); h30 = fut[:, 1].reshape(64, -1).double().cpu().numpy()
+                extra = {"HYB_T1_BOTH": bool(alarm(h10, h30, "BOTH")), "HYB_T1_H30_floor": bool(alarm(h10, h30, "H30_floor", hyb[2]))}
             rows.append({"state": name, "at_rest": bool(f["at_rest"]), "harm": 2 <= k <= 62, "harm_safe": k == 0,
                          "any_fork": af, "any_safe": asafe, "old_harm_count": old_k, "new_harm_count": k,
                          "old_any_fork": labels(old_ev)[0], "scale_mean": float(f["scales"].mean()),
                          "alarms": {"real_futures": bool(alarm(real[:, 0], real[:, 1], "BOTH")),
                                     "US_BOTH": bool(alarm(e10, e30, "BOTH")),
-                                    "US_H30_floor": bool(alarm(e10, e30, "H30_floor", tau))}})
+                                    "US_H30_floor": bool(alarm(e10, e30, "H30_floor", tau)), **extra}})
             torch.cuda.empty_cache()
     keep = [r for r in rows if r["at_rest"]]
     out = {"unit_test_robot_still": unit, "states": len(rows), "not_at_rest_excluded": len(rows) - len(keep),
