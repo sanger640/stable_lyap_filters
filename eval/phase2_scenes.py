@@ -25,6 +25,9 @@ PALETTE = [(0.9, 0.1, 0.1), (0.8, 0.6, 0.4), (0.2, 0.5, 0.9), (0.2, 0.7, 0.3),
            (0.95, 0.8, 0.2), (0.6, 0.3, 0.7), (0.95, 0.5, 0.1), (0.3, 0.3, 0.3)]
 HOME_QPOS = "0 -0.93 0 -2.77 0 2.72 0.7853 0.04 0.04"
 HOME_CTRL = "0 -0.92 0 -2.77 0 2.72 0.7853 110"
+VALID_PERTURBATION = True    # data correction 2026-10-13 (see Phase2Sim.perturb); False reproduces older data
+HOLD_CHECK_STEPS = 38        # stability check horizon (control steps) for valid perturbations
+REST_MOVE_MM, REST_TILT_DEG = 10.0, 10.0   # a chunk start is 'at rest' if the unperturbed scene, robot holding, stays within these
 PILOT = {"seed_base": 990_000, "scenes": 30, "futures": 8}
 RANGES = {   # amendment 1; the pilot may adjust only the action ranges ("action") and family sizes
     "box_half": ((0.008, 0.016), (0.008, 0.014), (0.020, 0.045)),
@@ -283,15 +286,76 @@ class Phase2Sim(_base()):
         return np.concatenate([self.data.xpos[self.tracked_block_ids], self.data.xquat[self.tracked_block_ids]], 1)
 
     def perturb(self, position, rotation):
-        """Per-object pose noise on every object's free joint (position (N,3) m, rotation (N,3) rad)."""
+        """Perception-error pose noise on every object. With VALID_PERTURBATION (default, data correction
+        2026-10-13) the noise is planar (x, y, yaw) and is shrunk (x1, 0.75, 0.5, 0.25, 0) until the perturbed scene
+        is physically valid and at rest like the observed one: no new overlap beyond 0.5 mm and, over the full 3.8 s
+        horizon with the robot holding its target, no object moving more than 5 mm (or tilting more than 5 deg) beyond
+        what the unperturbed scene does. Without the flag: the
+        original full 6-D noise (reproduces data generated before 2026-10-13)."""
+        if not VALID_PERTURBATION:
+            return self._apply(position, rotation, planar=False)
+        base = self.snapshot()
+        pen0 = self._penetration()
+        move0, tilt0 = self._hold_motion(HOLD_CHECK_STEPS)
+        self.restore(base)
+        for scale in (1.0, 0.75, 0.5, 0.25, 0.0):
+            self.restore(base)
+            if scale > 0:
+                self._apply(position * scale, rotation * scale, planar=True)
+            if scale == 0.0:
+                self.last_perturb_scale = 0.0
+                return
+            if self._penetration() > pen0 + 0.0005:
+                continue
+            after = self.snapshot()
+            move, tilt = self._hold_motion(HOLD_CHECK_STEPS)
+            self.restore(after)
+            if np.all(move <= move0 + 0.005) and np.all(tilt <= tilt0 + 5.0):
+                self.last_perturb_scale = scale
+                return
+
+    def _apply(self, position, rotation, planar):
         from scipy.spatial.transform import Rotation
         d = self.data
         for k, adr in enumerate(self.qadr):
-            d.qpos[adr:adr + 3] += position[k]
+            dp = np.array(position[k], float)
+            rv = np.array(rotation[k], float)
+            if planar:
+                dp[2] = 0.0; rv = np.array([0.0, 0.0, rv[2]])
+            d.qpos[adr:adr + 3] += dp
             w, x, y, z = d.qpos[adr + 3:adr + 7]
-            q = (Rotation.from_rotvec(rotation[k]) * Rotation.from_quat([x, y, z, w])).as_quat()
+            q = (Rotation.from_rotvec(rv) * Rotation.from_quat([x, y, z, w])).as_quat()
             d.qpos[adr + 3:adr + 7] = [q[3], q[0], q[1], q[2]]
         self.mj.mj_forward(self.model, d)
+
+    def _penetration(self):
+        """Deepest overlap (m) of any contact involving an object."""
+        ids = set(self.tracked_block_ids)
+        deep = 0.0
+        for c in self.data.contact[:self.data.ncon]:
+            if int(self.model.geom_bodyid[c.geom1]) in ids or int(self.model.geom_bodyid[c.geom2]) in ids:
+                deep = max(deep, -float(c.dist))
+        return deep
+
+    def _hold_motion(self, steps=5):
+        """Per-object displacement (m) and tilt change (deg) over `steps` control steps holding the robot target."""
+        s0 = self.object_state()
+        hold = np.r_[self.target, 0.0]
+        for _ in range(steps):
+            self.execute(hold)
+        s1 = self.object_state()
+        return (np.linalg.norm(s1[:, :3] - s0[:, :3], axis=1),
+                np.abs(tilt_deg(s1[:, 3:]) - tilt_deg(s0[:, 3:])))
+
+
+def at_rest(sim):
+    """True if, with the robot holding its target for the full horizon, no NON-TARGET object of the UNPERTURBED scene moves more
+    than REST_MOVE_MM or tilts more than REST_TILT_DEG (otherwise motion is ongoing and forks cannot be attributed to
+    the next action). Leaves the simulator state unchanged."""
+    snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
+    move, tilt = sim._hold_motion(HOLD_CHECK_STEPS)
+    sim.restore(snap); sim.data.qacc_warmstart[:] = warm
+    return bool(np.all(move[1:] * 1000 <= REST_MOVE_MM) and np.all(tilt[1:] <= REST_TILT_DEG))   # non-target objects
 
 
 def settle(sim, family):
