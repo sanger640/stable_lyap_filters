@@ -295,8 +295,12 @@ class Phase2Sim(_base()):
         if not VALID_PERTURBATION:
             return self._apply(position, rotation, planar=False)
         base = self.snapshot()
-        pen0 = self._penetration()
-        move0, tilt0 = self._hold_motion(HOLD_CHECK_STEPS)
+        key = hash(base[0].tobytes())                         # the unperturbed scene is shared by all its futures
+        if getattr(self, "_base_key", None) != key:
+            pen0 = self._penetration()
+            move0, tilt0 = self._hold_motion(HOLD_CHECK_STEPS)
+            self._base_key, self._base_check = key, (pen0, move0, tilt0)
+        pen0, move0, tilt0 = self._base_check
         self.restore(base)
         for scale in (1.0, 0.75, 0.5, 0.25, 0.0):
             self.restore(base)
@@ -308,7 +312,7 @@ class Phase2Sim(_base()):
             if self._penetration() > pen0 + 0.0005:
                 continue
             after = self.snapshot()
-            move, tilt = self._hold_motion(HOLD_CHECK_STEPS)
+            move, tilt = self._hold_motion(HOLD_CHECK_STEPS, limit=(move0 + 0.005, tilt0 + 5.0))
             self.restore(after)
             if np.all(move <= move0 + 0.005) and np.all(tilt <= tilt0 + 5.0):
                 self.last_perturb_scale = scale
@@ -337,12 +341,19 @@ class Phase2Sim(_base()):
                 deep = max(deep, -float(c.dist))
         return deep
 
-    def _hold_motion(self, steps=5):
-        """Per-object displacement (m) and tilt change (deg) over `steps` control steps holding the robot target."""
+    def _hold_motion(self, steps=5, limit=None):
+        """Per-object displacement (m) and tilt change (deg) over `steps` control steps holding the robot target;
+        with `limit` (per-object move, tilt bounds) it stops early once an object is 20 mm / 20 deg beyond a bound (an
+        object that far gone does not come back, so the draw is rejected either way)."""
         s0 = self.object_state()
         hold = np.r_[self.target, 0.0]
-        for _ in range(steps):
+        for i in range(steps):
             self.execute(hold)
+            if limit is not None and i % 5 == 4:
+                s1 = self.object_state()
+                m = np.linalg.norm(s1[:, :3] - s0[:, :3], axis=1); t = np.abs(tilt_deg(s1[:, 3:]) - tilt_deg(s0[:, 3:]))
+                if np.any(m > limit[0] + 0.02) or np.any(t > limit[1] + 20.0):   # far beyond: will not come back
+                    return m, t
         s1 = self.object_state()
         return (np.linalg.norm(s1[:, :3] - s0[:, :3], axis=1),
                 np.abs(tilt_deg(s1[:, 3:]) - tilt_deg(s0[:, 3:])))
@@ -504,6 +515,24 @@ def future(sim, snapshot, chunk, noise, error, hold=30):
     for act in list(acts) + [chunk[-1]] * hold:
         sim.execute(act); out.append(sim.object_state())
     return np.stack(out)
+
+
+def events(trace, start):
+    """Any-outcome events (primary label from 2026-10-13): trace (T, N, 7), start (N, 7) -> (N, 3) bool per object
+    INCLUDING the target: tilt change >= 45 deg, off the table top, centre moved >= 30 mm (end of the hold)."""
+    end = trace[-1]
+    tilt = np.abs(tilt_deg(end[:, 3:]) - tilt_deg(start[:, 3:])) >= 45.0
+    off = (end[:, 0] < TABLE_X[0]) | (end[:, 0] > TABLE_X[1]) | (end[:, 1] < TABLE_Y[0]) | (end[:, 1] > TABLE_Y[1]) \
+        | (end[:, 2] < TABLE_TOP - 0.01)
+    moved = np.linalg.norm(end[:, :3] - start[:, :3], axis=1) >= 0.030
+    return np.stack([tilt, off, moved], 1)
+
+
+def split_count(event_list):
+    """Futures' event arrays -> count of the most split (object, event) cell: the one maximising min(c, K - c).
+    Any-outcome fork iff 2 <= c <= K - 2; safe iff c in {0, K}."""
+    cnt = np.sum(event_list, 0).ravel(); k = len(event_list)
+    return int(cnt[np.argmax(np.minimum(cnt, k - cnt))])
 
 
 def harm(trace, start):

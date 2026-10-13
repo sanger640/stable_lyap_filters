@@ -1,16 +1,37 @@
 {
-  "id": "t2-push-monitor",
-  "status": "frozen 2026-10-12 before any T2 data (user: 'do 1 and 2'; paper experiment E4)",
-  "task": "T2: push a box (+y, small jitter) past one or two tall, narrow cylinders (40-60 mm high, 0-20 mm clearance); fixed task structure, randomised sizes/poses/masses/friction (eval/t2_push.py, pilot 3: fork rate 17%, always-harm 15%)",
-  "fork_label": "harm (any non-target object tilts >= 45 deg, leaves the table, or moves >= 30 mm) in 2-62 of 64 oracle futures; any-outcome label reported beside",
-  "training_data": "scene seeds 0-2999 screened with 8 futures per chunk start (as eval/phase2_data.py, family code 4); 4,800 states: harm-disagreeing up to 2,400 + others (select seed 20261320); 16/8 futures",
-  "selection_set_H_T2": "scene seeds 500000-500799, 64 oracle futures per chunk start (seed 20261212, family code 4); 80 forks + 80 safe (seed 20261321)",
-  "model": "US recipe at the US2_long budget: deterministic conv step model, label-free rare-mode rebalancing, Gauss-TE starts fitted on T2 deltas, 22,500 steps, seed 0 (US2_long code path with T2 data)",
-  "grading": "H_T2 with the BOTH readout (primary) and hold-30 + floor (descriptive); score = caught - false; a fresh T2 panel and a T2 filter follow in a later addendum if H_T2 reaches >= 80% / <= 20%",
-  "compute": "3090 machine (CPU screening, GPU encoding pools never alongside another GPU job)",
-  "label_decision_2026_10_13": {
-    "date": "2026-10-13",
-    "status": "user decision (\"include any outcome as part of 'unsafe' behavior\"), recorded before re-grading",
-    "label": "primary fork label from now on = any-outcome fork: some object (target included) tilts >= 45 deg, leaves the table, or moves >= 30 mm in 2-62 of 64 true futures; safe = no such event varies (0 or 64); states with an event in exactly 1 or 63 futures are excluded. The harm (neighbour-only) label is reported beside. Earlier frozen verdicts stay as recorded under their original label"
-  }
+ "id": "t2-push-monitor",
+ "status": "frozen 2026-10-12 before any T2 data (user: 'do 1 and 2'; paper experiment E4)",
+ "task": "T2: push a box (+y, small jitter) past one or two tall, narrow cylinders (40-60 mm high, 0-20 mm clearance); fixed task structure, randomised sizes/poses/masses/friction (eval/t2_push.py, pilot 3: fork rate 17%, always-harm 15%)",
+ "fork_label": "harm (any non-target object tilts >= 45 deg, leaves the table, or moves >= 30 mm) in 2-62 of 64 oracle futures; any-outcome label reported beside",
+ "training_data": "scene seeds 0-2999 screened with 8 futures per chunk start (as eval/phase2_data.py, family code 4); 4,800 states: harm-disagreeing up to 2,400 + others (select seed 20261320); 16/8 futures",
+ "selection_set_H_T2": "scene seeds 500000-500799, 64 oracle futures per chunk start (seed 20261212, family code 4); 80 forks + 80 safe (seed 20261321)",
+ "model": "US recipe at the US2_long budget: deterministic conv step model, label-free rare-mode rebalancing, Gauss-TE starts fitted on T2 deltas, 22,500 steps, seed 0 (US2_long code path with T2 data)",
+ "grading": "H_T2 with the BOTH readout (primary) and hold-30 + floor (descriptive); score = caught - false; a fresh T2 panel and a T2 filter follow in a later addendum if H_T2 reaches >= 80% / <= 20%",
+ "compute": "3090 machine (CPU screening, GPU encoding pools never alongside another GPU job)",
+ "label_decision_2026_10_13": {
+  "date": "2026-10-13",
+  "status": "user decision (\"include any outcome as part of 'unsafe' behavior\"), recorded before re-grading",
+  "label": "primary fork label from now on = any-outcome fork: some object (target included) tilts >= 45 deg, leaves the table, or moves >= 30 mm in 2-62 of 64 true futures; safe = no such event varies (0 or 64); states with an event in exactly 1 or 63 futures are excluded. The harm (neighbour-only) label is reported beside. Earlier frozen verdicts stay as recorded under their original label"
+ },
+ "data_correction_2026_10_13": {
+  "date": "2026-10-13",
+  "status": "frozen (user approved: 'yes start the regeneration'; scope narrowed by user to the three-block task and T2)",
+  "finding": "Perception-error perturbations were applied as full 6-D pose noise without settling: objects interpenetrated (median 2-4 mm) and some fell or were ejected with the robot holding still (21/30 sampled varied-scene forks; 3/25 three-block states). See results/jenga/perturbation_artifact_check*.json.",
+  "correction": {
+   "perturbation": "planar (x, y, yaw) noise, shrunk x1/0.75/0.5/0.25/0 until no new overlap > 0.5 mm and, over the 3.8 s horizon with the robot holding, no object moves > 5 mm or tilts > 5 deg beyond the unperturbed scene; the applied (scaled) error is recorded and is what the start sampler receives",
+   "at_rest": "a chunk start is excluded if, unperturbed and with the robot holding, a non-target object moves > 10 mm or tilts > 10 deg over the horizon",
+   "label": "any-outcome primary (label_decision_2026_10_13), harm beside",
+   "unit_test": "before any regenerated data is used: robot-still futures from perturbed starts must show (near) zero events; a verification video is shown to the user"
+  },
+  "unchanged": "scene/episode seeds, futures seeds, snippet rules, chunk starts, frame indices, models and readouts",
+  "outputs": {
+   "three_block_H": "results/program_b/phase1/h_v2 (old h/ kept)",
+   "T2": "results/program_b/t2_v2 (old t2/ kept)"
+  },
+  "order": [
+   "three-block H re-label and re-grade of existing monitors (US BOTH, US H30_floor, hybrid T1)",
+   "T2 data + H_T2 regeneration, retrain US_T2 and the T2 hybrid",
+   "varied scenes (F1/F2), joint model: parked"
+  ]
+ }
 }

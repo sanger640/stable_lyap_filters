@@ -1,54 +1,75 @@
 {
-  "id": "branching-wm-phase1e-label-free-rebalancing",
-  "status": "frozen before execution (redrafted 2026-10-08; user: 'sure go ahead'; frozen before mode detection or any Phase-1e training)",
-  "question": "Can the training rebalancing that lifted the monitor (arm R) be done WITHOUT task labels or simulator state, by oversampling the rare outcome mode found by the goal-free split test on each training state's own real futures?",
-  "basis": "Phase 1d: arm R (50% toppling futures per batch, chosen with Jenga topple labels) 74.7% / 4.7% on H, 79.1% / 7.5% on fresh panel 7, vs cell E 69.3% / 8.2% and 71.6% / 7.5%. The monitor is label-free at run time, but R's training used a task-specific label; this protocol tests a task-agnostic replacement.",
-  "mode_detection": "for every training state (Phase-1 enriched data: 4,766 states, 8 or 16 real futures each), apply the unchanged split test (persistent_mode_alarm) to the real futures' latents at hold 10 and hold 30. If it alarms, the smaller hold-30 group is the state's RARE MODE and the other futures its MAJORITY MODE; otherwise all futures are 'no split'. Uses only image latents: no topple label, no block state, no task knowledge. Topple labels are used afterwards ONLY to report how rare modes relate to topples (descriptive).",
-  "base_recipe": "cell E exactly (30,000 steps, seed 0), differing only in how futures are sampled into batches",
-  "arms": {
-    "U_unsupervised": "50% of every batch drawn uniformly from rare-mode futures, 50% uniformly from all other futures (majority and no-split)",
-    "US_siblings": "50% rare-mode futures; the other 50% drawn from the majority mode of states that have a rare mode (the sibling branch of the same start)"
+ "id": "branching-wm-phase1e-label-free-rebalancing",
+ "status": "frozen before execution (redrafted 2026-10-08; user: 'sure go ahead'; frozen before mode detection or any Phase-1e training)",
+ "question": "Can the training rebalancing that lifted the monitor (arm R) be done WITHOUT task labels or simulator state, by oversampling the rare outcome mode found by the goal-free split test on each training state's own real futures?",
+ "basis": "Phase 1d: arm R (50% toppling futures per batch, chosen with Jenga topple labels) 74.7% / 4.7% on H, 79.1% / 7.5% on fresh panel 7, vs cell E 69.3% / 8.2% and 71.6% / 7.5%. The monitor is label-free at run time, but R's training used a task-specific label; this protocol tests a task-agnostic replacement.",
+ "mode_detection": "for every training state (Phase-1 enriched data: 4,766 states, 8 or 16 real futures each), apply the unchanged split test (persistent_mode_alarm) to the real futures' latents at hold 10 and hold 30. If it alarms, the smaller hold-30 group is the state's RARE MODE and the other futures its MAJORITY MODE; otherwise all futures are 'no split'. Uses only image latents: no topple label, no block state, no task knowledge. Topple labels are used afterwards ONLY to report how rare modes relate to topples (descriptive).",
+ "base_recipe": "cell E exactly (30,000 steps, seed 0), differing only in how futures are sampled into batches",
+ "arms": {
+  "U_unsupervised": "50% of every batch drawn uniformly from rare-mode futures, 50% uniformly from all other futures (majority and no-split)",
+  "US_siblings": "50% rare-mode futures; the other 50% drawn from the majority mode of states that have a rare mode (the sibling branch of the same start)"
+ },
+ "references": "cell E (no rebalancing) and arm R (label-based rebalancing), both already evaluated through the same code path",
+ "evaluation_on_H": "as Phase 1d: R0 and R1 (each model's own validation-error floor), lean/contact catch rates (frozen 10-deg rule; reporting only), side agreement",
+ "selection_rule": "rank U and US by (forks caught - false alarms) under R0 on H; report beside E and R",
+ "held_out_check": "the better of U and US on panel 7, graded as Phase 1d addendum 1 (descriptive; panel 7 does not choose between arms)",
+ "success_reading": "U or US 'matches R' if its H score (caught - false) is within 0.03 of R's (0.700); then the rebalancing result can be stated as task-agnostic",
+ "gate_for_panel_6": "unchanged: >= 80% of H forks caught with <= 20% false alarms (R0); a fresh panel 6 would be generated only after asking",
+ "out_of_scope": "the fork-rich DATA SELECTION behind cell E (screened with topple counts) is also label-based; a label-free version (screen scenes whose real futures split) is a separate, later protocol",
+ "budget": "mode detection ~10 min; U and US ~2.5 h each, one at a time; evaluation minutes",
+ "amendment_1": {
+  "date": "2026-10-08",
+  "status": "recorded before any Phase-1e model finished (the first U run was stopped at step ~2,000 at the user's request: 'stop it and do option 1 and 2 and 4 and then start training'; its partial model was deleted)",
+  "recipe_change": "eval/fast_train.py: data packed on the GPU (option 1), torch.compile on the network (option 2), batch 128 x 7,500 steps (same 960,000 samples as 32 x 30,000) with learning rate x2 (sqrt scaling) (option 4); per-step gradient checkpointing (memory only). Model, loss, start mixing, input noise and hold weighting unchanged",
+  "arms": "U and US as frozen, plus R_fast = arm R's label-based rebalancing retrained with the same fast recipe, as the like-for-like reference (the comparison U/US vs R uses R_fast; Phase-1d R and cell E are reported beside, marked 'old recipe')",
+  "rules_adapted": "under-training rule on the last 10% vs the previous 10% of steps; the 0.03 'matches R' margin now refers to R_fast; everything else unchanged",
+  "benchmark": "60-step test: 0.78 s per 128-sample step compiled (about 1.2x the old throughput; the GPU is compute-bound)"
+ },
+ "addendum_1": {
+  "date": "2026-10-08",
+  "status": "recorded before running (user: 'do r_fast and at the same time do panel-7 check'); R_fast still training",
+  "what": "held-out check of US on panel 7. US is the better of U and US on H under the frozen selection rule (R0 caught - false: US 0.672, U 0.639); the choice does not depend on R_fast. Same grading as eval/phase1d_panel7.py (G starts from independent monitor draws, seed 20261112; R0 and R1 with US's own floor 0.3646; frozen 10-deg lean/contact rule). Cell E re-run through the same code path as a reproducibility check against its stored panel-7 numbers; R's stored panel-7 numbers (old recipe) reported beside.",
+  "status_of_result": "descriptive held-out evidence; does not choose between arms. Panel 6 is not generated without asking the user."
+ },
+ "addendum_2": {
+  "date": "2026-10-08",
+  "status": "recorded before panel 6 is generated (user: 'sure' to generating panel 6 after US passed the H gate, 81.3/14.1, and held up on panel 7, 82.1/8.6)",
+  "panel_6": "generated as specified in results/jenga/phase1b_branching_protocol.json (reset +10000, 80 episodes, selection seed 20261090, selection as panels 1-5: forks 2-62/64 up to 60, safe 0/64 up to 100) with eval/step3b_panel5.py unchanged except constants; draw seeds monitor_d 20261092, truth_A 20261094, truth_B 20261095, hat 20261096. Never used before for training, selection or any check",
+  "graded": "US (the Phase-1e arm selected on H; primary), R0 and R1 with US's floor 0.3646; beside it: cell E and R_fast (same code path, their own floors), the exact-start MuJoCo probe and the second oracle run (truth_B) as references. Monitor draws independent of truth draws (deployable setting), lean/contact by the frozen 10-deg rule",
+  "gates": "panel-6 gates (phase1 protocol): forks caught >= 80% AND false alarms <= 20% (R0) for US; R1 reported beside",
+  "grading_waits_for": "R_fast to finish and be scored on H, so all three models are graded in one pass"
+ },
+ "addendum_3": {
+  "date": "2026-10-11",
+  "status": "recorded before running (user: 'go ahead with 1 and 3')",
+  "why": "Phase 2 amendment 4's guard on the 3-block H found, post hoc, that US with the 'hold-30 two-group test + model-error floor' readout (H30_floor) scores 86.7% / 5.9% (0.808) and BOTH 88.0% / 16.5% (0.715), vs the frozen persistent test P 81.3% / 14.1% (0.672)",
+  "what": "held-out check of the readouts on panels 7 and 6 (fresh; never used to choose a readout): US and cell E with the same G starts and seeds as addenda 1-2; readouts P, BOTH, H30, H30_floor (floor = each model's validation floor: US 0.3646, E 0.3108); references on panel 6: exact-start MuJoCo probe and second oracle run (stored)",
+  "confirmation_rule": "H30_floor is 'confirmed better than P' for US if on BOTH panels its score (caught - false) >= P's score + 0.03; otherwise reported as not confirmed. Descriptive for E and the other readouts"
+ },
+ "label_decision_2026_10_13": {
+  "date": "2026-10-13",
+  "status": "user decision (\"include any outcome as part of 'unsafe' behavior\"), recorded before re-grading",
+  "label": "primary fork label from now on = any-outcome fork: some object (target included) tilts >= 45 deg, leaves the table, or moves >= 30 mm in 2-62 of 64 true futures; safe = no such event varies (0 or 64); states with an event in exactly 1 or 63 futures are excluded. The harm (neighbour-only) label is reported beside. Earlier frozen verdicts stay as recorded under their original label"
+ },
+ "data_correction_2026_10_13": {
+  "date": "2026-10-13",
+  "status": "frozen (user approved: 'yes start the regeneration'; scope narrowed by user to the three-block task and T2)",
+  "finding": "Perception-error perturbations were applied as full 6-D pose noise without settling: objects interpenetrated (median 2-4 mm) and some fell or were ejected with the robot holding still (21/30 sampled varied-scene forks; 3/25 three-block states). See results/jenga/perturbation_artifact_check*.json.",
+  "correction": {
+   "perturbation": "planar (x, y, yaw) noise, shrunk x1/0.75/0.5/0.25/0 until no new overlap > 0.5 mm and, over the 3.8 s horizon with the robot holding, no object moves > 5 mm or tilts > 5 deg beyond the unperturbed scene; the applied (scaled) error is recorded and is what the start sampler receives",
+   "at_rest": "a chunk start is excluded if, unperturbed and with the robot holding, a non-target object moves > 10 mm or tilts > 10 deg over the horizon",
+   "label": "any-outcome primary (label_decision_2026_10_13), harm beside",
+   "unit_test": "before any regenerated data is used: robot-still futures from perturbed starts must show (near) zero events; a verification video is shown to the user"
   },
-  "references": "cell E (no rebalancing) and arm R (label-based rebalancing), both already evaluated through the same code path",
-  "evaluation_on_H": "as Phase 1d: R0 and R1 (each model's own validation-error floor), lean/contact catch rates (frozen 10-deg rule; reporting only), side agreement",
-  "selection_rule": "rank U and US by (forks caught - false alarms) under R0 on H; report beside E and R",
-  "held_out_check": "the better of U and US on panel 7, graded as Phase 1d addendum 1 (descriptive; panel 7 does not choose between arms)",
-  "success_reading": "U or US 'matches R' if its H score (caught - false) is within 0.03 of R's (0.700); then the rebalancing result can be stated as task-agnostic",
-  "gate_for_panel_6": "unchanged: >= 80% of H forks caught with <= 20% false alarms (R0); a fresh panel 6 would be generated only after asking",
-  "out_of_scope": "the fork-rich DATA SELECTION behind cell E (screened with topple counts) is also label-based; a label-free version (screen scenes whose real futures split) is a separate, later protocol",
-  "budget": "mode detection ~10 min; U and US ~2.5 h each, one at a time; evaluation minutes",
-  "amendment_1": {
-    "date": "2026-10-08",
-    "status": "recorded before any Phase-1e model finished (the first U run was stopped at step ~2,000 at the user's request: 'stop it and do option 1 and 2 and 4 and then start training'; its partial model was deleted)",
-    "recipe_change": "eval/fast_train.py: data packed on the GPU (option 1), torch.compile on the network (option 2), batch 128 x 7,500 steps (same 960,000 samples as 32 x 30,000) with learning rate x2 (sqrt scaling) (option 4); per-step gradient checkpointing (memory only). Model, loss, start mixing, input noise and hold weighting unchanged",
-    "arms": "U and US as frozen, plus R_fast = arm R's label-based rebalancing retrained with the same fast recipe, as the like-for-like reference (the comparison U/US vs R uses R_fast; Phase-1d R and cell E are reported beside, marked 'old recipe')",
-    "rules_adapted": "under-training rule on the last 10% vs the previous 10% of steps; the 0.03 'matches R' margin now refers to R_fast; everything else unchanged",
-    "benchmark": "60-step test: 0.78 s per 128-sample step compiled (about 1.2x the old throughput; the GPU is compute-bound)"
+  "unchanged": "scene/episode seeds, futures seeds, snippet rules, chunk starts, frame indices, models and readouts",
+  "outputs": {
+   "three_block_H": "results/program_b/phase1/h_v2 (old h/ kept)",
+   "T2": "results/program_b/t2_v2 (old t2/ kept)"
   },
-  "addendum_1": {
-    "date": "2026-10-08",
-    "status": "recorded before running (user: 'do r_fast and at the same time do panel-7 check'); R_fast still training",
-    "what": "held-out check of US on panel 7. US is the better of U and US on H under the frozen selection rule (R0 caught - false: US 0.672, U 0.639); the choice does not depend on R_fast. Same grading as eval/phase1d_panel7.py (G starts from independent monitor draws, seed 20261112; R0 and R1 with US's own floor 0.3646; frozen 10-deg lean/contact rule). Cell E re-run through the same code path as a reproducibility check against its stored panel-7 numbers; R's stored panel-7 numbers (old recipe) reported beside.",
-    "status_of_result": "descriptive held-out evidence; does not choose between arms. Panel 6 is not generated without asking the user."
-  },
-  "addendum_2": {
-    "date": "2026-10-08",
-    "status": "recorded before panel 6 is generated (user: 'sure' to generating panel 6 after US passed the H gate, 81.3/14.1, and held up on panel 7, 82.1/8.6)",
-    "panel_6": "generated as specified in results/jenga/phase1b_branching_protocol.json (reset +10000, 80 episodes, selection seed 20261090, selection as panels 1-5: forks 2-62/64 up to 60, safe 0/64 up to 100) with eval/step3b_panel5.py unchanged except constants; draw seeds monitor_d 20261092, truth_A 20261094, truth_B 20261095, hat 20261096. Never used before for training, selection or any check",
-    "graded": "US (the Phase-1e arm selected on H; primary), R0 and R1 with US's floor 0.3646; beside it: cell E and R_fast (same code path, their own floors), the exact-start MuJoCo probe and the second oracle run (truth_B) as references. Monitor draws independent of truth draws (deployable setting), lean/contact by the frozen 10-deg rule",
-    "gates": "panel-6 gates (phase1 protocol): forks caught >= 80% AND false alarms <= 20% (R0) for US; R1 reported beside",
-    "grading_waits_for": "R_fast to finish and be scored on H, so all three models are graded in one pass"
-  },
-  "addendum_3": {
-    "date": "2026-10-11",
-    "status": "recorded before running (user: 'go ahead with 1 and 3')",
-    "why": "Phase 2 amendment 4's guard on the 3-block H found, post hoc, that US with the 'hold-30 two-group test + model-error floor' readout (H30_floor) scores 86.7% / 5.9% (0.808) and BOTH 88.0% / 16.5% (0.715), vs the frozen persistent test P 81.3% / 14.1% (0.672)",
-    "what": "held-out check of the readouts on panels 7 and 6 (fresh; never used to choose a readout): US and cell E with the same G starts and seeds as addenda 1-2; readouts P, BOTH, H30, H30_floor (floor = each model's validation floor: US 0.3646, E 0.3108); references on panel 6: exact-start MuJoCo probe and second oracle run (stored)",
-    "confirmation_rule": "H30_floor is 'confirmed better than P' for US if on BOTH panels its score (caught - false) >= P's score + 0.03; otherwise reported as not confirmed. Descriptive for E and the other readouts"
-  },
-  "label_decision_2026_10_13": {
-    "date": "2026-10-13",
-    "status": "user decision (\"include any outcome as part of 'unsafe' behavior\"), recorded before re-grading",
-    "label": "primary fork label from now on = any-outcome fork: some object (target included) tilts >= 45 deg, leaves the table, or moves >= 30 mm in 2-62 of 64 true futures; safe = no such event varies (0 or 64); states with an event in exactly 1 or 63 futures are excluded. The harm (neighbour-only) label is reported beside. Earlier frozen verdicts stay as recorded under their original label"
-  }
+  "order": [
+   "three-block H re-label and re-grade of existing monitors (US BOTH, US H30_floor, hybrid T1)",
+   "T2 data + H_T2 regeneration, retrain US_T2 and the T2 hybrid",
+   "varied scenes (F1/F2), joint model: parked"
+  ]
+ }
 }

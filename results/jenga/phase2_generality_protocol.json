@@ -1,303 +1,324 @@
 {
-  "id": "branching-wm-phase2-generality",
-  "status": "design decisions fixed (user 2026-10-08: 'go ahead with your recommendations for p 2'); stage P2-0 frozen below; the scene generator and panels are frozen in a later amendment before any Phase-2 scene data is generated",
-  "question": "Does the image-only fork monitor (DINOv2 latent -> learned dynamics -> 64 futures -> goal-free split test) catch forks on scene TYPES it was never trained on, with an uncertainty model that knows nothing about the objects?",
-  "why": "The task-agnostic claim has only been tested on one scene (three upright blocks, pick the middle one). The G operator injects perception error as pose noise on exactly three named blocks, which cannot exist for an arbitrary scene.",
-  "scenes": {
-    "generator": "procedural MJCF scenes on the existing Panda table (vendor/panda_express_sim): 2-6 free objects; shapes box / cylinder / slab with sampled sizes, masses, friction; random layouts with a reachable target",
-    "families": {
-      "F1_rows": "rows of upright objects with gaps 0-15 mm (generalises the 3-block task)",
-      "F2_stacks": "2-3 object stacks, target on top or at the bottom",
-      "F3_leaning": "one object leaning on another or on a wall",
-      "F4_clutter": "loose clutter, objects touching at random"
-    },
-    "actions": "scripted pick and push primitives toward the target (approach, descend, grasp/push, lift/hold) with randomised offsets, so each chunk start has a nominal 8-step chunk; bench execution-noise snippets as now",
-    "OPEN_1": "which families to build first (proposal: F1 + F2 for training, F3 held out; F4 later)"
+ "id": "branching-wm-phase2-generality",
+ "status": "design decisions fixed (user 2026-10-08: 'go ahead with your recommendations for p 2'); stage P2-0 frozen below; the scene generator and panels are frozen in a later amendment before any Phase-2 scene data is generated",
+ "question": "Does the image-only fork monitor (DINOv2 latent -> learned dynamics -> 64 futures -> goal-free split test) catch forks on scene TYPES it was never trained on, with an uncertainty model that knows nothing about the objects?",
+ "why": "The task-agnostic claim has only been tested on one scene (three upright blocks, pick the middle one). The G operator injects perception error as pose noise on exactly three named blocks, which cannot exist for an arbitrary scene.",
+ "scenes": {
+  "generator": "procedural MJCF scenes on the existing Panda table (vendor/panda_express_sim): 2-6 free objects; shapes box / cylinder / slab with sampled sizes, masses, friction; random layouts with a reachable target",
+  "families": {
+   "F1_rows": "rows of upright objects with gaps 0-15 mm (generalises the 3-block task)",
+   "F2_stacks": "2-3 object stacks, target on top or at the bottom",
+   "F3_leaning": "one object leaning on another or on a wall",
+   "F4_clutter": "loose clutter, objects touching at random"
   },
-  "fork_label_for_grading_only": "generic harm event in 2-62 of 64 oracle futures: any NON-target object tilts >= 45 deg, falls off the table, or moves >= 30 mm (OPEN_2: thresholds). Oracle futures from the true state + perception draws on every object's pose + execution snippets, as now.",
-  "object_free_uncertainty": {
-    "problem": "G(z0, d) needs d = per-block pose noise for 3 known blocks",
-    "proposal": "G* : (z0, eps) -> perturbed start latent, eps ~ N(0, I) of fixed size, trained on (true-state latent, rendered perturbed-start latent) pairs with an energy-score / set loss so that its 64 samples match the spread of 64 real perturbed renders; at run time only the image latent and noise go in (no object count, poses or names). Perception error during training data generation is still applied per object in the simulator (that is how the real spread is produced).",
-    "check": "on the 3-block task, G* in place of G must keep US within 0.03 of its H score before Phase 2 uses it (a separate pre-test, P2-0)",
-    "OPEN_3": "alternative: noise directly in latent space scaled by measured per-location latent error (cheaper, cruder)"
+  "actions": "scripted pick and push primitives toward the target (approach, descend, grasp/push, lift/hold) with randomised offsets, so each chunk start has a nominal 8-step chunk; bench execution-noise snippets as now",
+  "OPEN_1": "which families to build first (proposal: F1 + F2 for training, F3 held out; F4 later)"
+ },
+ "fork_label_for_grading_only": "generic harm event in 2-62 of 64 oracle futures: any NON-target object tilts >= 45 deg, falls off the table, or moves >= 30 mm (OPEN_2: thresholds). Oracle futures from the true state + perception draws on every object's pose + execution snippets, as now.",
+ "object_free_uncertainty": {
+  "problem": "G(z0, d) needs d = per-block pose noise for 3 known blocks",
+  "proposal": "G* : (z0, eps) -> perturbed start latent, eps ~ N(0, I) of fixed size, trained on (true-state latent, rendered perturbed-start latent) pairs with an energy-score / set loss so that its 64 samples match the spread of 64 real perturbed renders; at run time only the image latent and noise go in (no object count, poses or names). Perception error during training data generation is still applied per object in the simulator (that is how the real spread is produced).",
+  "check": "on the 3-block task, G* in place of G must keep US within 0.03 of its H score before Phase 2 uses it (a separate pre-test, P2-0)",
+  "OPEN_3": "alternative: noise directly in latent space scaled by measured per-location latent error (cheaper, cruder)"
+ },
+ "training": "Phase-1e US recipe (deterministic conv step model, label-free rare-mode rebalancing) with label-free curation from Phase 1f if it passed; same latent (DINOv2 ViT-S/14 392 -> channel PCA 8, PCA refit on the training families only)",
+ "evaluation": {
+  "in_family": "fresh panels from the training families with unseen parameters",
+  "held_out_family": "panel from the held-out family (never used for training, PCA fitting or selection)",
+  "references": "MuJoCo exact-start probe (oracle state), second oracle run, always-stay / always-alarm baselines, and the 3-block-only US model (to show what training diversity adds)",
+  "metrics": "forks caught and false alarms (R0, R1), per family"
+ },
+ "gates": "OPEN_4 (proposal): held-out family >= 70% caught with <= 20% false alarms, and in-family >= 80% / <= 20%",
+ "stages_and_cost": [
+  "P2-0: G* on the 3-block task (training G* ~2 h GPU, US evaluation ~0.5 h)",
+  "scene generator + scripted primitives + harm label (engineering, ~1-2 days)",
+  "screen, select (label-free as Phase 1f) and render training data for 2 families (~1-2 days CPU)",
+  "train + evaluate (~0.5 day GPU)",
+  "panels: in-family and held-out (~0.5 day CPU)"
+ ],
+ "out_of_scope": "real images; V-JEPA 2-AC (separate protocol, can use the GPU while Phase 2 data generates on the CPU)",
+ "decisions": {
+  "OPEN_1_families": "train on F1 rows + F2 stacks; F3 leaning is the held-out family; F4 clutter later",
+  "OPEN_2_harm_thresholds": "non-target object tilt >= 45 deg, falls off the table, or moves >= 30 mm",
+  "OPEN_3_uncertainty": "learned object-free sampler G* (recommended); the cheaper latent-noise sampler is kept as a pre-declared comparator in P2-0 because the step3b P1 check (results/jenga/step3b_p1_result.json) found a global latent-PCA Gaussian sampler on par with G",
+  "OPEN_4_gates": "held-out family >= 70% caught with <= 20% false alarms; in-family >= 80% / <= 20% (R0)"
+ },
+ "P2_0": {
+  "status": "frozen before execution (2026-10-08), before any G* training",
+  "question": "Can the 3-block G operator (18-number pose noise on named blocks) be replaced by an object-free start sampler without losing US's H accuracy?",
+  "samplers": {
+   "Gstar": "PerturbNet body (as G: 4 FiLM blocks, width 96) with its 18-number pose input replaced by eps ~ N(0, I_32); trained on the Phase-1 enriched training states (z0 -> rendered perturbed starts z0k) with the energy score per state: 8 G* samples vs 8 of the state's real z0k (random subset), ES = mean||X-Y|| - 0.5 mean||X-X'|| on flattened latents; batch 16 states, 8,000 steps, AdamW 1e-3 cosine, weight decay 1e-4, seed 0",
+   "Gauss": "z0 + mean + top-64 principal directions of (z0k - z0) over the same training states with their measured standard deviations (eval/step3b_models.fit_gaussian refit on the enriched data); no network"
   },
-  "training": "Phase-1e US recipe (deterministic conv step model, label-free rare-mode rebalancing) with label-free curation from Phase 1f if it passed; same latent (DINOv2 ViT-S/14 392 -> channel PCA 8, PCA refit on the training families only)",
-  "evaluation": {
-    "in_family": "fresh panels from the training families with unseen parameters",
-    "held_out_family": "panel from the held-out family (never used for training, PCA fitting or selection)",
-    "references": "MuJoCo exact-start probe (oracle state), second oracle run, always-stay / always-alarm baselines, and the 3-block-only US model (to show what training diversity adds)",
-    "metrics": "forks caught and false alarms (R0, R1), per family"
+  "step_A": "evaluation-only swap: the Phase-1e US model unchanged; on H and for its floor (step3b/val), the 64 starts come from the sampler (seeded per state, 20261130) instead of G(z0, d). R0, R1, lean/contact as Phase 1e",
+  "pass": "H score (caught - false, R0) within 0.03 of US with G (0.672). If both pass, Phase 2 uses the higher-scoring sampler. Also reported: energy score and spread ratio (sampler vs real rendered starts) on step3b/val",
+  "step_B": "only if neither passes A: retrain US (fast recipe, seed 0) with the sampler replacing G in the 50/50 start mix, evaluate as A, same pass rule",
+  "panel_7": "the passing sampler (if any) is also run with US on panel 7, descriptively"
+ },
+ "amendment_1": {
+  "date": "2026-10-08",
+  "status": "frozen 2026-10-09 (user: 'freeze the phase 2 amendment and keep the pca'), before any scene-generator code, pilot, P2-0b run or Phase-2 data; the latent decision (keep the existing channel PCA 8) is approved explicitly",
+  "P2_0b_start_sampler_for_varied_layouts": {
+   "why": "P2-0 selected Gauss (score 0.709 vs G 0.672), but its 64 noise directions span the whole 28x28 grid and were fit where the three blocks sit in the 3-block camera view; they cannot move with objects in new layouts",
+   "candidates": {
+    "Gauss_global": "P2-0 Gauss unchanged (reference)",
+    "Gauss_TE": "translation-equivariant: zero-mean stationary Gaussian field on the 28x28x8 grid; per-location 8x8 channel covariance and spatial correlation (radially averaged over lags 0-4 cells) estimated from (z0k - z0) on the training states; sampled by convolving white noise with the fitted kernel",
+    "Gauss_TE_masked": "Gauss_TE with each location's amplitude scaled by a background score: a(x) = clip((||z0(x) - m|| - q5) / (q95 - q5), 0, 1), where m is the median latent over all locations of all training images and q5/q95 are percentiles of ||z0 - m|| over the same; noise concentrates where the image differs from plain table. No object detection, count or pose"
+   },
+   "test": "as P2-0 step A on H with the Phase-1e US model (evaluation-only swap, own floor); pass = within 0.03 of US with G (0.672)",
+   "use": "the best passing location-independent candidate (Gauss_TE or Gauss_TE_masked) becomes the Phase-2 sampler, refit on Phase-2 training families. If neither passes, Phase 2 proceeds with Gauss_TE_masked and reports the 3-block shortfall (no further sampler search)",
+   "run_when": "after Phase-1f screening frees the GPU (single process, minutes)"
   },
-  "gates": "OPEN_4 (proposal): held-out family >= 70% caught with <= 20% false alarms, and in-family >= 80% / <= 20%",
-  "stages_and_cost": [
-    "P2-0: G* on the 3-block task (training G* ~2 h GPU, US evaluation ~0.5 h)",
-    "scene generator + scripted primitives + harm label (engineering, ~1-2 days)",
-    "screen, select (label-free as Phase 1f) and render training data for 2 families (~1-2 days CPU)",
-    "train + evaluate (~0.5 day GPU)",
-    "panels: in-family and held-out (~0.5 day CPU)"
-  ],
-  "out_of_scope": "real images; V-JEPA 2-AC (separate protocol, can use the GPU while Phase 2 data generates on the CPU)",
-  "decisions": {
-    "OPEN_1_families": "train on F1 rows + F2 stacks; F3 leaning is the held-out family; F4 clutter later",
-    "OPEN_2_harm_thresholds": "non-target object tilt >= 45 deg, falls off the table, or moves >= 30 mm",
-    "OPEN_3_uncertainty": "learned object-free sampler G* (recommended); the cheaper latent-noise sampler is kept as a pre-declared comparator in P2-0 because the step3b P1 check (results/jenga/step3b_p1_result.json) found a global latent-PCA Gaussian sampler on par with G",
-    "OPEN_4_gates": "held-out family >= 70% caught with <= 20% false alarms; in-family >= 80% / <= 20% (R0)"
+  "simulator": {
+   "base": "the existing Panda scene (vendor/panda_express_sim panda_jenga_setup.xml): same robot, table, controller (DirectJengaSim execute/_control), 0.1 s control step, physics options",
+   "scene_builder": "eval/phase2_scenes.py writes one MJCF per scene from a seed: the three named blocks are replaced by N free bodies obj0..objN-1 (obj0 = target); all objects must lie inside the close-camera view (lookat 0.5, 0, 0.46; distance 0.30) with >= 60% of each object's pixels visible in the true-start render (checked by segmentation render; scenes failing it are re-drawn with the next seed)",
+   "objects": "shape box / cylinder / slab; box half-sizes x 8-16 mm, y 8-14 mm, z 20-45 mm; cylinder radius 8-14 mm, half-height 20-45 mm; slab half-sizes 25-40 x 12-18 x 5-8 mm; mass 25-120 g; sliding friction 0.5-1.0 (MuJoCo default torsional/rolling); colours drawn per object from a fixed 8-colour palette (the target is NOT always red)",
+   "settling": "after building, 1.0 s of physics with the robot at its home pose; scenes in which any object moves > 5 mm or tilts > 5 deg during settling (unstable by construction) are re-drawn, EXCEPT F3 where the leaning contact must persist (re-drawn if it slips > 5 mm)"
   },
-  "P2_0": {
-    "status": "frozen before execution (2026-10-08), before any G* training",
-    "question": "Can the 3-block G operator (18-number pose noise on named blocks) be replaced by an object-free start sampler without losing US's H accuracy?",
-    "samplers": {
-      "Gstar": "PerturbNet body (as G: 4 FiLM blocks, width 96) with its 18-number pose input replaced by eps ~ N(0, I_32); trained on the Phase-1 enriched training states (z0 -> rendered perturbed starts z0k) with the energy score per state: 8 G* samples vs 8 of the state's real z0k (random subset), ES = mean||X-Y|| - 0.5 mean||X-X'|| on flattened latents; batch 16 states, 8,000 steps, AdamW 1e-3 cosine, weight decay 1e-4, seed 0",
-      "Gauss": "z0 + mean + top-64 principal directions of (z0k - z0) over the same training states with their measured standard deviations (eval/step3b_models.fit_gaussian refit on the enriched data); no network"
-    },
-    "step_A": "evaluation-only swap: the Phase-1e US model unchanged; on H and for its floor (step3b/val), the 64 starts come from the sampler (seeded per state, 20261130) instead of G(z0, d). R0, R1, lean/contact as Phase 1e",
-    "pass": "H score (caught - false, R0) within 0.03 of US with G (0.672). If both pass, Phase 2 uses the higher-scoring sampler. Also reported: energy score and spread ratio (sampler vs real rendered starts) on step3b/val",
-    "step_B": "only if neither passes A: retrain US (fast recipe, seed 0) with the sampler replacing G in the 50/50 start mix, evaluate as A, same pass rule",
-    "panel_7": "the passing sampler (if any) is also run with US on panel 7, descriptively"
+  "families": {
+   "F1_rows": "2-5 upright boxes or cylinders in a row along y, gaps 0-15 mm, row yaw +-10 deg, small per-object yaw/position jitter as the 3-block reset (+-2 mm, +-3 deg); target = a random object of the row",
+   "F2_stacks": "1-2 stacks of 2-3 objects (box or slab bases, box/cylinder/slab on top, offset 0-8 mm), plus 0-2 upright neighbours within 0-20 mm; target = a top object (pick) or a stack/neighbour object (push)",
+   "F3_leaning_HELD_OUT": "one object leaning 10-30 deg on an upright neighbour or on a fixed low wall, plus 0-2 further neighbours; target = leaning, supporting or neighbouring object. Never used for training, PCA, sampler fitting, selection or tuning"
   },
-  "amendment_1": {
-    "date": "2026-10-08",
-    "status": "frozen 2026-10-09 (user: 'freeze the phase 2 amendment and keep the pca'), before any scene-generator code, pilot, P2-0b run or Phase-2 data; the latent decision (keep the existing channel PCA 8) is approved explicitly",
-    "P2_0b_start_sampler_for_varied_layouts": {
-      "why": "P2-0 selected Gauss (score 0.709 vs G 0.672), but its 64 noise directions span the whole 28x28 grid and were fit where the three blocks sit in the 3-block camera view; they cannot move with objects in new layouts",
-      "candidates": {
-        "Gauss_global": "P2-0 Gauss unchanged (reference)",
-        "Gauss_TE": "translation-equivariant: zero-mean stationary Gaussian field on the 28x28x8 grid; per-location 8x8 channel covariance and spatial correlation (radially averaged over lags 0-4 cells) estimated from (z0k - z0) on the training states; sampled by convolving white noise with the fitted kernel",
-        "Gauss_TE_masked": "Gauss_TE with each location's amplitude scaled by a background score: a(x) = clip((||z0(x) - m|| - q5) / (q95 - q5), 0, 1), where m is the median latent over all locations of all training images and q5/q95 are percentiles of ||z0 - m|| over the same; noise concentrates where the image differs from plain table. No object detection, count or pose"
-      },
-      "test": "as P2-0 step A on H with the Phase-1e US model (evaluation-only swap, own floor); pass = within 0.03 of US with G (0.672)",
-      "use": "the best passing location-independent candidate (Gauss_TE or Gauss_TE_masked) becomes the Phase-2 sampler, refit on Phase-2 training families. If neither passes, Phase 2 proceeds with Gauss_TE_masked and reports the 3-block shortfall (no further sampler search)",
-      "run_when": "after Phase-1f screening frees the GPU (single process, minutes)"
-    },
-    "simulator": {
-      "base": "the existing Panda scene (vendor/panda_express_sim panda_jenga_setup.xml): same robot, table, controller (DirectJengaSim execute/_control), 0.1 s control step, physics options",
-      "scene_builder": "eval/phase2_scenes.py writes one MJCF per scene from a seed: the three named blocks are replaced by N free bodies obj0..objN-1 (obj0 = target); all objects must lie inside the close-camera view (lookat 0.5, 0, 0.46; distance 0.30) with >= 60% of each object's pixels visible in the true-start render (checked by segmentation render; scenes failing it are re-drawn with the next seed)",
-      "objects": "shape box / cylinder / slab; box half-sizes x 8-16 mm, y 8-14 mm, z 20-45 mm; cylinder radius 8-14 mm, half-height 20-45 mm; slab half-sizes 25-40 x 12-18 x 5-8 mm; mass 25-120 g; sliding friction 0.5-1.0 (MuJoCo default torsional/rolling); colours drawn per object from a fixed 8-colour palette (the target is NOT always red)",
-      "settling": "after building, 1.0 s of physics with the robot at its home pose; scenes in which any object moves > 5 mm or tilts > 5 deg during settling (unstable by construction) are re-drawn, EXCEPT F3 where the leaning contact must persist (re-drawn if it slips > 5 mm)"
-    },
-    "families": {
-      "F1_rows": "2-5 upright boxes or cylinders in a row along y, gaps 0-15 mm, row yaw +-10 deg, small per-object yaw/position jitter as the 3-block reset (+-2 mm, +-3 deg); target = a random object of the row",
-      "F2_stacks": "1-2 stacks of 2-3 objects (box or slab bases, box/cylinder/slab on top, offset 0-8 mm), plus 0-2 upright neighbours within 0-20 mm; target = a top object (pick) or a stack/neighbour object (push)",
-      "F3_leaning_HELD_OUT": "one object leaning 10-30 deg on an upright neighbour or on a fixed low wall, plus 0-2 further neighbours; target = leaning, supporting or neighbouring object. Never used for training, PCA, sampler fitting, selection or tuning"
-    },
-    "actions": {
-      "format": "4-D commands (xyz target, gripper +1 close / -1 open) at 10 Hz, as the Jenga replays",
-      "primitives": "PICK: move above target (approach height 60-120 mm), descend to grasp height, close, lift 80 mm; PUSH: move to a pre-push point 20-40 mm behind the target on a random horizontal direction, lower, push 30-80 mm through the target, retract. Waypoints interpolated at 5-12 mm per step (sampled speed)",
-      "randomisation": "grasp/push offset +-12 mm, approach yaw of the push direction +-25 deg, descent depth +-8 mm; these make some chunks brush or bump neighbours, which is where forks come from",
-      "episodes": "one primitive per scene (PICK or PUSH, family-dependent), 40-90 commands; chunk starts every 8 commands (chunk_starts), oracle/latent futures as now (8-command chunk + 30-step hold on the last target)"
-    },
-    "uncertainty_for_oracle_and_training_futures": "per-object pose noise drawn from the measured perception error model pooled over the three Jenga blocks (position covariance per block's 3x3 block of the 9x9, rotation covariance averaged over blocks), independently per object; bench execution-noise snippets as now",
-    "harm_and_fork_labels": "(grading only) harm in a future = any NON-target object tilts >= 45 deg from its start tilt, leaves the table top, or its centre moves >= 30 mm; fork = harm in 2-62 of 64 oracle futures; safe = 0/64",
-    "latent": "AMENDS the frozen 'PCA refit on the training families only': keep the existing channel PCA 8 (fit on 3-block images) so the 3-block US model runs unchanged as a reference; reported beside: the PCA's explained channel variance on Phase-2 images. Reason: a refit would make the 3-block reference impossible and adds a second change at once",
-    "pilot": "before any frozen data: 30 scenes per family from pilot seeds (never reused) to check (a) camera visibility, (b) settling, (c) fork rate per chunk start. Only the action randomisation ranges and family sizes may be adjusted, to reach a fork rate of 3-30% of screened chunk starts in each family; adjustments are recorded in amendment 2 together with the frozen seeds before data generation",
-    "training_data": "Phase-1f method (image split test on 8 hold-10/30 rendered futures, alarming up to half + others) if Phase-1f L passes its 0.03 rule; otherwise the harm-disagreement screen (sim-only, used ONLY for selection) with the caveat stated. 2,400 states per training family (F1, F2), 16/8 futures as Phase 1",
-    "selection_set_and_panels": {
-      "H2": "160 states (80 forks + 80 safe where available) from held-out F1+F2 seeds, for floors and any selection",
-      "panel_in_family": "fresh F1+F2 panel, up to 60 forks + 100 safe, generated only after the model is fixed",
-      "panel_held_out_F3": "fresh F3 panel, same size, generated only after the model is fixed"
-    },
-    "models_graded": "US recipe trained on F1+F2 (primary, with the P2-0b sampler); the 3-block US model zero-shot (reference); MuJoCo exact-start probe; second oracle run; always-stay / always-alarm",
-    "gates": "as decided: in-family >= 80% caught with <= 20% false alarms; held-out F3 >= 70% / <= 20% (R0), for the primary model",
-    "cost": "scene builder + primitives + harm label + pilot ~1-1.5 days engineering; screen/render ~1 day CPU (7 workers, GPU not shared with another encoding pool); training ~2 h; H2 and panels ~0.5 day"
+  "actions": {
+   "format": "4-D commands (xyz target, gripper +1 close / -1 open) at 10 Hz, as the Jenga replays",
+   "primitives": "PICK: move above target (approach height 60-120 mm), descend to grasp height, close, lift 80 mm; PUSH: move to a pre-push point 20-40 mm behind the target on a random horizontal direction, lower, push 30-80 mm through the target, retract. Waypoints interpolated at 5-12 mm per step (sampled speed)",
+   "randomisation": "grasp/push offset +-12 mm, approach yaw of the push direction +-25 deg, descent depth +-8 mm; these make some chunks brush or bump neighbours, which is where forks come from",
+   "episodes": "one primitive per scene (PICK or PUSH, family-dependent), 40-90 commands; chunk starts every 8 commands (chunk_starts), oracle/latent futures as now (8-command chunk + 30-step hold on the last target)"
   },
-  "amendment_2": {
-    "date": "2026-10-09",
-    "status": "frozen 2026-10-09 (user: 'go with option 1 and freeze it'), after the pilot and before any Phase-2 data",
-    "pilot_result": "results/jenga/phase2_pilot.json: F1 30/30 valid, fork rate 14%; F3 14/30 valid (16 slid > 5 mm while settling; re-drawn per amendment 1), fork rate 16%; F2 2/30 valid because stacked objects hide the ones below from the near top-down close camera (27/30 failed the 60% visibility rule)",
-    "change": "visibility rule: every object >= 60% of its unoccluded pixels visible, EXCEPT an object that supports another (in contact with another object whose centre is higher), which needs >= 10%. Judged on the settled true start (after the 1.0 s settling), since support contacts only exist then. Applies to all families",
-    "action_ranges": "unchanged (F1 and F3 fork rates are inside 3-30%); F2 is re-piloted with the new rule on the same pilot seeds; if its fork rate falls outside 3-30%, only F2's action ranges may be adjusted, recorded before data generation",
-    "known_biases": "F3 keeps only leaners that do not slide during settling (skews toward higher friction and smaller lean); reported with the F3 results",
-    "seeds": {
-      "train_scenes": "F1 and F2 scene seeds 0-1499 each (screened as Phase 1f: 8 futures per chunk start rendered at hold 10/30, image split test; selection seed 20261210; 2,400 states per family: alarming up to 1,200 + others; futures 16/8, seed 20261211)",
-      "H2": "F1+F2 scene seeds 500000-500599, 64 oracle futures per screened state (seed 20261212), 80 forks + 80 safe (selection seed 20261213)",
-      "panel_in_family": "F1+F2 scene seeds 600000-600599 (truth seeds 20261214/20261215, monitor draws 20261216); up to 60 forks + 100 safe",
-      "panel_held_out_F3": "F3 scene seeds 700000-700999 (truth 20261217/20261218, monitor 20261219); up to 60 forks + 100 safe",
-      "rule": "a scene failing visibility or settling is skipped (its seed is not reused); counts of skipped scenes are reported"
-    },
-    "pilot_adjustment": {
-      "date": "2026-10-09",
-      "recorded": "before any Phase-2 data, under amendment 2's rule (only F2 action ranges)",
-      "re_pilot": "F1 30/30 valid, fork rate 15%; F2 17/30 valid (10 visibility, 3 settling), fork rate 35% (above 30%), always-harm 26%; F3 14/30, 15%",
-      "change": "F2 only: grasp/push offset +-12 -> +-8 mm, push distance 30-80 -> 30-60 mm; F2 re-piloted on the same pilot seeds; if still > 30%, offset +-5 mm and push 30-45 mm (last allowed step), then proceed regardless and report the rate",
-      "outcome": "F2 fork rate 35% (offset +-12, push 30-80), 32% (+-8, 30-60), 35% (+-5, 30-45; final): stacks are intrinsically fork-rich; per the rule, data generation proceeds with the last step's ranges and the rate is reported. Training-data selection uses the pre-declared fallback (generic harm disagreement among 8 screen futures, sim-only) because Phase 1f's L failed its 0.03 rule; screen seed 20261209"
-    }
+  "uncertainty_for_oracle_and_training_futures": "per-object pose noise drawn from the measured perception error model pooled over the three Jenga blocks (position covariance per block's 3x3 block of the 9x9, rotation covariance averaged over blocks), independently per object; bench execution-noise snippets as now",
+  "harm_and_fork_labels": "(grading only) harm in a future = any NON-target object tilts >= 45 deg from its start tilt, leaves the table top, or its centre moves >= 30 mm; fork = harm in 2-62 of 64 oracle futures; safe = 0/64",
+  "latent": "AMENDS the frozen 'PCA refit on the training families only': keep the existing channel PCA 8 (fit on 3-block images) so the 3-block US model runs unchanged as a reference; reported beside: the PCA's explained channel variance on Phase-2 images. Reason: a refit would make the 3-block reference impossible and adds a second change at once",
+  "pilot": "before any frozen data: 30 scenes per family from pilot seeds (never reused) to check (a) camera visibility, (b) settling, (c) fork rate per chunk start. Only the action randomisation ranges and family sizes may be adjusted, to reach a fork rate of 3-30% of screened chunk starts in each family; adjustments are recorded in amendment 2 together with the frozen seeds before data generation",
+  "training_data": "Phase-1f method (image split test on 8 hold-10/30 rendered futures, alarming up to half + others) if Phase-1f L passes its 0.03 rule; otherwise the harm-disagreement screen (sim-only, used ONLY for selection) with the caveat stated. 2,400 states per training family (F1, F2), 16/8 futures as Phase 1",
+  "selection_set_and_panels": {
+   "H2": "160 states (80 forks + 80 safe where available) from held-out F1+F2 seeds, for floors and any selection",
+   "panel_in_family": "fresh F1+F2 panel, up to 60 forks + 100 safe, generated only after the model is fixed",
+   "panel_held_out_F3": "fresh F3 panel, same size, generated only after the model is fixed"
   },
-  "amendment_3": {
-    "date": "2026-10-09",
-    "status": "recorded before H2 is screened and before any Phase-2 model is trained (implementation details of the frozen design; user: 'go ahead with next steps')",
-    "start_sampler": "Gauss_TE (P2-0b winner, 0.666 vs 0.672), refit on the Phase-2 training deltas (z0k - z0); used (a) in training in place of G in the 50/50 start mix and (b) for the 64 monitor starts on H2 and the panels (seeded per state, 20261220). The 3-block US reference is graded zero-shot with the same Phase-2 Gauss_TE",
-    "training": "US2 = Phase-1e US recipe exactly (fast recipe; label-free rare-mode rebalancing, 50% rare mode / 50% sibling majority), seed 0, on the 4,800 F1+F2 training states",
-    "H2": "F1+F2 seeds 500000-500599; 64 oracle futures per chunk start (pose error draw j seed 20261212, bench snippet j); fork = harm in 2-62/64, safe = 0/64; 80 + 80 drawn with seed 20261213; selected states rendered (true start + 64 futures at hold 10/30, executed actions); monitor actions = the 64 executed chunks (paired with the real futures, as H in Phase 1)",
-    "floor": "no separate validation set exists for Phase 2: each model's floor tau = its mean hold-30 error against H2's real futures (unpaired sampler starts, as in P2-0); label-free",
-    "grading": "R0 and R1 overall and per family; score = caught - false alarm (R0). H2 is the selection set; the gates are judged only on the fresh panels"
+  "models_graded": "US recipe trained on F1+F2 (primary, with the P2-0b sampler); the 3-block US model zero-shot (reference); MuJoCo exact-start probe; second oracle run; always-stay / always-alarm",
+  "gates": "as decided: in-family >= 80% caught with <= 20% false alarms; held-out F3 >= 70% / <= 20% (R0), for the primary model",
+  "cost": "scene builder + primitives + harm label + pilot ~1-1.5 days engineering; screen/render ~1 day CPU (7 workers, GPU not shared with another encoding pool); training ~2 h; H2 and panels ~0.5 day"
+ },
+ "amendment_2": {
+  "date": "2026-10-09",
+  "status": "frozen 2026-10-09 (user: 'go with option 1 and freeze it'), after the pilot and before any Phase-2 data",
+  "pilot_result": "results/jenga/phase2_pilot.json: F1 30/30 valid, fork rate 14%; F3 14/30 valid (16 slid > 5 mm while settling; re-drawn per amendment 1), fork rate 16%; F2 2/30 valid because stacked objects hide the ones below from the near top-down close camera (27/30 failed the 60% visibility rule)",
+  "change": "visibility rule: every object >= 60% of its unoccluded pixels visible, EXCEPT an object that supports another (in contact with another object whose centre is higher), which needs >= 10%. Judged on the settled true start (after the 1.0 s settling), since support contacts only exist then. Applies to all families",
+  "action_ranges": "unchanged (F1 and F3 fork rates are inside 3-30%); F2 is re-piloted with the new rule on the same pilot seeds; if its fork rate falls outside 3-30%, only F2's action ranges may be adjusted, recorded before data generation",
+  "known_biases": "F3 keeps only leaners that do not slide during settling (skews toward higher friction and smaller lean); reported with the F3 results",
+  "seeds": {
+   "train_scenes": "F1 and F2 scene seeds 0-1499 each (screened as Phase 1f: 8 futures per chunk start rendered at hold 10/30, image split test; selection seed 20261210; 2,400 states per family: alarming up to 1,200 + others; futures 16/8, seed 20261211)",
+   "H2": "F1+F2 scene seeds 500000-500599, 64 oracle futures per screened state (seed 20261212), 80 forks + 80 safe (selection seed 20261213)",
+   "panel_in_family": "F1+F2 scene seeds 600000-600599 (truth seeds 20261214/20261215, monitor draws 20261216); up to 60 forks + 100 safe",
+   "panel_held_out_F3": "F3 scene seeds 700000-700999 (truth 20261217/20261218, monitor 20261219); up to 60 forks + 100 safe",
+   "rule": "a scene failing visibility or settling is skipped (its seed is not reused); counts of skipped scenes are reported"
   },
-  "amendment_4": {
-    "date": "2026-10-09",
-    "status": "frozen 2026-10-09 (user: 'freeze it and go ahead'), before any part-A comparison or part-B training",
-    "basis": {
-      "H2_result": "US2 5.1% caught / 6.1% false; 3-block US zero-shot 6.4% / 2.4% (results/jenga/phase2_h2_result.json)",
-      "readout": "the frozen persistent split test on H2's REAL futures catches 19/78 forks (8/82 false); misses are mostly 'not persistent' (47): the two groups at hold 10 are not the same futures as at hold 30 (multi-factor scenes: e.g. grasp success at hold 10, a neighbour falling by hold 30). Hold-30-only on real futures: 69/78, 25/82 false; hold-10-only: 71/78, 22/82 (exploratory, H2)",
-      "dynamics": "US2 underfits: final training loss 0.072 vs US 0.037; on its own training fork states its hold-30 error is 1.3x the real futures' spread, and even from the exact rendered perturbed starts its futures spread only 0.28-0.33x the real ones (F1, F2); Gauss-TE start noise has the right size (0.97-1.09x the real perturbed starts)"
-    },
-    "part_A_readout": {
-      "candidates": {
-        "P": "frozen persistent test (reference)",
-        "H30": "two-group test at hold 30 only (BIC, Ashman D > 2, minority >= 2)",
-        "H30_floor": "H30 and hold-30 separation > the model's own floor (as R1); on real futures the floor is 0, i.e. = H30",
-        "BOTH": "two-group test passes at hold 10 AND at hold 30, partitions free to differ"
-      },
-      "selection": "on H2 real futures (the readout's ceiling), rank by caught - false; the winner must also keep US's score on the 3-block H within 0.03 of the frozen test's 0.672 (so Phase 1 conclusions are not changed by the new readout); if none qualifies, keep P and report",
-      "note": "H2 real-future numbers above were looked at before this draft; H2 is the selection set, the panels decide"
-    },
-    "part_B_dynamics": {
-      "arms": {
-        "US2_long": "US2 recipe, 3x steps (22,500 at batch 128)",
-        "US2_wide": "US2 recipe, network width 192 (from 128), 7,500 steps"
-      },
-      "selection": "rank US2, US2_long, US2_wide by H2 score (caught - false) under the part-A readout; also report fork spread ratio vs real on H2",
-      "budget": "US2_long ~5 h, US2_wide ~3 h GPU, one at a time"
-    },
-    "then": "if the best arm passes in-family >= 80% / <= 20% on H2, generate the two fresh panels (in-family and held-out F3) as frozen in amendment 2; otherwise report and stop for a decision"
-  },
-  "amendment_5": {
-    "date": "2026-10-10",
-    "status": "frozen 2026-10-10 (user: 'go with option 1, freeze and launch it'), before training",
-    "basis": "amendment 4 part B on H2 (BOTH readout): US2_long (22,500 steps) 34.6% caught / 15.9% false (score 0.188), flagged still undertrained (loss 0.059, falling); US2_wide no gain; ceiling on real futures 84.6% / 22.0%",
-    "arm": "US2_xlong = US2 recipe exactly (Gauss-TE starts, label-free rare-mode rebalancing, fast recipe, width 128, seed 0), 67,500 steps (9x US2) with the cosine schedule over the full run",
-    "grading": "H2 with the BOTH readout and each model's own floor (as amendment 4 grade), next to US2, US2_wide, US2_long; ranking by score",
-    "rule": "if the best arm reaches >= 80% caught with <= 20% false alarms on H2, generate the two fresh panels (amendment 2 seeds); otherwise report and stop for a decision",
-    "budget": "~14 h GPU",
-    "addendum_panel_screen": "2026-10-10, recorded before running (user away, delegated: 'i allow you to take over and run tests and continue'): the oracle-only harm screen of the two fresh panels (in-family F1+F2 seeds 600000-600599, truth seed 20261214; held-out F3 seeds 700000-700999, truth seed 20261217) is run early on idle CPUs to save time. No rendering, encoding, model or monitor touches these scenes; panels are selected, rendered and graded only if the amendment-5 rule allows",
-    "addendum_seed_replicate": "2026-10-10, approved by the user ('approve 1-3') before launch: US2_long retrained with seed 1 (identical recipe, 22,500 steps) on the RTX 5080 (future tensor kept in pinned host memory, FAST_TRAIN_Z_ON_CPU=1; values unchanged), graded on H2 with BOTH beside the seed-0 arms. Descriptive only: it measures seed variation and does not change the amendment-5 rule (which uses the seed-0 arms)",
-    "addendum_panels_if_pass": "2026-10-10, approved by the user ('approve 1-3'): if the best seed-0 arm passes the amendment-5 rule on H2, the two fresh panels are selected, rendered and graded automatically; otherwise stop and report",
-    "addendum_panel_details": "2026-10-10, recorded before any panel is selected or rendered: selection seeds 20261221 (in-family) / 20261222 (F3); primary model = the best seed-0 arm on H2; references: 3-block US zero-shot, second oracle run (truth_B seeds 20261215 / 20261218), exact-start probe (no pose error, 64 bench snippets); monitor = 64 Gauss-TE starts (seeds 20261216 / 20261219), executed chunk with snippet j, BOTH readout; BOTH+floor (H2 floor) reported beside; gates on BOTH",
-    "addendum_harm_rebalancing_diagnostic": "2026-10-11, approved by the user ('run A on the 5080') before launch: DIAGNOSTIC upper bound, not task-agnostic. US2_harm = US2_long recipe (22,500 steps, seed 0, Gauss-TE starts) but each batch is 50% futures with harm (simulator label) and 50% without, instead of label-free rare-mode rebalancing (only 56% of rare-mode futures are harmful here). Graded on H2 with BOTH beside US2_long seeds 0/1 (0.188 / 0.276; seed spread ~0.09). Reading: clearly above both seeds -> the label-free emphasis signal is a weak link; within the seed spread -> the dynamics model is"
-  },
-  "amendment_6_DRAFT": {
-    "date": "2026-10-10",
-    "status": "DRAFT - not frozen; for the user's decision after US2_xlong (approved as 'draft only')",
-    "motivation": "US2 underfits the Phase-2 scenes and improves with training length (US2 0.0 -> US2_long 0.19 on H2); each step unrolls all 19 model steps with checkpointing, so steps are expensive",
-    "arm": {
-      "US2_trunc": "US2 recipe, but each training sample unrolls a random window of K = 10 model steps: with probability 1/2 the window starts at step 0 from the sampled/rendered start (as now, keeping the start-uncertainty -> outcome mapping), otherwise at a uniform step t0 in 1..9 from the real latent z[t0-1] plus the usual input noise; loss on the window's steps with the same hold weights. ~1.9x cheaper per step; trained for the same wall-clock as US2_xlong would need for 3x US2_long's samples"
-    },
-    "risk": "windows started from real latents train on real rather than self-predicted states (exposure bias); the step-0 half keeps full-horizon rollouts from uncertain starts",
-    "selection": "H2 score under BOTH beside US2_long and US2_xlong; same amendment-5 rule for panels",
-    "decide_after": "US2_xlong's learning curve: if xlong is still improving at 67,500 steps, cheaper steps are worth it; if it plateaued below the bar, more steps of any kind are unlikely to help and a different dynamics model (pretrained V-JEPA 2-AC, transformer predictor) is the better next step"
-  },
-  "amendment_7": {
-    "date": "2026-10-11",
-    "status": "frozen before running (user: 'do 1. and 3 do ibot and after that ask me about the transformer')",
-    "motivation": "Toso et al. 2026 (arXiv 2610.07540, App. A.2): frozen DINOv2 amplifies small physical perturbations ~25x (iBOT ~1x) and its predictors cannot hold an equilibrium; our Phase-2 predictor underfits and collapses futures (spread 0.3x real) while the loss keeps falling",
-    "diagnostic": {
-      "frames": "the H2 renders made for the V-JEPA test (true start, 64 perturbed starts with monitor draws seed 20261230, 64 real futures after 18 and 36 commands)",
-      "encoders": {
-        "DINO_fixedPCA": "current latent (DINOv2 ViT-S/14 392 -> fixed channel PCA 8 fit on 3-block images)",
-        "DINO_refitPCA": "DINOv2 tokens, channel PCA 8 refit on the H2 true-start frames",
-        "IBOT_PCA": "iBOT ViT-S/16 teacher (448 px, 28x28 patch tokens, ImageNet normalisation) -> channel PCA 8 fit on the H2 true-start frames"
-      },
-      "metrics": {
-        "gain": "median over states of (||z_start_k - z_true|| / object position perturbation rms mm), divided by the median latent distance between different states' true starts (scene scale)",
-        "linearity": "median per-state Spearman correlation between ||z_start_k - z_true|| and the perturbation size",
-        "ceiling": "BOTH readout on the real futures (forks caught, false alarms, score)"
-      },
-      "rule": "iBOT qualifies for retraining if its normalised gain is <= 0.5x DINO_fixedPCA's OR its linearity is >= 0.2 higher, AND its real-future BOTH score is >= DINO_fixedPCA's - 0.05"
-    },
-    "retrain_if_qualified": {
-      "data": "the same 4,800 Phase-2 training states and seeds re-rendered and encoded with iBOT -> channel PCA 8 (fit on 600 training true-start frames, seed 20261240); H2 re-rendered the same way (true start + 64 futures at hold 10/30)",
-      "model": "US2_long recipe (22,500 steps, seed 0, Gauss-TE refit on iBOT deltas, rare modes re-detected) on the iBOT latents",
-      "comparison": "H2 with BOTH and own floor beside US2_long seeds 0/1 (0.188 / 0.276) and US2_xlong (0.266); 'helps' if above 0.28 + 0.05",
-      "then": "ask the user about the transformer predictor (option B)"
-    }
-  },
-  "amendment_8": {
-    "date": "2026-10-11",
-    "status": "frozen before any code runs (user: 'sure build and run with the aux pixel arm, and keep vjepa fine tune aside')",
-    "basis": "everything but the predictor has been ruled out on H2: readout fixed (BOTH), start sampler fine (Gauss-TE), encoder fine (iBOT no better, amendment 7), training length plateaus (xlong 0.266), width no help, harm-label emphasis worse (US2_harm 0.040), V-JEPA 2-AC zero-shot fails (-0.05)",
-    "predictor": "spatial transformer step model replacing the conv net, same interface and recipe: the 28x28x8 latent is patchified 2x2 -> 196 tokens (dim 32 -> 384) + learned 2-D position embeddings + 4 register tokens; 6 blocks, width 384, 6 heads, MLP 4x, AdaLN-Zero conditioning on the embedded action pair (after Toso et al. 2026 and WorldDiT); attention across all locations; output: per-token linear -> 2x2x8 residual (unpatchified). Deterministic, unrolled 19 steps as the US recipe",
-    "arms": {
-      "T": "transformer predictor, US2_long recipe otherwise (label-free rare-mode rebalancing, 50/50 Gauss-TE or rendered starts, input noise, hold weights, 22,500 steps at batch 128, lr x2 cosine, seed 0)",
-      "T_pix": "T plus an auxiliary head (training only; absent at inference) predicting per-patch-normalised RGB of the REAL future close-camera frame at hold 10 and hold 30: frame downsampled to 112x112, 14x14 patches of 8x8x3 = 192 values each normalised by its own mean and std (as WorldDiT); head = linear from the 196 output tokens; loss weight 0.01 (MSE), applied at model steps HOLD10 and HOLD30"
-    },
-    "data": "the existing 4,800 Phase-2 training states; future frames re-rendered with the identical seeds and future order as eval/phase2_data.py and verified against the stored traces (max abs difference < 1e-6 required, else the arm is not run)",
-    "grading": "H2 with the BOTH readout and each model's own floor, beside US2_long seeds 0/1 (0.188 / 0.276) and US2_xlong (0.266); 'transformer helps' if T or T_pix scores > 0.276 + 0.05; amendment-5 rule for panels (>= 80% / <= 20% on H2)",
-    "compute": "T on the 3090, T_pix on the 5080 (frames copied over), in parallel"
-  },
-  "amendment_9": {
-    "date": "2026-10-12",
-    "status": "frozen before any code runs (user: 'sure build and run the set-level objective')",
-    "basis": "amendment 8: transformers reach the lowest training loss (0.039) yet do not branch better (T 0.06, T_pix 0.19 vs conv 0.19-0.28); per-family breakdown shows a uniform ~half-of-ceiling gap. Per-future regression from paired starts smears across forks; sampled (Gauss-TE) starts used by the monitor never receive a direct training signal",
-    "set_loss": "each step, S = 8 training states (4 drawn uniformly from states whose own futures have a rare mode -- label-free -- and 4 uniformly from all states); for each, M = 8 of its real futures (uniform without replacement) give the real set Y (hold-10 and hold-30 latents) and their executed actions; the model is rolled 19 steps from 8 Gauss-TE starts (one per real future's actions) giving X. Set term = energy distance per state: mean||X-Y|| - 0.5 mean_{i!=j}||X_i-X_j|| - 0.5 mean_{i!=j}||Y_i-Y_j||, divided by sqrt(D), averaged over hold 10 and hold 30 and the S states",
-    "objective": "per-future US recipe loss (unchanged batch of 128) + lambda * set term",
-    "arms": {
-      "C0": "control: lambda = 0",
-      "SL_low": "lambda such that lambda x (initial set term) = 0.5 x (initial per-future loss)",
-      "SL_high": "lambda such that lambda x (initial set term) = 5 x (initial per-future loss)"
-    },
-    "calibration": "initial values measured on 20 training batches with the starting model before any update (seed 0); recorded in the result",
-    "training": "all arms fine-tune US2_long (seed 0, the 0.188 model) for 7,500 steps at batch 128, AdamW lr 1.5e-4 (fast recipe lr / 4) cosine, seed 0, same rare-mode rebalancing, Gauss-TE / rendered start mix, input noise and hold weights",
-    "grading": "H2 with BOTH and own floor; 'set loss helps' if the better SL arm scores >= C0 + 0.10 (above the observed seed spread 0.09); panels only under the amendment-5 rule (>= 80% / <= 20% on H2)",
-    "compute": "C0 on the 3090, SL_low then SL_high on the 5080"
-  },
-  "amendment_10": {
-    "date": "2026-10-12",
-    "status": "frozen before any code runs (user: 'build the hybrid model')",
-    "basis": "amendment 9 interim: the set-level loss spreads futures (0.29x -> 0.50x real) and catches more forks (36% -> 53%) but doubles false alarms (15% -> 33%); spread is not targeted at forks. Foresight Diffusion (Zhang et al., ICLR 2026) shows deterministic predictive streams should carry prediction while a generative stream adds variability; FlowWM (Porcher et al. 2026) shows feature-space flow matching needs a wide projection head and a noise-shifted timestep schedule",
-    "model": {
-      "predictive_stream": "US2_xlong (deterministic conv step model), frozen; for future k it rolls the TRUE start latent z0 with that future's executed actions and gives z_det at hold 10 and hold 30",
-      "generative_head": "conditional flow matching on the residual r = z_real - z_det at hold 10 and hold 30 (2 x 28x28x8): tokens = 196 locations (2x2 patches; noisy residual 64 dims + conditioning z0 32 + z_det 64 dims) -> linear to width 384; 4 DiT blocks, 6 heads, AdaLN-Zero on the flow time and the embedded 19-step action sequence; wide projection head (LayerNorm -> 1024 -> 1024 -> 64, GELU); linear path, velocity target r - noise; training times shifted toward noise with the Esser shift, alpha = 8",
-      "training": "Phase-2 training states, futures sampled with the label-free rare-mode rebalancing (50% rare mode / 50% sibling majority), batch 128, 20,000 steps, AdamW 3e-4 with 500 warm-up steps then cosine, weight decay 1e-4, seed 0, bf16",
-      "monitor": "per H2 state, 64 samples: z_det from the true start latent and executed chunk j, plus a residual sampled with 20 Euler steps on the shifted schedule (seed 20261250 + state index); BOTH readout on the 64 hold-10/hold-30 futures"
-    },
-    "grading": "H2 with BOTH; beside US2_xlong (0.266), US2_long seeds (0.188 / 0.276), C0 and SL arms; report spread ratio; 'hybrid helps' if score >= 0.276 + 0.05; panels only if >= 80% caught / <= 20% false on H2",
-    "compute": "3090 (free after C0)"
-  },
-  "addendum_any_outcome_label": {
-    "date": "2026-10-12",
-    "status": "recorded before computing (user: 'do part c now'); descriptive, does not replace the frozen harm label or any gate",
-    "label": "any-outcome fork: for each future, the binary events per object (INCLUDING the target): tilt change >= 45 deg, leaves the table, centre moves >= 30 mm (end of hold); a state is an any-outcome fork if some (object, event) occurs in 2-62 of its 64 oracle futures; safe if no (object, event) varies (each occurs in 0 or 64)",
-    "graded": "H2 real-future upper limit and the existing models (US2_long seeds 0/1, US2_xlong, T, T_pix, C0, SL_low) with BOTH, under both labels; also the confusion of the two labels"
-  },
-  "amendment_11": {
-    "date": "2026-10-12",
-    "status": "frozen before any new data (user: 'data scale up you can start')",
-    "question": "Is training-data scarcity across varied layouts the bottleneck? (never varied in Phase 2; Phase 1 used ~4,800 states for ONE layout)",
-    "data": "3x the Phase-2 training set: the existing 4,800 states plus 9,600 new ones from new scene seeds 1500-6499 per family (F1, F2), screened and selected exactly as eval/phase2_data.py (8 screen futures, harm disagreement 1-7 of 8 up to half, the rest others; 16/8 futures; screen seed 20261209, select seed 20261260, futures seed 20261211 keyed by scene seed so the new states never collide with the old); 4,800 new per family",
-    "model": "US2 recipe exactly (deterministic conv, label-free rare-mode rebalancing re-detected on the combined data, Gauss-TE starts refit on the combined deltas? NO: Gauss-TE kept fixed as amendment 3 so only the data changes), seed 0, 67,500 steps (US2_xlong's budget) -> US2_x3data",
-    "comparison": "US2_xlong (same steps, 1x data, 0.266 on H2); 'data helps' if US2_x3data scores >= 0.266 + 0.10 on H2 (BOTH); also reported under the any-outcome label",
-    "compute": "screen/render on the 3090 machine's CPUs (rendering pools never share the GPU with another encoding pool); data copied to the 5080 machine (1.7 TB disk) and read from a disk memmap during training (values identical to in-memory)"
-  },
-  "amendment_12": {
-    "date": "2026-10-12",
-    "status": "frozen before running (user: 'sure do 1 and 2'); runs after amendment 11 finishes",
-    "basis": "amendment 10: hybrid 38.5% / 6.1% (score 0.324, misses the 0.326 bar by 0.002) with spread 0.83x real and the lowest false-alarm rate in Phase 2",
-    "arm": "HYB_x3 = the amendment-10 hybrid exactly, but (a) the frozen deterministic stream is US2_x3data (amendment 11) and (b) the residual head is trained on the 3x data (amendment-11 memmaps, same label-free rare-mode rebalancing), 40,000 steps (2x amendment 10), otherwise identical",
-    "grading": "H2, BOTH, beside HYB (0.324) and US2_x3data; 'helps' if >= 0.324 + 0.05; amendment-5 rule for panels",
-    "compute": "5080 machine (where the memmaps live)"
-  },
-  "addendum_3block_zero_shot": {
-    "date": "2026-10-12",
-    "status": "recorded before running (user: 'how does this run on the 3 block scene only as is rn?'); descriptive",
-    "what": "zero-shot on the three-block selection set H (160 states, 75 forks): HYB (amendment 10; trained on F1+F2 only) sampling 64 futures from the true start latent with the executed chunks; US2_xlong (Phase-2 deterministic) with Phase-2 Gauss-TE starts; readouts BOTH and hold-30+floor (floor = each model's mean hold-30 error on H's real futures); beside the three-block-trained US (H: P 0.672, BOTH 0.715, H30_floor 0.808)"
-  },
-  "amendment_13": {
-    "date": "2026-10-13",
-    "status": "frozen before running (user: 'go with per-task hybrids now and joint hybrid on 5080')",
-    "per_task_hybrids": {
-      "HYB_T1": "amendment-10 hybrid recipe (20,000 steps) on the three-block training data (Phase-1 enriched, 4,766 states, Phase-1e rare modes) with the frozen three-block US model as deterministic stream; graded on the three-block H (BOTH primary; hold-30+floor descriptive, floor = mean hold-30 error on H's real futures) beside US (BOTH 0.715, hold-30+floor 0.808 with its validation floor)",
-      "HYB_T2": "same recipe on the T2 training data (4,800 states) with the frozen T2 US2_long as deterministic stream; graded on H_T2 beside US2_long (BOTH 0.574)",
-      "helps": "score >= the task's deterministic monitor + 0.05 under BOTH"
-    },
-    "joint": {
-      "data": "three tasks, ~4,800 states each: three-block (Phase-1 enriched), T2, Phase-2 F1+F2 (original 4,800); disk memmaps on the 5080 with task ids",
-      "det_stream": "US recipe (deterministic conv, label-free rare-mode rebalancing within each task, Gauss-TE starts refit on the joint deltas, fast recipe), 67,500 steps; batches balanced 1/3 per task",
-      "head": "amendment-10 residual flow head on the joint data with the joint deterministic stream frozen, 40,000 steps, balanced 1/3 per task",
-      "grading": "each task's selection set (three-block H, H_T2, H2) with BOTH, beside that task's per-task deterministic and per-task hybrid models; 'joint matches per-task' if within 0.05 on each"
-    },
-    "compute": "per-task hybrids on the 3090 (T1 then T2); joint on the 5080"
-  },
-  "label_decision_2026_10_13": {
-    "date": "2026-10-13",
-    "status": "user decision (\"include any outcome as part of 'unsafe' behavior\"), recorded before re-grading",
-    "label": "primary fork label from now on = any-outcome fork: some object (target included) tilts >= 45 deg, leaves the table, or moves >= 30 mm in 2-62 of 64 true futures; safe = no such event varies (0 or 64); states with an event in exactly 1 or 63 futures are excluded. The harm (neighbour-only) label is reported beside. Earlier frozen verdicts stay as recorded under their original label"
+  "pilot_adjustment": {
+   "date": "2026-10-09",
+   "recorded": "before any Phase-2 data, under amendment 2's rule (only F2 action ranges)",
+   "re_pilot": "F1 30/30 valid, fork rate 15%; F2 17/30 valid (10 visibility, 3 settling), fork rate 35% (above 30%), always-harm 26%; F3 14/30, 15%",
+   "change": "F2 only: grasp/push offset +-12 -> +-8 mm, push distance 30-80 -> 30-60 mm; F2 re-piloted on the same pilot seeds; if still > 30%, offset +-5 mm and push 30-45 mm (last allowed step), then proceed regardless and report the rate",
+   "outcome": "F2 fork rate 35% (offset +-12, push 30-80), 32% (+-8, 30-60), 35% (+-5, 30-45; final): stacks are intrinsically fork-rich; per the rule, data generation proceeds with the last step's ranges and the rate is reported. Training-data selection uses the pre-declared fallback (generic harm disagreement among 8 screen futures, sim-only) because Phase 1f's L failed its 0.03 rule; screen seed 20261209"
   }
+ },
+ "amendment_3": {
+  "date": "2026-10-09",
+  "status": "recorded before H2 is screened and before any Phase-2 model is trained (implementation details of the frozen design; user: 'go ahead with next steps')",
+  "start_sampler": "Gauss_TE (P2-0b winner, 0.666 vs 0.672), refit on the Phase-2 training deltas (z0k - z0); used (a) in training in place of G in the 50/50 start mix and (b) for the 64 monitor starts on H2 and the panels (seeded per state, 20261220). The 3-block US reference is graded zero-shot with the same Phase-2 Gauss_TE",
+  "training": "US2 = Phase-1e US recipe exactly (fast recipe; label-free rare-mode rebalancing, 50% rare mode / 50% sibling majority), seed 0, on the 4,800 F1+F2 training states",
+  "H2": "F1+F2 seeds 500000-500599; 64 oracle futures per chunk start (pose error draw j seed 20261212, bench snippet j); fork = harm in 2-62/64, safe = 0/64; 80 + 80 drawn with seed 20261213; selected states rendered (true start + 64 futures at hold 10/30, executed actions); monitor actions = the 64 executed chunks (paired with the real futures, as H in Phase 1)",
+  "floor": "no separate validation set exists for Phase 2: each model's floor tau = its mean hold-30 error against H2's real futures (unpaired sampler starts, as in P2-0); label-free",
+  "grading": "R0 and R1 overall and per family; score = caught - false alarm (R0). H2 is the selection set; the gates are judged only on the fresh panels"
+ },
+ "amendment_4": {
+  "date": "2026-10-09",
+  "status": "frozen 2026-10-09 (user: 'freeze it and go ahead'), before any part-A comparison or part-B training",
+  "basis": {
+   "H2_result": "US2 5.1% caught / 6.1% false; 3-block US zero-shot 6.4% / 2.4% (results/jenga/phase2_h2_result.json)",
+   "readout": "the frozen persistent split test on H2's REAL futures catches 19/78 forks (8/82 false); misses are mostly 'not persistent' (47): the two groups at hold 10 are not the same futures as at hold 30 (multi-factor scenes: e.g. grasp success at hold 10, a neighbour falling by hold 30). Hold-30-only on real futures: 69/78, 25/82 false; hold-10-only: 71/78, 22/82 (exploratory, H2)",
+   "dynamics": "US2 underfits: final training loss 0.072 vs US 0.037; on its own training fork states its hold-30 error is 1.3x the real futures' spread, and even from the exact rendered perturbed starts its futures spread only 0.28-0.33x the real ones (F1, F2); Gauss-TE start noise has the right size (0.97-1.09x the real perturbed starts)"
+  },
+  "part_A_readout": {
+   "candidates": {
+    "P": "frozen persistent test (reference)",
+    "H30": "two-group test at hold 30 only (BIC, Ashman D > 2, minority >= 2)",
+    "H30_floor": "H30 and hold-30 separation > the model's own floor (as R1); on real futures the floor is 0, i.e. = H30",
+    "BOTH": "two-group test passes at hold 10 AND at hold 30, partitions free to differ"
+   },
+   "selection": "on H2 real futures (the readout's ceiling), rank by caught - false; the winner must also keep US's score on the 3-block H within 0.03 of the frozen test's 0.672 (so Phase 1 conclusions are not changed by the new readout); if none qualifies, keep P and report",
+   "note": "H2 real-future numbers above were looked at before this draft; H2 is the selection set, the panels decide"
+  },
+  "part_B_dynamics": {
+   "arms": {
+    "US2_long": "US2 recipe, 3x steps (22,500 at batch 128)",
+    "US2_wide": "US2 recipe, network width 192 (from 128), 7,500 steps"
+   },
+   "selection": "rank US2, US2_long, US2_wide by H2 score (caught - false) under the part-A readout; also report fork spread ratio vs real on H2",
+   "budget": "US2_long ~5 h, US2_wide ~3 h GPU, one at a time"
+  },
+  "then": "if the best arm passes in-family >= 80% / <= 20% on H2, generate the two fresh panels (in-family and held-out F3) as frozen in amendment 2; otherwise report and stop for a decision"
+ },
+ "amendment_5": {
+  "date": "2026-10-10",
+  "status": "frozen 2026-10-10 (user: 'go with option 1, freeze and launch it'), before training",
+  "basis": "amendment 4 part B on H2 (BOTH readout): US2_long (22,500 steps) 34.6% caught / 15.9% false (score 0.188), flagged still undertrained (loss 0.059, falling); US2_wide no gain; ceiling on real futures 84.6% / 22.0%",
+  "arm": "US2_xlong = US2 recipe exactly (Gauss-TE starts, label-free rare-mode rebalancing, fast recipe, width 128, seed 0), 67,500 steps (9x US2) with the cosine schedule over the full run",
+  "grading": "H2 with the BOTH readout and each model's own floor (as amendment 4 grade), next to US2, US2_wide, US2_long; ranking by score",
+  "rule": "if the best arm reaches >= 80% caught with <= 20% false alarms on H2, generate the two fresh panels (amendment 2 seeds); otherwise report and stop for a decision",
+  "budget": "~14 h GPU",
+  "addendum_panel_screen": "2026-10-10, recorded before running (user away, delegated: 'i allow you to take over and run tests and continue'): the oracle-only harm screen of the two fresh panels (in-family F1+F2 seeds 600000-600599, truth seed 20261214; held-out F3 seeds 700000-700999, truth seed 20261217) is run early on idle CPUs to save time. No rendering, encoding, model or monitor touches these scenes; panels are selected, rendered and graded only if the amendment-5 rule allows",
+  "addendum_seed_replicate": "2026-10-10, approved by the user ('approve 1-3') before launch: US2_long retrained with seed 1 (identical recipe, 22,500 steps) on the RTX 5080 (future tensor kept in pinned host memory, FAST_TRAIN_Z_ON_CPU=1; values unchanged), graded on H2 with BOTH beside the seed-0 arms. Descriptive only: it measures seed variation and does not change the amendment-5 rule (which uses the seed-0 arms)",
+  "addendum_panels_if_pass": "2026-10-10, approved by the user ('approve 1-3'): if the best seed-0 arm passes the amendment-5 rule on H2, the two fresh panels are selected, rendered and graded automatically; otherwise stop and report",
+  "addendum_panel_details": "2026-10-10, recorded before any panel is selected or rendered: selection seeds 20261221 (in-family) / 20261222 (F3); primary model = the best seed-0 arm on H2; references: 3-block US zero-shot, second oracle run (truth_B seeds 20261215 / 20261218), exact-start probe (no pose error, 64 bench snippets); monitor = 64 Gauss-TE starts (seeds 20261216 / 20261219), executed chunk with snippet j, BOTH readout; BOTH+floor (H2 floor) reported beside; gates on BOTH",
+  "addendum_harm_rebalancing_diagnostic": "2026-10-11, approved by the user ('run A on the 5080') before launch: DIAGNOSTIC upper bound, not task-agnostic. US2_harm = US2_long recipe (22,500 steps, seed 0, Gauss-TE starts) but each batch is 50% futures with harm (simulator label) and 50% without, instead of label-free rare-mode rebalancing (only 56% of rare-mode futures are harmful here). Graded on H2 with BOTH beside US2_long seeds 0/1 (0.188 / 0.276; seed spread ~0.09). Reading: clearly above both seeds -> the label-free emphasis signal is a weak link; within the seed spread -> the dynamics model is"
+ },
+ "amendment_6_DRAFT": {
+  "date": "2026-10-10",
+  "status": "DRAFT - not frozen; for the user's decision after US2_xlong (approved as 'draft only')",
+  "motivation": "US2 underfits the Phase-2 scenes and improves with training length (US2 0.0 -> US2_long 0.19 on H2); each step unrolls all 19 model steps with checkpointing, so steps are expensive",
+  "arm": {
+   "US2_trunc": "US2 recipe, but each training sample unrolls a random window of K = 10 model steps: with probability 1/2 the window starts at step 0 from the sampled/rendered start (as now, keeping the start-uncertainty -> outcome mapping), otherwise at a uniform step t0 in 1..9 from the real latent z[t0-1] plus the usual input noise; loss on the window's steps with the same hold weights. ~1.9x cheaper per step; trained for the same wall-clock as US2_xlong would need for 3x US2_long's samples"
+  },
+  "risk": "windows started from real latents train on real rather than self-predicted states (exposure bias); the step-0 half keeps full-horizon rollouts from uncertain starts",
+  "selection": "H2 score under BOTH beside US2_long and US2_xlong; same amendment-5 rule for panels",
+  "decide_after": "US2_xlong's learning curve: if xlong is still improving at 67,500 steps, cheaper steps are worth it; if it plateaued below the bar, more steps of any kind are unlikely to help and a different dynamics model (pretrained V-JEPA 2-AC, transformer predictor) is the better next step"
+ },
+ "amendment_7": {
+  "date": "2026-10-11",
+  "status": "frozen before running (user: 'do 1. and 3 do ibot and after that ask me about the transformer')",
+  "motivation": "Toso et al. 2026 (arXiv 2610.07540, App. A.2): frozen DINOv2 amplifies small physical perturbations ~25x (iBOT ~1x) and its predictors cannot hold an equilibrium; our Phase-2 predictor underfits and collapses futures (spread 0.3x real) while the loss keeps falling",
+  "diagnostic": {
+   "frames": "the H2 renders made for the V-JEPA test (true start, 64 perturbed starts with monitor draws seed 20261230, 64 real futures after 18 and 36 commands)",
+   "encoders": {
+    "DINO_fixedPCA": "current latent (DINOv2 ViT-S/14 392 -> fixed channel PCA 8 fit on 3-block images)",
+    "DINO_refitPCA": "DINOv2 tokens, channel PCA 8 refit on the H2 true-start frames",
+    "IBOT_PCA": "iBOT ViT-S/16 teacher (448 px, 28x28 patch tokens, ImageNet normalisation) -> channel PCA 8 fit on the H2 true-start frames"
+   },
+   "metrics": {
+    "gain": "median over states of (||z_start_k - z_true|| / object position perturbation rms mm), divided by the median latent distance between different states' true starts (scene scale)",
+    "linearity": "median per-state Spearman correlation between ||z_start_k - z_true|| and the perturbation size",
+    "ceiling": "BOTH readout on the real futures (forks caught, false alarms, score)"
+   },
+   "rule": "iBOT qualifies for retraining if its normalised gain is <= 0.5x DINO_fixedPCA's OR its linearity is >= 0.2 higher, AND its real-future BOTH score is >= DINO_fixedPCA's - 0.05"
+  },
+  "retrain_if_qualified": {
+   "data": "the same 4,800 Phase-2 training states and seeds re-rendered and encoded with iBOT -> channel PCA 8 (fit on 600 training true-start frames, seed 20261240); H2 re-rendered the same way (true start + 64 futures at hold 10/30)",
+   "model": "US2_long recipe (22,500 steps, seed 0, Gauss-TE refit on iBOT deltas, rare modes re-detected) on the iBOT latents",
+   "comparison": "H2 with BOTH and own floor beside US2_long seeds 0/1 (0.188 / 0.276) and US2_xlong (0.266); 'helps' if above 0.28 + 0.05",
+   "then": "ask the user about the transformer predictor (option B)"
+  }
+ },
+ "amendment_8": {
+  "date": "2026-10-11",
+  "status": "frozen before any code runs (user: 'sure build and run with the aux pixel arm, and keep vjepa fine tune aside')",
+  "basis": "everything but the predictor has been ruled out on H2: readout fixed (BOTH), start sampler fine (Gauss-TE), encoder fine (iBOT no better, amendment 7), training length plateaus (xlong 0.266), width no help, harm-label emphasis worse (US2_harm 0.040), V-JEPA 2-AC zero-shot fails (-0.05)",
+  "predictor": "spatial transformer step model replacing the conv net, same interface and recipe: the 28x28x8 latent is patchified 2x2 -> 196 tokens (dim 32 -> 384) + learned 2-D position embeddings + 4 register tokens; 6 blocks, width 384, 6 heads, MLP 4x, AdaLN-Zero conditioning on the embedded action pair (after Toso et al. 2026 and WorldDiT); attention across all locations; output: per-token linear -> 2x2x8 residual (unpatchified). Deterministic, unrolled 19 steps as the US recipe",
+  "arms": {
+   "T": "transformer predictor, US2_long recipe otherwise (label-free rare-mode rebalancing, 50/50 Gauss-TE or rendered starts, input noise, hold weights, 22,500 steps at batch 128, lr x2 cosine, seed 0)",
+   "T_pix": "T plus an auxiliary head (training only; absent at inference) predicting per-patch-normalised RGB of the REAL future close-camera frame at hold 10 and hold 30: frame downsampled to 112x112, 14x14 patches of 8x8x3 = 192 values each normalised by its own mean and std (as WorldDiT); head = linear from the 196 output tokens; loss weight 0.01 (MSE), applied at model steps HOLD10 and HOLD30"
+  },
+  "data": "the existing 4,800 Phase-2 training states; future frames re-rendered with the identical seeds and future order as eval/phase2_data.py and verified against the stored traces (max abs difference < 1e-6 required, else the arm is not run)",
+  "grading": "H2 with the BOTH readout and each model's own floor, beside US2_long seeds 0/1 (0.188 / 0.276) and US2_xlong (0.266); 'transformer helps' if T or T_pix scores > 0.276 + 0.05; amendment-5 rule for panels (>= 80% / <= 20% on H2)",
+  "compute": "T on the 3090, T_pix on the 5080 (frames copied over), in parallel"
+ },
+ "amendment_9": {
+  "date": "2026-10-12",
+  "status": "frozen before any code runs (user: 'sure build and run the set-level objective')",
+  "basis": "amendment 8: transformers reach the lowest training loss (0.039) yet do not branch better (T 0.06, T_pix 0.19 vs conv 0.19-0.28); per-family breakdown shows a uniform ~half-of-ceiling gap. Per-future regression from paired starts smears across forks; sampled (Gauss-TE) starts used by the monitor never receive a direct training signal",
+  "set_loss": "each step, S = 8 training states (4 drawn uniformly from states whose own futures have a rare mode -- label-free -- and 4 uniformly from all states); for each, M = 8 of its real futures (uniform without replacement) give the real set Y (hold-10 and hold-30 latents) and their executed actions; the model is rolled 19 steps from 8 Gauss-TE starts (one per real future's actions) giving X. Set term = energy distance per state: mean||X-Y|| - 0.5 mean_{i!=j}||X_i-X_j|| - 0.5 mean_{i!=j}||Y_i-Y_j||, divided by sqrt(D), averaged over hold 10 and hold 30 and the S states",
+  "objective": "per-future US recipe loss (unchanged batch of 128) + lambda * set term",
+  "arms": {
+   "C0": "control: lambda = 0",
+   "SL_low": "lambda such that lambda x (initial set term) = 0.5 x (initial per-future loss)",
+   "SL_high": "lambda such that lambda x (initial set term) = 5 x (initial per-future loss)"
+  },
+  "calibration": "initial values measured on 20 training batches with the starting model before any update (seed 0); recorded in the result",
+  "training": "all arms fine-tune US2_long (seed 0, the 0.188 model) for 7,500 steps at batch 128, AdamW lr 1.5e-4 (fast recipe lr / 4) cosine, seed 0, same rare-mode rebalancing, Gauss-TE / rendered start mix, input noise and hold weights",
+  "grading": "H2 with BOTH and own floor; 'set loss helps' if the better SL arm scores >= C0 + 0.10 (above the observed seed spread 0.09); panels only under the amendment-5 rule (>= 80% / <= 20% on H2)",
+  "compute": "C0 on the 3090, SL_low then SL_high on the 5080"
+ },
+ "amendment_10": {
+  "date": "2026-10-12",
+  "status": "frozen before any code runs (user: 'build the hybrid model')",
+  "basis": "amendment 9 interim: the set-level loss spreads futures (0.29x -> 0.50x real) and catches more forks (36% -> 53%) but doubles false alarms (15% -> 33%); spread is not targeted at forks. Foresight Diffusion (Zhang et al., ICLR 2026) shows deterministic predictive streams should carry prediction while a generative stream adds variability; FlowWM (Porcher et al. 2026) shows feature-space flow matching needs a wide projection head and a noise-shifted timestep schedule",
+  "model": {
+   "predictive_stream": "US2_xlong (deterministic conv step model), frozen; for future k it rolls the TRUE start latent z0 with that future's executed actions and gives z_det at hold 10 and hold 30",
+   "generative_head": "conditional flow matching on the residual r = z_real - z_det at hold 10 and hold 30 (2 x 28x28x8): tokens = 196 locations (2x2 patches; noisy residual 64 dims + conditioning z0 32 + z_det 64 dims) -> linear to width 384; 4 DiT blocks, 6 heads, AdaLN-Zero on the flow time and the embedded 19-step action sequence; wide projection head (LayerNorm -> 1024 -> 1024 -> 64, GELU); linear path, velocity target r - noise; training times shifted toward noise with the Esser shift, alpha = 8",
+   "training": "Phase-2 training states, futures sampled with the label-free rare-mode rebalancing (50% rare mode / 50% sibling majority), batch 128, 20,000 steps, AdamW 3e-4 with 500 warm-up steps then cosine, weight decay 1e-4, seed 0, bf16",
+   "monitor": "per H2 state, 64 samples: z_det from the true start latent and executed chunk j, plus a residual sampled with 20 Euler steps on the shifted schedule (seed 20261250 + state index); BOTH readout on the 64 hold-10/hold-30 futures"
+  },
+  "grading": "H2 with BOTH; beside US2_xlong (0.266), US2_long seeds (0.188 / 0.276), C0 and SL arms; report spread ratio; 'hybrid helps' if score >= 0.276 + 0.05; panels only if >= 80% caught / <= 20% false on H2",
+  "compute": "3090 (free after C0)"
+ },
+ "addendum_any_outcome_label": {
+  "date": "2026-10-12",
+  "status": "recorded before computing (user: 'do part c now'); descriptive, does not replace the frozen harm label or any gate",
+  "label": "any-outcome fork: for each future, the binary events per object (INCLUDING the target): tilt change >= 45 deg, leaves the table, centre moves >= 30 mm (end of hold); a state is an any-outcome fork if some (object, event) occurs in 2-62 of its 64 oracle futures; safe if no (object, event) varies (each occurs in 0 or 64)",
+  "graded": "H2 real-future upper limit and the existing models (US2_long seeds 0/1, US2_xlong, T, T_pix, C0, SL_low) with BOTH, under both labels; also the confusion of the two labels"
+ },
+ "amendment_11": {
+  "date": "2026-10-12",
+  "status": "frozen before any new data (user: 'data scale up you can start')",
+  "question": "Is training-data scarcity across varied layouts the bottleneck? (never varied in Phase 2; Phase 1 used ~4,800 states for ONE layout)",
+  "data": "3x the Phase-2 training set: the existing 4,800 states plus 9,600 new ones from new scene seeds 1500-6499 per family (F1, F2), screened and selected exactly as eval/phase2_data.py (8 screen futures, harm disagreement 1-7 of 8 up to half, the rest others; 16/8 futures; screen seed 20261209, select seed 20261260, futures seed 20261211 keyed by scene seed so the new states never collide with the old); 4,800 new per family",
+  "model": "US2 recipe exactly (deterministic conv, label-free rare-mode rebalancing re-detected on the combined data, Gauss-TE starts refit on the combined deltas? NO: Gauss-TE kept fixed as amendment 3 so only the data changes), seed 0, 67,500 steps (US2_xlong's budget) -> US2_x3data",
+  "comparison": "US2_xlong (same steps, 1x data, 0.266 on H2); 'data helps' if US2_x3data scores >= 0.266 + 0.10 on H2 (BOTH); also reported under the any-outcome label",
+  "compute": "screen/render on the 3090 machine's CPUs (rendering pools never share the GPU with another encoding pool); data copied to the 5080 machine (1.7 TB disk) and read from a disk memmap during training (values identical to in-memory)"
+ },
+ "amendment_12": {
+  "date": "2026-10-12",
+  "status": "frozen before running (user: 'sure do 1 and 2'); runs after amendment 11 finishes",
+  "basis": "amendment 10: hybrid 38.5% / 6.1% (score 0.324, misses the 0.326 bar by 0.002) with spread 0.83x real and the lowest false-alarm rate in Phase 2",
+  "arm": "HYB_x3 = the amendment-10 hybrid exactly, but (a) the frozen deterministic stream is US2_x3data (amendment 11) and (b) the residual head is trained on the 3x data (amendment-11 memmaps, same label-free rare-mode rebalancing), 40,000 steps (2x amendment 10), otherwise identical",
+  "grading": "H2, BOTH, beside HYB (0.324) and US2_x3data; 'helps' if >= 0.324 + 0.05; amendment-5 rule for panels",
+  "compute": "5080 machine (where the memmaps live)"
+ },
+ "addendum_3block_zero_shot": {
+  "date": "2026-10-12",
+  "status": "recorded before running (user: 'how does this run on the 3 block scene only as is rn?'); descriptive",
+  "what": "zero-shot on the three-block selection set H (160 states, 75 forks): HYB (amendment 10; trained on F1+F2 only) sampling 64 futures from the true start latent with the executed chunks; US2_xlong (Phase-2 deterministic) with Phase-2 Gauss-TE starts; readouts BOTH and hold-30+floor (floor = each model's mean hold-30 error on H's real futures); beside the three-block-trained US (H: P 0.672, BOTH 0.715, H30_floor 0.808)"
+ },
+ "amendment_13": {
+  "date": "2026-10-13",
+  "status": "frozen before running (user: 'go with per-task hybrids now and joint hybrid on 5080')",
+  "per_task_hybrids": {
+   "HYB_T1": "amendment-10 hybrid recipe (20,000 steps) on the three-block training data (Phase-1 enriched, 4,766 states, Phase-1e rare modes) with the frozen three-block US model as deterministic stream; graded on the three-block H (BOTH primary; hold-30+floor descriptive, floor = mean hold-30 error on H's real futures) beside US (BOTH 0.715, hold-30+floor 0.808 with its validation floor)",
+   "HYB_T2": "same recipe on the T2 training data (4,800 states) with the frozen T2 US2_long as deterministic stream; graded on H_T2 beside US2_long (BOTH 0.574)",
+   "helps": "score >= the task's deterministic monitor + 0.05 under BOTH"
+  },
+  "joint": {
+   "data": "three tasks, ~4,800 states each: three-block (Phase-1 enriched), T2, Phase-2 F1+F2 (original 4,800); disk memmaps on the 5080 with task ids",
+   "det_stream": "US recipe (deterministic conv, label-free rare-mode rebalancing within each task, Gauss-TE starts refit on the joint deltas, fast recipe), 67,500 steps; batches balanced 1/3 per task",
+   "head": "amendment-10 residual flow head on the joint data with the joint deterministic stream frozen, 40,000 steps, balanced 1/3 per task",
+   "grading": "each task's selection set (three-block H, H_T2, H2) with BOTH, beside that task's per-task deterministic and per-task hybrid models; 'joint matches per-task' if within 0.05 on each"
+  },
+  "compute": "per-task hybrids on the 3090 (T1 then T2); joint on the 5080"
+ },
+ "label_decision_2026_10_13": {
+  "date": "2026-10-13",
+  "status": "user decision (\"include any outcome as part of 'unsafe' behavior\"), recorded before re-grading",
+  "label": "primary fork label from now on = any-outcome fork: some object (target included) tilts >= 45 deg, leaves the table, or moves >= 30 mm in 2-62 of 64 true futures; safe = no such event varies (0 or 64); states with an event in exactly 1 or 63 futures are excluded. The harm (neighbour-only) label is reported beside. Earlier frozen verdicts stay as recorded under their original label"
+ },
+ "data_correction_2026_10_13": {
+  "date": "2026-10-13",
+  "status": "frozen (user approved: 'yes start the regeneration'; scope narrowed by user to the three-block task and T2)",
+  "finding": "Perception-error perturbations were applied as full 6-D pose noise without settling: objects interpenetrated (median 2-4 mm) and some fell or were ejected with the robot holding still (21/30 sampled varied-scene forks; 3/25 three-block states). See results/jenga/perturbation_artifact_check*.json.",
+  "correction": {
+   "perturbation": "planar (x, y, yaw) noise, shrunk x1/0.75/0.5/0.25/0 until no new overlap > 0.5 mm and, over the 3.8 s horizon with the robot holding, no object moves > 5 mm or tilts > 5 deg beyond the unperturbed scene; the applied (scaled) error is recorded and is what the start sampler receives",
+   "at_rest": "a chunk start is excluded if, unperturbed and with the robot holding, a non-target object moves > 10 mm or tilts > 10 deg over the horizon",
+   "label": "any-outcome primary (label_decision_2026_10_13), harm beside",
+   "unit_test": "before any regenerated data is used: robot-still futures from perturbed starts must show (near) zero events; a verification video is shown to the user"
+  },
+  "unchanged": "scene/episode seeds, futures seeds, snippet rules, chunk starts, frame indices, models and readouts",
+  "outputs": {
+   "three_block_H": "results/program_b/phase1/h_v2 (old h/ kept)",
+   "T2": "results/program_b/t2_v2 (old t2/ kept)"
+  },
+  "order": [
+   "three-block H re-label and re-grade of existing monitors (US BOTH, US H30_floor, hybrid T1)",
+   "T2 data + H_T2 regeneration, retrain US_T2 and the T2 hybrid",
+   "varied scenes (F1/F2), joint model: parked"
+  ]
+ }
 }

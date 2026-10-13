@@ -73,8 +73,46 @@ def pose_noise(key, sigma, blocks=3):
     return position, rotation
 
 
+VALID_PERTURBATION = True    # data correction 2026-10-13 (as eval/phase2_scenes.py); False reproduces older data
+HOLD_CHECK_STEPS = 38
+REST_MOVE_MM, REST_TILT_DEG = 10.0, 10.0
+
+
 def perturb_blocks(sim, position, rotation):
-    """Shift and rotate the three blocks' free joints in place; velocities are untouched."""
+    """Perception-error noise on the three blocks' free joints; velocities are untouched. With VALID_PERTURBATION the
+    noise is planar (x, y, yaw) and shrunk (x1, 0.75, 0.5, 0.25, 0) until the scene is valid and at rest like the
+    observed one: no new overlap beyond 0.5 mm, and over the 3.8 s horizon with the robot holding, no block moving more
+    than 5 mm (or tilting more than 5 deg) beyond the unperturbed scene. The applied (scaled, planar) error is stored
+    in sim.last_perturbation; sim.last_perturb_scale holds the scale."""
+    position, rotation = np.asarray(position, float), np.asarray(rotation, float)
+    if not VALID_PERTURBATION:
+        _apply_blocks(sim, position, rotation)
+        sim.last_perturbation, sim.last_perturb_scale = (position, rotation), 1.0
+        return
+    base = sim.snapshot()
+    key = hash(base[0].tobytes())
+    if getattr(sim, "_base_key", None) != key:
+        sim._base_check = (_penetration(sim), *_hold_motion(sim))
+        sim._base_key = key
+        sim.restore(base)
+    pen0, move0, tilt0 = sim._base_check
+    planar_p = position * np.array([1.0, 1.0, 0.0]); planar_r = rotation * np.array([0.0, 0.0, 1.0])
+    for scale in (1.0, 0.75, 0.5, 0.25, 0.0):
+        sim.restore(base)
+        if scale == 0.0:
+            break
+        _apply_blocks(sim, planar_p * scale, planar_r * scale)
+        if _penetration(sim) > pen0 + 0.0005:
+            continue
+        after = sim.snapshot()
+        move, tilt = _hold_motion(sim, limit=(move0 + 0.005, tilt0 + 5.0))
+        sim.restore(after)
+        if np.all(move <= move0 + 0.005) and np.all(tilt <= tilt0 + 5.0):
+            break
+    sim.last_perturbation, sim.last_perturb_scale = (planar_p * scale, planar_r * scale), scale
+
+
+def _apply_blocks(sim, position, rotation):
     from scipy.spatial.transform import Rotation
     from jenga_short_held_tails import BLOCK_NAMES
     m, d = sim.model, sim.data
@@ -85,6 +123,51 @@ def perturb_blocks(sim, position, rotation):
         quat = (Rotation.from_rotvec(rotation[k]) * Rotation.from_quat([x, y, z, w])).as_quat()
         d.qpos[adr + 3:adr + 7] = [quat[3], quat[0], quat[1], quat[2]]
     sim.mj.mj_forward(m, d)
+
+
+def _block_ids(sim):
+    from jenga_short_held_tails import BLOCK_NAMES
+    return [sim.model.body(n).id for n in BLOCK_NAMES]
+
+
+def _penetration(sim):
+    ids = set(_block_ids(sim)); deep = 0.0
+    for c in sim.data.contact[:sim.data.ncon]:
+        if int(sim.model.geom_bodyid[c.geom1]) in ids or int(sim.model.geom_bodyid[c.geom2]) in ids:
+            deep = max(deep, -float(c.dist))
+    return deep
+
+
+def _pose(sim):
+    ids = _block_ids(sim)
+    pos = sim.data.xpos[ids].copy()
+    tilt = np.degrees(np.arccos(np.clip(sim.data.xmat[ids].reshape(-1, 3, 3)[:, 2, 2], -1, 1)))
+    return pos, tilt
+
+
+def _hold_motion(sim, steps=HOLD_CHECK_STEPS, limit=None):
+    """Per-block displacement (m) and tilt change (deg) holding the robot's target and gripper for `steps` actions;
+    stops early once a block is 20 mm / 20 deg beyond `limit` (such a draw is rejected either way)."""
+    p0, t0 = _pose(sim)
+    hold = np.r_[sim.target, 0.0].astype(np.float32)
+    for i in range(steps):
+        sim.execute(hold)
+        if limit is not None and i % 5 == 4:
+            p1, t1 = _pose(sim)
+            m, t = np.linalg.norm(p1 - p0, axis=1), np.abs(t1 - t0)
+            if np.any(m > limit[0] + 0.02) or np.any(t > limit[1] + 20.0):
+                return m, t
+    p1, t1 = _pose(sim)
+    return np.linalg.norm(p1 - p0, axis=1), np.abs(t1 - t0)
+
+
+def blocks_at_rest(sim):
+    """True if, holding still for the horizon, neither NEIGHBOUR block of the unperturbed scene moves more than
+    REST_MOVE_MM or tilts more than REST_TILT_DEG. Leaves the simulator state unchanged."""
+    snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
+    move, tilt = _hold_motion(sim)
+    sim.restore(snap); sim.data.qacc_warmstart[:] = warm
+    return bool(np.all(move[1:] * 1000 <= REST_MOVE_MM) and np.all(tilt[1:] <= REST_TILT_DEG))
 
 
 class Friction:

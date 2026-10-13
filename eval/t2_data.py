@@ -14,7 +14,8 @@ import numpy as np  # noqa: E402
 import phase2_data as pdata  # noqa: E402
 import phase2_models as pm  # noqa: E402
 
-T2DIR = ROOT / "results/program_b/t2"
+import os  # noqa: E402
+T2DIR = ROOT / os.environ.get("T2_DIR", "results/program_b/t2")      # data correction 2026-10-13: results/program_b/t2_v2
 H_SEEDS = range(500_000, 500_800)
 
 
@@ -58,15 +59,12 @@ def h(screen_workers=14, render_workers=5):
     for d in ("h2_screen", "h2"):
         (T2DIR / d).mkdir(parents=True, exist_ok=True)
     screens = pdata.pool_run(h_screen_job, [("T2", s) for s in H_SEEDS], screen_workers, "h screen")
-    rows = [(f, s, int(i), c) for (f, s), r in sorted(screens.items()) if not r["skipped"] for i, c in r["harm_counts"].items()]
-    rng = np.random.default_rng(20261321)
-    forks = [r for r in rows if 2 <= r[3] <= 62]; safe = [r for r in rows if r[3] == 0]
-    forks = [forks[i] for i in sorted(rng.permutation(len(forks))[:80])]
-    safe = [safe[i] for i in sorted(rng.permutation(len(safe))[:80])]
+    rows, forks, safe, n_forks, _ = pm.h_select(screens, np.random.default_rng(20261321))
     by = {}
     for f, s, i, _ in forks + safe:
         by.setdefault((f, s), set()).add(i)
-    summary = {"scenes": len(screens), "chunk_starts": len(rows), "forks_available": sum(2 <= r[3] <= 62 for r in rows),
+    summary = {"scenes": len(screens), "chunk_starts": len(rows), "forks_available": n_forks,
+               "not_at_rest_excluded": sum(len(r.get("not_at_rest", [])) for r in screens.values() if not r["skipped"]),
                "h_forks": len(forks), "h_safe": len(safe)}
     (T2DIR / "h_selection.json").write_text(json.dumps(summary) + "\n")
     print(json.dumps(summary), flush=True)
@@ -97,4 +95,6 @@ def grade():
 
 
 if __name__ == "__main__":
+    if "t2_v2" not in str(T2DIR) and sys.argv[1] in ("train_data", "h"):
+        raise SystemExit("old T2 data is kept: regenerate into T2_DIR=results/program_b/t2_v2")
     {"train_data": train_data, "h": h, "model": model, "grade": grade}[sys.argv[1]]()

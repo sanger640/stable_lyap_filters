@@ -73,17 +73,34 @@ def _h2_screen(family, seed):
     scene, sim, acts, starts = prep
     snippets = np.load(um.BENCH)["snippets"]
     pos_cov, rot_cov = ps.pooled_error_model()
-    out = {}
+    out, split, not_rest = {}, {}, []
     for index, act in enumerate(acts):
-        if index in starts:
+        if index in starts and ps.VALID_PERTURBATION and not ps.at_rest(sim):
+            not_rest.append(index)                       # data correction 2026-10-13: start not at rest -> excluded
+        elif index in starts:
             snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
             start = sim.object_state()
             key = (FAMILY_CODE[family], seed, index)
             traces, _, _ = _futures(sim, snap, acts[index:index + 8], len(scene["objects"]), key, snippets, pos_cov, rot_cov)
             out[index] = int(sum(ps.harm(t, start) for t in traces))
+            split[index] = ps.split_count([ps.events(t, start) for t in traces])
             sim.restore(snap); sim.data.qacc_warmstart[:] = warm
         sim.execute(act)
-    return {"skipped": False, "harm_counts": out}
+    return {"skipped": False, "harm_counts": out, "split_counts": split, "not_at_rest": not_rest}
+
+
+def h_select(screens, rng, n_each=80):
+    """Selection-set states. Any-outcome label (primary from 2026-10-13) when the screens carry split counts:
+    fork = some (object, event) cell in 2..62 of 64 futures, safe = every cell 0 or 64; harm counts otherwise."""
+    rows = [(f, s, int(i), c) for (f, s), r in sorted(screens.items()) if not r["skipped"]
+            for i, c in r.get("split_counts", r["harm_counts"]).items()]
+    any_label = all("split_counts" in r for r in screens.values() if not r["skipped"])
+    forks = [r for r in rows if 2 <= r[3] <= 62]
+    safe = [r for r in rows if (r[3] in (0, 64) if any_label else r[3] == 0)]
+    n_f, n_s = len(forks), len(safe)
+    forks = [forks[i] for i in sorted(rng.permutation(len(forks))[:n_each])]
+    safe = [safe[i] for i in sorted(rng.permutation(len(safe))[:n_each])]
+    return rows, forks, safe, n_f, n_s
 
 
 def h2_render_job(job):
@@ -123,6 +140,7 @@ def _h2_render(job):
                     torch.cuda.empty_cache()
                     np.savez(path.with_suffix(".tmp.npz"), z0=z[0], z=z[1:].reshape(64, 2, 28, 28, 8),
                              actions=np.stack(executed), harm=np.array([ps.harm(t, start) for t in traces]),
+                             events=np.stack([ps.events(t, start) for t in traces]),
                              traces=np.stack(traces).astype(np.float32), start_state=start, close_frame=true_start)
                     path.with_suffix(".tmp.npz").replace(path)
                     sim.restore(snap); sim.data.qacc_warmstart[:] = warm
@@ -138,17 +156,13 @@ def h2(workers_screen, workers_render):
     for d in ("h2_screen", "h2"):
         (OUT / d).mkdir(parents=True, exist_ok=True)
     screens = pdata.pool_run(h2_screen_job, [(f, s) for f in ("F1", "F2") for s in H2_SEEDS], workers_screen, "h2 screen")
-    rows = [(f, s, int(i), c) for (f, s), r in sorted(screens.items()) if not r["skipped"] for i, c in r["harm_counts"].items()]
-    rng = np.random.default_rng(SEEDS["h2_select"])
-    forks = [r for r in rows if 2 <= r[3] <= 62]
-    safe = [r for r in rows if r[3] == 0]
-    forks = [forks[i] for i in sorted(rng.permutation(len(forks))[:80])]
-    safe = [safe[i] for i in sorted(rng.permutation(len(safe))[:80])]
+    rows, forks, safe, n_forks, n_safe = h_select(screens, np.random.default_rng(SEEDS["h2_select"]))
     by = {}
     for f, s, i, _ in forks + safe:
         by.setdefault((f, s), set()).add(i)
     summary = {"scenes": len(screens), "skipped": sum(r["skipped"] for r in screens.values()), "chunk_starts": len(rows),
-               "forks_available": len([r for r in rows if 2 <= r[3] <= 62]), "safe_available": len([r for r in rows if r[3] == 0]),
+               "forks_available": n_forks, "safe_available": n_safe,
+               "not_at_rest_excluded": sum(len(r.get("not_at_rest", [])) for r in screens.values() if not r["skipped"]),
                "h2_forks": len(forks), "h2_safe": len(safe),
                "per_family": {f: {"forks": sum(r[0] == f for r in forks), "safe": sum(r[0] == f for r in safe)} for f in ("F1", "F2")}}
     (OUT / "h2_selection.json").write_text(json.dumps({"summary": summary, "states": [f"{f}:{s}:{i}" for f, s, i, _ in forks + safe]}) + "\n")

@@ -68,20 +68,23 @@ def _screen(family, seed):
     snippets = np.load(um.BENCH)["snippets"]
     pos_cov, rot_cov = ps.pooled_error_model()
     n = len(scene["objects"])
-    out = {}
+    out, split, not_rest = {}, {}, []
     for index, act in enumerate(acts):
-        if index in starts:
+        if index in starts and ps.VALID_PERTURBATION and not ps.at_rest(sim):
+            not_rest.append(index)                       # data correction 2026-10-13: start not at rest -> excluded
+        elif index in starts:
             snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
             start = sim.object_state()
-            harms = []
+            harms, evs = [], []
             for k in range(K_SCREEN):
                 rng = np.random.default_rng([SEEDS["screen"], FAMILY_CODE[family], seed, index, k])
-                harms.append(ps.harm(ps.future(sim, snap, acts[index:index + 8], snippets[rng.integers(len(snippets))],
-                                               ps.draw_error(n, pos_cov, rot_cov, SEEDS["screen"], seed, index, k)), start))
-            out[index] = int(sum(harms))
+                tr = ps.future(sim, snap, acts[index:index + 8], snippets[rng.integers(len(snippets))],
+                               ps.draw_error(n, pos_cov, rot_cov, SEEDS["screen"], seed, index, k))
+                harms.append(ps.harm(tr, start)); evs.append(ps.events(tr, start))
+            out[index] = int(sum(harms)); split[index] = ps.split_count(evs)
             sim.restore(snap); sim.data.qacc_warmstart[:] = warm
         sim.execute(act)
-    return {"skipped": False, "n_objects": n, "harm_counts": out}
+    return {"skipped": False, "n_objects": n, "harm_counts": out, "split_counts": split, "not_at_rest": not_rest}
 
 
 def select(screens):
@@ -89,7 +92,7 @@ def select(screens):
     roles, summary = {}, {}
     for family in FAMILIES:
         rows = [(seed, int(i), c) for (f, seed), r in screens.items() if f == family and not r["skipped"]
-                for i, c in r["harm_counts"].items()]
+                for i, c in r.get("split_counts", r["harm_counts"]).items()]   # any-outcome split (2026-10-13)
         dis = [r for r in rows if 0 < r[2] < K_SCREEN]
         oth = [r for r in rows if not 0 < r[2] < K_SCREEN]
         dis = [dis[i] for i in sorted(rng.permutation(len(dis))[:DISAGREE_CAP])]
@@ -159,6 +162,7 @@ def _render(job):
                     np.savez(path.with_suffix(".tmp.npz"), z0=z[0], z0k=z[1:1 + n],
                              z=z[1 + n:].reshape(n, len(FRAME_INDEX), 28, 28, 8), d_pos=np.stack(pos), d_rot=np.stack(rot),
                              traces=np.stack(traces).astype(np.float32), actions=np.stack(executed), harm=np.array(harms),
+                             events=np.stack([ps.events(t, start) for t in traces]),
                              start_state=start, frame_index=np.array(FRAME_INDEX))
                     path.with_suffix(".tmp.npz").replace(path)
                     sim.restore(snap); sim.data.qacc_warmstart[:] = warm
@@ -190,15 +194,22 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--screen-workers", type=int, default=14)
     parser.add_argument("--render-workers", type=int, default=5)
+    parser.add_argument("--out", default=None)
+    parser.add_argument("--stage", default="all", choices=("all", "screen", "render"))
     args = parser.parse_args()
     if not json.loads(PROTOCOL.read_text())["amendment_2"]["status"].startswith("frozen"):
         raise SystemExit("amendment 2 not frozen")
+    if args.out:
+        global OUT
+        OUT = Path(args.out)
     for d in ("screen", "train"):
         (OUT / d).mkdir(parents=True, exist_ok=True)
     screens = pool_run(screen_job, [(f, s) for f in ("F1", "F2") for s in TRAIN_SEEDS], args.screen_workers, "screen")
     roles, summary = select(screens)
     (OUT / "selection.json").write_text(json.dumps({"summary": summary, "roles": {f"{f}:{s}": v for (f, s), v in roles.items()}}) + "\n")
     print(json.dumps(summary), flush=True)
+    if args.stage == "screen":
+        return
     jobs = [(f, s, r) for (f, s), r in sorted(roles.items())]
     pool_run(render_job, jobs, args.render_workers, "render")
     print("done", flush=True)
