@@ -167,6 +167,43 @@ def _truth_v2(path):
     return out
 
 
+def truth_v3_job(path):
+    """v3 (data correction 2026-10-13): as v2 with physically valid perturbations (program_b_reference default) and
+    an at-rest flag for the start state."""
+    import traceback
+    try:
+        import program_b_reference as pr
+        assert pr.VALID_PERTURBATION
+        return str(path), _truth_v3(Path(path)), None
+    except Exception:
+        return str(path), None, traceback.format_exc()
+
+
+def _truth_v3(path):
+    import program_b_reference as pr
+    from jenga_short_held_tails import DirectJengaSim, extract_sim
+    import uncertainty_monitor_dev as um
+    out = _truth_v2(path)
+    sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="t1r_"))))
+    try:
+        with np.load(path) as f:
+            sim.restore((f["state"], f["ctrl"], f["target"], float(f["gripper"])))
+        out["at_rest"] = pr.blocks_at_rest(sim)
+    finally:
+        sim.close()
+    return out
+
+
+def stage_truth_v3(workers):
+    f = OUT / "truth_v3.json"
+    truth = json.loads(f.read_text()) if f.exists() else {}
+    paths = [str(p) for p in sorted((OUT / "states").glob("*.npz")) if str(p) not in truth]
+    if paths:
+        truth.update(pool(truth_v3_job, paths, workers, "truth_v3"))
+        f.write_text(json.dumps(truth) + "\n")
+    print("truth_v3 done", flush=True)
+
+
 def pool(fn, jobs, workers, label):
     res, fail = {}, []
     with mp.get_context("spawn").Pool(workers, initializer=_set_base) as p:
@@ -266,8 +303,20 @@ def stage_monitor_v2():
     print("monitor_v2 done", flush=True)
 
 
-def analyse_v2():
-    truth = json.loads((OUT / "truth_v2.json").read_text()); mon = json.loads((OUT / "monitor_v2.json").read_text())
+def analyse_v3():
+    """analyse_v2 on corrected truth (truth_v3), starts not at rest excluded; monitor unchanged (monitor_v2)."""
+    global RESULT_V2
+    truth = json.loads((OUT / "truth_v3.json").read_text())
+    excluded = [Path(p).stem for p, t in truth.items() if not t["at_rest"]]
+    RESULT_V2 = ROOT / "results/jenga/t1_filter_v3_result.json"
+    analyse_v2({p: t for p, t in truth.items() if t["at_rest"]}, extra={"not_at_rest_excluded": excluded})
+
+
+RESULT_V2 = ROOT / "results/jenga/t1_filter_v2_result.json"
+
+
+def analyse_v2(truth=None, extra=None):
+    truth = truth if truth is not None else json.loads((OUT / "truth_v2.json").read_text()); mon = json.loads((OUT / "monitor_v2.json").read_text())
     order = sorted(OFFSETS_MM, key=lambda o: (o[0] ** 2 + o[1] ** 2, o))
     k = lambda o: f"{o[0]},{o[1]}"
     rows = []
@@ -305,8 +354,9 @@ def analyse_v2():
                       "median_task_deviation_mm": float(np.median([r[pol + "_dev_mm"] for r in acted])) if acted else None,
                       "certain_topple_choices": sum(1 for r in acted if r[pol] >= 0.97)}
         out[grp] = g
+    out.update(extra or {})
     out["rows"] = rows
-    (ROOT / "results/jenga/t1_filter_v2_result.json").write_text(json.dumps(out, indent=1, default=list) + "\n")
+    RESULT_V2.write_text(json.dumps(out, indent=1, default=list) + "\n")
     print(json.dumps({k2: v for k2, v in out.items() if k2 != "rows"}, indent=1), flush=True)
 
 
@@ -379,13 +429,14 @@ def analyse():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("stage", choices=("cpu", "monitor", "analyse", "truth_v2", "monitor_v2", "analyse_v2"))
+    parser.add_argument("stage", choices=("cpu", "monitor", "analyse", "truth_v2", "monitor_v2", "analyse_v2", "truth_v3", "analyse_v3"))
     parser.add_argument("--workers", type=int, default=12)
     args = parser.parse_args()
     if not json.loads(PROTOCOL.read_text())["status"].startswith("frozen"):
         raise SystemExit("protocol not frozen")
     {"cpu": lambda: stage_cpu(args.workers), "monitor": stage_monitor, "analyse": analyse,
-     "truth_v2": lambda: stage_truth_v2(args.workers), "monitor_v2": stage_monitor_v2, "analyse_v2": analyse_v2}[args.stage]()
+     "truth_v2": lambda: stage_truth_v2(args.workers), "monitor_v2": stage_monitor_v2, "analyse_v2": analyse_v2,
+     "truth_v3": lambda: stage_truth_v3(args.workers), "analyse_v3": analyse_v3}[args.stage]()
 
 
 if __name__ == "__main__":
