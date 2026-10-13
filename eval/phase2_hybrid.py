@@ -226,7 +226,9 @@ def grade(name="HYB", result=RESULT):
     out = {"readout": "BOTH", "model": name, "HYB": {"all": score(al, fork), "F1": score(al[fam == "F1"], fork[fam == "F1"]),
                                       "F2": score(al[fam == "F2"], fork[fam == "F2"]),
                                       "fork_spread_ratio_median": float(np.median(spread))}}
-    out["hybrid_helps"] = bool(out["HYB"]["all"]["score"] >= (0.276 if name == "HYB" else 0.324) + 0.05)
+    ref = {"HYB": 0.276, "HYB_x3": 0.324, "HYB_T2": 0.574}.get(name)
+    out["reference_score"] = ref
+    out["hybrid_helps"] = None if ref is None else bool(out["HYB"]["all"]["score"] >= ref + 0.05)
     out["passes_in_family_bar_on_H2"] = bool(out["HYB"]["all"]["caught"] >= 0.80 and out["HYB"]["all"]["false_alarm"] <= 0.20)
     result.write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps(out, indent=1), flush=True)
