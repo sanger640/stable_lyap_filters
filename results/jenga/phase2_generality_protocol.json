@@ -278,5 +278,21 @@
     "date": "2026-10-12",
     "status": "recorded before running (user: 'how does this run on the 3 block scene only as is rn?'); descriptive",
     "what": "zero-shot on the three-block selection set H (160 states, 75 forks): HYB (amendment 10; trained on F1+F2 only) sampling 64 futures from the true start latent with the executed chunks; US2_xlong (Phase-2 deterministic) with Phase-2 Gauss-TE starts; readouts BOTH and hold-30+floor (floor = each model's mean hold-30 error on H's real futures); beside the three-block-trained US (H: P 0.672, BOTH 0.715, H30_floor 0.808)"
+  },
+  "amendment_13": {
+    "date": "2026-10-13",
+    "status": "frozen before running (user: 'go with per-task hybrids now and joint hybrid on 5080')",
+    "per_task_hybrids": {
+      "HYB_T1": "amendment-10 hybrid recipe (20,000 steps) on the three-block training data (Phase-1 enriched, 4,766 states, Phase-1e rare modes) with the frozen three-block US model as deterministic stream; graded on the three-block H (BOTH primary; hold-30+floor descriptive, floor = mean hold-30 error on H's real futures) beside US (BOTH 0.715, hold-30+floor 0.808 with its validation floor)",
+      "HYB_T2": "same recipe on the T2 training data (4,800 states) with the frozen T2 US2_long as deterministic stream; graded on H_T2 beside US2_long (BOTH 0.574)",
+      "helps": "score >= the task's deterministic monitor + 0.05 under BOTH"
+    },
+    "joint": {
+      "data": "three tasks, ~4,800 states each: three-block (Phase-1 enriched), T2, Phase-2 F1+F2 (original 4,800); disk memmaps on the 5080 with task ids",
+      "det_stream": "US recipe (deterministic conv, label-free rare-mode rebalancing within each task, Gauss-TE starts refit on the joint deltas, fast recipe), 67,500 steps; batches balanced 1/3 per task",
+      "head": "amendment-10 residual flow head on the joint data with the joint deterministic stream frozen, 40,000 steps, balanced 1/3 per task",
+      "grading": "each task's selection set (three-block H, H_T2, H2) with BOTH, beside that task's per-task deterministic and per-task hybrid models; 'joint matches per-task' if within 0.05 on each"
+    },
+    "compute": "per-task hybrids on the 3090 (T1 then T2); joint on the 5080"
   }
 }
