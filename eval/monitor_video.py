@@ -103,6 +103,50 @@ def stage_sim(workers=8):
             print(f"sim {n}/{len(cand)} ep{e}", "FAILED\n" + err if err else "", flush=True)
 
 
+def truth2_job(e):
+    """Ground truth with the gripper-relative target events (label revision 2026-10-13), same futures as stage sim."""
+    import traceback
+    try:
+        import uncertainty_monitor_dev as um
+        import visual_pipeline_panel3 as p3
+        from jenga_runtime import DEFAULT_LMDB, JengaReplay
+        from jenga_short_held_tails import DirectJengaSim, extract_sim
+        from regrade_any_outcome import events_three_block_v2, labels
+        target = OUT / f"ep{e}.truth2.json"
+        if target.exists():
+            return e, None
+        errors, snippets = p3.ErrorModel(), np.load(um.BENCH)["snippets"]
+        replay = JengaReplay(DEFAULT_LMDB); actions = np.asarray(replay.episode(e).actions, np.float32); replay.close()
+        with np.load(OUT / f"ep{e}.npz") as f:
+            starts = [int(s) for s in f["starts"]]
+        sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="mv2_"))))
+        out = {}
+        try:
+            sim.reset(int(e) + RESET_BASE)
+            for i, a in enumerate(actions):
+                if i in starts:
+                    snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy(); key = (int(e) + RESET_BASE, i)
+                    tr = np.stack([um.rollout(sim, snap, actions[i:i + 8], snippets[j], [errors.sample(SEEDS["truth"], *key, j)]) for j in range(64)])
+                    af, asafe = labels(events_three_block_v2(tr)); out[i] = {"fork": bool(af), "safe": bool(asafe)}
+                    sim.restore(snap); sim.data.qacc_warmstart[:] = warm
+                if i > max(starts):
+                    break
+                sim.execute(a)
+        finally:
+            sim.close()
+        target.write_text(json.dumps(out) + "\n")
+        return e, None
+    except Exception:
+        return e, traceback.format_exc()
+
+
+def stage_truth2(workers=9):
+    eps = json.loads((ROOT / "results/jenga/monitor_video_summary.json").read_text())["episodes"]
+    with mp.get_context("spawn").Pool(workers) as pool:
+        for e, err in pool.imap_unordered(truth2_job, eps):
+            print("truth2", e, err or "", flush=True)
+
+
 def stage_monitor():
     import torch
     import step3_world_model as wm
@@ -183,6 +227,11 @@ def stage_compose():
     clock = 0.0
     for e in chosen:
         f = dict(np.load(OUT / f"ep{e}.npz")); m = dict(np.load(OUT / f"ep{e}.mon.npz"))
+        t2 = OUT / f"ep{e}.truth2.json"
+        if t2.exists():                                   # gripper-relative target events (label revision)
+            lab = json.loads(t2.read_text())
+            f["any_fork"] = np.array([lab[str(int(s))]["fork"] for s in f["starts"]])
+            f["any_safe"] = np.array([lab[str(int(s))]["safe"] for s in f["starts"]])
         starts = list(f["starts"]); n = len(f["close"])
         timeline = []                                                   # (start, alarm, truth) for the strip
         for k, s in enumerate(starts):
@@ -225,7 +274,7 @@ def stage_compose():
                     d.ellipse([px - 4, py - 4, px + 4, py + 4], fill=c)
                 d.text((sx0 + 8, sy0 + 6), "64 imagined futures (3 s ahead)", fill=(60, 70, 80), font=small)
                 d.text((sx0 + 8, sy0 + sh - 20), f"split {int(m['minority'][cur])}/64, separation {m['separation'][cur]:.2f} (floor {float(m['tau']):.2f})", fill=(60, 70, 80), font=small)
-                tt = {"fork": f"TRUTH: fork\n{timeline[cur][3]}/64 real futures topple a neighbour" if timeline[cur][3] else "TRUTH: fork\nonly the target's outcome varies",
+                tt = {"fork": f"TRUTH: fork\n{timeline[cur][3]}/64 real futures topple a neighbour" if timeline[cur][3] else "TRUTH: fork\nthe target drops or tips in some futures",
                       "safe": "TRUTH: safe\nall 64 real futures agree", "unclear": "TRUTH: unclear\n1 of 64 real futures differs"}[truth]
                 if not timeline[cur][4]:
                     tt = "TRUTH: n/a\nblocks still moving at this start"
@@ -261,4 +310,4 @@ def stage_compose():
 
 
 if __name__ == "__main__":
-    {"sim": stage_sim, "monitor": stage_monitor, "compose": stage_compose}[sys.argv[1]]()
+    {"sim": stage_sim, "monitor": stage_monitor, "truth2": stage_truth2, "compose": stage_compose}[sys.argv[1]]()

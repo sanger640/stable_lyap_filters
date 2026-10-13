@@ -39,6 +39,23 @@ def events_three_block(traces):
     return np.stack([tilt, off, mov], -1)
 
 
+DROP_MM = 50.0   # target counts as dropped if, gripper closed, it ends > 50 mm from the gripper site (held: 12-35 mm)
+
+
+def events_three_block_v2(traces):
+    """Label revision 2026-10-13 (user-approved): neighbours as events_three_block; the TARGET's events are discrete
+    and gripper-relative, so normal carrying never counts: tilt change >= 45 deg, off the table, and
+    - gripper closed at the end: dropped (ends > DROP_MM from the gripper site),
+    - gripper open at the end: moved >= 30 mm (knocked/pushed while not held).
+    traces (64, T, 61): [0:9] block positions (target first), [57:60] gripper site, [60] closed flag."""
+    ev = events_three_block(traces).copy()
+    end = traces[:, -1]
+    closed = end[:, 60] > 0
+    dropped = np.linalg.norm(end[:, 0:3] - end[:, 57:60], axis=1) * 1000 > DROP_MM
+    ev[:, 0, 2] = np.where(closed, dropped, ev[:, 0, 2])
+    return ev
+
+
 def labels(ev):
     cnt = ev.sum(0)
     fork = bool(((cnt >= 2) & (cnt <= 62)).any())
