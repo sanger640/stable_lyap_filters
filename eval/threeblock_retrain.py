@@ -26,15 +26,147 @@ os.environ.setdefault("MUJOCO_GL", "egl")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 
-V2 = ROOT / "results/program_b/threeblock_v2"
-RESULT = ROOT / "results/jenga/threeblock_retrain_result.json"
+V2 = ROOT / os.environ.get("TB_DIR", "results/program_b/threeblock_v2")
+RESULT = ROOT / ("results/jenga/threeblock_retrain_result.json" if V2.name == "threeblock_v2" else f"results/jenga/{V2.name}_result.json")
+RESELECT = V2.name != "threeblock_v2"      # v3+: training states re-screened and re-selected with the corrected perturbation
 
 
 # ------------------------------------------------------------------------------------------------ data
+# ------------------------------------------------------------------------------------------------ re-screen (v3)
+def screen_job(job):
+    import traceback
+    try:
+        return job[0], job[1], _screen(job), None
+    except Exception:
+        return job[0], job[1], None, traceback.format_exc()
+
+
+def _screen(job):
+    """As step3_data._chain_job 'screen' (8 futures per chunk start, same seeds), with the corrected perturbation,
+    an at-rest test and the any-outcome split count (gripper-relative target events) beside the topple count."""
+    episode_id, seed, screen_seed, out = job
+    import program_b_reference as pr
+    import step3_data as sd
+    import uncertainty_monitor_dev as um
+    import visual_pipeline_panel3 as p3
+    from fresh_fragility_panel import topple_count
+    from jenga_runtime import DEFAULT_LMDB, JengaReplay
+    from jenga_short_held_tails import DirectJengaSim, chunk_starts, extract_sim
+    from regrade_any_outcome import events_three_block_v2
+    target = Path(out) / f"{episode_id}_{seed}.json"
+    if target.exists():
+        return json.loads(target.read_text())
+    assert pr.VALID_PERTURBATION
+    errors, snippets = p3.ErrorModel(), np.load(um.BENCH)["snippets"]
+    replay = JengaReplay(DEFAULT_LMDB); actions = np.asarray(replay.episode(episode_id).actions, np.float32); replay.close()
+    starts = [s for s in chunk_starts(len(actions)) if s + 8 <= len(actions)]
+    sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="tbs_"))))
+    result = {}
+    try:
+        sim.reset(int(seed))
+        for index, action in enumerate(actions):
+            if index in starts:
+                chunk = actions[index:index + 8]
+                snapshot = sim.snapshot(); warm0 = sim.data.qacc_warmstart.copy()
+                start_tilt = sim.block_diagnostics()["tilt"][1:].copy()
+                if not pr.blocks_at_rest(sim):
+                    result[index] = {"at_rest": False}
+                else:
+                    key = (int(episode_id), int(seed), int(index)); traces = []
+                    for k in range(sd.K_SCREEN):
+                        rng = np.random.default_rng([screen_seed, *key, k])
+                        traces.append(sd.future(sim, snapshot, chunk, snippets[rng.integers(len(snippets))],
+                                                errors.sample(screen_seed, *key, k))[0])
+                    tr = np.stack(traces); cnt = events_three_block_v2(tr).sum(0).ravel()
+                    result[index] = {"at_rest": True, "topples": int(topple_count(traces, start_tilt)),
+                                     "split": int(cnt[np.argmax(np.minimum(cnt, sd.K_SCREEN - cnt))])}
+                sim.restore(snapshot); sim.data.qacc_warmstart[:] = warm0
+                if index == max(starts):
+                    break
+            sim.execute(action)
+    finally:
+        sim.close()
+    tmp = target.with_suffix(".tmp"); tmp.write_text(json.dumps(result)); tmp.replace(target)
+    return result
+
+
+def stage_screen(workers=int(os.environ.get("TB_SCREEN_WORKERS", 16))):
+    """Re-screen both training sources and re-select with the original rules and seeds; disagreement now means
+    0 < split < 8 under the gripper-relative any-outcome label (primary), on at-rest starts only."""
+    import step3_data as sd
+    step3_screen_seed = sd.SEEDS["screen"]          # read before phase1_data's import patches sd.SEEDS["screen"]
+    import phase1_data as p1data
+    cf = V2 / "chains.json"                         # cached so a second machine (without the encoded frames) can help
+    if not cf.exists():
+        c_, h_ = sd.train_chains(); cf.write_text(json.dumps({"chains": c_, "held": sorted(h_)}) + "\n")
+    cj_ = json.loads(cf.read_text())
+    chains, held = [tuple(x) for x in cj_["chains"]], set(cj_["held"])
+    episodes = sorted({e for e, _ in chains}, key=int)
+    src = {"step3": ([(e, s) for e, s in chains], step3_screen_seed),
+           "phase1": ([(e, s) for e in episodes for s in p1data.NEW_SEEDS], p1data.SEEDS["screen"])}
+    screens = {}
+    for name, (cj, sseed) in src.items():
+        out = V2 / f"screen_{name}"; out.mkdir(parents=True, exist_ok=True)
+        res, fails = {}, []
+        if os.environ.get("TB_REVERSE"):
+            cj = cj[::-1]
+        with mp.get_context("spawn").Pool(workers) as pool:
+            for n, (e, s, r, err) in enumerate(pool.imap_unordered(screen_job, [(e, s, sseed, str(out)) for e, s in cj]), 1):
+                if err:
+                    fails.append((e, s)); print(err, flush=True)
+                else:
+                    res[f"{e}:{s}"] = r
+                if n % 50 == 0 or n == len(cj):
+                    print(f"screen {name} {n}/{len(cj)}", flush=True)
+        if fails:
+            raise SystemExit(f"screen failures {name}: {fails[:10]}")
+        screens[name] = res
+    if os.environ.get("TB_REVERSE"):
+        return                                         # helper machine: screens only
+    K = sd.K_SCREEN
+    dis = lambda c: 0 < c < K
+    rows = lambda scr: [(k.split(":")[0], int(k.split(":")[1]), int(i), v["split"]) for k, r in scr.items()
+                        for i, v in r.items() if v["at_rest"]]
+    # step3 rule (eval/step3_data.select): train 1500 with up to 750 disagreeing, val 150 (half disagreeing) from held
+    rng = np.random.default_rng(sd.SEEDS["select"])
+    r3 = rows(screens["step3"])
+
+    def pick(pool, total, cap):
+        a_ = [r for r in pool if dis(r[3])]; b_ = [r for r in pool if not dis(r[3])]
+        a_ = [a_[i] for i in rng.permutation(len(a_))[:cap]]
+        b_ = [b_[i] for i in rng.permutation(len(b_))[:total - len(a_)]]
+        return a_, b_
+    ta, tb = pick([r for r in r3 if r[0] not in held], sd.TRAIN_STATES, sd.DISAGREE_CAP)
+    va, vb = pick([r for r in r3 if r[0] in held], sd.VAL_STATES, sd.VAL_STATES // 2)
+    roles3 = {}
+    for name, group in (("train", ta + tb), ("val", va + vb)):
+        for e, s, i, _ in group:
+            roles3.setdefault(f"{e}:{s}", {}).setdefault(str(i), []).append(name)
+    # phase1 rule (eval/phase1_data.select): all disagreeing new-seed TRAIN states as t16, as many others as t8
+    r1 = rows(screens["phase1"]) + r3
+    rng1 = np.random.default_rng(p1data.SEEDS["select"])
+    new_train = [r for r in r1 if r[0] not in held and r[1] in p1data.NEW_SEEDS]
+    t_dis = [r for r in new_train if dis(r[3])]; t_oth = [r for r in new_train if not dis(r[3])]
+    t_oth = [t_oth[i] for i in rng1.permutation(len(t_oth))[:len(t_dis)]]
+    roles1 = {}
+    for group, role in ((t_dis, "t16"), (t_oth, "t8")):
+        for e, s, i, _ in group:
+            roles1.setdefault(f"{e}:{s}", {})[str(i)] = role
+    allrows = [v for scr in screens.values() for r in scr.values() for v in r.values()]
+    summary = {"chain_starts": len(allrows), "not_at_rest": sum(not v["at_rest"] for v in allrows),
+               "disagree_any_outcome": sum(v["at_rest"] and dis(v["split"]) for v in allrows),
+               "disagree_topples": sum(v["at_rest"] and dis(v["topples"]) for v in allrows),
+               "step3": {"train": len(ta + tb), "train_disagree": len(ta), "val": len(va + vb), "val_disagree": len(va)},
+               "phase1": {"t16": len(t_dis), "t8": len(t_oth)}}
+    (V2 / "selection_step3.json").write_text(json.dumps({"summary": summary, "roles": roles3}) + "\n")
+    (V2 / "selection_phase1.json").write_text(json.dumps({"summary": summary, "roles": roles1}) + "\n")
+    print("selection", json.dumps(summary), flush=True)
+
+
 def jobs():
     import step3_data as sd
     spec = {}   # (episode, seed) -> {index: [(folder, n, seed_value, frame_index)]}
-    s3 = json.loads((sd.OUT / "selection.json").read_text())["roles"]
+    s3 = json.loads(((V2 / "selection_step3.json") if RESELECT else (sd.OUT / "selection.json")).read_text())["roles"]
     for chain, sel in s3.items():
         e, s = chain.split(":")
         for i, roles in sel.items():
@@ -42,7 +174,7 @@ def jobs():
                 if r in ("train", "val"):
                     spec.setdefault((e, int(s)), {}).setdefault(int(i), []).append(
                         ("train" if r == "train" else "val", sd.K_FUTURES, sd.SEEDS["futures"], sd.FRAME_INDEX))
-    p1 = json.loads((ROOT / "results/program_b/phase1/selection.json").read_text())["roles"]
+    p1 = json.loads(((V2 / "selection_phase1.json") if RESELECT else (ROOT / "results/program_b/phase1/selection.json")).read_text())["roles"]
     for chain, sel in p1.items():
         e, s = chain.split(":")
         for i, r in sel.items():
@@ -284,5 +416,5 @@ def stage_grade():
 
 
 if __name__ == "__main__":
-    {"data": stage_data, "g": stage_g, "modes": stage_modes, "us": stage_us, "hybrid": stage_hybrid,
+    {"screen": stage_screen, "data": stage_data, "g": stage_g, "modes": stage_modes, "us": stage_us, "hybrid": stage_hybrid,
      "grade": stage_grade}[sys.argv[1]]()
