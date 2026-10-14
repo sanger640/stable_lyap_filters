@@ -27,6 +27,12 @@ def _sim():
         import uncertainty_monitor_dev as um
         from jenga_short_held_tails import DirectJengaSim, extract_sim
         _SIM = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="lt_"))))
+        ms = float(os.environ.get("HARD_MASS", 0))           # same physics as the run (stress layouts: light neighbours)
+        if ms:
+            m = _SIM.model
+            for name in ("block_left", "block_right"):
+                b = m.body(name).id
+                m.body_mass[b] *= ms; m.body_inertia[b] *= ms
     return _SIM
 
 
@@ -44,7 +50,7 @@ def job(args):
     for name, chunk in (("nominal", nominal), ("executed", executed)):
         if name == "executed" and np.allclose(executed, nominal):
             out["executed"] = out["nominal"]; continue
-        tr = [um.rollout(sim, snap, chunk, snippets[j], [errors.sample(SEED, k, 0, j)]) for j in range(64)]
+        tr = [um.rollout(sim, snap, chunk, snippets[j], [errors.sample(SEED, int(k), 0, j)]) for j in range(64)]
         af, asafe = labels(events_three_block_v2(np.stack(tr))); kk = topple_count(tr, tilt)
         out[name] = {"any_fork": bool(af), "any_safe": bool(asafe), "topples": int(kk), "harm_fork": bool(2 <= kk <= 62)}
     return k, out
@@ -52,8 +58,13 @@ def job(args):
 
 def main(path, workers=int(os.environ.get("LT_WORKERS", 16))):
     path = Path(path)
-    with np.load(path, allow_pickle=True) as f:
-        S = {k: f[k] for k in f.files}
+    if path.is_dir():                                        # a paired-run folder of per-episode files
+        parts = [dict(np.load(p_, allow_pickle=True)) for p_ in sorted(path.glob("ep*.npz"))]
+        S = {k: np.concatenate([q[k] for q in parts]) for k in parts[0]}
+        path = path.with_suffix(".npz")
+    else:
+        with np.load(path, allow_pickle=True) as f:
+            S = {k: f[k] for k in f.files}
     jobs = [(k, S["state"][k], S["ctrl"][k], S["target"][k], S["gripper"][k], S["start_tilt"][k], S["nominal"][k], S["executed"][k])
             for k in range(len(S["state"]))]
     res = {}
