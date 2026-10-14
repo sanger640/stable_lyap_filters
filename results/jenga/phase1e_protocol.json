@@ -71,5 +71,22 @@
    "T2 data + H_T2 regeneration, retrain US_T2 and the T2 hybrid",
    "varied scenes (F1/F2), joint model: parked"
   ]
+ },
+ "final_test_panels_v2_2026_10_14": {
+  "status": "frozen before any panel-6/7 re-grading (user: 'sure go ahead')",
+  "panels": "fresh panels 6 and 7 (same states, never used for any choice); ground truth recomputed with the corrected perturbation (truth_A, truth_B; 64 futures each, original seeds); states not at rest excluded; states with an outcome in exactly 1 or 63 futures excluded",
+  "labels": {
+   "primary": "any-outcome with gripper-relative target events (regrade_any_outcome.events_three_block_v2) on truth_A",
+   "secondary": "harm (neighbour topple in 2-62 of 64 truth_A futures)"
+  },
+  "primary_monitor": "v3 hybrid (results/program_b/threeblock_v3/model_HYB_T1.pt) with hold-30 + its validation floor (H30_floor), chosen on the corrected H before this test",
+  "secondary": [
+   "v3 plain US, BOTH readout",
+   "old deployed plain US (old data), H30_floor with its validation floor",
+   "MuJoCo probe from the exact start (64 snippet futures, no perception error)",
+   "second oracle truth_B (corrected perturbation, independent draws)"
+  ],
+  "monitor_inputs": "close-camera frame of the true start; old US uses old G with the raw error draw (as deployed); v3 US uses v3 G with the planar part of the draw; hybrid uses the true-start latent (no G)",
+  "report": "caught, false alarm, score per panel and pooled, Wilson 95% CIs; no gate"
  }
 }
