@@ -15,13 +15,15 @@ import phase2_data as pdata  # noqa: E402
 import phase2_models as pm  # noqa: E402
 
 import os  # noqa: E402
-T2DIR = ROOT / os.environ.get("T2_DIR", "results/program_b/t2")      # data correction 2026-10-13: results/program_b/t2_v2
-H_SEEDS = range(500_000, 500_800)
+TASK = os.environ.get("TASK", "T2")                                  # T3 (push to zone) reuses this driver
+T2DIR = ROOT / os.environ.get("T2_DIR", "results/program_b/t2" if TASK == "T2" else "results/program_b/t3")   # T2 correction: t2_v2
+H_SEEDS = range(500_000, 500_800) if TASK == "T2" else range(600_000, 600_800)
+SEL_SEEDS = (20261320, 20261321) if TASK == "T2" else (20261420, 20261421)
 
 
 def _patch():
     pdata.OUT = T2DIR; pm.OUT = T2DIR
-    pdata.FAMILIES = ("T2",)
+    pdata.FAMILIES = (TASK,)
 
 
 def screen_job(job):
@@ -44,8 +46,8 @@ def train_data(screen_workers=14, render_workers=5):
     _patch()
     for d in ("screen", "train"):
         (T2DIR / d).mkdir(parents=True, exist_ok=True)
-    screens = pdata.pool_run(screen_job, [("T2", s) for s in range(3000)], screen_workers, "t2 screen")
-    pdata.SEEDS = dict(pdata.SEEDS, select=20261320)
+    screens = pdata.pool_run(screen_job, [(TASK, s) for s in range(3000)], screen_workers, f"{TASK.lower()} screen")
+    pdata.SEEDS = dict(pdata.SEEDS, select=SEL_SEEDS[0])
     pdata.PER_FAMILY, pdata.DISAGREE_CAP = 4800, 2400
     roles, summary = pdata.select(screens)
     (T2DIR / "selection.json").write_text(json.dumps({"summary": summary, "roles": {f"{f}:{s}": v for (f, s), v in roles.items()}}) + "\n")
@@ -58,8 +60,8 @@ def h(screen_workers=14, render_workers=5):
     _patch()
     for d in ("h2_screen", "h2"):
         (T2DIR / d).mkdir(parents=True, exist_ok=True)
-    screens = pdata.pool_run(h_screen_job, [("T2", s) for s in H_SEEDS], screen_workers, "h screen")
-    rows, forks, safe, n_forks, _ = pm.h_select(screens, np.random.default_rng(20261321))
+    screens = pdata.pool_run(h_screen_job, [(TASK, s) for s in H_SEEDS], screen_workers, "h screen")
+    rows, forks, safe, n_forks, _ = pm.h_select(screens, np.random.default_rng(SEL_SEEDS[1]))
     by = {}
     for f, s, i, _ in forks + safe:
         by.setdefault((f, s), set()).add(i)
@@ -95,6 +97,6 @@ def grade():
 
 
 if __name__ == "__main__":
-    if "t2_v2" not in str(T2DIR) and sys.argv[1] in ("train_data", "h"):
+    if TASK == "T2" and "t2_v2" not in str(T2DIR) and sys.argv[1] in ("train_data", "h"):
         raise SystemExit("old T2 data is kept: regenerate into T2_DIR=results/program_b/t2_v2")
     {"train_data": train_data, "h": h, "model": model, "grade": grade}[sys.argv[1]]()

@@ -139,7 +139,7 @@ def stage_grade():
                 o10, o30 = sm.roll(old_us, old_g(z64, d_raw), acts)
                 u10, u30 = sm.roll(us3, g3(z64, d_pl), acts)
                 gen = torch.Generator(device="cuda").manual_seed(hy.MONITOR_SEED + 50_000 + len(rows))
-                fut = hy.sample(head, us3, z64, us3._act(torch.as_tensor(acts, device="cuda")), s["residual_scale"], gen)
+                fut = hy.sample(head, us3, z64, us3._act(torch.as_tensor(p1d.augment(acts, None, False), device="cuda")), s["residual_scale"], gen)
                 h10 = fut[:, 0].reshape(64, -1).double().cpu().numpy(); h30 = fut[:, 1].reshape(64, -1).double().cpu().numpy()
                 rows.append({"panel": panel, "state": name, "at_rest": rest, "fork": fA, "safe": sA,
                              "harm": 2 <= kA <= 62, "harm_safe": kA == 0,

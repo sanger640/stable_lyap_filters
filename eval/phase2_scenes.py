@@ -25,6 +25,8 @@ PALETTE = [(0.9, 0.1, 0.1), (0.8, 0.6, 0.4), (0.2, 0.5, 0.9), (0.2, 0.7, 0.3),
            (0.95, 0.8, 0.2), (0.6, 0.3, 0.7), (0.95, 0.5, 0.1), (0.3, 0.3, 0.3)]
 HOME_QPOS = "0 -0.93 0 -2.77 0 2.72 0.7853 0.04 0.04"
 HOME_CTRL = "0 -0.92 0 -2.77 0 2.72 0.7853 110"
+TARGET_MOVED_EVENT = True    # T3 sets False (the pushed block's displacement is the task, not an event)
+AT_REST_INCLUDE_TARGET = False   # T3 sets True
 VALID_PERTURBATION = True    # data correction 2026-10-13 (see Phase2Sim.perturb); False reproduces older data
 HOLD_CHECK_STEPS = 38        # stability check horizon (control steps) for valid perturbations
 REST_MOVE_MM, REST_TILT_DEG = 10.0, 10.0   # a chunk start is 'at rest' if the unperturbed scene, robot holding, stays within these
@@ -94,6 +96,9 @@ def sample_scene(family, seed):
     if family == "T2":                                      # task T2 (push past tall objects), eval/t2_push.py
         import t2_push
         return t2_push.sample_t2(seed)
+    if family == "T3":                                      # task T3 (push a Jenga block into a zone), eval/t3_push.py
+        import t3_push
+        return t3_push.sample_t3(seed)
     rng = np.random.default_rng([20261200, {"F1": 1, "F2": 2, "F3": 3}[family], seed])
     wall = None
     if family == "F1":
@@ -194,11 +199,15 @@ def scene_xml(scene):
       <joint type="free"/>
       <geom name="obj{k}_g" size="{size}" type="{typ}" rgba="{rgba}" mass="{o['mass']:.5f}" friction="{o['friction']:.3f} 0.005 0.0001"/>
     </body>''')
+    if scene.get("zone"):                                   # T3 goal zone: visual only (no collision), flush with the table
+        z = scene["zone"]
+        geoms.append(f'''    <geom name="zone" type="cylinder" size="{z['radius']:.5f} 0.0003" pos="{z['pos'][0]:.5f} {z['pos'][1]:.5f} {TABLE_TOP + 0.0003:.5f}" rgba="0.2 0.75 0.3 0.55" contype="0" conaffinity="0"/>''')
     if scene["wall"]:
         w = scene["wall"]
         geoms.append(f'''    <body name="wall" pos="{w['pos'][0]:.5f} {w['pos'][1]:.5f} {w['pos'][2]:.5f}">
       <geom size="{' '.join(f'{v:.5f}' for v in w['size'])}" type="box" rgba="0.55 0.55 0.6 1"/>
     </body>''')
+    table_friction = f' friction="{scene["table_friction"]:.3f} 0.005 0.0001"' if "table_friction" in scene else ""   # T3
     qpos = HOME_QPOS + "".join(" " + " ".join(f"{v:.6f}" for v in [*o["pos"], *o["quat"]]) for o in scene["objects"])
     return f'''<mujoco model="phase2_{scene['family']}_{scene['seed']}">
   <include file="panda.xml"/>
@@ -217,7 +226,7 @@ def scene_xml(scene):
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
     <body name="table" pos="0.5 0 0">
-      <geom size="0.2 0.4 0.025" type="box" rgba="0.9 0.9 0.9 1" pos="0 0 0.4" mass="1000" contype="1" conaffinity="1"/>
+      <geom size="0.2 0.4 0.025" type="box" rgba="0.9 0.9 0.9 1" pos="0 0 0.4" mass="1000" contype="1" conaffinity="1"{table_friction}/>
     </body>
 {chr(10).join(geoms)}
     <camera name="cam_fixed" pos="0.9 0 1.2" mode="targetbody" target="table"/>
@@ -366,7 +375,8 @@ def at_rest(sim):
     snap = sim.snapshot(); warm = sim.data.qacc_warmstart.copy()
     move, tilt = sim._hold_motion(HOLD_CHECK_STEPS)
     sim.restore(snap); sim.data.qacc_warmstart[:] = warm
-    return bool(np.all(move[1:] * 1000 <= REST_MOVE_MM) and np.all(tilt[1:] <= REST_TILT_DEG))   # non-target objects
+    k0 = 0 if AT_REST_INCLUDE_TARGET else 1                # non-target objects (T3, a single pushed block: all)
+    return bool(np.all(move[k0:] * 1000 <= REST_MOVE_MM) and np.all(tilt[k0:] <= REST_TILT_DEG))
 
 
 def settle(sim, family):
@@ -467,11 +477,20 @@ def primitive_actions(sim, scene):
             yaw = scene["push_yaw"] + np.radians(rng.uniform(-scene["push_jitter_deg"], scene["push_jitter_deg"]))
         u = np.array([np.cos(yaw), np.sin(yaw)])               # push direction (0 = away from the robot, +x)
         reach = float(np.abs(half_extent(tgt)[:2]).max())
+        if "push_reach_m" in scene:                             # T3: contact face distance along the push direction
+            reach = scene["push_reach_m"]
+        if "push_site_offset_xy" in scene:                      # T3: centre the leading finger (not the site) on the block
+            off = off + np.asarray(scene["push_site_offset_xy"])
         pre = pos[:2] + off - u * (reach + rng.uniform(*a["prepush_mm"]) / 1000)
         z = TABLE_TOP + min(0.015, 0.8 * (top - TABLE_TOP))
+        if "push_height_mm" in scene:                           # T3: fingertip height above the table (tip vs slide)
+            z = TABLE_TOP + scene["push_height_mm"] / 1000
         cmds.append(np.r_[home, 1.0])                          # close the gripper to push with the fingertips
         go(np.r_[pre, top + 0.05], 0.0); go(np.r_[pre, z])
-        go(np.r_[pos[:2] + off + u * (rng.uniform(*a["push_mm"]) / 1000 - reach), z])
+        travel = rng.uniform(*a["push_mm"]) / 1000
+        if "zone" in scene:                                     # T3: push so the block centre would end at the zone centre
+            travel = float(np.dot(np.asarray(scene["zone"]["pos"][:2]) - pos[:2], u)) + scene.get("push_overshoot_m", 0.0)
+        go(np.r_[pos[:2] + off + u * (travel - reach), z])
         go(np.r_[cmds[-1][:2], top + 0.06])
     cmds += [cmds[-1].copy() for _ in range(8)]                # short hold so the last chunk has a full 8 commands
     for c in cmds[1:]:
@@ -525,6 +544,8 @@ def events(trace, start):
     off = (end[:, 0] < TABLE_X[0]) | (end[:, 0] > TABLE_X[1]) | (end[:, 1] < TABLE_Y[0]) | (end[:, 1] > TABLE_Y[1]) \
         | (end[:, 2] < TABLE_TOP - 0.01)
     moved = np.linalg.norm(end[:, :3] - start[:, :3], axis=1) >= 0.030
+    if not TARGET_MOVED_EVENT:                              # T3: the pushed block moves by design; no 'moved' event for it
+        moved[0] = False
     return np.stack([tilt, off, moved], 1)
 
 

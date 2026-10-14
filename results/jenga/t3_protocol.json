@@ -1,0 +1,24 @@
+{
+ "name": "T3: push an upright Jenga block into a goal zone without tipping it",
+ "date": "2026-10-14",
+ "status": "frozen (user: replace T2 as the second task; 'yes go ahead with that')",
+ "scene": "eval/t3_push.py (sample_t3): one upright Jenga block 25x20x75 mm, friction 0.33-0.37 on a 0.1-friction table (a known material: friction is invisible to the camera), yaw +-10 deg; visual-only green zone (radius 25-30 mm) 60-110 mm ahead along +y; push with closed fingertips at a fingertip height of 18-36 mm (critical ~27 mm), 3-6 mm per command, aimed to bring the block centre to the zone centre (calibrated finger lead 26 mm, overshoot 10 mm)",
+ "pilots": {
+  "1": "table friction 1.0 dominated: 88% tipped, 0% in zone",
+  "2": "heights 2-30 mm, block friction 0.2-0.5: 35% tipped, zone 2% (contact ~26 mm ahead of the site)",
+  "3": "calibrated reach: in zone 76% of untipped with 25-30 mm zone; tipping set by height x friction (threshold ~9.5 mm)",
+  "4 (final, seeds 990300+)": "48 scenes: 29% of scenes have a fork (1-7 of 8 futures), 42% tip nominally, 44% end in the zone (75% of untipped)"
+ },
+ "uncertainty": "as the other tasks: corrected (valid, planar) perception-error perturbation of the block + execution-noise snippets; starts not at rest excluded (the block itself included)",
+ "labels": {
+  "unsafe (primary)": "any-outcome with the pushed block's own displacement excluded: the block tips >= 45 deg or leaves the table, in 2-62 of 64 futures (fork); 0 or 64 (safe)",
+  "task": "block centre ends inside the zone, upright (for the filter)"
+ },
+ "data": {
+  "train": "3000 scenes (seeds 0-2999, family code 5), K=8 screen, selection as T2 (up to 2400 disagreeing + others, 4800 states, t16/t8)",
+  "selection_set_H_T3": "seeds 600000-600799, 64 futures, 80 forks + 80 safe (any-outcome)",
+  "driver": "TASK=T3 eval/t2_data.py (h, train_data, model)"
+ },
+ "checks_before_training": "robot-still unit test on H_T3 + verification video shown to the user",
+ "models": "US recipe (Gauss-TE starts, US rebalancing) and the hybrid flow head, as T2/three-block; readouts BOTH and H30_floor; chosen on H_T3, final test on a fresh panel later"
+}
