@@ -178,7 +178,10 @@ def proxy(e30, scale):
     return (frac * sep / scale), centroid
 
 
-def cem_filter(mon, sim, chunk, starts=None, rng=None):
+INTENT_MAX = 1.0      # v2 hard constraint: predicted majority outcome within one model-error floor of the nominal's
+
+
+def cem_filter(mon, sim, chunk, starts=None, rng=None, version=None):
     """-> (chunk to execute, or None to abstain; info). Every candidate is scored with the monitor's own exact BOTH test
     on 64 futures; the cheapest unflagged candidate (action change + intent) is executed."""
     t0 = time.time()
@@ -196,9 +199,13 @@ def cem_filter(mon, sim, chunk, starts=None, rng=None):
         intent = ((cen - cen0).norm(dim=1) / np.sqrt(D // 3) / mon.tau).cpu().numpy()
         change = (P ** 2).sum(1) / CEM["s_a_mm"] ** 2
         cost = change + CEM["lam"] * risk + CEM["mu"] * intent
-        for j in np.flatnonzero(~alarm):
-            if best is None or cost[j] < best[0]:
-                best = (float(cost[j]), P[j], float(change[j]), float(intent[j]))
+        version_ = version or int(__import__("os").environ.get("CEM_VERSION", 1))
+        feasible = ~alarm if version_ == 1 else (~alarm & (intent <= INTENT_MAX))
+        if version_ == 2:                          # v2: change is the only cost among feasible candidates
+            cost = change + CEM["lam"] * risk + 10.0 * np.maximum(intent - INTENT_MAX, 0)
+        for j in np.flatnonzero(feasible):
+            if best is None or (change[j] if version_ == 2 else cost[j]) < best[0]:
+                best = (float(change[j] if version_ == 2 else cost[j]), P[j], float(change[j]), float(intent[j]))
         order = np.argsort(cost)
         el = P[order[:CEM["elites"]]]
         mean, sd = el.mean(0), el.std(0) + 0.5

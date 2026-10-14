@@ -284,7 +284,7 @@ def paired(mode, n=100, shrink=None):
     Every decision state is saved for per-decision ground truth (eval/loop_truth.py)."""
     import cem_filter as cf
     shrink = shrink if shrink is not None else float(os.environ.get("HARD_SHRINK", 10))
-    tag = f"paired_{mode}"
+    tag = f"paired_{mode}" + ("" if int(os.environ.get("CEM_VERSION", 1)) == 1 or mode != "cem" else f"_v{os.environ['CEM_VERSION']}")
     path = ROOT / f"results/jenga/{tag}.jsonl"; sdir = OUT / tag; sdir.mkdir(parents=True, exist_ok=True)
     done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()
     pol, mon, rng = load_policy(), cf.Monitor(), np.random.default_rng(20261511)

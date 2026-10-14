@@ -22,5 +22,11 @@
   "decision": "the filter WORKS in closed loop if neighbour topples drop with McNemar exact p < 0.05 on the 100 paired episodes AND task success (lift >= 3 cm, no topple) is not lower by more than 10 points",
   "caveat": "0.3x neighbour mass is invisible to the camera and outside the world model's training physics, so this tests the filter under unmodelled physics"
  },
- "per_decision_truth": "every decision state saved; 64-future ground truth computed afterwards (eval/loop_truth.py) to grade monitor alarms against forks"
+ "per_decision_truth": "every decision state saved; 64-future ground truth computed afterwards (eval/loop_truth.py) to grade monitor alarms against forks",
+ "arm_cem_v2": {
+  "added": "2026-10-14, before running v2 and before tests A/B of v1 finished (interim v1: fork topple 27% -> 25%, 6 of 22 fork states made worse)",
+  "change": "intent becomes a hard constraint: a candidate is acceptable only if the monitor sees no split AND its predicted majority outcome lies within 1.0 model-error floor of the nominal chunk's predicted majority outcome; among acceptable candidates the smallest action change wins; none acceptable -> hold (abstain)",
+  "reason": "v1 could move an action into a region where all futures topple (no split, wrongly treated as safe)",
+  "tests": "same test A (fixed states) and test B (paired closed loop, same episodes, seeds and baseline arm) with the same decision rules"
+ }
 }
