@@ -122,10 +122,12 @@ def _data(job):
     return done
 
 
-def stage_data(workers=6):
+def stage_data(workers=int(os.environ.get("TB_WORKERS", 6))):
     for d in ("train", "val", "p1train"):
         (V2 / d).mkdir(parents=True, exist_ok=True)
     js = jobs(); fails = []; stats = {}
+    if os.environ.get("TB_REVERSE"):                     # second machine: same jobs from the other end
+        js = js[::-1][:int(os.environ.get("TB_LIMIT", len(js)))]
     with mp.get_context("spawn").Pool(workers) as pool:
         for n, (key, res, err) in enumerate(pool.imap_unordered(data_job, js), 1):
             if err:
