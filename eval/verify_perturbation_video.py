@@ -20,6 +20,7 @@ import phase2_models as pm  # noqa: E402
 import phase2_scenes as ps  # noqa: E402
 
 OUTV = ROOT / "results/program_b/perturbation_fix_verification.mp4"
+SUMMARY = ROOT / "results/jenga/perturbation_fix_video_summary.json"
 SCENES = ["F2_500022_s34", "F2_500148_s10", "F2_500010_s18", "F2_500076_s2", "F1_500095_s26", "F1_500041_s50", "T2_500003_s26", "T2_500010_s34"]
 
 
@@ -50,12 +51,13 @@ def run(sim, snap, err, valid, chunk, noise, render):
 
 
 def main():
-    import imageio.v2 as imageio
+    import imageio_ffmpeg
     import mujoco
     import uncertainty_monitor_dev as um
     from jenga_render_frames import close_camera
     snippets = np.load(um.BENCH)["snippets"]; pc, rc = ps.pooled_error_model()
-    writer = imageio.get_writer(OUTV, fps=8, codec="libx264", quality=8)
+    writer = imageio_ffmpeg.write_frames(str(OUTV), (1024, 256), fps=8, codec="libx264", quality=8, macro_block_size=1)
+    writer.send(None)
     summary = []
     for name in SCENES:
         fam, seed, s = name.split("_"); seed, index = int(seed), int(s[1:])
@@ -103,15 +105,15 @@ def main():
         title = label(np.zeros((256, 256, 3), np.uint8), [name, f"scene at rest: {rest}"], (255, 255, 255))
         blank = np.zeros((256, 256, 3), np.uint8)
         for _ in range(10):
-            writer.append_data(np.concatenate([title, blank, blank, blank], 1))
+            writer.send(np.concatenate([title, blank, blank, blank], 1))
         for t in range(len(f_old)):
             panels = [label(f_old[t], ["OLD perturbation", "robot holds still"], (255, 120, 120)),
                       label(f_new[t], ["NEW perturbation", "robot holds still"], (140, 255, 140)),
                       label(f_yes[t], ["NEW, robot acts", "future with event"], (255, 200, 120)) if f_yes else label(blank, ["NEW, robot acts", "(no future with event)"], (200, 200, 200)),
                       label(f_no[t], ["NEW, robot acts", "future without event"], (140, 220, 255)) if f_no else label(blank, ["NEW, robot acts", "(no quiet future)"], (200, 200, 200))]
-            writer.append_data(np.concatenate(panels, 1))
+            writer.send(np.concatenate(panels, 1))
     writer.close()
-    (ROOT / "results/jenga/perturbation_fix_video_summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+    SUMMARY.write_text(json.dumps(summary, indent=1) + "\n")
     print("video", OUTV, flush=True)
 
 
