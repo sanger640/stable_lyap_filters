@@ -88,7 +88,7 @@ def model():
 def grade():
     _patch()
     import phase2_amend4 as a4
-    a4.RESULT = ROOT / "results/jenga/t2_h_result.json"
+    a4.RESULT = ROOT / ("results/jenga/t2_h_result.json" if T2DIR.name == "t2" else f"results/jenga/t2_h_{T2DIR.name}_result.json")
     if not a4.RESULT.exists():
         a4.RESULT.write_text(json.dumps({"A_selected_readout": "BOTH"}) + "\n")   # protocol: BOTH is the primary readout
     a4.grade("T2_H")

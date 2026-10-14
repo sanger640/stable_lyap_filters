@@ -15,7 +15,8 @@ import phase2_hybrid as hy  # noqa: E402
 import phase2_models as pm  # noqa: E402
 
 T1DIR = ROOT / "results/program_b/t1_hybrid"
-T2DIR = ROOT / "results/program_b/t2"
+import os  # noqa: E402
+T2DIR = ROOT / os.environ.get("T2_DIR", "results/program_b/t2")
 
 
 def t1():
@@ -66,7 +67,7 @@ def t1():
 def t2():
     pm.OUT = T2DIR; hy.OUT = T2DIR
     hy.train(name="HYB_T2", det_name="US2_long")
-    hy.grade("HYB_T2", ROOT / "results/jenga/hybrid_T2_result.json")
+    hy.grade("HYB_T2", ROOT / ("results/jenga/hybrid_T2_result.json" if T2DIR.name == "t2" else f"results/jenga/hybrid_T2_{T2DIR.name}_result.json"))
 
 
 if __name__ == "__main__":
