@@ -1,0 +1,26 @@
+{
+ "name": "Decisive safety-filter test (three-block)",
+ "date": "2026-10-14",
+ "status": "frozen before running",
+ "test_A_fixed_states": {
+  "what": "the 75 filter-panel states (32 forks, 40 safe, 3 not at rest excluded) with corrected ground truth (results/program_b/t1_filter, truth_v3)",
+  "arms": [
+   "no filter (policy/demo chunk as is)",
+   "CEM filter with the clean plain world model (eval/cem_filter.py)"
+  ],
+  "measure": "topple probability of the executed chunk = share of 64 MuJoCo futures (corrected perception error + execution noise, truth_A seeds) in which a neighbour topples; abstentions counted as 0 and reported separately",
+  "decision": "the filter WORKS on fork states if its mean topple probability is lower than no filter with a paired Wilcoxon signed-rank p < 0.05, and it changes no more than 10% of safe-state actions"
+ },
+ "test_B_closed_loop": {
+  "what": "user's diffusion policy, closed loop, stress layouts: neighbours at 0.3x mass (calibration 6/20 topples), execution noise on, settled start, 48 s",
+  "pairing": "each episode i uses the same layout, policy seed 4000+i and noise sequence in every arm; arms diverge only where the filter acts",
+  "arms": [
+   "policy alone (monitor logs alarms, never acts)",
+   "policy + CEM filter"
+  ],
+  "episodes": 100,
+  "decision": "the filter WORKS in closed loop if neighbour topples drop with McNemar exact p < 0.05 on the 100 paired episodes AND task success (lift >= 3 cm, no topple) is not lower by more than 10 points",
+  "caveat": "0.3x neighbour mass is invisible to the camera and outside the world model's training physics, so this tests the filter under unmodelled physics"
+ },
+ "per_decision_truth": "every decision state saved; 64-future ground truth computed afterwards (eval/loop_truth.py) to grade monitor alarms against forks"
+}
