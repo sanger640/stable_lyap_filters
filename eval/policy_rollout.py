@@ -68,8 +68,11 @@ def policy_chunk(pol, hist):
     return r["action"][0].cpu().numpy()                                  # (8, 4)
 
 
-def episode(pol, i, video=False, chunk_hook=None):
-    """One closed-loop episode. chunk_hook(sim, chunk, k) -> chunk to execute (monitor / filter go here)."""
+def episode(pol, i, video=False, chunk_hook=None, exec_noise=False):
+    """One closed-loop episode. chunk_hook(sim, chunk, k) -> (chunk to execute or None = hold, info) (monitor / filter
+    go here). exec_noise: each executed chunk gets a measured execution-noise snippet (as every simulated future)."""
+    import uncertainty_monitor_dev as um_
+    snippets = np.load(um_.BENCH)["snippets"]; nrng = np.random.default_rng([20261502, i])
     import uncertainty_monitor_dev as um
     from jenga_short_held_tails import DirectJengaSim, extract_sim
     sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="pol_"))))
@@ -78,13 +81,19 @@ def episode(pol, i, video=False, chunk_hook=None):
         sim.reset(RESET_BASE + i)
         z0 = None                                   # resting height, read after the first chunk (blocks spawn in the air)
         hist = [cams.obs()]; hist.append(hist[0])
-        frames, chunks, peak_neigh, max_lift = [], [], 0.0, 0.0
+        frames, chunks, peak_neigh, max_lift, log = [], [], 0.0, 0.0, []
         for k in range(MAX_CHUNKS):
             chunk = policy_chunk(pol, hist)
-            if chunk_hook is not None:
-                chunk = chunk_hook(sim, chunk, k)
+            info = {}
+            if chunk_hook is not None and z0 is not None:
+                chunk, info = chunk_hook(sim, chunk, k)
+                if chunk is None:                                            # abstain: hold for one chunk, re-plan
+                    chunk = np.repeat(np.r_[sim.target, 0.0][None], 8, 0).astype(np.float32)
             chunks.append(chunk)
-            for a in chunk:
+            noise = snippets[nrng.integers(len(snippets))] if exec_noise else np.zeros((8, 3))
+            peak_before = peak_neigh
+            for j, a in enumerate(chunk):
+                a = np.asarray(a, np.float32).copy(); a[:3] -= noise[j]
                 sim.execute(a)
                 o = cams.obs(); hist.append(o)
                 if video:
@@ -96,11 +105,14 @@ def episode(pol, i, video=False, chunk_hook=None):
                 max_lift = max(max_lift, float(sim.data.xpos[sim.tracked_block_ids[0]][2] - z0))
             if z0 is None:
                 z0 = float(sim.data.xpos[sim.tracked_block_ids[0]][2])
+            log.append({**{k_: v for k_, v in info.items() if k_ != "starts"}, "chunk": k,
+                        "topple_started": bool(peak_before < TOPPLE_DEG <= peak_neigh)})
             if max_lift >= LIFT_M:
                 break
         res = {"episode": i, "chunks": k + 1, "lifted": max_lift >= LIFT_M, "max_lift_mm": round(max_lift * 1000, 1),
                "neighbour_toppled": peak_neigh >= TOPPLE_DEG, "peak_neighbour_tilt": round(peak_neigh, 1)}
         res["success"] = res["lifted"] and not res["neighbour_toppled"]
+        res["log"] = log
         return res, frames, np.stack(chunks)
     finally:
         cams.close(); sim.close()
@@ -128,5 +140,43 @@ def baseline(n=20, videos=4):
     print(json.dumps({k: v for k, v in out.items() if k != "rows"}), flush=True)
 
 
+def run(mode, n=100, start=0):
+    """mode: none | monitor (log alarms, no intervention) | abstain (hold on alarm) | cem. Execution noise on."""
+    import cem_filter as cf
+    OUT.mkdir(parents=True, exist_ok=True)
+    pol = load_policy()
+    mon = cf.Monitor() if mode != "none" else None
+    rng = np.random.default_rng(20261503)
+    path = ROOT / f"results/jenga/policy_{mode}.jsonl"
+    done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()
+
+    def hook(sim, chunk, k):
+        if mode == "monitor" or mode == "abstain":
+            alarm, sec, _ = mon.check(sim, chunk)
+            return (None if (mode == "abstain" and alarm) else chunk), {"alarm": alarm, "seconds": round(sec, 3)}
+        out, info = cf.cem_filter(mon, sim, chunk, rng=rng)
+        return out, info
+    for i in range(start, start + n):
+        if i in done:
+            continue
+        res, _, _ = episode(pol, i, chunk_hook=None if mode == "none" else hook, exec_noise=True)
+        with open(path, "a") as f:
+            f.write(json.dumps(res) + "\n")
+        print(mode, {k: v for k, v in res.items() if k != "log"}, flush=True)
+    rows = [json.loads(l) for l in path.read_text().splitlines()]
+    summ = {"mode": mode, "episodes": len(rows), "success": sum(r["success"] for r in rows),
+            "lifted": sum(r["lifted"] for r in rows), "neighbour_toppled": sum(r["neighbour_toppled"] for r in rows)}
+    if mode != "none":
+        L = [c for r in rows for c in r["log"]]
+        summ.update({"decisions": len(L), "alarms": sum(bool(c.get("alarm") or c.get("intervened")) for c in L),
+                     "abstained": sum(bool(c.get("abstained")) for c in L),
+                     "decision_seconds_median": float(np.median([c["seconds"] for c in L if "seconds" in c])) if L else None})
+    (ROOT / f"results/jenga/policy_{mode}_summary.json").write_text(json.dumps(summ, indent=1) + "\n")
+    print(json.dumps(summ), flush=True)
+
+
 if __name__ == "__main__":
-    {"baseline": baseline}[sys.argv[1]]()
+    if sys.argv[1] == "baseline":
+        baseline()
+    else:
+        run(sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 100)
