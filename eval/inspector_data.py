@@ -69,7 +69,7 @@ def truth_job(args):
     errors, snippets = p3.ErrorModel(), np.load(um.BENCH)["snippets"]
     snap = (state, ctrl, target, float(gripper))
     flags = []
-    for j in range(64):
+    for j in range(int(os.environ.get("TRUTH_N", 64))):              # 64 by default; fewer for quick screening
         tr = um.rollout(_S, snap, chunk, snippets[j] * EXEC_SCALE, [errors.sample(SEED, *key, j)])
         flags.append(bool(np.any((neighbour_tilts(tr[-1]) >= TOPPLE_DEG) & (np.asarray(tilt) < TOPPLE_DEG))))
     return key, flags
