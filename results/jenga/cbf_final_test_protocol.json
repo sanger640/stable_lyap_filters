@@ -1,0 +1,14 @@
+{
+ "name": "Fork-boundary CBF filter: final closed-loop test (three-block, your diffusion policy)",
+ "date": "2026-10-15 ~02:40 EDT",
+ "status": "frozen before any test episode outcome was inspected (test policy-alone arm recorded, outcomes not looked at)",
+ "setting": "normal block physics, 2x execution noise (EXEC_NOISE_SCALE=2; development topple rate ~20%), settled start, default layouts, 48 s, policy seeded 4000+i, same execution-noise sequence per episode",
+ "episodes": "TEST: 1000-1299 (paired_record_test2x = policy alone, already recorded; paired_cbf_test2x = with the filter). Worker k of 7 runs episodes i % 7 == k on the same machine in both arms (0-3 RTX 3090, 4-6 RTX 5080). Development episodes 0-299 were used for every choice.",
+ "filter": "eval/cbf_filter.py: barrier h = log2 of the smallest uncertainty scale (0.5,1,2,3) at which the 64 imagined futures of the policy's plan split; regime o = largest latent change outside the robot's hand path; accept the policy's plan iff h >= min(h_hold, 1.0) and o <= O_MAX (label-free 99th percentile on development decisions, recomputed with the chosen world model); otherwise the closest feasible of 15 policy-sampled plans + 3 simple moves, else the one with the largest h. Purely latent, no object state, no labels, no goal.",
+ "choices_by_rule_on_development_validation_episodes (e % 5 == 0)": {
+  "world_model": "use the closed-loop-retrained model (closedloop_v1/model/model_US.pt) iff its 15-step-look-ahead split catches at least 0.15 more real forks than the old model (threeblock_v3) with at most 0.05 more false alarms on safe decisions; otherwise the old model",
+  "horizon": "15-step look-ahead (H15) unless the chosen model's barrier AUC with 8 steps exceeds H15 by >= 0.03"
+ },
+ "decision": "the filter WORKS if neighbour topples drop with McNemar exact one-sided p < 0.05 over the 300 paired test episodes AND task success (lift >= 3 cm, no topple) falls by at most 30 episodes (10 points)",
+ "also_reported": "interventions per decision, choice kinds, decision time, prevented/caused episodes, success change; per-decision ground truth on a sample for diagnosis"
+}
