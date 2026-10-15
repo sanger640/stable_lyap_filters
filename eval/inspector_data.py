@@ -22,9 +22,10 @@ import numpy as np
 os.environ.setdefault("MUJOCO_GL", "egl")
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-OUT = ROOT / "results/program_b/inspector"
+OUT = ROOT / os.environ.get("INSP_OUT", "results/program_b/inspector")
 RUNS = ROOT / "results/program_b/policy_rollouts"
-ARMS = {"alone": "paired_monitor", "filter": "paired_cem_v2"}
+ARMS = {"alone": os.environ.get("INSP_ALONE", "paired_monitor"), "filter": os.environ.get("INSP_FILTER", "paired_cem_v2")}
+EXEC_SCALE = float(os.environ.get("EXEC_NOISE_SCALE", 1.0))      # the run's execution-noise level (final test: 2)
 SEED = 20261550
 
 
@@ -50,7 +51,7 @@ def _sim():
     from jenga_short_held_tails import DirectJengaSim, extract_sim
     sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="insp_"))))
     ms = float(os.environ.get("HARD_MASS", 0.3))
-    for name in ("block_left", "block_right"):
+    for name in (("block_left", "block_right") if ms else ()):
         b = sim.model.body(name).id
         sim.model.body_mass[b] *= ms; sim.model.body_inertia[b] *= ms
     return sim
@@ -69,7 +70,7 @@ def truth_job(args):
     snap = (state, ctrl, target, float(gripper))
     flags = []
     for j in range(64):
-        tr = um.rollout(_S, snap, chunk, snippets[j], [errors.sample(SEED, *key, j)])
+        tr = um.rollout(_S, snap, chunk, snippets[j] * EXEC_SCALE, [errors.sample(SEED, *key, j)])
         flags.append(bool(np.any((neighbour_tilts(tr[-1]) >= TOPPLE_DEG) & (np.asarray(tilt) < TOPPLE_DEG))))
     return key, flags
 
@@ -87,7 +88,7 @@ def video_job(args):
     snippets = np.load(um.BENCH)["snippets"]
     nrng = np.random.default_rng([20261502, ep])
     first = int(S["chunk_index"][0])
-    noises = [snippets[nrng.integers(len(snippets))] for _ in range(int(S["chunk_index"][-1]) + 1)]
+    noises = [snippets[nrng.integers(len(snippets))] * EXEC_SCALE for _ in range(int(S["chunk_index"][-1]) + 1)]
     sim = _sim()
     rf = mujoco.Renderer(sim.model, height=240, width=320); rc = mujoco.Renderer(sim.model, height=240, width=240)
     cam = close_camera(mujoco)
