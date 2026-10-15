@@ -103,13 +103,19 @@ def films(mode="cem", n=12):
     (vdir / "summary.json").write_text(json.dumps(rows, indent=1) + "\n")
 
 
-def policy_chunk(pol, hist):
+PLAN_START = 1          # diffusion_policy executes action_pred[To-1 : To-1+8] with To = 2 observation steps
+
+
+def policy_chunk(pol, hist, full=False, n=1):
+    """The policy's next 8 commands; full=True: its whole 16-step plan; n > 1: n independent plans (n, 16, 4)."""
     import torch
     w = np.stack([h[0] for h in hist[-2:]]); f = np.stack([h[1] for h in hist[-2:]]); s = np.stack([h[2] for h in hist[-2:]])
-    t = lambda x: torch.from_numpy(x).permute(0, 3, 1, 2)[None].float().cuda() / 255.0
+    t = lambda x: torch.from_numpy(x).permute(0, 3, 1, 2)[None].float().cuda().expand(n, -1, -1, -1, -1) / 255.0
     with torch.no_grad():
-        r = pol.predict_action({"camera_1": t(w), "camera_2": t(f), "agent_pos": torch.from_numpy(s)[None].cuda()})
-    return r["action"][0].cpu().numpy()                                  # (8, 4)
+        r = pol.predict_action({"camera_1": t(w), "camera_2": t(f), "agent_pos": torch.from_numpy(s)[None].cuda().expand(n, -1, -1)})
+    if n > 1:
+        return r["action_pred"].cpu().numpy()                             # (n, 16, 4)
+    return r["action_pred"][0].cpu().numpy() if full else r["action"][0].cpu().numpy()
 
 
 HARD = {"gap_shrink_mm": (8.0, 8.0), "yaw_deg": 6.0}   # stress layouts: neighbours moved toward the middle (default gaps 20 mm)
@@ -175,20 +181,25 @@ def episode(pol, i, video=False, chunk_hook=None, exec_noise=False, max_chunks=N
             z0 = float(sim.data.xpos[sim.tracked_block_ids[0]][2])
         frames, chunks, peak_neigh, max_lift, log, lift_t = [], [], 0.0, 0.0, [], None
         for k in range(max_chunks or MAX_CHUNKS):
-            chunk = policy_chunk(pol, hist)
+            plan = policy_chunk(pol, hist, full=True)                       # (16, 4) action_pred; steps 1..8 are executed
+            chunk = plan[PLAN_START:PLAN_START + 8].copy()                   # identical to the policy's own "action" output
             nominal = chunk.copy()
             info = {}
             if snaps is not None and z0 is not None:
                 snap_k = sim.snapshot(); tilt_k = sim.block_diagnostics()["tilt"][1:].copy()
             if chunk_hook is not None and z0 is not None:
-                chunk, info = chunk_hook(sim, chunk, k)
+                if getattr(chunk_hook, "wants_context", False):
+                    chunk, info = chunk_hook(sim, chunk, k, plan=plan, hist=hist, pol=pol)
+                else:
+                    chunk, info = chunk_hook(sim, chunk, k)
                 if chunk is None:                                            # abstain: hold for one chunk, re-plan
                     chunk = np.repeat(np.r_[sim.target, 0.0][None], 8, 0).astype(np.float32)
             chunks.append(chunk)
             if snaps is not None and z0 is not None:
                 snaps.append({"chunk_index": k, "state": snap_k[0], "ctrl": snap_k[1], "target": snap_k[2], "gripper": snap_k[3],
-                              "start_tilt": tilt_k, "nominal": nominal, "executed": np.asarray(chunk, np.float32)})
-            noise = snippets[nrng.integers(len(snippets))] if exec_noise else np.zeros((8, 3))
+                              "start_tilt": tilt_k, "nominal": nominal, "executed": np.asarray(chunk, np.float32),
+                              "plan16": np.asarray(plan, np.float32)})
+            noise = snippets[nrng.integers(len(snippets))] * float(os.environ.get("EXEC_NOISE_SCALE", 1.0)) if exec_noise else np.zeros((8, 3))
             peak_before = peak_neigh
             for j, a in enumerate(chunk):
                 a = np.asarray(a, np.float32).copy(); a[:3] -= noise[j]
@@ -288,21 +299,32 @@ def paired(mode, n=100, shrink=None):
     tag += os.environ.get("PAIRED_TAG", "")                       # e.g. "_test" or a new experiment name
     path = ROOT / f"results/jenga/{tag}.jsonl"; sdir = OUT / tag; sdir.mkdir(parents=True, exist_ok=True)
     done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()
-    pol, mon, rng = load_policy(), cf.Monitor(), np.random.default_rng(20261511)
+    pol, rng = load_policy(), np.random.default_rng(20261511)
+    mon = cf.Monitor() if mode != "record" else None
+    if mode == "cbf":
+        import cbf_filter as cbff
+        cbf = cbff.CBF(mon)
 
-    def hook(sim, chunk, k):
+    def hook(sim, chunk, k, **ctx):
+        if mode == "cbf":
+            return cbf.filter(sim, chunk, k, **ctx)
         if mode in ("monitor", "abstain"):
             a, sec, _ = mon.check(sim, chunk)
             return (None if (mode == "abstain" and a) else chunk), {"alarm": a, "seconds": round(sec, 3)}
         return cf.cem_filter(mon, sim, chunk, rng=rng)
     shard, nshard = (int(x) for x in os.environ.get("SHARD", "0/1").split("/"))   # parallel workers: episode i % nshard == shard
-    for i in range(n):
+    off = int(os.environ.get("EP_OFFSET", 0))                     # test episodes use a fresh index range
+    for i in range(off, off + n):
         if i in done or i % nshard != shard:
             continue
         if os.environ.get("PER_EPISODE_SEEDS", "1") == "1":   # results independent of how episodes are split over workers
-            rng = np.random.default_rng([20261511, i]); mon.rng = np.random.default_rng([20261501, i])
+            rng = np.random.default_rng([20261511, i])
+            if mon is not None:
+                mon.rng = np.random.default_rng([20261501, i])
         snaps = []
-        res, _, _ = episode(pol, i, chunk_hook=hook, exec_noise=True, max_chunks=60, settle=True, seed=4000 + i, hard=shrink,
+        hook.wants_context = (mode == "cbf")
+        res, _, _ = episode(pol, i, chunk_hook=None if mode == "record" else hook, exec_noise=True, max_chunks=60, settle=True,
+                            seed=4000 + i, hard=None if os.environ.get("HARD_OFF") else shrink,
                             snaps=snaps)
         info = {c["chunk"]: c for c in res["log"]}
         if snaps:
