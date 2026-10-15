@@ -65,15 +65,29 @@ def main(path, workers=int(os.environ.get("LT_WORKERS", 16))):
     else:
         with np.load(path, allow_pickle=True) as f:
             S = {k: f[k] for k in f.files}
+    keep = np.arange(len(S["state"]))
+    if os.environ.get("LT_SUBSET"):                          # decisions that matter + a random sample of the rest
+        import json as _j
+        arm = path.stem
+        eps = {(_r := _j.loads(l))["episode"]: _r for l in (ROOT / f"results/jenga/{arm}.jsonl").read_text().splitlines()}
+        started = {(e, c["chunk"]) for e, r in eps.items() for c in r["log"] if c.get("topple_started")}
+        pre = {(e, c - 1) for e, c in started} | {(e, c - 2) for e, c in started}
+        imp = np.array([bool(S["alarm"][k] or S["intervened"][k] or (int(S["episode"][k]), int(S["chunk_index"][k])) in started | pre)
+                        for k in range(len(S["state"]))])
+        rest = np.flatnonzero(~imp)
+        samp = np.random.default_rng(20261540).choice(rest, min(len(rest), int(os.environ.get("LT_SAMPLE", 500))), replace=False)
+        keep = np.sort(np.concatenate([np.flatnonzero(imp), samp]))
+        S["sampled_background"] = np.isin(np.arange(len(S["state"])), samp)
+        print("subset", len(keep), "of", len(S["state"]), "decisions", flush=True)
     jobs = [(k, S["state"][k], S["ctrl"][k], S["target"][k], S["gripper"][k], S["start_tilt"][k], S["nominal"][k], S["executed"][k])
-            for k in range(len(S["state"]))]
+            for k in keep]
     res = {}
     with mp.get_context("spawn").Pool(workers) as pool:
         for n, (k, out) in enumerate(pool.imap_unordered(job, jobs), 1):
             res[k] = out
             if n % 100 == 0:
                 print(f"truth {n}/{len(jobs)}", flush=True)
-    keys = ("episode", "chunk_index", "alarm", "intervened", "abstained")
+    keys = ("episode", "chunk_index", "alarm", "intervened", "abstained", "sampled_background")
     rows = [{**{kk: (S[kk][k].item() if kk in S else None) for kk in keys}, **res[k]} for k in sorted(res)]
     out = path.with_name(path.stem + "_truth.json")
     out.write_text(json.dumps(rows) + "\n")
