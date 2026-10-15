@@ -38,7 +38,7 @@ class Packed:
         return (self.z0[self.state_of[idx]].float(), self.z0k[idx].float(), self.d[idx], z.float(), self.a[idx])
 
 
-def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True, log_every=250, start_fn=None):
+def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True, log_every=250, start_fn=None, init=None, lr=None):
     """sampler(rng, batch) -> numpy indices into the flat future list. start_fn(z0) -> sampled starts replaces the
     3-block G operator in the 50/50 start mix (Phase 2: object-free Gauss-TE)."""
     import step3b_models as sm
@@ -51,13 +51,15 @@ def train(name, out_dir, states, sampler, seed=0, steps=STEPS, compile_net=True,
     pairs = torch.cat([s["actions"] for s in states[:400]])
     stats = wm.Stats(seq, pairs)
     model = wm.WorldModel("deterministic", stats, pairs.shape[-1])
+    if init is not None:                                   # fine-tune: start from a trained model (and keep its stats)
+        model = wm.WorldModel.load(init); stats = model.stats
     data = Packed(states)
     net = torch.compile(model.net) if compile_net else model.net
-    opt = torch.optim.AdamW(model.net.parameters(), lr=LR, weight_decay=1e-4)
+    opt = torch.optim.AdamW(model.net.parameters(), lr=lr or LR, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps)
     wts = torch.ones(wm.STEPS, device=DEVICE); wts[[wm.HOLD10, wm.HOLD30]] = sm.HOLD_WEIGHT
     zeros_tau = torch.zeros(BATCH, device=DEVICE)
-    log, t0 = [{"batch": BATCH, "steps": steps, "lr": LR}], time.time()
+    log, t0 = [{"batch": BATCH, "steps": steps, "lr": lr or LR, "init": str(init) if init else None}], time.time()
 
     def step_fn(inp, act_t):
         return net(inp, torch.zeros_like(inp), act_t, zeros_tau)

@@ -90,7 +90,8 @@ def stage_eval():
     keys = [k for k in T if int(k.split(":")[0]) % 5 == 0]
     sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="cle_"))))
     res = {"decisions": len(keys)}
-    for name, mpath in (("old", V3 / "model_US.pt"), ("new", OUT / "model_US.pt")):
+    old_p, new_p = Path(os.environ.get("EVAL_OLD", V3 / "model_US.pt")), Path(os.environ.get("EVAL_NEW", OUT / "model_US.pt"))
+    for name, mpath in (("old", old_p), ("new", new_p)):
         mon = cf.Monitor(seed=20261610); mon.model = wm.WorldModel.load(mpath); mon.model.net.eval()
         torch = mon.torch
         out = {}
@@ -129,7 +130,8 @@ def stage_eval():
                      "split_caught_forks": round(np.mean([out[k][hz]["split1"] for k in fk]), 3) if fk else None,
                      "split_false_on_safe": round(np.mean([out[k][hz]["split1"] for k in sk]), 3) if sk else None}
         res[name] = r
-    (ROOT / "results/jenga/closedloop_train_eval.json").write_text(json.dumps(res, indent=1) + "\n")
+    res["models"] = {"old": str(old_p), "new": str(new_p)}
+    (ROOT / os.environ.get("EVAL_OUT", "results/jenga/closedloop_train_eval.json")).write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1), flush=True)
 
 

@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 import cbf_qp as q  # noqa: E402
 
-OUT = q.OUT / "checks"
+OUT = q.OUT / os.environ.get("CHECKS_DIR", "checks")
+BASE = q.OUT / "checks"                                   # where the plans (and their cached truth) live
 N_SAMP, NUDGES = 12, [(ax, mm) for ax in (0, 1) for mm in (-10, -5, 5, 10)]
 
 
@@ -63,6 +64,25 @@ def make():
         print(f"make {n_ + 1}", flush=True)
     (OUT / "plans.json").write_text(json.dumps(rows))
     print("made", len(rows), "decisions", flush=True)
+
+
+def rescore():
+    """Same plans as the base check, barrier recomputed with the current world model (CBF_WM) -> OUT/plans.json."""
+    import torch
+    import cem_filter as cf
+    OUT.mkdir(parents=True, exist_ok=True)
+    C, K = q.load_cache()
+    mon = cf.Monitor()
+    rows = json.loads((BASE / "plans.json").read_text())
+    for r in rows:
+        i = r["i"]
+        z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
+        hreq = min(K[i]["h_now"], 1.0)
+        scales = [s for s in (0.5, 1.0) if np.log2(s) < hreq - 1e-9] or [1.0]
+        with torch.no_grad():
+            P = torch.as_tensor(np.asarray(r["plans"], np.float32), device="cuda")
+            r["B"] = torch.stack([q.Barrier(mon, z0, 1000 + i, q.QP["N"], s)(P) for s in scales]).min(0).values.cpu().numpy().round(4).tolist()
+    (OUT / "plans.json").write_text(json.dumps(rows)); print("rescored", len(rows), "with", os.environ.get("CBF_WM"), flush=True)
 
 
 def truth():
@@ -120,4 +140,4 @@ def report():
 
 
 if __name__ == "__main__":
-    {"make": make, "truth": truth, "report": report}[sys.argv[1]]()
+    {"make": make, "rescore": rescore, "truth": truth, "report": report}[sys.argv[1]]()
