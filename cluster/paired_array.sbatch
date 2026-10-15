@@ -14,8 +14,9 @@ cd "${SLF_ROOT:-$HOME/projects/def-soojeon/ali313/slf/repo}"
 module load apptainer
 export CBF_WM=${CBF_WM:-$PWD/results/program_b/closedloop_v1/model/model_US.pt}
 # clean container environment (host cert/library paths break it); pass only what the run needs
-ENV="MUJOCO_GL=egl,PYOPENGL_PLATFORM=egl,TORCH_HOME=$PWD/../torch_home,DIFFUSION_POLICY_DIR=$PWD/../diffusion_policy"
+ENV="MUJOCO_GL=osmesa,PYOPENGL_PLATFORM=osmesa,TORCH_HOME=$PWD/../torch_home,DIFFUSION_POLICY_DIR=$PWD/../diffusion_policy"
 ENV="$ENV,PER_EPISODE_SEEDS=1,PAIRED_PER_EP=1,PAIRED_TAG=$TAG,EP_OFFSET=$OFF,SHARD=$SLURM_ARRAY_TASK_ID/$NT"
+ENV="$ENV,LD_LIBRARY_PATH=$PWD/../glx/osmesa:/.singularity.d/libs"   # MIG GPU slices have no OpenGL/EGL: MuJoCo renders on the CPU (OSMesa, libs from Ubuntu jammy)
 ENV="$ENV,EXEC_NOISE_SCALE=${EXEC_NOISE_SCALE:-2},HARD_OFF=${HARD_OFF:-1},CBF_WM=$CBF_WM,PYTHONUNBUFFERED=1${EXTRA_ENV:+,$EXTRA_ENV}"
 PY="apptainer exec --nv --cleanenv --env $ENV -B /project -B /scratch -B $HOME ../torch290.sif ../pyenv/bin/python"   # torch 2.9.0+cu128, mujoco 3.13 (= local)
 for arm in $ARMS; do
