@@ -285,6 +285,7 @@ def paired(mode, n=100, shrink=None):
     import cem_filter as cf
     shrink = shrink if shrink is not None else float(os.environ.get("HARD_SHRINK", 10))
     tag = f"paired_{mode}" + ("" if int(os.environ.get("CEM_VERSION", 1)) == 1 or mode != "cem" else f"_v{os.environ['CEM_VERSION']}")
+    tag += os.environ.get("PAIRED_TAG", "")                       # e.g. "_test" or a new experiment name
     path = ROOT / f"results/jenga/{tag}.jsonl"; sdir = OUT / tag; sdir.mkdir(parents=True, exist_ok=True)
     done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()
     pol, mon, rng = load_policy(), cf.Monitor(), np.random.default_rng(20261511)
@@ -294,9 +295,12 @@ def paired(mode, n=100, shrink=None):
             a, sec, _ = mon.check(sim, chunk)
             return (None if (mode == "abstain" and a) else chunk), {"alarm": a, "seconds": round(sec, 3)}
         return cf.cem_filter(mon, sim, chunk, rng=rng)
+    shard, nshard = (int(x) for x in os.environ.get("SHARD", "0/1").split("/"))   # parallel workers: episode i % nshard == shard
     for i in range(n):
-        if i in done:
+        if i in done or i % nshard != shard:
             continue
+        if os.environ.get("PER_EPISODE_SEEDS", "1") == "1":   # results independent of how episodes are split over workers
+            rng = np.random.default_rng([20261511, i]); mon.rng = np.random.default_rng([20261501, i])
         snaps = []
         res, _, _ = episode(pol, i, chunk_hook=hook, exec_noise=True, max_chunks=60, settle=True, seed=4000 + i, hard=shrink,
                             snaps=snaps)

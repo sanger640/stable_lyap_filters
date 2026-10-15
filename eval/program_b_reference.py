@@ -74,7 +74,7 @@ def pose_noise(key, sigma, blocks=3):
 
 
 VALID_PERTURBATION = True    # data correction 2026-10-13 (as eval/phase2_scenes.py); False reproduces older data
-HOLD_CHECK_STEPS = 38
+HOLD_CHECK_STEPS = int(os.environ.get("PB_HOLD_CHECK", 38))   # screening may use fewer steps; reported runs use 38
 REST_MOVE_MM, REST_TILT_DEG = 10.0, 10.0
 
 
