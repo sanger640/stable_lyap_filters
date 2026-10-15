@@ -14,6 +14,7 @@ No object state, no failure labels, no task goal. O_MAX is calibrated label-free
 of o for the policy's own plans).
 """
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -22,7 +23,11 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "N_LOOK": 15}
+CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "N_LOOK": 15,
+       # variants (2026-10-15 diagnosis): TRIGGER "both" = barrier or regime check can trigger (final-test filter),
+       # "barrier" = only the barrier triggers (regime check still screens candidates); SELECT "closest" = closest feasible
+       # candidate (final-test filter), "margin" = largest barrier among feasible candidates, then closest
+       "TRIGGER": os.environ.get("CBF_TRIGGER", "both"), "SELECT": os.environ.get("CBF_SELECT", "closest")}
 CALIB = ROOT / "results/jenga/cbf_calibration.json"
 
 
@@ -103,7 +108,8 @@ class CBF:
         h, o = self.score(sim, z0, np.stack([plan, hold]), 64)
         h_nom, o_nom, h_now = h[0], o[0], h[1]
         info = {"h_nom": float(h_nom), "o_nom": float(o_nom), "h_now": float(h_now)}
-        if self.ok(np.array([h_nom]), np.array([o_nom]), h_now)[0]:
+        o_trig = o_nom if CFG["TRIGGER"] == "both" else -np.inf
+        if self.ok(np.array([h_nom]), np.array([o_trig]), h_now)[0]:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         rs = (torch.get_rng_state(), torch.cuda.get_rng_state())          # sampling candidates must not shift the policy's RNG
         try:
@@ -114,11 +120,14 @@ class CBF:
         hc, oc = self.score(sim, z0, np.stack(cands), CFG["FUT_CAND"])
         feas = self.ok(hc, oc, h_now)
         dist = np.array([np.linalg.norm(np.asarray(c)[1:9, :3] - np.asarray(plan)[1:9, :3]) for c in cands])
-        if feas.any():
+        if feas.any() and CFG["SELECT"] == "margin":
+            f_ = np.flatnonzero(feas); j = int(f_[np.lexsort((dist[f_], -hc[f_]))[0]]); kind = "feasible"
+        elif feas.any():
             j = int(np.flatnonzero(feas)[np.argmin(dist[feas])]); kind = "feasible"
         else:
             j = int(np.lexsort((oc, -hc))[0]); kind = "best_effort"
         out = np.asarray(cands[j], np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
         return out, {**info, "intervened": True, "abstained": False, "choice": j, "kind": kind,
                      "h_choice": float(hc[j]), "o_choice": float(oc[j]), "change_mm": float(dist[j] * 1000),
+                     "h_cands": [float(x) for x in hc], "o_cands": [round(float(x), 4) for x in oc],
                      "seconds": round(time.time() - t0, 2)}

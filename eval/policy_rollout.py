@@ -263,6 +263,9 @@ def run(mode, n=100, start=0):
     rng = np.random.default_rng(20261503)
     path = ROOT / f"results/jenga/policy_{mode}.jsonl"
     done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()
+    per_ep = os.environ.get("PAIRED_PER_EP") == "1"              # cluster jobs: one result file per episode (no shared appends)
+    if per_ep:
+        done |= {int(q.stem[2:]) for q in sdir.glob("ep*.json")}
 
     def hook(sim, chunk, k):
         if mode == "monitor" or mode == "abstain":
@@ -274,8 +277,11 @@ def run(mode, n=100, start=0):
         if i in done:
             continue
         res, _, _ = episode(pol, i, chunk_hook=None if mode == "none" else hook, exec_noise=True)
-        with open(path, "a") as f:
-            f.write(json.dumps(res) + "\n")
+        if per_ep:
+            tmp = sdir / f"ep{i:03d}.json.tmp"; tmp.write_text(json.dumps(res) + "\n"); tmp.rename(sdir / f"ep{i:03d}.json")
+        else:
+            with open(path, "a") as f:
+                f.write(json.dumps(res) + "\n")
         print(mode, {k: v for k, v in res.items() if k != "log"}, flush=True)
     rows = [json.loads(l) for l in path.read_text().splitlines()]
     summ = {"mode": mode, "episodes": len(rows), "success": sum(r["success"] for r in rows),
@@ -299,6 +305,9 @@ def paired(mode, n=100, shrink=None):
     tag += os.environ.get("PAIRED_TAG", "")                       # e.g. "_test" or a new experiment name
     path = ROOT / f"results/jenga/{tag}.jsonl"; sdir = OUT / tag; sdir.mkdir(parents=True, exist_ok=True)
     done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()
+    per_ep = os.environ.get("PAIRED_PER_EP") == "1"              # cluster jobs: one result file per episode (no shared appends)
+    if per_ep:
+        done |= {int(q.stem[2:]) for q in sdir.glob("ep*.json")}
     pol, rng = load_policy(), np.random.default_rng(20261511)
     mon = cf.Monitor() if mode != "record" else None
     if mode == "cbf":
@@ -334,8 +343,11 @@ def paired(mode, n=100, shrink=None):
                 arr[key] = np.array([bool(info.get(int(c), {}).get(key, False)) for c in arr["chunk_index"]])
             np.savez_compressed(sdir / f"ep{i:03d}.npz", **arr)
         res["shrink_mm"] = shrink
-        with open(path, "a") as f:
-            f.write(json.dumps(res) + "\n")
+        if per_ep:
+            tmp = sdir / f"ep{i:03d}.json.tmp"; tmp.write_text(json.dumps(res) + "\n"); tmp.rename(sdir / f"ep{i:03d}.json")
+        else:
+            with open(path, "a") as f:
+                f.write(json.dumps(res) + "\n")
         print(tag, {k: v for k, v in res.items() if k != "log"}, flush=True)
 
 

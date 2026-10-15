@@ -1,0 +1,15 @@
+{
+ "name": "Fork-boundary CBF variants, development comparison (dev3)",
+ "written": "2026-10-15, before any dev3 episode was run",
+ "motivation": "Diagnosis of the final test (results/jenga/cbf_diagnose.json): the regime check triggered 197 interventions, 188 with no real effect; 6 of 9 caused topples came from choosing the closest feasible candidate (usually a near-copy of a risky policy plan) at a correctly flagged moment.",
+ "episodes": "2000-2149 (150; never used for training, calibration, development or the final test)",
+ "setting": "same as the final test: normal mass, 2x execution noise, HARD_OFF, closed-loop-retrained world model model_US.pt, N_LOOK 15, O_MAX from cbf_calibration.json, per-episode seeds, shard i%7 -> workers 0-3 on the 3090, 4-6 on the 5080 for every arm",
+ "arms": {
+  "record": "policy alone",
+  "A": "final-test filter (CBF_TRIGGER=both, CBF_SELECT=closest)",
+  "B1": "only the barrier triggers; regime check still screens candidates (CBF_TRIGGER=barrier, CBF_SELECT=closest)",
+  "B2": "B1 + largest-barrier-then-closest selection (CBF_TRIGGER=barrier, CBF_SELECT=margin)"
+ },
+ "metrics": "neighbour topples, success (3 cm lift without topple), prevented/caused vs record, one-sided McNemar vs record, interventions per decision",
+ "selection_rule": "Pick the variant (A, B1 or B2) with the fewest topples among those whose success is at least A's success minus 5. A replaces the final-test filter only if it has at least 3 fewer topples than A (otherwise keep A). The chosen variant then gets a fresh pre-registered paired test on new episodes; dev3 numbers are never reported as a test result."
+}
