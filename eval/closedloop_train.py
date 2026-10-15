@@ -31,7 +31,15 @@ def _patch():
             (sub / p.name).symlink_to(p)
             st = p.with_name(p.stem + ".start.npy")
             (sub / st.name).symlink_to(st)
-    p1b.FOLDERS_ENRICHED = [V3 / "train", V3 / "p1train", sub]
+    p1 = V3 / "p1train"
+    if os.environ.get("CL_DROP_T8") == "1":            # memory (60 GB machine): keep the fork-rich phase-1 states only
+        roles = json.loads((V3 / "selection_phase1.json").read_text())["roles"]
+        t16 = {f"ep{ch.split(':')[0]}_seed{ch.split(':')[1]}_s{i}.npz" for ch, sel_ in roles.items() for i, r in sel_.items() if r == "t16"}
+        p1 = V3 / "p1train_t16"; p1.mkdir(exist_ok=True)
+        for q in (V3 / "p1train").glob("ep*.npz"):
+            if q.name in t16 and not (p1 / q.name).exists():
+                (p1 / q.name).symlink_to(q); st = q.with_name(q.stem + ".start.npy"); (p1 / st.name).symlink_to(st)
+    p1b.FOLDERS_ENRICHED = [V3 / "train", p1, sub]
 
 
 def _names_states():
