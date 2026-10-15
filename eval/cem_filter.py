@@ -16,6 +16,7 @@ Solved with CEM (population 16, 3 iterations, 4 elites); every candidate gets th
 the robot holds its current target for the chunk and the policy re-plans from the new observation.
 """
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -40,7 +41,8 @@ class Monitor:
         import visual_pipeline_panel3 as p3
         from step3_data import Latent
         self.torch, self.wm, self.sm = torch, wm, sm
-        self.model = wm.WorldModel.load(V3 / "model_US.pt"); self.model.net.eval()
+        wmp = os.environ.get("CBF_WM")                     # optional world-model override (e.g. the closed-loop retrained one)
+        self.model = wm.WorldModel.load(Path(wmp) if wmp else V3 / "model_US.pt"); self.model.net.eval()
         self.g = sm.G.load(V3 / "G.pt")
         self.tau = json.loads((V3 / "floor_US.json").read_text())["tau"]
         self.latent, self.errors = Latent(), p3.ErrorModel()
