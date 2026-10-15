@@ -268,6 +268,8 @@ def regime_o(e30, z0, mask):
 
 
 def opt(tag="v0"):
+    if QP["VERSION"] >= 2:
+        return opt_v2(tag)
     if QP["VERSION"] >= 1:
         return opt_v1(tag)
     """CBF-QP by SQP for every intervened decision -> optimized plan, barrier trace, exact verification."""
@@ -399,6 +401,80 @@ def opt_v1(tag):
             print(f"opt {n_ + 1}/{len(sel)} {time.time() - t0:.0f}s {trace[0]} -> {trace[-1]} change {res[-1]['change_mm']} mm verified {ok}", flush=True)
     (OUT / f"opt_{tag}.json").write_text(json.dumps({"cfg": QP, "rows": res}))
     print("opt done", len(res), "verified", sum(r["verified"] for r in res), f"{time.time() - t0:.0f}s", flush=True)
+
+
+def mean_o(bar, plans, z0, site):
+    """Smooth risk-like barrier input: mean over futures of the latent change away from the hand (mask per plan)."""
+    import torch
+    import cbf_barrier as cb
+    _, e30 = bar.endpoints(plans)
+    out = []
+    for c in range(len(plans)):
+        pts = np.vstack([site[None], plans[c][1:16, :3].detach().cpu().numpy()])
+        m = torch.as_tensor(~cb.hand_mask(pts), device="cuda").float()
+        diff = (e30[c].reshape(-1, 28, 28, 8) - z0[None]).pow(2).mean(-1)
+        out.append(((diff * m).sum((1, 2)) / m.sum()).mean())
+    return torch.stack(out)
+
+
+def opt_v2(tag):
+    """v2 (2026-10-15 check: mean_o tracks real nudge effects r = 0.76, the fork barrier 0.12-0.15):
+    min ||theta||^2  s.t.  mean_o(p) <= tau,  tau = the QP_TAU_PCT percentile of mean_o for the policy's own plan at
+    calm (untouched) decisions -- label-free, like O_MAX. Exact discrete check afterwards as before."""
+    import torch
+    import cem_filter as cf
+    import cbf_filter as cbff
+    import inspector_data as insp
+    C, K = load_cache()
+    mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
+    M = torch.as_tensor(knot_matrix(), device="cuda", dtype=torch.float32)
+    n = QP["N"]
+    calm = []
+    for i, k in enumerate(K):
+        if k["acted"]:
+            continue
+        z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
+        with torch.no_grad():
+            calm.append(float(mean_o(Barrier(mon, z0, 1000 + i, n, 1.0), torch.as_tensor(C["plan16"][i][None], device="cuda", dtype=torch.float32), z0, C["site"][i])[0]))
+    tau = float(np.percentile(calm, float(os.environ.get("QP_TAU_PCT", 75))))
+    print(f"tau {tau:.4f} from {len(calm)} calm decisions (pct {os.environ.get('QP_TAU_PCT', 75)})", flush=True)
+    res, t0 = [], time.time()
+    for n_, i in enumerate([i for i, k in enumerate(K) if k["acted"]]):
+        z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
+        bar = Barrier(mon, z0, 1000 + i, n, 1.0)
+        base = torch.as_tensor(C["plan16"][i], device="cuda", dtype=torch.float32)
+        th = np.zeros(len(QP["KNOTS"]) * 3); trace = []
+        for it in range(QP["ITERS"] + 1):
+            thv = torch.as_tensor(th, device="cuda", dtype=torch.float32).view(-1, 3).requires_grad_(True)
+            p = base.clone(); p[:, :3] = p[:, :3] + M @ thv / 1000
+            mo = mean_o(bar, p[None], z0, C["site"][i])[0]
+            trace.append(round(float(mo), 4))
+            if float(mo) <= tau or it == QP["ITERS"]:
+                break
+            g = torch.autograd.grad(-mo, thv)[0].flatten().cpu().numpy().astype(np.float64)   # constraint: -mo >= -tau
+            c = -tau - (-float(mo)) + g @ th
+            target = min_norm([g], [c], th)
+            stepv = target - th; nrm = np.linalg.norm(stepv)
+            if nrm > QP["STEP_MM"]:
+                stepv *= QP["STEP_MM"] / nrm
+            th = th + stepv
+            if np.linalg.norm(th) > QP["MAX_MM"]:
+                th *= QP["MAX_MM"] / np.linalg.norm(th)
+        with torch.no_grad():
+            p = base.clone(); p[:, :3] = p[:, :3] + M @ torch.as_tensor(th, device="cuda", dtype=torch.float32).view(-1, 3) / 1000
+        plan = p.cpu().numpy()
+        sim.restore((C["state"][i], C["ctrl"][i], C["target"][i], float(C["gripper"][i])))
+        h, o = cbf.score(sim, z0, np.stack([plan]), 64)
+        ok = bool(cbf.ok(h, o, K[i]["h_now"])[0])
+        chunk = plan[cbff.CFG["PLAN_START"]:cbff.CFG["PLAN_START"] + 8].astype(np.float32)
+        res.append({"i": i, "ep": K[i]["ep"], "d": K[i]["d"], "tau": round(tau, 4), "trace": trace,
+                    "change_mm": round(float(np.linalg.norm(plan[1:9, :3] - C["plan16"][i][1:9, :3]) * 1000), 1),
+                    "knots_mm": np.round(th.reshape(-1, 3), 1).tolist(), "h": float(h[0]), "o": round(float(o[0]), 4),
+                    "verified": ok, "chunk": chunk.tolist()})
+        if n_ % 20 == 0:
+            print(f"opt {n_ + 1} {time.time() - t0:.0f}s mean_o {trace[0]} -> {trace[-1]} (tau {tau:.3f}) change {res[-1]['change_mm']} mm", flush=True)
+    (OUT / f"opt_{tag}.json").write_text(json.dumps({"cfg": QP, "tau": tau, "rows": res}))
+    print("opt done", len(res), "reached tau", sum(r["trace"][-1] <= tau for r in res), "verified", sum(r["verified"] for r in res), flush=True)
 
 
 def _truth_one(job):
