@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generic array job: runs `python $SCRIPT $ARGS` in the container with TASK=<array index>/<NT> and EXTRA_ENV.
-#   sbatch --array=0-$((NT-1)) --export=ALL,NT=<n>,SCRIPT=eval/cf_data.py,ARGS="",EXTRA_ENV="CF_RUN=...,CF_OUT=..." cluster/py_array.sbatch
+#   sbatch --array=0-$((NT-1)) --export=ALL,NT=<n>,SCRIPT=eval/cf_data.py,ARGS="",EXTRA_ENV="CF_RUN=...;CF_OUT=..." cluster/py_array.sbatch
 #SBATCH --account=def-soojeon
 #SBATCH --gpus=nvidia_h100_80gb_hbm3_1g.10gb:1
 #SBATCH --cpus-per-task=2
