@@ -43,6 +43,12 @@ CFG = {"ALPHA": E("OPT_ALPHA", 0.3), "STARTS": E("OPT_STARTS", 4), "STEPS": E("O
        # exclude the untouched flagged plan; VERIFY = check the answer on fresh draws, fall back to the next candidate.
        "CEM_CRN": E("OPT_CEM_CRN", 0), "CEM_NO_NOMINAL": E("OPT_CEM_NO_NOMINAL", 0), "CEM_VERIFY": E("OPT_CEM_VERIFY", 1), "CVAR": E("OPT_CVAR", 0.25),
        "AL_STEPS": E("OPT_AL_STEPS", 20), "AL_N": E("OPT_AL_N", 32),
+       # SOLVER "chunk" (2026-10-16): decision variable = the executed action chunk itself (steps 1-8, xyz; gripper
+       # fixed), lookahead 9-15 = the policy's own continuation shifted by the step-8 change; cost = weighted change +
+       # ETA * second differences (smoothness, incl. the current target); ONE learned barrier B (eval/learned_barrier.py,
+       # predicted real topple fraction) both as the constraint B <= EPS and for acceptance (fresh draws); augmented
+       # Lagrangian; starts = the policy's plan and its own samples, as initial chunks.
+       "EPS": E("OPT_EPS", 0.10), "ETA": E("OPT_ETA", 4.0), "CH_STEPS": E("OPT_CH_STEPS", 20),
        "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [float(v) for v in os.environ.get("OPT_SIG0", "0.99,0.55").split(",")]}
 
 
@@ -71,7 +77,8 @@ def run(tag="opt"):
     for n_, r in enumerate(rows):
         i = r["i"]; z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
         sim.restore((C["state"][i], C["ctrl"][i], C["target"][i], float(C["gripper"][i])))
-        plan, info = optimise(mon, cbf, sim, z0, C["site"][i], np.asarray(r["plans"], np.float32)[:CFG["STARTS"]], K[i]["h_now"], 1000 + i)
+        plan, info = optimise(mon, cbf, sim, z0, C["site"][i], np.asarray(r["plans"], np.float32)[:CFG["STARTS"]], K[i]["h_now"], 1000 + i,
+                              decision=i)
         out.append({"i": i, **info, "chunk": plan[1:9].astype(np.float32).tolist()})
         if n_ % 15 == 0:
             print(f"run {n_ + 1}/{len(rows)} {time.time() - t0:.0f}s start {info['start']} sigma {info['sigma']} change {info['change_mm']} mm feasible {info['feasible']}", flush=True)
@@ -79,13 +86,15 @@ def run(tag="opt"):
     print("run done", len(out), f"{time.time() - t0:.0f}s", flush=True)
 
 
-def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None):
+def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, decision=None):
     """The single CBF optimisation for one decision. starts (S,16,4): the policy's plan first, then its own samples.
     sim must be at the decision state (for the exact fork check). Returns (plan (16,4) numpy, info)."""
     import torch
     fork_check = (os.environ.get("OPT_FORK_CHECK") == "1") if fork_check is None else fork_check
     if CFG["SOLVER"] == "cem":
         return optimise_cem(mon, cbf, sim, z0, site, starts, h_now, seed)
+    if CFG["SOLVER"] == "chunk":
+        return optimise_chunk(mon, cbf, sim, z0, site, starts, h_now, seed, decision)
     if CFG["SOLVER"] == "al":
         return optimise_al(mon, cbf, sim, z0, site, starts, h_now, seed)
     M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
@@ -295,6 +304,62 @@ def optimise_al(mon, cbf, sim, z0, site, starts, h_now, seed):
     info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "fork_ok": int(okf.sum()),
             "sigma": round(float(sg[j]), 3), "change_mm": round(float(ch[j]), 1), "steps": it + 1,
             "verified": bool(cbf.ok(h, o, h_now)[0])}
+    return plan, info
+
+
+def _chunk_plans(pol, D):
+    """pol (1,16,4), D (S,8,3) m: steps 1-8 = policy + D, steps 9-15 = policy continuation + D[step 8]; gripper kept."""
+    import torch
+    off = torch.cat([torch.zeros_like(D[:, :1]), D, D[:, -1:].expand(-1, 7, -1)], 1)          # (S,16,3)
+    p = pol.expand(len(D), -1, -1).clone()
+    p[..., :3] = p[..., :3] + off
+    return p
+
+
+def _chunk_cost(D):
+    """mm^2 / 100: change of the executed steps (weights 1) + ETA x second differences incl. the fixed step 0."""
+    import torch
+    Dm = D * 1000
+    full = torch.cat([torch.zeros_like(Dm[:, :1]), Dm], 1)
+    d2 = full[:, 2:] - 2 * full[:, 1:-1] + full[:, :-2]
+    return (Dm.pow(2).sum((1, 2)) + CFG["ETA"] * d2.pow(2).sum((1, 2))) / 100, Dm.pow(2).sum((1, 2)).sqrt()
+
+
+def optimise_chunk(mon, cbf, sim, z0, site, starts, h_now, seed, decision=None):
+    import torch
+    import learned_barrier as lb
+    B = lb.load(decision)
+    P0 = torch.as_tensor(np.asarray(starts, np.float32), device="cuda"); pol = P0[:1]
+    D = (P0[:, 1:9, :3] - pol[:, 1:9, :3]).clone().requires_grad_(True)                     # starts as initial chunks
+    bar = q.Barrier(mon, z0, seed, lb.N_FUT, 1.0)
+    opt = torch.optim.Adam([D], lr=CFG["LR_MM"] / 1000)
+    lam = torch.zeros(len(D), device="cuda"); rho = 10.0; eps = CFG["EPS"]
+    for it in range(CFG["CH_STEPS"]):
+        pl = _chunk_plans(pol, D)
+        b = B(lb.features(bar, pl, z0, site))
+        g = b / eps - 1
+        J, _ = _chunk_cost(D)
+        loss = (J + lam * g + 0.5 * rho * torch.relu(g + lam / rho) ** 2).sum()
+        opt.zero_grad(); loss.backward(); opt.step()
+        with torch.no_grad():                        # trust region: |change| <= MAX_MM per step
+            n = D.norm(dim=-1, keepdim=True).clamp_min(1e-9)
+            D.mul_(torch.clamp(CFG["MAX_MM"] / 1000 / n, max=1.0))
+            if (it + 1) % 5 == 0:
+                lam = torch.clamp(lam + rho * g.detach(), min=0); rho = min(rho * 2, 1e4)
+    with torch.no_grad():
+        pl = _chunk_plans(pol, D)
+        bar2 = q.Barrier(mon, z0, seed + 1000, lb.N_FUT, 1.0)                                 # fresh draws: acceptance
+        b2 = B(lb.features(bar2, pl, z0, site)).cpu().numpy()
+        J, ch = _chunk_cost(D); J = J.cpu().numpy(); ch = ch.cpu().numpy()
+    feas = b2 <= eps
+    j = int(np.flatnonzero(feas)[np.argmin(J[feas])]) if feas.any() else int(np.argmin(b2))
+    plan = pl[j].cpu().numpy()
+    h, o = cbf.score(sim, z0, plan[None], 64)
+    info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": 1.0,
+            "change_mm": round(float(ch[j]), 1), "B_choice": round(float(b2[j]), 4), "B_policy": None,
+            "verified": bool(cbf.ok(h, o, h_now)[0])}
+    with torch.no_grad():
+        info["B_policy"] = round(float(B(lb.features(bar2, pol, z0, site))[0]), 4)
     return plan, info
 
 
