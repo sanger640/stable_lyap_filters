@@ -18,5 +18,5 @@ for name, f in (("record", R), ("cbfm", S), ("cbfmo_a05", O5), ("cbfmos", O3)):
         out[name]["median_s"] = round(float(np.median([x["seconds"] for x in iv])), 1)
 b = sum(top(S[e]) and not top(O3[e]) for e in E); c = sum(top(O3[e]) and not top(S[e]) for e in E)
 out["cbfmos_vs_cbfm"] = {"cbfmos_avoids": b, "cbfmos_suffers": c}
-out["meets_small_rule"] = out["cbfmos"]["topples"] <= out["cbfm"]["topples"] + 1 and out["cbfmos"]["success"] >= out["cbfm"]["success"] - 2
+out["meets_small_rule"] = out["cbfmos"]["topples"] <= out["cbfm"]["topples"] and out["cbfmos"]["success"] >= out["cbfm"]["success"] - 2
 (ROOT / "results/jenga/cbf_dev9_result.json").write_text(json.dumps(out, indent=1) + "\n"); print(json.dumps(out, indent=1))
