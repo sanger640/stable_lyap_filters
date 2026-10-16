@@ -318,6 +318,12 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "opt"; cbff.CFG["OPT_STARTS"] = 8
         cbf_opt.CFG.update({"ALPHA": 0.3, "STEPS": 10, "STARTS": 8, "N": 16})
         return _paired("cbfmo3", "cbf", n, shrink)
+    if mode == "cbfmos":                       # CBF optimisation with the cost fixed to the written formulation
+        import cbf_filter as cbff               # (path change on geometry + lambda (1 - sigma)^2; sigma starts 0.99 and 0.55)
+        import cbf_opt
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "opt"; cbff.CFG["OPT_STARTS"] = 8
+        cbf_opt.CFG.update({"ALPHA": 0.5, "STEPS": 10, "STARTS": 8, "N": 16, "COST": "separate", "SIG0": [0.99, 0.55]})
+        return _paired("cbfmos", "cbf", n, shrink)
     if mode == "cbfmg":                        # final filter with object-free Gauss-TE starts (no object-centric G)
         import cbf_filter as cbff
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["START"] = "gte"

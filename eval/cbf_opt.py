@@ -28,7 +28,12 @@ import cbf_qp as q  # noqa: E402
 
 E = lambda k, d: type(d)(os.environ.get(k, d))
 CFG = {"ALPHA": E("OPT_ALPHA", 0.3), "STARTS": E("OPT_STARTS", 4), "STEPS": E("OPT_STEPS", 15), "N": E("OPT_N", 16),
-       "LAMBDA": E("OPT_LAMBDA", 400.0), "MU": E("OPT_MU", 1e4), "LR_MM": E("OPT_LR_MM", 1.5), "MAX_MM": E("OPT_MAX_MM", 40.0)}
+       "LAMBDA": E("OPT_LAMBDA", 400.0), "MU": E("OPT_MU", 1e4), "LR_MM": E("OPT_LR_MM", 1.5), "MAX_MM": E("OPT_MAX_MM", 40.0),
+       # COST "separate" (2026-10-16 fix, matches the written formulation ||delta||^2 + lambda (1 - sigma)^2): the path change
+       # is measured on the bent path GEOMETRY before time-scaling, so slowing down is charged only by lambda (1 - sigma)^2.
+       # "timed" = the old code: compared step-by-step in time, so a slower plan also counted as a large path change.
+       # SIG0: sigma initialisations; each of the first STARTS / len(SIG0) starts is tried at every SIG0 (initialisations only).
+       "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [0.99, 0.55]}
 
 
 def time_scale(plan, sigma):
@@ -72,34 +77,47 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None):
     bar = q.Barrier(mon, z0, seed, CFG["N"], 1.0)
     P = torch.as_tensor(np.asarray(starts, np.float32), device="cuda")
     pol = P[:1]
+    sig0 = CFG["SIG0"] if CFG["COST"] == "separate" else [0.99]
+    if len(sig0) > 1:                                # same number of starts in total: fewer plans, each at every sigma init
+        P = P[:max(1, len(P) // len(sig0))].repeat(len(sig0), 1, 1)
+    s_init = torch.tensor([v for v in sig0 for _ in range(len(P) // len(sig0))], device="cuda")
+    s_init = torch.logit(((s_init - 0.3) / 0.7).clamp(1e-3, 1 - 1e-3))
     with torch.no_grad():
         o_pol = float(q.mean_o(bar, pol, z0, site)[0])
     tau = (1 - CFG["ALPHA"]) * o_pol
     S = len(P)
     knots = torch.zeros(S, len(q.QP["KNOTS"]), 3, device="cuda", requires_grad=True)
-    s_raw = torch.full((S,), 4.0, device="cuda", requires_grad=True)                        # sigma ~ 0.99 at start
+    s_raw = s_init.clone().requires_grad_(True)
     opt = torch.optim.Adam([{"params": [knots], "lr": CFG["LR_MM"]}, {"params": [s_raw], "lr": 0.3}])
 
     def plans_of(knots, s_raw):
         sig = 0.3 + 0.7 * torch.sigmoid(s_raw)
-        p = time_scale(P, sig)
         off = torch.einsum("tk,skd->std", M, knots) / 1000
-        return torch.cat([p[..., :3] + off, p[..., 3:]], -1), sig
+        if CFG["COST"] == "separate":                # bend the path, then execute it at speed sigma
+            geo = torch.cat([P[..., :3] + off, P[..., 3:]], -1)
+            return time_scale(geo, sig), sig, geo
+        p = time_scale(P, sig)
+        p = torch.cat([p[..., :3] + off, p[..., 3:]], -1)
+        return p, sig, p
+
+    def change(geo):                                 # mm^2 from the policy's plan (path geometry, or timed for "timed")
+        return ((geo[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2))
     for _ in range(CFG["STEPS"]):
-        p, sig = plans_of(knots, s_raw)
+        p, sig, geo = plans_of(knots, s_raw)
         ob = q.mean_o(bar, p, z0, site)
-        dist = ((p[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2))                 # mm^2 from the policy's plan
+        dist = change(geo)
         loss = (dist / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100 + CFG["MU"] * torch.relu(ob / max(tau, 1e-9) - 1) ** 2).sum()
         opt.zero_grad(); loss.backward(); opt.step()
         with torch.no_grad():
             nrm = knots.norm(dim=(1, 2), keepdim=True).clamp_min(1e-9)
             knots.mul_(torch.clamp(CFG["MAX_MM"] / nrm, max=1.0))
     with torch.no_grad():
-        p, sig = plans_of(knots, s_raw)
+        p, sig, geo = plans_of(knots, s_raw)
         bar32 = q.Barrier(mon, z0, seed + 1000, 32, 1.0)                                       # fresh draws for the choice
         ob = q.mean_o(bar32, p, z0, site).cpu().numpy()
         tau32 = (1 - CFG["ALPHA"]) * float(q.mean_o(bar32, pol, z0, site)[0])
-        dist = ((p[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2)).sqrt().cpu().numpy()
+        dist = change(geo).sqrt().cpu().numpy()
+        cost = (change(geo) / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100).cpu().numpy()     # the objective, for the choice
     feas = ob <= tau32
     pall = p.cpu().numpy()
     if fork_check:                                   # second safety condition: the exact fork barrier rule
@@ -109,7 +127,8 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None):
         pool_ = both if both.any() else (okf if okf.any() else feas)
     else:
         pool_ = feas
-    j = int(np.flatnonzero(pool_)[np.argmin(dist[pool_])]) if pool_.any() else int(np.argmin(ob))
+    key = cost if CFG["COST"] == "separate" else dist
+    j = int(np.flatnonzero(pool_)[np.argmin(key[pool_])]) if pool_.any() else int(np.argmin(ob))
     plan = pall[j]
     h, o = cbf.score(sim, z0, plan[None], 64)
     info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": round(float(sig[j]), 3),

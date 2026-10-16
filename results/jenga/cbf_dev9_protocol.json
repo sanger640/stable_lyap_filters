@@ -1,0 +1,8 @@
+{
+ "name": "dev9 (small, 75 eps): CBF optimisation with the cost fixed to the written formulation (cbfmos)",
+ "written": "2026-10-16 ~10:00, before running",
+ "why": "dev8 logs: the old code measured the path change step-by-step in time, so slowing down counted as a large path change on top of lambda (1 - sigma)^2; median sigma 0.97, while the selection filter used its slow / vertical moves in 40% of interventions. Fix: change measured on path geometry before time-scaling; sigma initialised at 0.99 and 0.55 (initialisations only, 8 starts total); choice = lowest objective among starts satisfying barrier + fork rule.",
+ "gate": "launched only if the offline check (75 risky decisions, real simulator, cbfopt_report_sep50.json) has real risk not above the old optimisation's 12.4%",
+ "episodes": "12075-12149 (the dev8 episodes); arms record (replay check) + cbfmos; compared with dev8 cbfm / cbfmo on the same episodes",
+ "rule": "small exploratory: if topples(cbfmos) <= topples(cbfm) and success(cbfmos) >= success(cbfm) - 2, propose a pre-registered larger test of the optimisation filter to the user; otherwise report and diagnose"
+}
