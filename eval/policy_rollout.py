@@ -306,6 +306,10 @@ def paired(mode, n=100, shrink=None):
         if os.environ.get("OPT_CALIB"):
             cbff.CALIB = Path(os.environ["OPT_CALIB"]) if os.path.isabs(os.environ["OPT_CALIB"]) else ROOT / os.environ["OPT_CALIB"]
         return _paired("cbfopt", "cbf", n, shrink)
+    if mode == "cbfm":                         # final-test filter with a larger safety margin: h_safe = log2(3)
+        import cbf_filter as cbff
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0))
+        return _paired("cbfm", "cbf", n, shrink)
     if mode == "cbfv":                         # final-test filter + readout veto on its choice
         os.environ["CBF_VETO"] = "1"
         import cbf_filter as cbff

@@ -1,0 +1,9 @@
+{
+ "name": "dev7: final-test filter with a larger safety margin (h_safe = log2 3) vs final-test filter (h_safe = 1), 600 episodes, Rorqual",
+ "written": "2026-10-16 ~03:15, before any dev7 episode was run",
+ "motivation": "Of the 78 topples the final-test filter did not prevent in dev6, 53 had the filter act within 3 decisions before the topple (41 at the topple decision itself): detected but too late. One decision earlier the barrier often read h = 1.0 (no fork at normal error, fork at 2x), which h_safe = 1 accepts. Requiring h >= min(h_now, log2 3) acts on those marginal plans one step earlier.",
+ "episodes": "8000-8599 (600; never used)",
+ "setting": "as the final test; all three arms of an episode in one cluster job; model_US",
+ "arms": {"record": "policy alone", "cbf": "final-test filter (h_safe = 1)", "cbfm": "same filter with h_safe = log2(3); everything else unchanged"},
+ "decision_rule": "cbfm goes to a fresh pre-registered final test if it has at least 4 fewer topples than cbf AND success >= cbf success - 8. 1-3 fewer with success within 8: 'not distinguishable', decide with the user. Otherwise keep the final-test filter. dev7 numbers are never reported as a test result."
+}
