@@ -7,10 +7,11 @@
 #SBATCH --mem=24G
 #SBATCH --time=02:00:00
 #SBATCH --output=logs/%x_%A_%a.out
+# EXTRA_ENV: separate settings with ';' (sbatch --export splits on commas, so commas would be lost)
 set -euo pipefail
 cd "${SLF_ROOT:-$HOME/projects/def-soojeon/ali313/slf/repo}"
 module load apptainer
 TASK=${SLURM_ARRAY_TASK_ID:-0}/${NT:-1}
 ENV="MUJOCO_GL=osmesa,PYOPENGL_PLATFORM=osmesa,TORCH_HOME=$PWD/../torch_home,DIFFUSION_POLICY_DIR=$PWD/../diffusion_policy"
-ENV="$ENV,LD_LIBRARY_PATH=$PWD/../glx/osmesa:/.singularity.d/libs,PYTHONUNBUFFERED=1,CF_TASK=$TASK,TASK=$TASK${EXTRA_ENV:+,$EXTRA_ENV}"
+ENV="$ENV,LD_LIBRARY_PATH=$PWD/../glx/osmesa:/.singularity.d/libs,PYTHONUNBUFFERED=1,CF_TASK=$TASK,TASK=$TASK${EXTRA_ENV:+,${EXTRA_ENV//;/,}}"
 apptainer exec --nv --cleanenv --env "$ENV" -B /project -B /scratch -B $HOME ../torch290.sif ../pyenv/bin/python $SCRIPT ${ARGS:-}
