@@ -33,7 +33,13 @@ CFG = {"ALPHA": E("OPT_ALPHA", 0.3), "STARTS": E("OPT_STARTS", 4), "STEPS": E("O
        # is measured on the bent path GEOMETRY before time-scaling, so slowing down is charged only by lambda (1 - sigma)^2.
        # "timed" = the old code: compared step-by-step in time, so a slower plan also counted as a large path change.
        # SIG0: sigma initialisations; each of the first STARTS / len(SIG0) starts is tried at every SIG0 (initialisations only).
-       "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [0.99, 0.55]}
+       # SOLVER: "grad" = penalty method on the mean disturbance (dev8); "cem" = cross-entropy method on the EXACT accepted
+       # rule (fork barrier h >= min(h_now, h_safe), o <= O_MAX) with the same objective; "al" = augmented-Lagrangian
+       # gradient solver on a CVaR disturbance barrier (risk-aware), more steps, early stop.
+       "SOLVER": os.environ.get("OPT_SOLVER", "grad"), "CEM_POP": E("OPT_CEM_POP", 32), "CEM_ITERS": E("OPT_CEM_ITERS", 3),
+       "CEM_ELITES": E("OPT_CEM_ELITES", 6), "CEM_SD_MM": E("OPT_CEM_SD_MM", 8.0), "CEM_N": E("OPT_CEM_N", 32), "CVAR": E("OPT_CVAR", 0.25),
+       "AL_STEPS": E("OPT_AL_STEPS", 20), "AL_N": E("OPT_AL_N", 32),
+       "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [float(v) for v in os.environ.get("OPT_SIG0", "0.99,0.55").split(",")]}
 
 
 def time_scale(plan, sigma):
@@ -55,6 +61,7 @@ def run(tag="opt"):
     import inspector_data as insp
     C, K = q.load_cache()
     rows = json.loads((q.OUT / "checks" / "plans.json").read_text())                          # 75 risky decisions
+    rows = rows[:int(os.environ.get("OPT_LIMIT", len(rows)))]
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
     out, t0 = [], time.time()
     for n_, r in enumerate(rows):
@@ -73,6 +80,10 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None):
     sim must be at the decision state (for the exact fork check). Returns (plan (16,4) numpy, info)."""
     import torch
     fork_check = (os.environ.get("OPT_FORK_CHECK") == "1") if fork_check is None else fork_check
+    if CFG["SOLVER"] == "cem":
+        return optimise_cem(mon, cbf, sim, z0, site, starts, h_now, seed)
+    if CFG["SOLVER"] == "al":
+        return optimise_al(mon, cbf, sim, z0, site, starts, h_now, seed)
     M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
     bar = q.Barrier(mon, z0, seed, CFG["N"], 1.0)
     P = torch.as_tensor(np.asarray(starts, np.float32), device="cuda")
@@ -133,6 +144,140 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None):
     h, o = cbf.score(sim, z0, plan[None], 64)
     info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": round(float(sig[j]), 3),
             "change_mm": round(float(dist[j]), 1), "obar_policy": round(o_pol, 4), "obar_final": round(float(ob[j]), 4),
+            "verified": bool(cbf.ok(h, o, h_now)[0])}
+    return plan, info
+
+
+def _build(P, M, c, kn, sg):
+    """Plans from (start index c (B,), knots kn (B,K,3) mm, speed sg (B,)): bend the start's path, then run it at sg."""
+    import torch
+    geo = P[c].clone()
+    geo[..., :3] = geo[..., :3] + torch.einsum("tk,bkd->btd", M, kn) / 1000
+    return time_scale(geo, sg), geo
+
+
+def _objective(geo, sg, pol):
+    """The objective of the formulation: path change (mm^2 / 100, geometry, steps 1:8) + lambda (1 - sigma)^2 / 100."""
+    ch = ((geo[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2))
+    return ch / 100 + CFG["LAMBDA"] * (1 - sg) ** 2 / 100, ch.sqrt()
+
+
+def _rank(ok, J, h, o):
+    """Feasible (exact rule) first by objective; infeasible by largest h, then smallest o."""
+    return sorted(range(len(J)), key=lambda i: (0, J[i], 0) if ok[i] else (1, -h[i], o[i]))
+
+
+def optimise_cem(mon, cbf, sim, z0, site, starts, h_now, seed):
+    """Cross-entropy method on the exact accepted rule. Search space: which policy sample to bend (categorical; the
+    policy's samples are only the initial distribution), 4 xyz knots (Gaussian, |.| <= MAX_MM) and sigma (Gaussian,
+    clipped to [0.3, 1]). Every candidate gets the exact fork barrier (64 futures x 4 scales), as the selection filter's
+    candidates do; the answer is the cheapest candidate satisfying the rule (else the largest h)."""
+    import torch
+    rng = np.random.default_rng(seed)
+    M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
+    P = torch.as_tensor(np.asarray(starts, np.float32), device="cuda"); pol = P[:1]
+    S, K, pop, ne = len(P), len(q.QP["KNOTS"]), CFG["CEM_POP"], CFG["CEM_ELITES"]
+    probs = np.full(S, 1 / S); mu = np.zeros((K, 3)); sd = np.full((K, 3), CFG["CEM_SD_MM"]); smu, ssd = 0.85, 0.2
+    C_, KN, SG, H, O, OK, J, CH = [], [], [], [], [], [], [], []
+    for it in range(CFG["CEM_ITERS"]):
+        c = np.repeat(np.arange(S), int(np.ceil(pop / S)))[:pop] if it == 0 else rng.choice(S, pop, p=probs)
+        kn = rng.normal(mu, sd, (pop, K, 3)); sg = np.clip(rng.normal(smu, ssd, pop), 0.3, 1.0)
+        if it == 0:                                  # include every start untouched (bend 0, full speed)
+            first = np.r_[0, np.flatnonzero(np.diff(c)) + 1]; kn[first] = 0; sg[first] = 1.0
+        nrm = np.linalg.norm(kn.reshape(pop, -1), axis=1); kn *= np.minimum(1, CFG["MAX_MM"] / np.maximum(nrm, 1e-9))[:, None, None]
+        with torch.no_grad():
+            pl, geo = _build(P, M, torch.as_tensor(c, device="cuda"), torch.as_tensor(kn, device="cuda", dtype=torch.float32),
+                             torch.as_tensor(sg, device="cuda", dtype=torch.float32))
+            j_, ch_ = _objective(geo, torch.as_tensor(sg, device="cuda", dtype=torch.float32), pol)
+        h, o = cbf.score(sim, z0, pl.cpu().numpy(), CFG["CEM_N"]); ok = cbf.ok(h, o, h_now)
+        C_ += list(c); KN += list(kn); SG += list(sg); H += list(h); O += list(o); OK += list(ok)
+        J += list(j_.cpu().numpy()); CH += list(ch_.cpu().numpy())
+        el = _rank(OK, J, H, O)[:ne]                 # elites over everything seen so far
+        cnt = np.bincount(np.asarray(C_)[el], minlength=S)
+        probs = 0.8 * cnt / ne + 0.2 / S
+        ek = np.asarray(KN)[el]; es = np.asarray(SG)[el]
+        mu, sd = ek.mean(0), np.maximum(ek.std(0), 2.0); smu, ssd = es.mean(), max(es.std(), 0.05)
+    b = _rank(OK, J, H, O)[0]
+    with torch.no_grad():
+        pl, _ = _build(P, M, torch.as_tensor([C_[b]], device="cuda"), torch.as_tensor(KN[b][None], device="cuda", dtype=torch.float32),
+                       torch.as_tensor([SG[b]], device="cuda", dtype=torch.float32))
+    plan = pl[0].cpu().numpy()
+    hv, ov = cbf.score(sim, z0, plan[None], 64)      # fresh draws
+    info = {"start": int(C_[b]), "feasible": bool(OK[b]), "n_feasible": int(np.sum(OK)), "sigma": round(float(SG[b]), 3),
+            "change_mm": round(float(CH[b]), 1), "h_choice": float(H[b]), "evaluated": len(J),
+            "verified": bool(cbf.ok(hv, ov, h_now)[0])}
+    return plan, info
+
+
+def _o_futures(bar, plans, z0, site):
+    """Per-future latent change away from the hand: (C, n)."""
+    import torch
+    import cbf_barrier as cb
+    _, e30 = bar.endpoints(plans)
+    out = []
+    for c in range(len(plans)):
+        pts = np.vstack([site[None], plans[c][1:16, :3].detach().cpu().numpy()])
+        m = torch.as_tensor(~cb.hand_mask(pts), device="cuda").float()
+        diff = (e30[c].reshape(-1, 28, 28, 8) - z0[None]).pow(2).mean(-1)
+        out.append((diff * m).sum((1, 2)) / m.sum())
+    return torch.stack(out)
+
+
+def _cvar(x, beta):
+    k = max(1, int(np.ceil(beta * x.shape[1])))
+    return x.topk(k, dim=1).values.mean(1)
+
+
+def optimise_al(mon, cbf, sim, z0, site, starts, h_now, seed):
+    """Gradient solver, improved: risk-aware barrier g = CVaR_beta(outside-hand change) <= (1 - alpha) g(policy),
+    augmented Lagrangian (multiplier + growing penalty) instead of a fixed penalty, AL_STEPS steps with early stop once
+    every start is feasible, AL_N futures. The horizon already ends in 20 hold steps after the plan (backup: hold still).
+    Choice: cheapest start satisfying the CVaR barrier (fresh draws) AND the exact fork rule (as cbfmo)."""
+    import torch
+    M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
+    P0 = torch.as_tensor(np.asarray(starts, np.float32), device="cuda"); pol = P0[:1]
+    sig0 = CFG["SIG0"]
+    P = P0[:max(1, len(P0) // len(sig0))].repeat(len(sig0), 1, 1); S = len(P)
+    c = torch.arange(S, device="cuda")
+    s_init = torch.tensor([v for v in sig0 for _ in range(S // len(sig0))], device="cuda")
+    bar = q.Barrier(mon, z0, seed, CFG["AL_N"], 1.0)
+    with torch.no_grad():
+        tau = (1 - CFG["ALPHA"]) * float(_cvar(_o_futures(bar, pol, z0, site), CFG["CVAR"])[0])
+    knots = torch.zeros(S, len(q.QP["KNOTS"]), 3, device="cuda", requires_grad=True)
+    s_raw = torch.logit(((s_init - 0.3) / 0.7).clamp(1e-3, 1 - 1e-3)).clone().requires_grad_(True)
+    opt = torch.optim.Adam([{"params": [knots], "lr": CFG["LR_MM"]}, {"params": [s_raw], "lr": 0.3}])
+    lam = torch.zeros(S, device="cuda"); rho = 10.0
+    for it in range(CFG["AL_STEPS"]):
+        sg = 0.3 + 0.7 * torch.sigmoid(s_raw)
+        pl, geo = _build(P, M, c, knots, sg)
+        g = _cvar(_o_futures(bar, pl, z0, site), CFG["CVAR"]) / max(tau, 1e-9) - 1         # <= 0 is feasible
+        J, _ = _objective(geo, sg, pol)
+        loss = (J + lam * g + 0.5 * rho * torch.relu(g + lam / rho) ** 2).sum()
+        opt.zero_grad(); loss.backward(); opt.step()
+        with torch.no_grad():
+            nrm = knots.norm(dim=(1, 2), keepdim=True).clamp_min(1e-9)
+            knots.mul_(torch.clamp(CFG["MAX_MM"] / nrm, max=1.0))
+            if (it + 1) % 5 == 0:
+                lam = torch.clamp(lam + rho * g.detach(), min=0); rho = min(rho * 2, 1e4)
+            if bool((g <= 0).all()) and it >= 4:
+                break
+    with torch.no_grad():
+        sg = 0.3 + 0.7 * torch.sigmoid(s_raw)
+        pl, geo = _build(P, M, c, knots, sg)
+        bar2 = q.Barrier(mon, z0, seed + 1000, CFG["AL_N"], 1.0)
+        tau2 = (1 - CFG["ALPHA"]) * float(_cvar(_o_futures(bar2, pol, z0, site), CFG["CVAR"])[0])
+        g2 = _cvar(_o_futures(bar2, pl, z0, site), CFG["CVAR"]).cpu().numpy()
+        J, ch = _objective(geo, sg, pol); J = J.cpu().numpy(); ch = ch.cpu().numpy()
+    feas = g2 <= tau2
+    pall = pl.cpu().numpy()
+    hh, oo = cbf.score(sim, z0, pall, 64); okf = cbf.ok(hh, oo, h_now)
+    both = feas & okf
+    pool_ = both if both.any() else (okf if okf.any() else feas)
+    j = int(np.flatnonzero(pool_)[np.argmin(J[pool_])]) if pool_.any() else int(np.argmax(hh))
+    plan = pall[j]
+    h, o = cbf.score(sim, z0, plan[None], 64)
+    info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "fork_ok": int(okf.sum()),
+            "sigma": round(float(sg[j]), 3), "change_mm": round(float(ch[j]), 1), "steps": it + 1,
             "verified": bool(cbf.ok(h, o, h_now)[0])}
     return plan, info
 
