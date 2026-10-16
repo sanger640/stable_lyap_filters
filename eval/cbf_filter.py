@@ -31,7 +31,11 @@ CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 
        # FIX "select" = choose among policy samples + 3 primitives (final-test filter); "opt" = the single CBF optimisation
        # (eval/cbf_opt.py: path bends + speed, multi-start from the policy plan + 7 policy samples, relative disturbance
        # barrier, exact fork check in the choice; no primitives)
-       "FIX": os.environ.get("CBF_FIX", "select"), "OPT_STARTS": int(os.environ.get("OPT_STARTS", 8))}
+       "FIX": os.environ.get("CBF_FIX", "select"), "OPT_STARTS": int(os.environ.get("OPT_STARTS", 8)),
+       # "qfix" (2026-10-15 night): pick the lowest fixed-readout risk among the policy plan + 15 policy samples, no
+       # primitives. Fixed readout: fork -> share of futures in the disturbed group; no fork -> 1 if the futures' mean
+       # change away from the hand > QFIX_TAU x O_MAX (everything toppling is NOT safe), else 0.
+       "QFIX_TAU": float(os.environ.get("QFIX_TAU", 0.5)), "QFIX_TIE": float(os.environ.get("QFIX_TIE", 0.02))}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
@@ -90,6 +94,30 @@ class CBF:
                 h[c] = np.log2(cb.SCALES[hit[0]])
         return h, o
 
+    def qfix(self, sim, z0, plans, n=64):
+        """Fixed readout per plan (scale 1, 64 futures): fork -> disturbed-group share; no fork -> mean outside-hand change
+        above QFIX_TAU * O_MAX -> 1, else 0."""
+        import cem_filter as cf
+        import cbf_barrier as cb
+        import cbf_qp as q
+        torch = self.mon.torch
+        bar = q.Barrier(self.mon, z0, int(self.mon.rng.integers(2 ** 31)), n, 1.0)
+        with torch.no_grad():
+            e10, e30 = bar.endpoints(torch.as_tensor(np.asarray(plans, np.float32), device="cuda"))
+        ok10, _, _ = cf.split_test_gpu(e10); ok30, lab, _ = cf.split_test_gpu(e30)
+        tau = CFG["QFIX_TAU"] * CFG["O_MAX"]
+        site = sim.data.site_xpos[sim.site].copy(); out = []
+        for c in range(len(plans)):
+            pts = np.vstack([site[None], np.asarray(plans[c])[CFG["PLAN_START"]:CFG["PLAN_START"] + CFG["N_LOOK"], :3]])
+            m = torch.as_tensor(~cb.hand_mask(pts), device="cuda").float()
+            o = (((e30[c].reshape(n, 28, 28, 8) - z0[None]).pow(2).mean(-1) * m).sum((1, 2)) / m.sum()).cpu().numpy()
+            L = lab[c].cpu().numpy().astype(bool)
+            if bool(ok10[c] & ok30[c]) and not (L.all() or (~L).all()):
+                bad = L if o[L].mean() > o[~L].mean() else ~L; out.append(float(bad.mean()))
+            else:
+                out.append(float(o.mean() > tau))
+        return np.array(out)
+
     def ok(self, h, o, h_now):
         return (h >= min(h_now, CFG["H_SAFE"]) - CFG["GAMMA"]) & (o <= (CFG["O_MAX"] if CFG["O_MAX"] is not None else np.inf))
 
@@ -120,6 +148,16 @@ class CBF:
             samples = pr.policy_chunk(pol, hist, n=CFG["OPT_STARTS"] - 1 if CFG["FIX"] == "opt" else CFG["N_SAMPLES"])
         finally:
             torch.set_rng_state(rs[0]); torch.cuda.set_rng_state(rs[1])
+        if CFG["FIX"] == "qfix":
+            cands = np.concatenate([np.asarray(plan, np.float32)[None], np.asarray(samples, np.float32)])
+            qv = self.qfix(sim, z0, cands)
+            dist_c = np.array([np.linalg.norm(np.asarray(c)[1:9, :3] - np.asarray(plan)[1:9, :3]) for c in cands])
+            near = np.flatnonzero(qv <= qv.min() + CFG["QFIX_TIE"])
+            j = int(near[np.argmin(dist_c[near])])                          # lowest readout risk; ties -> closest to the policy
+            out = cands[j][CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
+            return out, {**info, "intervened": j != 0, "abstained": False, "kind": "qfix", "choice": j,
+                         "q_policy": float(qv[0]), "q_choice": float(qv[j]), "change_mm": float(dist_c[j] * 1000),
+                         "seconds": round(time.time() - t0, 2)}
         if CFG["FIX"] == "opt":
             import cbf_opt
             starts = np.concatenate([np.asarray(plan, np.float32)[None], np.asarray(samples, np.float32)])

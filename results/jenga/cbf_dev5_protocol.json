@@ -1,0 +1,13 @@
+{
+ "name": "dev5: fixed-readout selection (cbfq) vs the final-test filter (cbf), closed loop on Alliance",
+ "written": "2026-10-15 ~23:45, before any dev5 episode was run",
+ "motivation": "The fork readout treats 'all futures topple' (no split) as safe. Fixed readout: fork -> share of futures in the disturbed group; no fork -> 1 if the futures' mean change away from the hand > 0.5 x O_MAX else 0. On 75 risky dev decisions, choosing among the policy's plan + 12 samples by the fixed readout gave 14.5% real risk (random 19.9%, current selection with primitives 13.8%); with real futures 9.0% (results/program_b/cbf_qp/readout_fix_real.json, readout_fix_imagined.json). tau factor 0.5 was chosen on the real-futures ceiling (same 75 decisions), not on any model.",
+ "episodes": "5300-5599 (300; never used)",
+ "setting": "as the final test (normal mass, 2x execution noise, HARD_OFF, per-episode seeds); all three arms of an episode in one cluster job; closed-loop world model model_US for both filter arms (only the fix differs)",
+ "arms": {
+  "record": "policy alone",
+  "cbf": "final-test filter (trigger: barrier or regime check; fix: closest safe of 15 policy samples + 3 primitives)",
+  "cbfq": "same trigger; fix: lowest fixed-readout risk among the policy plan + 15 policy samples (ties within 0.02 -> closest to the policy plan; if that is the policy plan, no change); no primitives"
+ },
+ "decision_rule": "cbfq goes to a fresh pre-registered final test if it has at least 5 fewer topples than cbf AND success >= cbf success - 8. If it has fewer topples by 1-4 with success within 8: 'not distinguishable', decide with the user. Otherwise keep the final-test filter. dev5 numbers are never reported as a test result."
+}

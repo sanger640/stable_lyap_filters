@@ -306,6 +306,11 @@ def paired(mode, n=100, shrink=None):
         if os.environ.get("OPT_CALIB"):
             cbff.CALIB = Path(os.environ["OPT_CALIB"]) if os.path.isabs(os.environ["OPT_CALIB"]) else ROOT / os.environ["OPT_CALIB"]
         return _paired("cbfopt", "cbf", n, shrink)
+    if mode == "cbfq":                         # fixed-readout selection among the policy's own samples (no primitives)
+        os.environ["CBF_FIX"] = "qfix"
+        import cbf_filter as cbff
+        cbff.CFG["FIX"] = "qfix"
+        return _paired("cbfq", "cbf", n, shrink)
     return _paired(mode, mode, n, shrink)
 
 
