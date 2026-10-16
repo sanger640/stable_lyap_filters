@@ -46,6 +46,9 @@ Last updated 2026-10-16.
   - CEM v1 on the exact rule (32 futures, 24x3): 24.3%; returned the flagged policy plan unchanged in 45/75 (a noisy re-test passed it; winner's curse) -> CEM v2 (common random numbers, exclude the flagged plan, verify + fallback).
   - al (augmented Lagrangian on CVaR_0.25 disturbance, 16 futures, <=15 steps, 8 starts, fork check): 23.1% (helped 22 / hurt 15 vs policy; median change 6.1 mm; slowed 3).
   - Every new variant today lands at 19-24% vs the single old run b50 12.4% -> control queued: b50 configuration rerun exactly (b50rep) to test whether 12.4% reproduces.
+  - CORRECTION (2026-10-16 afternoon): a30/b50 ran with model_CF (cf_v1), but sep50, sep50s1, sep50fc, CEM v1/v2, al, chunk and b50rep ran with the cem_filter DEFAULT world model threeblock_v3 (no CBF_WM set; my error). So those variants are NOT comparable to b50 (solver and model both changed). cbf_opt CFG now records WM. b50rep = b50 settings with threeblock_v3 = a world-model comparison, not a reproduction.
+  - CEM v2 (threeblock_v3): 22.5% (helped 30 / hurt 14 vs policy; worse than selection on 33, better on 7; verified 100%).
+  - Learned barrier (eval/learned_barrier.py) is trained on real neighbour-topple labels -> NOT task-agnostic, not admissible inside the filter; its chunk run was stopped. CV ranking: spearman 0.59 vs 0.37 for mean disturbance (diagnostic only: the latent statistics carry the risk signal).
 
 ## Variants that did NOT beat the first/final filter in closed loop (all pre-registered dev tests)
 

@@ -1,0 +1,11 @@
+{
+ "name": "Optimiser-in-the-loop world-model data, round 1 (small)",
+ "written": "2026-10-16 ~14:00, before any round-1 data was collected",
+ "why": "All optimiser variants pass their own world-model check but land at 19-24% real risk offline (selection 13.8%): model exploitation. Fix without labels: train the world model on the optimiser's own proposals.",
+ "data": "200 cf_v1 training states (paired_record_dev2x episodes 0-299, near-topple first); policy plan + 3 proposals of the gradient optimiser (cbf_opt grad, b50 settings, model_CF) x 4 paired perturbation draws, H15. Image latents only, no labels.",
+ "model": "model_OIL = model_CF fine-tuned 3000 steps, lr x0.3, batches 1/3 oil / 1/3 cf_v1 / 1/3 closed-loop. O_MAX recalibrated label-free (eval/cbf_calibrate.py).",
+ "benchmark": "offline, the 75 risky dev decisions (episodes 2000-2149, disjoint from training), b50 settings (OPT_FORK_CHECK=1 OPT_ALPHA=0.5 OPT_STARTS=8 OPT_STEPS=10 OPT_COST=timed OPT_SIG0=0.987410), real risk 32 futures; tag b50oil.",
+ "comparison": "b50oil vs b50 (same settings, model_CF, 12.4%) on the same 75 decisions; reference selection 13.8%, policy 27.6%.",
+ "decision_rule": "Round 2 (more states / second iteration) only if real risk(b50oil) <= real risk(b50) - 2 points. Otherwise round-1 data did not help and we report it. Offline only, never quoted as a test result.",
+ "context": "Also running: b50rep (b50 settings with threeblock_v3) and b50cl (closedloop_v1 model_US) = the existing world-model ladder threeblock_v3 -> closed-loop -> CF for the same optimiser."
+}

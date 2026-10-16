@@ -78,7 +78,12 @@ def _job(args):
     sim, r, cam, latent = g["_W"]
     errors, snippets = p3.ErrorModel(), np.load(um.BENCH)["snippets"]
     rng = np.random.default_rng([SEED, e, c])
-    plans = [np.asarray(plan, np.float32)] + [nudge(plan, rng) for _ in range(V - 1)]
+    if os.environ.get("CF_PLANS"):                 # optimiser-in-the-loop data: the optimiser's proposals instead of nudges
+        if "_PROP" not in g:
+            g["_PROP"] = json.loads(Path(os.environ["CF_PLANS"]).read_text())
+        plans = [np.asarray(plan, np.float32)] + [np.asarray(p_, np.float32) for p_ in g["_PROP"][f"{e}:{c}"]]
+    else:
+        plans = [np.asarray(plan, np.float32)] + [nudge(plan, rng) for _ in range(V - 1)]
     snap = (state, ctrl, target, float(gripper))
     sim.restore(snap); start = step_state(sim).copy()
     r.update_scene(sim.data, camera=cam); true_start = r.render().copy()

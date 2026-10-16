@@ -49,7 +49,9 @@ CFG = {"ALPHA": E("OPT_ALPHA", 0.3), "STARTS": E("OPT_STARTS", 4), "STEPS": E("O
        # predicted real topple fraction) both as the constraint B <= EPS and for acceptance (fresh draws); augmented
        # Lagrangian; starts = the policy's plan and its own samples, as initial chunks.
        "EPS": E("OPT_EPS", 0.10), "ETA": E("OPT_ETA", 4.0), "CH_STEPS": E("OPT_CH_STEPS", 20),
-       "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [float(v) for v in os.environ.get("OPT_SIG0", "0.99,0.55").split(",")]}
+       "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [float(v) for v in os.environ.get("OPT_SIG0", "0.99,0.55").split(",")],
+       # world model (2026-10-16: runs after b50 silently used the cem_filter default threeblock_v3 while b50 used model_CF)
+       "WM": os.environ.get("CBF_WM", "threeblock_v3 (default)")}
 
 
 def time_scale(plan, sigma):
@@ -86,7 +88,7 @@ def run(tag="opt"):
     print("run done", len(out), f"{time.time() - t0:.0f}s", flush=True)
 
 
-def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, decision=None):
+def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, decision=None, return_all=False):
     """The single CBF optimisation for one decision. starts (S,16,4): the policy's plan first, then its own samples.
     sim must be at the decision state (for the exact fork check). Returns (plan (16,4) numpy, info)."""
     import torch
@@ -158,6 +160,8 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, deci
     info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": round(float(sig[j]), 3),
             "change_mm": round(float(dist[j]), 1), "obar_policy": round(o_pol, 4), "obar_final": round(float(ob[j]), 4),
             "verified": bool(cbf.ok(h, o, h_now)[0])}
+    if return_all:                                   # every optimised start (world-model data collection, eval/oil_data.py)
+        info["all"], info["ob_all"] = pall, ob
     return plan, info
 
 
