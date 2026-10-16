@@ -39,6 +39,7 @@ Last updated 2026-10-16.
 ## Optimisation filter (the user's chosen direction)
 
 - dev8 interim (75 eps 12075-12149, Nibi): clean CBF optimisation (cbf_opt.optimise: path bends + speed, relative disturbance barrier alpha 0.5, multi-start from policy samples, exact fork check at h_safe log2 3, NO primitives) behind the final trigger: 7 topples vs selection 6 vs policy 13; success 50 vs 55 vs 47; head-to-head 4 vs 5; median change 16.8 vs 9.8 mm; 24.8 vs 9.2 s per intervention. On par for safety, slightly behind on success (larger changes). (results/jenga/cbf_dev8_result.json)
+- dev8b (same 75 eps, replays verified identical 75/75): alpha 0.3 (smaller required cut): 9 topples, success 47, median change 11.8 mm, 24.2 s. Worse than alpha 0.5 and selection (head-to-head vs selection 5 vs 8). Smaller changes did not buy success; they cost safety. (results/jenga/cbf_dev8b_result.json)
 
 ## Variants that did NOT beat the first/final filter in closed loop (all pre-registered dev tests)
 
