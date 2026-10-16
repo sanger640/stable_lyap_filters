@@ -37,7 +37,11 @@ CFG = {"ALPHA": E("OPT_ALPHA", 0.3), "STARTS": E("OPT_STARTS", 4), "STEPS": E("O
        # rule (fork barrier h >= min(h_now, h_safe), o <= O_MAX) with the same objective; "al" = augmented-Lagrangian
        # gradient solver on a CVaR disturbance barrier (risk-aware), more steps, early stop.
        "SOLVER": os.environ.get("OPT_SOLVER", "grad"), "CEM_POP": E("OPT_CEM_POP", 32), "CEM_ITERS": E("OPT_CEM_ITERS", 3),
-       "CEM_ELITES": E("OPT_CEM_ELITES", 6), "CEM_SD_MM": E("OPT_CEM_SD_MM", 8.0), "CEM_N": E("OPT_CEM_N", 32), "CVAR": E("OPT_CVAR", 0.25),
+       "CEM_ELITES": E("OPT_CEM_ELITES", 6), "CEM_SD_MM": E("OPT_CEM_SD_MM", 8.0), "CEM_N": E("OPT_CEM_N", 32),
+       # CEM v2 (2026-10-16, after CEM v1 returned the flagged policy plan unchanged in 45/75 risky decisions because a
+       # re-test with new random draws passed it): CRN = same draws for every candidate of a decision; NO_NOMINAL =
+       # exclude the untouched flagged plan; VERIFY = check the answer on fresh draws, fall back to the next candidate.
+       "CEM_CRN": E("OPT_CEM_CRN", 0), "CEM_NO_NOMINAL": E("OPT_CEM_NO_NOMINAL", 0), "CEM_VERIFY": E("OPT_CEM_VERIFY", 1), "CVAR": E("OPT_CVAR", 0.25),
        "AL_STEPS": E("OPT_AL_STEPS", 20), "AL_N": E("OPT_AL_N", 32),
        "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [float(v) for v in os.environ.get("OPT_SIG0", "0.99,0.55").split(",")]}
 
@@ -173,7 +177,7 @@ def optimise_cem(mon, cbf, sim, z0, site, starts, h_now, seed):
     clipped to [0.3, 1]). Every candidate gets the exact fork barrier (64 futures x 4 scales), as the selection filter's
     candidates do; the answer is the cheapest candidate satisfying the rule (else the largest h)."""
     import torch
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(seed); rng_saved = mon.rng              # restored at the end (closed loop)
     M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
     P = torch.as_tensor(np.asarray(starts, np.float32), device="cuda"); pol = P[:1]
     S, K, pop, ne = len(P), len(q.QP["KNOTS"]), CFG["CEM_POP"], CFG["CEM_ELITES"]
@@ -184,12 +188,18 @@ def optimise_cem(mon, cbf, sim, z0, site, starts, h_now, seed):
         kn = rng.normal(mu, sd, (pop, K, 3)); sg = np.clip(rng.normal(smu, ssd, pop), 0.3, 1.0)
         if it == 0:                                  # include every start untouched (bend 0, full speed)
             first = np.r_[0, np.flatnonzero(np.diff(c)) + 1]; kn[first] = 0; sg[first] = 1.0
+            if CFG["CEM_NO_NOMINAL"]:                # ... except the flagged policy plan itself
+                kn[0] = rng.normal(0, CFG["CEM_SD_MM"], (K, 3)); sg[0] = np.clip(rng.normal(smu, ssd), 0.3, 1.0)
         nrm = np.linalg.norm(kn.reshape(pop, -1), axis=1); kn *= np.minimum(1, CFG["MAX_MM"] / np.maximum(nrm, 1e-9))[:, None, None]
         with torch.no_grad():
             pl, geo = _build(P, M, torch.as_tensor(c, device="cuda"), torch.as_tensor(kn, device="cuda", dtype=torch.float32),
                              torch.as_tensor(sg, device="cuda", dtype=torch.float32))
             j_, ch_ = _objective(geo, torch.as_tensor(sg, device="cuda", dtype=torch.float32), pol)
+        if CFG["CEM_CRN"]:
+            mon.rng = np.random.default_rng(seed + 7)    # common random numbers: same draws for every candidate
         h, o = cbf.score(sim, z0, pl.cpu().numpy(), CFG["CEM_N"]); ok = cbf.ok(h, o, h_now)
+        if CFG["CEM_NO_NOMINAL"] and it == 0:
+            ok[0] = False; h[0] = -np.inf                # never return the untouched flagged plan
         C_ += list(c); KN += list(kn); SG += list(sg); H += list(h); O += list(o); OK += list(ok)
         J += list(j_.cpu().numpy()); CH += list(ch_.cpu().numpy())
         el = _rank(OK, J, H, O)[:ne]                 # elites over everything seen so far
@@ -197,15 +207,21 @@ def optimise_cem(mon, cbf, sim, z0, site, starts, h_now, seed):
         probs = 0.8 * cnt / ne + 0.2 / S
         ek = np.asarray(KN)[el]; es = np.asarray(SG)[el]
         mu, sd = ek.mean(0), np.maximum(ek.std(0), 2.0); smu, ssd = es.mean(), max(es.std(), 0.05)
-    b = _rank(OK, J, H, O)[0]
-    with torch.no_grad():
-        pl, _ = _build(P, M, torch.as_tensor([C_[b]], device="cuda"), torch.as_tensor(KN[b][None], device="cuda", dtype=torch.float32),
-                       torch.as_tensor([SG[b]], device="cuda", dtype=torch.float32))
-    plan = pl[0].cpu().numpy()
-    hv, ov = cbf.score(sim, z0, plan[None], 64)      # fresh draws
+    order = _rank(OK, J, H, O)
+    if CFG["CEM_CRN"]:
+        mon.rng = np.random.default_rng(seed + 99)       # fresh draws for the verification
+    for tries, b in enumerate(order[:max(1, CFG["CEM_VERIFY"])]):
+        with torch.no_grad():
+            pl, _ = _build(P, M, torch.as_tensor([C_[b]], device="cuda"), torch.as_tensor(KN[b][None], device="cuda", dtype=torch.float32),
+                           torch.as_tensor([SG[b]], device="cuda", dtype=torch.float32))
+        plan = pl[0].cpu().numpy()
+        hv, ov = cbf.score(sim, z0, plan[None], 64)  # fresh draws
+        if cbf.ok(hv, ov, h_now)[0] or not OK[b]:
+            break
     info = {"start": int(C_[b]), "feasible": bool(OK[b]), "n_feasible": int(np.sum(OK)), "sigma": round(float(SG[b]), 3),
-            "change_mm": round(float(CH[b]), 1), "h_choice": float(H[b]), "evaluated": len(J),
+            "change_mm": round(float(CH[b]), 1), "h_choice": float(H[b]), "evaluated": len(J), "verify_tries": tries + 1,
             "verified": bool(cbf.ok(hv, ov, h_now)[0])}
+    mon.rng = rng_saved
     return plan, info
 
 
