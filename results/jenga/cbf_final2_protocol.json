@@ -1,0 +1,12 @@
+{
+ "name": "Final test 2: fork-boundary CBF filter with h_safe = log2 3 (cbfm)",
+ "written": "2026-10-16 ~05:20, before any final-test-2 episode was run",
+ "frozen_filter": "eval/cbf_filter.py at this commit with CFG H_SAFE = log2(3) (policy_rollout mode 'cbfm'); everything else identical to the first final-test filter: closed-loop world model results/program_b/closedloop_v1/model/model_US.pt, O_MAX results/jenga/cbf_calibration.json (0.484), N_LOOK 15, trigger = barrier or regime check, fix = closest safe of 15 policy samples + 3 primitives, else largest barrier.",
+ "why": "dev7 (600 dev episodes, results/jenga/cbf_dev7_result.json): 45 topples vs 87 (h_safe = 1) vs 113 (policy alone), success 425 vs 379 vs 364; pre-registered dev rule -> fresh final test. Motivated by dev6: most remaining failures were detected only at the topple decision.",
+ "episodes": "10000-10599 (600; never used for anything)",
+ "setting": "normal mass, 2x execution noise, HARD_OFF, per-episode seeds; Alliance (Rorqual), all three arms of an episode in one job; container torch 2.9 + MuJoCo 3.13",
+ "arms": {"record": "policy alone", "cbf": "first final-test filter (h_safe = 1), for reference", "cbfm": "the frozen filter under test"},
+ "primary": "cbfm vs record: one-sided exact McNemar on neighbour topples (prevented vs caused). PASS if p < 0.05 AND cbfm success >= record success - 15.",
+ "secondary": "cbfm vs cbf: topples and success, one-sided exact McNemar (reported, not part of pass/fail).",
+ "reporting": "Report all three arms, both comparisons, interventions and seconds per intervention, whatever the outcome."
+}
