@@ -296,12 +296,26 @@ def run(mode, n=100, start=0):
 
 
 def paired(mode, n=100, shrink=None):
+    if mode == "cbfopt":                       # the single CBF optimisation filter: its own world model + calibration
+        os.environ["CBF_FIX"] = "opt"
+        for k in ("OPT_WM", "OPT_CALIB"):
+            if os.environ.get(k):
+                os.environ["CBF_WM" if k == "OPT_WM" else "CBF_CALIB"] = os.environ[k]
+        import cbf_filter as cbff
+        cbff.CFG["FIX"] = "opt"
+        if os.environ.get("OPT_CALIB"):
+            cbff.CALIB = Path(os.environ["OPT_CALIB"]) if os.path.isabs(os.environ["OPT_CALIB"]) else ROOT / os.environ["OPT_CALIB"]
+        return _paired("cbfopt", "cbf", n, shrink)
+    return _paired(mode, mode, n, shrink)
+
+
+def _paired(name, mode, n=100, shrink=None):
     """Paired stress test: stress layouts, settled start, policy seeded per episode (4000 + i), execution noise on, 48 s.
     mode: monitor (alarms logged, actions untouched = the policy-alone baseline) | abstain (hold on alarm) | cem.
     Every decision state is saved for per-decision ground truth (eval/loop_truth.py)."""
     import cem_filter as cf
     shrink = shrink if shrink is not None else float(os.environ.get("HARD_SHRINK", 10))
-    tag = f"paired_{mode}" + ("" if int(os.environ.get("CEM_VERSION", 1)) == 1 or mode != "cem" else f"_v{os.environ['CEM_VERSION']}")
+    tag = f"paired_{name}" + ("" if int(os.environ.get("CEM_VERSION", 1)) == 1 or mode != "cem" else f"_v{os.environ['CEM_VERSION']}")
     tag += os.environ.get("PAIRED_TAG", "")                       # e.g. "_test" or a new experiment name
     path = ROOT / f"results/jenga/{tag}.jsonl"; sdir = OUT / tag; sdir.mkdir(parents=True, exist_ok=True)
     done = {json.loads(l)["episode"] for l in path.read_text().splitlines()} if path.exists() else set()

@@ -1,0 +1,14 @@
+{
+ "name": "dev4: single CBF optimisation filter vs the final-test filter, closed loop (Alliance clusters)",
+ "written": "2026-10-15 ~21:00, before any dev4 episode was run",
+ "motivation": "Offline (75 risky dev decisions, results/program_b/cbf_qp/cbfopt_report_b50.json) the single CBF optimisation without hand-made primitives lowered real risk 27.6% -> 12.4% vs 13.8% for the final-test selection filter. This checks it in closed loop.",
+ "episodes": "5000-5149 (150; never used for anything)",
+ "setting": "as the final test: normal mass, 2x execution noise, HARD_OFF, per-episode seeds; every episode runs all three arms in ONE cluster job (same GPU, same software), container torch 2.9 + MuJoCo 3.13 (CPU rendering)",
+ "arms": {
+  "record": "policy alone",
+  "cbf": "final-test filter: closedloop_v1 model_US, trigger = barrier or regime check, fix = closest safe of 15 policy samples + 3 primitives",
+  "cbfopt": "new filter: cf_v1 model_CF (O_MAX recalibrated label-free: results/jenga/cbf_calibration_CF.json), same trigger rule, fix = eval/cbf_opt.optimise (path bends + speed, starts = policy plan + 7 policy samples, relative disturbance barrier alpha 0.5, 10 Adam steps, 16 futures, exact fork check in the choice); no primitives"
+ },
+ "metrics": "neighbour topples, success (3 cm lift without topple), prevented/caused vs record, one-sided McNemar vs record, interventions, seconds per intervention",
+ "decision_rule": "cbfopt is taken to a fresh pre-registered final test if it has at least 3 fewer topples than cbf AND success >= cbf success - 5. If it has fewer topples but by less than 3, report it as 'not distinguishable on 150 episodes' and decide with the user. Otherwise the final-test filter stays. dev4 numbers are never reported as a test result."
+}

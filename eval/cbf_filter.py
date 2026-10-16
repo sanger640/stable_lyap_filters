@@ -27,8 +27,12 @@ CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 
        # variants (2026-10-15 diagnosis): TRIGGER "both" = barrier or regime check can trigger (final-test filter),
        # "barrier" = only the barrier triggers (regime check still screens candidates); SELECT "closest" = closest feasible
        # candidate (final-test filter), "margin" = largest barrier among feasible candidates, then closest
-       "TRIGGER": os.environ.get("CBF_TRIGGER", "both"), "SELECT": os.environ.get("CBF_SELECT", "closest")}
-CALIB = ROOT / "results/jenga/cbf_calibration.json"
+       "TRIGGER": os.environ.get("CBF_TRIGGER", "both"), "SELECT": os.environ.get("CBF_SELECT", "closest"),
+       # FIX "select" = choose among policy samples + 3 primitives (final-test filter); "opt" = the single CBF optimisation
+       # (eval/cbf_opt.py: path bends + speed, multi-start from the policy plan + 7 policy samples, relative disturbance
+       # barrier, exact fork check in the choice; no primitives)
+       "FIX": os.environ.get("CBF_FIX", "select"), "OPT_STARTS": int(os.environ.get("OPT_STARTS", 8))}
+CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
 def horizon(plan, n_look):
@@ -113,9 +117,17 @@ class CBF:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         rs = (torch.get_rng_state(), torch.cuda.get_rng_state())          # sampling candidates must not shift the policy's RNG
         try:
-            samples = pr.policy_chunk(pol, hist, n=CFG["N_SAMPLES"])
+            samples = pr.policy_chunk(pol, hist, n=CFG["OPT_STARTS"] - 1 if CFG["FIX"] == "opt" else CFG["N_SAMPLES"])
         finally:
             torch.set_rng_state(rs[0]); torch.cuda.set_rng_state(rs[1])
+        if CFG["FIX"] == "opt":
+            import cbf_opt
+            starts = np.concatenate([np.asarray(plan, np.float32)[None], np.asarray(samples, np.float32)])
+            best, oi = cbf_opt.optimise(self.mon, self, sim, z0, sim.data.site_xpos[sim.site].copy(), starts, h_now,
+                                        int(self.mon.rng.integers(2 ** 31)), fork_check=True)
+            out = np.asarray(best, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
+            return out, {**info, "intervened": True, "abstained": False, "kind": "opt", **oi,
+                         "seconds": round(time.time() - t0, 2)}
         cands = list(samples) + self.primitives(sim, plan)
         hc, oc = self.score(sim, z0, np.stack(cands), CFG["FUT_CAND"])
         feas = self.ok(hc, oc, h_now)

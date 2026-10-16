@@ -51,62 +51,71 @@ def run(tag="opt"):
     C, K = q.load_cache()
     rows = json.loads((q.OUT / "checks" / "plans.json").read_text())                          # 75 risky decisions
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
-    M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
     out, t0 = [], time.time()
     for n_, r in enumerate(rows):
         i = r["i"]; z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
-        bar = q.Barrier(mon, z0, 1000 + i, CFG["N"], 1.0)
-        P = torch.as_tensor(np.asarray(r["plans"], np.float32)[:CFG["STARTS"]], device="cuda")     # policy plan + samples
-        pol = P[:1]
-        with torch.no_grad():
-            o_pol = float(q.mean_o(bar, pol, z0, C["site"][i])[0])
-        tau = (1 - CFG["ALPHA"]) * o_pol
-        S = len(P)
-        knots = torch.zeros(S, len(q.QP["KNOTS"]), 3, device="cuda", requires_grad=True)
-        s_raw = torch.full((S,), 4.0, device="cuda", requires_grad=True)                    # sigma ~ 0.99 at start
-        opt = torch.optim.Adam([{"params": [knots], "lr": CFG["LR_MM"]}, {"params": [s_raw], "lr": 0.3}])
-
-        def plans_of(knots, s_raw):
-            sig = 0.3 + 0.7 * torch.sigmoid(s_raw)
-            p = time_scale(P, sig)
-            off = torch.einsum("tk,skd->std", M, knots) / 1000
-            p = torch.cat([p[..., :3] + off, p[..., 3:]], -1)
-            return p, sig
-        for step in range(CFG["STEPS"]):
-            p, sig = plans_of(knots, s_raw)
-            ob = q.mean_o(bar, p, z0, C["site"][i])
-            dist = ((p[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2))             # mm^2 from the policy's plan
-            loss = (dist / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100 + CFG["MU"] * torch.relu(ob / tau - 1) ** 2).sum()
-            opt.zero_grad(); loss.backward(); opt.step()
-            with torch.no_grad():
-                nrm = knots.norm(dim=(1, 2), keepdim=True).clamp_min(1e-9)
-                knots.mul_(torch.clamp(CFG["MAX_MM"] / nrm, max=1.0))
-        with torch.no_grad():
-            p, sig = plans_of(knots, s_raw)
-            bar32 = q.Barrier(mon, z0, 2000 + i, 32, 1.0)                                       # fresh draws for the choice
-            ob = q.mean_o(bar32, p, z0, C["site"][i]).cpu().numpy()
-            tau32 = (1 - CFG["ALPHA"]) * float(q.mean_o(bar32, pol, z0, C["site"][i])[0])
-            dist = ((p[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2)).sqrt().cpu().numpy()
-        feas = ob <= tau32
         sim.restore((C["state"][i], C["ctrl"][i], C["target"][i], float(C["gripper"][i])))
-        pall = p.cpu().numpy()
-        if os.environ.get("OPT_FORK_CHECK") == "1":            # second safety condition: the exact fork barrier rule
-            hh, oo = cbf.score(sim, z0, pall, 64)
-            okf = cbf.ok(hh, oo, K[i]["h_now"])
-            both = feas & okf
-            pool_ = both if both.any() else (okf if okf.any() else feas)
-        else:
-            pool_ = feas
-        j = int(np.flatnonzero(pool_)[np.argmin(dist[pool_])]) if pool_.any() else int(np.argmin(ob))
-        plan = pall[j]
-        h, o = cbf.score(sim, z0, plan[None], 64)
-        out.append({"i": i, "start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": round(float(sig[j]), 3),
-                    "change_mm": round(float(dist[j]), 1), "obar_policy": round(o_pol, 4), "obar_final": round(float(ob[j]), 4),
-                    "verified": bool(cbf.ok(h, o, K[i]["h_now"])[0]), "chunk": plan[1:9].astype(np.float32).tolist()})
+        plan, info = optimise(mon, cbf, sim, z0, C["site"][i], np.asarray(r["plans"], np.float32)[:CFG["STARTS"]], K[i]["h_now"], 1000 + i)
+        out.append({"i": i, **info, "chunk": plan[1:9].astype(np.float32).tolist()})
         if n_ % 15 == 0:
-            print(f"run {n_ + 1}/{len(rows)} {time.time() - t0:.0f}s start {j} sigma {out[-1]['sigma']} change {out[-1]['change_mm']} mm feasible {out[-1]['feasible']}", flush=True)
+            print(f"run {n_ + 1}/{len(rows)} {time.time() - t0:.0f}s start {info['start']} sigma {info['sigma']} change {info['change_mm']} mm feasible {info['feasible']}", flush=True)
     (q.OUT / f"cbfopt_{tag}.json").write_text(json.dumps({"cfg": CFG, "rows": out}))
     print("run done", len(out), f"{time.time() - t0:.0f}s", flush=True)
+
+
+def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None):
+    """The single CBF optimisation for one decision. starts (S,16,4): the policy's plan first, then its own samples.
+    sim must be at the decision state (for the exact fork check). Returns (plan (16,4) numpy, info)."""
+    import torch
+    fork_check = (os.environ.get("OPT_FORK_CHECK") == "1") if fork_check is None else fork_check
+    M = torch.as_tensor(q.knot_matrix(), device="cuda", dtype=torch.float32)
+    bar = q.Barrier(mon, z0, seed, CFG["N"], 1.0)
+    P = torch.as_tensor(np.asarray(starts, np.float32), device="cuda")
+    pol = P[:1]
+    with torch.no_grad():
+        o_pol = float(q.mean_o(bar, pol, z0, site)[0])
+    tau = (1 - CFG["ALPHA"]) * o_pol
+    S = len(P)
+    knots = torch.zeros(S, len(q.QP["KNOTS"]), 3, device="cuda", requires_grad=True)
+    s_raw = torch.full((S,), 4.0, device="cuda", requires_grad=True)                        # sigma ~ 0.99 at start
+    opt = torch.optim.Adam([{"params": [knots], "lr": CFG["LR_MM"]}, {"params": [s_raw], "lr": 0.3}])
+
+    def plans_of(knots, s_raw):
+        sig = 0.3 + 0.7 * torch.sigmoid(s_raw)
+        p = time_scale(P, sig)
+        off = torch.einsum("tk,skd->std", M, knots) / 1000
+        return torch.cat([p[..., :3] + off, p[..., 3:]], -1), sig
+    for _ in range(CFG["STEPS"]):
+        p, sig = plans_of(knots, s_raw)
+        ob = q.mean_o(bar, p, z0, site)
+        dist = ((p[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2))                 # mm^2 from the policy's plan
+        loss = (dist / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100 + CFG["MU"] * torch.relu(ob / max(tau, 1e-9) - 1) ** 2).sum()
+        opt.zero_grad(); loss.backward(); opt.step()
+        with torch.no_grad():
+            nrm = knots.norm(dim=(1, 2), keepdim=True).clamp_min(1e-9)
+            knots.mul_(torch.clamp(CFG["MAX_MM"] / nrm, max=1.0))
+    with torch.no_grad():
+        p, sig = plans_of(knots, s_raw)
+        bar32 = q.Barrier(mon, z0, seed + 1000, 32, 1.0)                                       # fresh draws for the choice
+        ob = q.mean_o(bar32, p, z0, site).cpu().numpy()
+        tau32 = (1 - CFG["ALPHA"]) * float(q.mean_o(bar32, pol, z0, site)[0])
+        dist = ((p[:, 1:9, :3] - pol[:, 1:9, :3]) * 1000).pow(2).sum((1, 2)).sqrt().cpu().numpy()
+    feas = ob <= tau32
+    pall = p.cpu().numpy()
+    if fork_check:                                   # second safety condition: the exact fork barrier rule
+        hh, oo = cbf.score(sim, z0, pall, 64)
+        okf = cbf.ok(hh, oo, h_now)
+        both = feas & okf
+        pool_ = both if both.any() else (okf if okf.any() else feas)
+    else:
+        pool_ = feas
+    j = int(np.flatnonzero(pool_)[np.argmin(dist[pool_])]) if pool_.any() else int(np.argmin(ob))
+    plan = pall[j]
+    h, o = cbf.score(sim, z0, plan[None], 64)
+    info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": round(float(sig[j]), 3),
+            "change_mm": round(float(dist[j]), 1), "obar_policy": round(o_pol, 4), "obar_final": round(float(ob[j]), 4),
+            "verified": bool(cbf.ok(h, o, h_now)[0])}
+    return plan, info
 
 
 def truth(tag="opt"):

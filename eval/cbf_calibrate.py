@@ -31,7 +31,7 @@ def main():
     q = float(np.quantile(o, 0.99))
     out = {"O_MAX": q, "world_model": os.environ.get("CBF_WM", "threeblock_v3"), "n": len(o),
            "source": "99th percentile of o over the policy's own H15 plans, 300 random development decisions (no labels)"}
-    (ROOT / "results/jenga/cbf_calibration.json").write_text(json.dumps(out, indent=1) + "\n")
+    (ROOT / os.environ.get("CBF_CALIB_OUT", "results/jenga/cbf_calibration.json")).write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps(out), flush=True)
 
 
