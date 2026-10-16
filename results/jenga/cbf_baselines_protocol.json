@@ -1,0 +1,15 @@
+{
+ "name": "Baselines: is it foresight or just caution? Final filter vs matched-rate random intervention vs always-cautious",
+ "written": "2026-10-16 ~08:45, before any episode was run",
+ "episodes": "11000-11599 (600; never used)",
+ "setting": "as final test 2 (normal mass, 2x execution noise, HARD_OFF, per-episode seeds); all four arms of an episode in one cluster job",
+ "arms": {
+  "record": "policy alone",
+  "cbfm": "final filter (h_safe = log2 3), frozen as in final test 2",
+  "cbfr": "matched-rate random trigger: identical fix procedure (closest safe of 15 policy samples + 3 primitives, h_safe = log2 3), but the decisions to act on are chosen at random with probability 0.071 (the final filter's rate in final test 2), seeded per episode",
+  "slow": "always cautious: every chunk executes half of the policy's planned displacement (the filter's 'half speed' move), no monitor"
+ },
+ "primary": "foresight: cbfm vs cbfr, one-sided exact McNemar on neighbour topples (cbfm avoids vs cbfm suffers). Supported if p < 0.05.",
+ "secondary": "cbfm vs slow: topples (McNemar) and success (cbfm >= slow is the expectation). cbfr and slow vs record reported.",
+ "reporting": "All four arms, all comparisons, intervention counts, whatever the outcome; these numbers are a reported baseline result."
+}

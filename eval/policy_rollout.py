@@ -306,6 +306,12 @@ def paired(mode, n=100, shrink=None):
         if os.environ.get("OPT_CALIB"):
             cbff.CALIB = Path(os.environ["OPT_CALIB"]) if os.path.isabs(os.environ["OPT_CALIB"]) else ROOT / os.environ["OPT_CALIB"]
         return _paired("cbfopt", "cbf", n, shrink)
+    if mode == "cbfr":                         # matched-rate baseline: final filter's fix at RANDOM decisions (7.1%)
+        import cbf_filter as cbff
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["TRIGGER"] = "random"
+        return _paired("cbfr", "cbf", n, shrink)
+    if mode == "slow":                         # always-cautious baseline: every chunk at half speed, no monitor
+        return _paired("slow", "slow", n, shrink)
     if mode == "cbfm":                         # final-test filter with a larger safety margin: h_safe = log2(3)
         import cbf_filter as cbff
         cbff.CFG["H_SAFE"] = float(np.log2(3.0))
@@ -337,7 +343,7 @@ def _paired(name, mode, n=100, shrink=None):
     if per_ep:
         done |= {int(q.stem[2:]) for q in sdir.glob("ep*.json")}
     pol, rng = load_policy(), np.random.default_rng(20261511)
-    mon = cf.Monitor() if mode != "record" else None
+    mon = cf.Monitor() if mode not in ("record", "slow") else None
     if mode == "cbf":
         import cbf_filter as cbff
         cbf = cbff.CBF(mon)
@@ -345,6 +351,10 @@ def _paired(name, mode, n=100, shrink=None):
     def hook(sim, chunk, k, **ctx):
         if mode == "cbf":
             return cbf.filter(sim, chunk, k, **ctx)
+        if mode == "slow":                   # half the policy's planned displacement from the current target, every chunk
+            p_ = np.asarray(ctx["plan"], np.float32).copy(); cur = np.asarray(sim.target, np.float32)
+            p_[:, :3] = cur + (p_[:, :3] - cur) * 0.5
+            return p_[PLAN_START:PLAN_START + 8].copy(), {"intervened": True, "kind": "slow"}
         if mode in ("monitor", "abstain"):
             a, sec, _ = mon.check(sim, chunk)
             return (None if (mode == "abstain" and a) else chunk), {"alarm": a, "seconds": round(sec, 3)}
@@ -358,8 +368,10 @@ def _paired(name, mode, n=100, shrink=None):
             rng = np.random.default_rng([20261511, i])
             if mon is not None:
                 mon.rng = np.random.default_rng([20261501, i])
+            if mode == "cbf":
+                cbf.trig_rng = np.random.default_rng([20261900, i])     # random-trigger baseline (unused otherwise)
         snaps = []
-        hook.wants_context = (mode == "cbf")
+        hook.wants_context = mode in ("cbf", "slow")
         res, _, _ = episode(pol, i, chunk_hook=None if mode == "record" else hook, exec_noise=True, max_chunks=60, settle=True,
                             seed=4000 + i, hard=None if os.environ.get("HARD_OFF") else shrink,
                             snaps=snaps)

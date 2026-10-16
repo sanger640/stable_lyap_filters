@@ -38,7 +38,10 @@ CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 
        "QFIX_TAU": float(os.environ.get("QFIX_TAU", 0.5)), "QFIX_TIE": float(os.environ.get("QFIX_TIE", 0.02)),
        # VETO (2026-10-16): final-test selection, but candidates whose fixed readout exceeds the policy plan's are excluded
        # (unless that leaves none). Targets the filter's harmful choices (offline: 9 -> 6 hurt, 36 helped unchanged).
-       "VETO": os.environ.get("CBF_VETO") == "1"}
+       "VETO": os.environ.get("CBF_VETO") == "1",
+       # matched-rate baseline (2026-10-16): TRIGGER "random" acts at a random RAND_P share of decisions (the final filter
+       # acted on 7.1% in final test 2), seeded per episode via self.trig_rng
+       "RAND_P": float(os.environ.get("CBF_RAND_P", 0.071))}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
@@ -49,6 +52,7 @@ def horizon(plan, n_look):
 
 class CBF:
     def __init__(self, mon):
+        self.trig_rng = np.random.default_rng(0)
         import cbf_barrier as cb
         self.mon, self.cb = mon, cb
         if CFG["O_MAX"] is None and CALIB.exists():
@@ -144,7 +148,10 @@ class CBF:
         h_nom, o_nom, h_now = h[0], o[0], h[1]
         info = {"h_nom": float(h_nom), "o_nom": float(o_nom), "h_now": float(h_now)}
         o_trig = o_nom if CFG["TRIGGER"] == "both" else -np.inf
-        if self.ok(np.array([h_nom]), np.array([o_trig]), h_now)[0]:
+        if CFG["TRIGGER"] == "random":       # matched-rate baseline: act at random decisions (same fix procedure)
+            if not (self.trig_rng.random() < CFG["RAND_P"]):
+                return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
+        elif self.ok(np.array([h_nom]), np.array([o_trig]), h_now)[0]:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         rs = (torch.get_rng_state(), torch.cuda.get_rng_state())          # sampling candidates must not shift the policy's RNG
         try:
