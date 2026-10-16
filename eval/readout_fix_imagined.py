@@ -32,8 +32,9 @@ def qfix(e10, e30, z0, P, site, tau):
     return np.array(out)                                                   # (C, len(tau))
 TAU = [0.25 * O_MAX, 0.5 * O_MAX]
 mon = cf.Monitor()
-models = {"det_closedloop": "results/program_b/closedloop_v1/model/model_US.pt", "det_cf": "results/program_b/cf_v1/model/model_CF.pt"}
-models.update({f"ens{k}": f"results/program_b/ens_v1/model_ENS{k}.pt" for k in range(4)})
+ENSD = os.environ.get("RF_ENS", "results/program_b/ens_v1"); TAG = os.environ.get("RF_TAG", "")
+models = {} if TAG else {"det_closedloop": "results/program_b/closedloop_v1/model/model_US.pt", "det_cf": "results/program_b/cf_v1/model/model_CF.pt"}
+models.update({f"ens{k}": f"{ENSD}/model_ENS{k}.pt" for k in range(4)})
 S = {}
 for name, path in models.items():
     mon.model = wm.WorldModel.load(path); mon.model.net.eval()
@@ -45,8 +46,8 @@ for name, path in models.items():
             e10, e30 = bar.endpoints(torch.as_tensor(P, device="cuda"))
         out.append(qfix(e10, e30, z0, P, C["site"][i], TAU)); torch.cuda.empty_cache()
     S[name] = np.stack(out); print(name, "done", flush=True)
-hy = hm.HybMonitor(); out = []
-for r in rows:
+hy = None if TAG else hm.HybMonitor(); out = []
+for r in (rows if hy else []):
     i = r["i"]; z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda"); P = np.asarray(r["plans"], np.float32)[:13]
     es = []
     for c0 in range(0, 13, 4):
@@ -57,7 +58,8 @@ for r in rows:
         es.append(hy.hy.sample(hy.head, hy.det, z0[None].expand(len(idx) * 64, -1, -1, -1).contiguous(), a, hy.rscale, g).reshape(len(idx), 64, 2, -1))
     e = torch.cat(es)
     out.append(qfix(e[:, :, 0], e[:, :, 1], z0, P, C["site"][i], TAU)); torch.cuda.empty_cache()
-S["hybrid"] = np.stack(out); print("hybrid done", flush=True)
+if hy:
+    S["hybrid"] = np.stack(out); print("hybrid done", flush=True)
 S["ensemble_mean"] = np.mean([S[f"ens{k}"] for k in range(4)], 0)
 def ev(X):
     sp = [spearmanr(X[d], R[d]).correlation for d in range(len(R)) if np.ptp(X[d]) > 0 and np.ptp(R[d]) > 0]
@@ -66,5 +68,5 @@ def ev(X):
 res = {"random": round(float(R[:, 1:].mean()), 4), "oracle": round(float(R.min(1).mean()), 4), "ceiling_real_futures_tau0.5": 0.0904}
 for name, X in S.items():
     res[name] = {f"tau={f}xO_MAX": ev(X[..., k]) for k, f in enumerate((0.25, 0.5))}
-np.savez(q.OUT / "readout_fix_imagined.npz", **S, R=R)
-json.dump(res, open(q.OUT / "readout_fix_imagined.json", "w"), indent=1); print(json.dumps(res, indent=1))
+np.savez(q.OUT / f"readout_fix_imagined{TAG}.npz", **S, R=R)
+json.dump(res, open(q.OUT / f"readout_fix_imagined{TAG}.json", "w"), indent=1); print(json.dumps(res, indent=1))

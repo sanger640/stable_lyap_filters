@@ -50,5 +50,5 @@ err = np.abs(Qall[0] - R).ravel(); s_ = sd.ravel()
 res["disagreement_vs_error"] = {"spearman_sd_vs_abs_error_member0": round(float(spearmanr(s_, err).correlation), 3),
                                 "mean_abs_error_low_sd": round(float(err[s_ <= np.median(s_)].mean()), 3),
                                 "mean_abs_error_high_sd": round(float(err[s_ > np.median(s_)].mean()), 3)}
-np.savez(q.OUT / "ens_scores.npz", Q=Qall, R=R)
-json.dump(res, open(q.OUT / "ens_check.json", "w"), indent=1); print(json.dumps(res, indent=1))
+np.savez(q.OUT / f"ens_scores_{ENS.name}.npz", Q=Qall, R=R)
+json.dump(res, open(q.OUT / f"ens_check_{ENS.name}.json", "w"), indent=1); print(json.dumps(res, indent=1))
