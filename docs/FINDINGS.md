@@ -44,6 +44,8 @@ Last updated 2026-10-16.
   - sep50fc: path change on geometry + sigma inits 0.99/0.55 (only 4 distinct starting plans): 19.4%; worse also where it did not slow (19.0 vs 11.5%) -> fewer distinct starting plans is the likely cause, not slowing per se.
   - sep50 / sep50s1 (22.5% / 25.9%) were run WITHOUT the fork check -> not comparable (my error).
   - CEM v1 on the exact rule (32 futures, 24x3): 24.3%; returned the flagged policy plan unchanged in 45/75 (a noisy re-test passed it; winner's curse) -> CEM v2 (common random numbers, exclude the flagged plan, verify + fallback).
+  - al (augmented Lagrangian on CVaR_0.25 disturbance, 16 futures, <=15 steps, 8 starts, fork check): 23.1% (helped 22 / hurt 15 vs policy; median change 6.1 mm; slowed 3).
+  - Every new variant today lands at 19-24% vs the single old run b50 12.4% -> control queued: b50 configuration rerun exactly (b50rep) to test whether 12.4% reproduces.
 
 ## Variants that did NOT beat the first/final filter in closed loop (all pre-registered dev tests)
 
