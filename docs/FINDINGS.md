@@ -52,6 +52,8 @@ Last updated 2026-10-16.
   - CEM v2 (threeblock_v3): 22.5% (helped 30 / hurt 14 vs policy; worse than selection on 33, better on 7; verified 100%).
   - Learned barrier (eval/learned_barrier.py) is trained on real neighbour-topple labels -> NOT task-agnostic, not admissible inside the filter; its chunk run was stopped. CV ranking: spearman 0.59 vs 0.37 for mean disturbance (diagnostic only: the latent statistics carry the risk signal).
 
+- dev10 (pre-registered, results/jenga/cbf_dev10_protocol.json; 75 eps 12075-12149, Nibi, replays identical 75/75), world model model_OIL for trigger + fix: optimisation-only filter (b50 settings) 5 topples / 45 success; selection with the same model 3 / 55; dev8 (closed-loop model): selection 6 / 55, optimiser 7 / 50; policy 13 / 47. Rule (not worse: topples <= +3 AND success >= -8) NOT met on success (45 vs 55). The better model helped both filters (topples 7->5 and 6->3). Lost successes (19 vs 9 gained) are mostly NO topple, lift < 25 mm at the 60-chunk limit: the optimiser's bent chunks (median 15.1 vs 9.8 mm) break the grasp; selection only uses the policy's own samples. 32 vs 7 s per intervention. (cbf_dev10_result.json)
+
 ## Variants that did NOT beat the first/final filter in closed loop (all pre-registered dev tests)
 
 - dev4: single gradient CBF optimisation (no primitives): 25 vs 27 topples, success 87 vs 93 -> keep. PROTOCOL DEVIATION: ran with model_US and 15 steps (EXTRA_ENV comma bug), not model_CF/10. (cbf_dev4_result.json)
