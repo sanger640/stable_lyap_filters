@@ -4,5 +4,6 @@
  "why": "dev8 interim: optimisation (alpha 0.5) matched the selection filter on topples (7 vs 6) but had fewer successes (50 vs 55) with larger changes (16.8 vs 9.8 mm median). A 30% required cut gave smaller changes offline (median 7.7 mm).",
  "episodes": "12000-12074 (same as dev8 interim); only the new arm + a policy-alone rerun (to verify the replays match the dev8 jobs on the same Nibi H100s)",
  "compare_to": "dev8 record / cbfm / cbfmo on the same episodes",
- "rule": "Small exploratory run: if cbfmo3 topples <= cbfm + 1 and success >= cbfm - 2, propose a pre-registered final test of the optimisation filter to the user; otherwise report and discuss."
+ "rule": "Small exploratory run: if cbfmo3 topples <= cbfm + 1 and success >= cbfm - 2, propose a pre-registered final test of the optimisation filter to the user; otherwise report and discuss.",
+ "correction": "2026-10-16 ~09:20: the first dev8b run used episodes 12000-12074, but the dev8 interim arms exist only for 12075-12149 (my error). Rerun: record + cbfmo3 on 12075-12149 with tag _dev8c; compare cbfmo3_dev8c with dev8's record/cbfm/cbfmo there; record_dev8c vs record_dev8 checks the replays match across jobs. The 12000-12074 block (record + cbfmo3) is kept."
 }
