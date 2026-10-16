@@ -1,0 +1,9 @@
+{
+ "name": "dev6: final-test filter + readout veto (cbfv) vs final-test filter (cbf), 600 episodes, closed loop on Rorqual",
+ "written": "2026-10-16 ~01:00, before any dev6 episode was run",
+ "motivation": "The final-test filter's harmful choices (it picks a 'safe' candidate that is really riskier) are its main flaw. Offline on 75 risky dev decisions (results/program_b/cbf_qp/veto_check.json), excluding candidates whose fixed readout exceeds the policy plan's changed the choice in 7/75 decisions, cut harmful choices 9 -> 6 and real risk 19.3% -> 17.5%, helpful choices unchanged (36). Expected closed-loop effect is small, hence 600 episodes.",
+ "episodes": "7000-7599 (600; never used: final test 1000-1299, dev3 2000-2149, dev4/5 5000-5599, training recordings 6000-6599)",
+ "setting": "as the final test; all three arms of an episode in one cluster job; model_US for both filter arms",
+ "arms": {"record": "policy alone", "cbf": "final-test filter", "cbfv": "final-test filter + readout veto (CBF_VETO=1; fixed readout tau 0.5 x O_MAX)"},
+ "decision_rule": "cbfv goes to a fresh pre-registered final test if it has at least 4 fewer topples than cbf AND success >= cbf success - 8. 1-3 fewer with success within 8: 'not distinguishable', decide with the user. Otherwise keep the final-test filter. dev6 numbers are never reported as a test result."
+}

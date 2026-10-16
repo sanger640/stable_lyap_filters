@@ -35,7 +35,10 @@ CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 
        # "qfix" (2026-10-15 night): pick the lowest fixed-readout risk among the policy plan + 15 policy samples, no
        # primitives. Fixed readout: fork -> share of futures in the disturbed group; no fork -> 1 if the futures' mean
        # change away from the hand > QFIX_TAU x O_MAX (everything toppling is NOT safe), else 0.
-       "QFIX_TAU": float(os.environ.get("QFIX_TAU", 0.5)), "QFIX_TIE": float(os.environ.get("QFIX_TIE", 0.02))}
+       "QFIX_TAU": float(os.environ.get("QFIX_TAU", 0.5)), "QFIX_TIE": float(os.environ.get("QFIX_TIE", 0.02)),
+       # VETO (2026-10-16): final-test selection, but candidates whose fixed readout exceeds the policy plan's are excluded
+       # (unless that leaves none). Targets the filter's harmful choices (offline: 9 -> 6 hurt, 36 helped unchanged).
+       "VETO": os.environ.get("CBF_VETO") == "1"}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
@@ -169,6 +172,13 @@ class CBF:
         cands = list(samples) + self.primitives(sim, plan)
         hc, oc = self.score(sim, z0, np.stack(cands), CFG["FUT_CAND"])
         feas = self.ok(hc, oc, h_now)
+        veto = {}
+        if CFG["VETO"]:                      # readout veto: never pick a candidate the fixed readout rates as more disturbed
+            qa = self.qfix(sim, z0, np.concatenate([np.asarray(plan, np.float32)[None], np.stack(cands).astype(np.float32)]))
+            keep = qa[1:] <= qa[0] + 1e-9
+            veto = {"q_policy": float(qa[0]), "vetoed": int((feas & ~keep).sum())}
+            if (feas & keep).any():
+                feas = feas & keep
         dist = np.array([np.linalg.norm(np.asarray(c)[1:9, :3] - np.asarray(plan)[1:9, :3]) for c in cands])
         if feas.any() and CFG["SELECT"] == "margin":
             f_ = np.flatnonzero(feas); j = int(f_[np.lexsort((dist[f_], -hc[f_]))[0]]); kind = "feasible"
@@ -177,7 +187,7 @@ class CBF:
         else:
             j = int(np.lexsort((oc, -hc))[0]); kind = "best_effort"
         out = np.asarray(cands[j], np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
-        return out, {**info, "intervened": True, "abstained": False, "choice": j, "kind": kind,
+        return out, {**info, **veto, "intervened": True, "abstained": False, "choice": j, "kind": kind,
                      "h_choice": float(hc[j]), "o_choice": float(oc[j]), "change_mm": float(dist[j] * 1000),
                      "h_cands": [float(x) for x in hc], "o_cands": [round(float(x), 4) for x in oc],
                      "seconds": round(time.time() - t0, 2)}
