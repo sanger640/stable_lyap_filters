@@ -36,6 +36,10 @@ Last updated 2026-10-16.
 - Fork-barrier gradients don't track real sensitivity (nudge r = 0.12-0.15); smooth mean disturbance away from the hand does (r = 0.76). Real risk is mm-sensitive (5 mm nudge: 23 points) and smooth (5 vs 10 mm r = 0.91). (checks/report.json, qsoft_check.json)
 - Calibration of imagined topple fraction: ECE 0.155; calibrated for 20-50%, overconfident above 50%; "no fork" plans topple 23% in risky scenes (det), 17% (hybrid). (reliability.json, reliability_hyb.json)
 
+## Optimisation filter (the user's chosen direction)
+
+- dev8 interim (75 eps 12000-12074, Nibi): clean CBF optimisation (cbf_opt.optimise: path bends + speed, relative disturbance barrier alpha 0.5, multi-start from policy samples, exact fork check at h_safe log2 3, NO primitives) behind the final trigger: 7 topples vs selection 6 vs policy 13; success 50 vs 55 vs 47; head-to-head 4 vs 5; median change 16.8 vs 9.8 mm; 24.8 vs 9.2 s per intervention. On par for safety, slightly behind on success (larger changes). (results/jenga/cbf_dev8_result.json)
+
 ## Variants that did NOT beat the first/final filter in closed loop (all pre-registered dev tests)
 
 - dev4: single gradient CBF optimisation (no primitives): 25 vs 27 topples, success 87 vs 93 -> keep. PROTOCOL DEVIATION: ran with model_US and 15 steps (EXTRA_ENV comma bug), not model_CF/10. (cbf_dev4_result.json)
