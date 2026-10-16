@@ -1,0 +1,13 @@
+{
+ "name": "dev10: optimisation-only CBF filter on the optimiser-in-the-loop world model (model_OIL) in closed loop",
+ "written": "2026-10-16 ~16:45, before any dev10 episode was run",
+ "why": "Offline, the same optimiser improved with world-model data: threeblock_v3 24.8% -> closed-loop 15.1% -> model_CF 12.4% -> model_OIL 11.8% (selection 13.8%). dev8 (7 vs 6 topples) used the closed-loop model.",
+ "arms": {
+  "record": "policy alone (replay check vs dev8 record, must match)",
+  "cbfmoil": "optimisation-only filter: final trigger (h < min(h_now, log2 3) or o > O_MAX), fix = cbf_opt.optimise with exactly the offline b50/b50oil settings (alpha 0.5, 10 Adam steps, 8 starts from policy samples, 16 futures, COST timed, sigma init 0.987410, exact fork check). No primitives, no labels.",
+  "cbfmsoil": "selection filter (cbfm: closest safe of 15 policy samples + 3 primitives) with the SAME world model, to separate the solver from the model."
+ },
+ "world_model": "results/program_b/oil_v1/model/model_OIL.pt for trigger and fix in both filter arms; O_MAX = results/jenga/cbf_calibration_OIL.json (0.485, label-free).",
+ "episodes": "12075-12149 (75; the dev8 / dev8c episodes, so dev8 record/cbfm/cbfmo are also comparable)",
+ "decision_rule": "Primary: cbfmoil vs cbfmsoil (same model). The optimisation-only filter is adopted as the main filter if NOT WORSE: topples(cbfmoil) <= topples(cbfmsoil) + 3 AND success(cbfmoil) >= success(cbfmsoil) - 8; 'better' if topples <= topples(cbfmsoil) - 4. Secondary (reported, not decisive): vs dev8 cbfm (6 topples / 55 success) and dev8 cbfmo (7 / 50). Replay check: record must equal dev8 record. dev numbers are never reported as a test result."
+}
