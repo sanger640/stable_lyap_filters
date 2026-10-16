@@ -1,0 +1,7 @@
+{
+ "name": "Step 1: does the policy's own plausibility separate the optimiser's harmful changes? (diagnostic on dev10, no new episodes)",
+ "written": "2026-10-16 ~19:45, before any plausibility was computed",
+ "measure": "plausibility error of a chunk = the diffusion policy's denoising loss (epsilon prediction MSE, normalised actions) at fixed timesteps {2,5,10,20,35} of 50 with 8 fixed noise draws (common random numbers), conditioned on the decision's 2-frame observation (re-rendered from the saved states). Candidate = the policy's 16-step plan with steps 1-8 replaced by the executed chunk and steps 9-15 shifted by the step-8 change. Delta = error(executed) - error(policy plan).",
+ "data": "every intervention of the optimisation filter (cbfmoil) and the selection filter (cbfmsoil) in dev10 (75 episodes each).",
+ "criteria": "Worth building only if BOTH: (a) the optimiser's median Delta is clearly above the selection filter's (selection picks the policy's own samples), and (b) over optimiser episodes without a topple, the episode's max Delta separates 'not lifted' from 'success' better than the episode's max change in mm (AUC higher by >= 0.05). Small sample (~60 episodes): a diagnostic, not a test."
+}
