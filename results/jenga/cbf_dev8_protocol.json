@@ -1,0 +1,9 @@
+{
+ "name": "dev8: the clean CBF optimisation filter with the final margin (cbfmo) vs the final selection filter (cbfm)",
+ "written": "2026-10-16 ~09:20, before any dev8 episode was run",
+ "cbfmo": "trigger = final rule (h < min(h_now, log2 3) or o > O_MAX); fix = eval/cbf_opt.optimise: decision variables = smooth xyz bends at 4 waypoints (incl. vertical) + speed sigma in [0.3, 1]; cost = ||delta||^2 + 400 (1 - sigma)^2 (in mm^2 / 100 units); constraint = relative disturbance barrier obar(p) <= (1 - 0.5) obar(p_pi); multi-start from the policy plan + 7 policy samples (initialisations only); 10 Adam steps, 16 futures; choice = cheapest start satisfying the barrier AND the exact fork rule at h_safe = log2 3 (else fork rule, else barrier, else lowest obar). No hand-made primitives. All parameters set in code (policy_rollout mode 'cbfmo'). World model model_US for both filters (only the fix differs).",
+ "cbfm": "final selection filter as in final test 2 (closest safe of 15 policy samples + 3 primitives, h_safe = log2 3)",
+ "episodes": "12000-12599 (600; never used)",
+ "setting": "as final test 2; all three arms (record, cbfm, cbfmo) of an episode in one cluster job",
+ "decision_rule": "Because cbfmo removes the hand-made primitives, it is adopted as the main filter if it is NOT WORSE: topples(cbfmo) <= topples(cbfm) + 3 AND success(cbfmo) >= success(cbfm) - 8; then it gets its own pre-registered final test. 'Better' is additionally reported if topples(cbfmo) <= topples(cbfm) - 4 (one-sided McNemar cbfmo vs cbfm). Otherwise the selection filter stays and the gap is diagnosed. dev8 numbers are never reported as a test result."
+}

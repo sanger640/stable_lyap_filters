@@ -41,7 +41,10 @@ CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 
        "VETO": os.environ.get("CBF_VETO") == "1",
        # matched-rate baseline (2026-10-16): TRIGGER "random" acts at a random RAND_P share of decisions (the final filter
        # acted on 7.1% in final test 2), seeded per episode via self.trig_rng
-       "RAND_P": float(os.environ.get("CBF_RAND_P", 0.071))}
+       "RAND_P": float(os.environ.get("CBF_RAND_P", 0.071)),
+       # START "G" = object-centric start sampler (per-block pose noise, 3 blocks; all tests so far); "gte" = object-free
+       # Gauss-TE field fitted on closed-loop latents (eval/gte_check.py; Phase 2 P2-0b estimator)
+       "START": os.environ.get("CBF_START", "G")}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
@@ -53,6 +56,9 @@ def horizon(plan, n_look):
 class CBF:
     def __init__(self, mon):
         self.trig_rng = np.random.default_rng(0)
+        if CFG["START"] == "gte":
+            import gte_check
+            self.gte = gte_check.GaussStarts()
         import cbf_barrier as cb
         self.mon, self.cb = mon, cb
         if CFG["O_MAX"] is None and CALIB.exists():
@@ -70,7 +76,10 @@ class CBF:
         for si, s in enumerate(cb.SCALES):
             d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])
                            for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(n_fut))])
-            st = mon.g(z0[None].expand(n_fut, -1, -1, -1), torch.as_tensor(d_, dtype=torch.float32))
+            if CFG["START"] == "gte":            # object-free starts: stationary Gaussian field in the latent (no objects)
+                st = self.gte(z0, n_fut, s, seed + si)
+            else:
+                st = mon.g(z0[None].expand(n_fut, -1, -1, -1), torch.as_tensor(d_, dtype=torch.float32))
             acts = []
             for p in plans:
                 base = horizon(p, CFG["N_LOOK"])

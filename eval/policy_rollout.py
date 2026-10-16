@@ -306,6 +306,16 @@ def paired(mode, n=100, shrink=None):
         if os.environ.get("OPT_CALIB"):
             cbff.CALIB = Path(os.environ["OPT_CALIB"]) if os.path.isabs(os.environ["OPT_CALIB"]) else ROOT / os.environ["OPT_CALIB"]
         return _paired("cbfopt", "cbf", n, shrink)
+    if mode == "cbfmo":                        # the clean CBF optimisation (cbf_opt.optimise) behind the final margin
+        import cbf_filter as cbff
+        import cbf_opt
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "opt"; cbff.CFG["OPT_STARTS"] = 8
+        cbf_opt.CFG.update({"ALPHA": 0.5, "STEPS": 10, "STARTS": 8, "N": 16})   # set in code (no cluster env vars)
+        return _paired("cbfmo", "cbf", n, shrink)
+    if mode == "cbfmg":                        # final filter with object-free Gauss-TE starts (no object-centric G)
+        import cbf_filter as cbff
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["START"] = "gte"
+        return _paired("cbfmg", "cbf", n, shrink)
     if mode == "cbfr":                         # matched-rate baseline: final filter's fix at RANDOM decisions (7.1%)
         import cbf_filter as cbff
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["TRIGGER"] = "random"
