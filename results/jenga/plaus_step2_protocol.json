@@ -1,0 +1,8 @@
+{
+ "name": "Step 2: optimisation-only filter with the policy-plausibility cost, offline",
+ "written": "2026-10-16 ~20:15, before the full run",
+ "change": "cbf_opt grad solver, b50 settings, model_OIL + OIL calibration (= b50oil), plus cost PLAUS_W * relu(err(p) - err(p_pi)) / err(p_pi) with PLAUS_W = 2.25 fixed a priori (doubling the policy's own denoising error costs as much as a 15 mm change); also in the choice among starts. err = eval/plausibility.py (policy denoising loss, 5 timesteps x 8 fixed draws, decision's re-rendered 2-frame observation). Tag b50oilp.",
+ "benchmark": "75 risky dev decisions, real risk 32 futures; compare paired with b50oil (11.8%); selection 13.8%.",
+ "criteria": "Go to a closed-loop run (step 3, needs the user's OK for Nibi) only if ALL: (1) real risk <= 13.8% (not worse than selection); (2) median relative excess plausibility error of the chosen chunks at most half of b50oil's (cbf_opt.py plaus b50oil vs b50oilp); (3) time per decision <= 1.5x b50oil's.",
+ "note": "Offline cannot measure picking success (the reason for this cost); plausibility is its proxy here, closed loop is the real test."
+}

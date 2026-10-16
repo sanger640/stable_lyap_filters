@@ -51,7 +51,11 @@ CFG = {"ALPHA": E("OPT_ALPHA", 0.3), "STARTS": E("OPT_STARTS", 4), "STEPS": E("O
        "EPS": E("OPT_EPS", 0.10), "ETA": E("OPT_ETA", 4.0), "CH_STEPS": E("OPT_CH_STEPS", 20),
        "COST": os.environ.get("OPT_COST", "separate"), "SIG0": [float(v) for v in os.environ.get("OPT_SIG0", "0.99,0.55").split(",")],
        # world model (2026-10-16: runs after b50 silently used the cem_filter default threeblock_v3 while b50 used model_CF)
-       "WM": os.environ.get("CBF_WM", "threeblock_v3 (default)")}
+       "WM": os.environ.get("CBF_WM", "threeblock_v3 (default)"),
+       # PLAUS_W (2026-10-16, step 2): policy-plausibility cost (eval/plausibility.py) in the grad solver:
+       # + PLAUS_W * relu(err(p) - err(p_pi)) / err(p_pi). Fixed a priori: doubling the policy's own denoising error costs
+       # as much as a 15 mm change (15^2 / 100 = 2.25). 0 = off.
+       "PLAUS_W": E("OPT_PLAUS_W", 0.0)}
 
 
 def time_scale(plan, sigma):
@@ -75,20 +79,54 @@ def run(tag="opt"):
     rows = json.loads((q.OUT / "checks" / "plans.json").read_text())                          # 75 risky decisions
     rows = rows[:int(os.environ.get("OPT_LIMIT", len(rows)))]
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
+    plaus_of = _plaus_setup() if CFG["PLAUS_W"] > 0 else None
     out, t0 = [], time.time()
     for n_, r in enumerate(rows):
         i = r["i"]; z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
+        t1 = time.time(); pl = plaus_of(K[i]) if plaus_of else None
         sim.restore((C["state"][i], C["ctrl"][i], C["target"][i], float(C["gripper"][i])))
         plan, info = optimise(mon, cbf, sim, z0, C["site"][i], np.asarray(r["plans"], np.float32)[:CFG["STARTS"]], K[i]["h_now"], 1000 + i,
-                              decision=i)
-        out.append({"i": i, **info, "chunk": plan[1:9].astype(np.float32).tolist()})
+                              decision=i, plaus=pl)
+        out.append({"i": i, **info, "seconds": round(time.time() - t1, 1), "chunk": plan[1:9].astype(np.float32).tolist()})
         if n_ % 15 == 0:
             print(f"run {n_ + 1}/{len(rows)} {time.time() - t0:.0f}s start {info['start']} sigma {info['sigma']} change {info['change_mm']} mm feasible {info['feasible']}", flush=True)
     (q.OUT / f"cbfopt_{tag}.json").write_text(json.dumps({"cfg": CFG, "rows": out}))
     print("run done", len(out), f"{time.time() - t0:.0f}s", flush=True)
 
 
-def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, decision=None, return_all=False):
+def _plaus_setup():
+    """Offline: key {ep, d} of a cached dev3A decision -> plaus(plans) (differentiable policy denoising error, conditioned
+    on that decision's re-rendered 2-frame observation). Needs the diffusion policy (run under dp_venv)."""
+    import inspector_data as insp
+    import plausibility as pl
+    import policy_rollout as pr
+    P = pl.Plausibility(pr.load_policy()); sim2 = insp._sim(); cams = pr.Cameras(sim2)
+
+    def plaus_of(key):
+        with np.load(q.RUN / f"ep{key['ep']:03d}.npz") as f:
+            S = {k: f[k] for k in f.files}
+        d = int(np.flatnonzero(S["chunk_index"] == key["d"])[0])
+        gc = P.cond(pl.obs_hist(sim2, cams, S, d, pl.episode_noises(key["ep"], int(S["chunk_index"][-1]) + 1)))
+        return lambda plans: P.error(gc, plans)
+    return plaus_of
+
+
+def plaus_tag(tag):
+    """Relative excess plausibility error of an existing run's chosen chunks (as 16-step plans) -> cbfopt_plaus_<tag>.json."""
+    import torch
+    import plausibility as pl
+    C, K = q.load_cache(); plaus_of = _plaus_setup()
+    rows = json.loads((q.OUT / f"cbfopt_{tag}.json").read_text())["rows"]; out = {}
+    for r in rows:
+        i = r["i"]; f = plaus_of(K[i])
+        with torch.no_grad():
+            e = f(np.stack([C["plan16"][i], pl.as_plan(C["plan16"][i], r["chunk"])])).cpu().numpy()
+        out[i] = round(float(max(e[1] - e[0], 0) / e[0]), 4)
+    (q.OUT / f"cbfopt_plaus_{tag}.json").write_text(json.dumps(out))
+    print(tag, "median relative excess error", float(np.median(list(out.values()))), flush=True)
+
+
+def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, decision=None, return_all=False, plaus=None):
     """The single CBF optimisation for one decision. starts (S,16,4): the policy's plan first, then its own samples.
     sim must be at the decision state (for the exact fork check). Returns (plan (16,4) numpy, info)."""
     import torch
@@ -110,7 +148,10 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, deci
     s_init = torch.logit(((s_init - 0.3) / 0.7).clamp(1e-3, 1 - 1e-3))
     with torch.no_grad():
         o_pol = float(q.mean_o(bar, pol, z0, site)[0])
+        e_pol = float(plaus(pol)[0]) if plaus is not None else None
     tau = (1 - CFG["ALPHA"]) * o_pol
+    W = CFG["PLAUS_W"] if plaus is not None else 0.0
+    prel = lambda p: torch.relu(plaus(p) - e_pol) / e_pol                # relative excess denoising error
     S = len(P)
     knots = torch.zeros(S, len(q.QP["KNOTS"]), 3, device="cuda", requires_grad=True)
     s_raw = s_init.clone().requires_grad_(True)
@@ -132,7 +173,10 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, deci
         p, sig, geo = plans_of(knots, s_raw)
         ob = q.mean_o(bar, p, z0, site)
         dist = change(geo)
-        loss = (dist / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100 + CFG["MU"] * torch.relu(ob / max(tau, 1e-9) - 1) ** 2).sum()
+        loss = (dist / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100 + CFG["MU"] * torch.relu(ob / max(tau, 1e-9) - 1) ** 2)
+        if W > 0:
+            loss = loss + W * prel(p)
+        loss = loss.sum()
         opt.zero_grad(); loss.backward(); opt.step()
         with torch.no_grad():
             nrm = knots.norm(dim=(1, 2), keepdim=True).clamp_min(1e-9)
@@ -144,6 +188,8 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, deci
         tau32 = (1 - CFG["ALPHA"]) * float(q.mean_o(bar32, pol, z0, site)[0])
         dist = change(geo).sqrt().cpu().numpy()
         cost = (change(geo) / 100 + CFG["LAMBDA"] * (1 - sig) ** 2 / 100).cpu().numpy()     # the objective, for the choice
+        pr_all = prel(p).cpu().numpy() if plaus is not None else np.zeros(len(p))
+        cost = cost + W * pr_all
     feas = ob <= tau32
     pall = p.cpu().numpy()
     if fork_check:                                   # second safety condition: the exact fork barrier rule
@@ -153,13 +199,15 @@ def optimise(mon, cbf, sim, z0, site, starts, h_now, seed, fork_check=None, deci
         pool_ = both if both.any() else (okf if okf.any() else feas)
     else:
         pool_ = feas
-    key = cost if CFG["COST"] == "separate" else dist
+    key = cost if (CFG["COST"] == "separate" or W > 0) else dist
     j = int(np.flatnonzero(pool_)[np.argmin(key[pool_])]) if pool_.any() else int(np.argmin(ob))
     plan = pall[j]
     h, o = cbf.score(sim, z0, plan[None], 64)
     info = {"start": j, "feasible": bool(feas[j]), "n_feasible": int(feas.sum()), "sigma": round(float(sig[j]), 3),
             "change_mm": round(float(dist[j]), 1), "obar_policy": round(o_pol, 4), "obar_final": round(float(ob[j]), 4),
             "verified": bool(cbf.ok(h, o, h_now)[0])}
+    if plaus is not None:
+        info["plaus_rel"] = round(float(pr_all[j]), 4)
     if return_all:                                   # every optimised start (world-model data collection, eval/oil_data.py)
         info["all"], info["ob_all"] = pall, ob
     return plan, info
@@ -406,4 +454,4 @@ def report(tag="opt"):
 
 
 if __name__ == "__main__":
-    {"run": run, "truth": truth, "report": report}[sys.argv[1]](*sys.argv[2:])
+    {"run": run, "truth": truth, "report": report, "plaus": plaus_tag}[sys.argv[1]](*sys.argv[2:])
