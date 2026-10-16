@@ -27,8 +27,10 @@ sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 import closedloop_data as cl  # noqa: E402
 import lookahead_check as la  # noqa: E402
 
-OUT = ROOT / "results/program_b/cf_v1"
-SEED, N_TRAIN, N_VAL, P, V = 20261700, 1700, 200, 4, 3
+OUT = ROOT / os.environ.get("CF_OUT", "results/program_b/cf_v1")
+SEED, N_TRAIN, N_VAL, P, V = 20261700, int(os.environ.get("CF_N_TRAIN", 1700)), int(os.environ.get("CF_N_VAL", 200)), 4, 3
+# CF_RUN = a per-episode cluster recording (policy_rollouts/<tag>/ep*.json + ep*.npz) instead of paired_record_dev2x
+RUN_DIR = ROOT / "results/program_b/policy_rollouts" / os.environ["CF_RUN"] if os.environ.get("CF_RUN") else None
 KNOTS, SIGMA_MM, CLIP_MM = (1, 5, 10, 15), (3.0, 10.0), 15.0
 
 
@@ -105,7 +107,30 @@ def _job(args):
     return "ok"
 
 
+def selection_from_run():
+    """Near-topple decisions (4 chunks before a real topple) first, then random ones; train e % 5 != 0, val e % 5 == 0."""
+    eps = {(r := json.loads(p.read_text()))["episode"]: r for p in RUN_DIR.glob("ep*.json")}
+    near, rest = [], []
+    for e, r in eps.items():
+        if not (RUN_DIR / f"ep{e:03d}.npz").exists():
+            continue
+        with np.load(RUN_DIR / f"ep{e:03d}.npz") as f:
+            have = set(int(c) for c in f["chunk_index"])
+        t0 = [c["chunk"] for c in r["log"] if c.get("topple_started")]
+        nk = {(e, t0[0] - d) for d in range(4)} & {(e, c) for c in have} if t0 else set()
+        near += sorted(nk); rest += [(e, c) for c in sorted(have) if (e, c) not in nk]
+    rng = np.random.default_rng(SEED); out = {}
+    for split, cond, n in (("train", lambda e: e % 5 != 0, N_TRAIN), ("val", lambda e: e % 5 == 0, N_VAL)):
+        a = [k for k in near if cond(k[0])]; b = [k for k in rest if cond(k[0])]
+        b = [b[i] for i in rng.permutation(len(b))]
+        for k in (a + b)[:n]:
+            out[k] = split
+    return out
+
+
 def selection():
+    if RUN_DIR is not None:
+        return selection_from_run()
     sel = {tuple(map(int, k.split(":"))): v for k, v in json.loads((cl.OUT / "selection.json").read_text()).items()}
     near = [k for k, v in sel.items() if v[1] == 16]                    # states within 4 chunks of a real topple
     rest = [k for k, v in sel.items() if v[1] != 16]
@@ -124,16 +149,24 @@ def main(workers=int(os.environ.get("CF_WORKERS", 6))):
         (OUT / d).mkdir(parents=True, exist_ok=True)
     shard = [int(x) for x in os.environ.get("CF_SHARD", "0,1,2,3,4,5,6").split(",")]
     sf = OUT / "selection.json"
-    if sf.exists():
+    if sf.exists() or os.environ.get("CF_SELECTION_ONLY") == "1":
+        if not sf.exists():
+            sel = selection(); sf.write_text(json.dumps({f"{e}:{c}": v for (e, c), v in sel.items()}) + "\n")
+            print("selection", len(sel), flush=True); return
         sel = {tuple(map(int, k.split(":"))): v for k, v in json.loads(sf.read_text()).items()}
     else:
         sel = selection(); sf.write_text(json.dumps({f"{e}:{c}": v for (e, c), v in sel.items()}) + "\n")
     jobs, cache = [], {}
-    for (e, c), split in sorted(sel.items()):
-        if e % 7 not in shard:
+    task = os.environ.get("CF_TASK")                       # cluster arrays: k/N -> states with index % N == k
+    for n_k, ((e, c), split) in enumerate(sorted(sel.items())):
+        if task:
+            k_, N_ = map(int, task.split("/"))
+            if n_k % N_ != k_:
+                continue
+        elif e % 7 not in shard:
             continue
         if e not in cache:
-            cache.clear(); cache[e] = dict(np.load(cl.RUN / f"ep{e:03d}.npz"))
+            cache.clear(); cache[e] = dict(np.load((RUN_DIR or cl.RUN) / f"ep{e:03d}.npz"))
         S = cache[e]; i = int(np.flatnonzero(S["chunk_index"] == c)[0])
         jobs.append(((e, c), split, S["state"][i], S["ctrl"][i], S["target"][i], S["gripper"][i], S["start_tilt"][i], S["plan16"][i]))
     fails = []
