@@ -11,6 +11,7 @@ Last updated 2026-10-16.
 | First filter (h_safe = 1) final test 1 | 65 -> 47 (27/9, p = 0.002), success 179 -> 187 | results/jenga/cbf_final_test_result.json |
 | First filter pooled replications (final test 1 + dev3/4/5/6) | 1,500 eps: 315 -> 206 (-35%), 143 prevented / 34 caused (p = 2e-17), success 893 -> 990 | results/jenga/cbf_pooled.json |
 | Success definition | success = lifted 3 cm AND no neighbour toppled (a topple is a failure even if the block was picked) | eval/cbf_final2.py, policy_rollout.py |
+| **RE-AUDIT under success definition v3** (2026-10-16; red block >= 2 cm toward the arm, upright, no neighbour topple; replays of saved states, topple flags reproduced 399-400/400) | Final test 2 (400 of 600 eps available on Rorqual): final filter topples 84 -> 26 (unchanged claim); success v1 244 -> 278 but **v3 230 -> 248 (73 / 55, p = 0.13, n.s.)**; red block fallen 61 -> 71, upright-but-not-pulled 28 -> 58. First filter in final test 2: v3 230 -> 223. Final test 1 (first filter): v3 175 -> 160 (26 / 41, p = 0.09). dev8: policy 43, final filter 49, optimiser 49. TOPPLE claims stand; SUCCESS claims shrink or vanish under v3. | results/jenga/outcome_audit_runs.json, success_definition_v3.json |
 
 ## What made the filter work (in order found)
 

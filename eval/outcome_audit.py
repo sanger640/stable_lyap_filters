@@ -74,5 +74,43 @@ def main(tag="dev10"):
     (ROOT / f"results/jenga/outcome_audit_{tag}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(summ, indent=1))
 
 
+def v3(x):
+    """success_definition_v3.json: red block >= 2 cm toward the arm, upright at the end, no neighbour topple."""
+    return (not x["logged_neighbour_toppled"]) and x["end_target_tilt"] < 45 and x["end_dx_mm"] <= -20
+
+
+def audit_runs(*runs):
+    """Audit arbitrary runs (e.g. paired_record_test2x paired_cbf_test2x) -> results/jenga/outcome_audit_runs.json (merged)."""
+    import inspector_data as insp
+    import plausibility as pl
+    sim = insp._sim(); f = ROOT / "results/jenga/outcome_audit_runs.json"
+    out = json.loads(f.read_text()) if f.exists() else {}
+    for run in runs:
+        res = {(r := json.loads(l))["episode"]: r for l in (ROOT / f"results/jenga/{run}.jsonl").read_text().splitlines()}
+        rows = []
+        for ep, r in sorted(res.items()):
+            p = RUNS / run / f"ep{ep:03d}.npz"
+            if not p.exists():
+                continue
+            with np.load(p) as f_:
+                S = {k: f_[k] for k in f_.files}
+            L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1))
+            x = {"ep": ep, "logged_neighbour_toppled": r["neighbour_toppled"], "replay_neighbour_toppled": bool(NT.max() >= 45),
+                 "logged_v1_success": r.get("seconds_to_3cm") is not None and not r["neighbour_toppled"],
+                 "end_target_tilt": round(float(TT[-1]), 1), "end_dx_mm": round(float(XY[-1, 0] * 1000), 1),
+                 "max_lift_mm": round(float(L.max() * 1000), 1)}
+            x["v3_success"] = v3(x); rows.append(x)
+        out[run] = {"episodes": len(rows), "replay_topple_flag_matches": sum(x["replay_neighbour_toppled"] == x["logged_neighbour_toppled"] for x in rows),
+                    "neighbour_topples": sum(x["logged_neighbour_toppled"] for x in rows), "v1_success": sum(x["logged_v1_success"] for x in rows),
+                    "v3_success": sum(x["v3_success"] for x in rows),
+                    "red_fallen_no_neighbour_topple": sum((not x["logged_neighbour_toppled"]) and x["end_target_tilt"] >= 45 for x in rows),
+                    "rows": rows}
+        f.write_text(json.dumps(out, indent=1))
+        print(run, {k: v for k, v in out[run].items() if k != "rows"}, flush=True)
+
+
 if __name__ == "__main__":
-    main(*sys.argv[1:])
+    if sys.argv[1:2] == ["runs"]:
+        audit_runs(*sys.argv[2:])
+    else:
+        main(*sys.argv[1:])
