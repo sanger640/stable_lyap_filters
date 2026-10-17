@@ -21,17 +21,18 @@ ARMS = ("record", "cbfmoil", "cbfmsoil")
 
 def replay(sim, S, noises):
     """-> per-step arrays: target lift (m, vs rest height at the first saved decision), target tilt, max neighbour tilt."""
-    lift, ttilt, ntilt = [], [], []
+    lift, ttilt, ntilt, xy = [], [], [], []
     for d in range(len(S["chunk_index"])):
         sim.restore((S["state"][d], S["ctrl"][d], S["target"][d], float(S["gripper"][d])))
         if d == 0:
-            z0 = float(sim.data.xpos[sim.tracked_block_ids[0]][2])
+            z0 = float(sim.data.xpos[sim.tracked_block_ids[0]][2]); xy0 = sim.data.xpos[sim.tracked_block_ids[0]][:2].copy()
         k = int(S["chunk_index"][d])
         for j, a in enumerate(S["executed"][d]):
             a = np.asarray(a, np.float32).copy(); a[:3] -= noises[k][j]; sim.execute(a)
             t = sim.block_diagnostics()["tilt"]
             lift.append(float(sim.data.xpos[sim.tracked_block_ids[0]][2] - z0)); ttilt.append(float(t[0])); ntilt.append(float(np.max(t[1:])))
-    return np.array(lift), np.array(ttilt), np.array(ntilt)
+            xy.append(sim.data.xpos[sim.tracked_block_ids[0]][:2] - xy0)
+    return np.array(lift), np.array(ttilt), np.array(ntilt), np.array(xy)
 
 
 def main(tag="dev10"):
@@ -44,14 +45,17 @@ def main(tag="dev10"):
         for ep, r in sorted(res.items()):
             with np.load(RUNS / f"paired_{arm}_{tag}" / f"ep{ep:03d}.npz") as f:
                 S = {k: f[k] for k in f.files}
-            L, TT, NT = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1))
+            L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1))
             i3 = int(np.argmax(L >= 0.03)) if (L >= 0.03).any() else None
             rows.append({"ep": ep, "logged_success_3cm": r.get("seconds_to_3cm") is not None and not r["neighbour_toppled"],
                          "logged_neighbour_toppled": r["neighbour_toppled"], "logged_max_lift_mm": r["max_lift_mm"],
                          "replay_max_lift_mm": round(float(L.max() * 1000), 1), "replay_neighbour_toppled": bool(NT.max() >= 45),
                          "target_max_tilt": round(float(TT.max()), 1), "target_tilt_at_3cm": round(float(TT[i3]), 1) if i3 is not None else None,
                          "target_toppled_before_3cm": bool((TT[:i3 if i3 is not None else len(TT)] >= 45).any()),
-                         "end_lift_mm": round(float(L[-1] * 1000), 1), "end_target_tilt": round(float(TT[-1]), 1)})
+                         "end_lift_mm": round(float(L[-1] * 1000), 1), "end_target_tilt": round(float(TT[-1]), 1),
+                         # red block horizontal displacement (x: negative = toward the robot base / arm side; y: along the row)
+                         "end_dx_mm": round(float(XY[-1, 0] * 1000), 1), "end_dy_mm": round(float(XY[-1, 1] * 1000), 1),
+                         "min_dx_mm": round(float(XY[:, 0].min() * 1000), 1), "frac_steps_lifted_5mm": round(float((L >= 0.005).mean()), 3)})
             print(arm, ep, flush=True)
         n = len(rows); R = rows
         top = lambda x: x["logged_neighbour_toppled"]
