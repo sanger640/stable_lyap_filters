@@ -95,3 +95,10 @@ failed), success (v4) 226 vs 252 vs policy 216. Diagnosis from the conf1 logs:
   136 certified, 13 hold, 1 best. DOSE-RESPONSE among certified fixes: change 0-6 mm risk 0.3% (policy 0.3%), 6-10 mm 4.8%
   (2.1%), 10-15 mm 15.1% (4.8%), > 15 mm 12.8% (3.9%). The model certifies mm-scale bends it cannot resolve; real risk is
   mm-sensitive (earlier: a 5 mm nudge moves real risk by 23 points on average). Hold fallback: 0.5% (13).
+- **Stage 2 result (2026-10-17 ~15:10), certifier OIL + 4 ensemble members, dev 150:** BOTH SOLVERS FAIL the A2 gate.
+  CEM: neighbour risk 5.73% (selection 0.71%, policy 2.83%, hold 0.48%; 23 worse / 7 better vs selection), red-fall 7.5%,
+  127 certified / 20 hold / 3 best, 46 s. GRAD: 7.17% (30 worse / 7 better), red-fall 7.6%, 96 certified / 47 hold / 7 best,
+  58 s. Dose-response persists with the ensemble certifier: certified fixes of 0-10 mm are about as risky as the policy
+  chunk (CEM 6-10 mm: 1.4% vs 1.6%), fixes of 10-15 mm are 2-4x riskier (CEM 8.1% vs 3.7%; GRAD 28% vs 7.3%), > 15 mm
+  worse still. Hold-still fallback: 0.3%. The ensemble certifier helped (CEM 7.6% -> 5.7%) but does not remove it.
+  Per the plan, no solver goes to Stage 3. Next step to be decided with the user.
