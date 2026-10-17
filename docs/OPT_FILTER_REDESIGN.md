@@ -71,4 +71,14 @@ failed), success (v4) 226 vs 252 vs policy 216. Diagnosis from the conf1 logs:
 
 ## Amendments
 
-(none yet)
+- **A1 (2026-10-17, before Stage 1 ran):** benchmark decisions are interventions of the SELECTION arm of conf1 only (not
+  both arms): its logged executed chunk is then exactly the closed-loop selection output (model_OIL, current settings), so
+  the baseline needs no re-run of the policy. Two real-risk labels per chunk: neighbour topple and red block fallen
+  (eval/bench2.py). Selection: at most 2 interventions per episode, seeded.
+- **Stage 1 result (2026-10-17):** dev set, 150 decisions: neighbour risk policy 2.83%, selection 0.71% (28 better /
+  3 worse, upper bound -1.3 points), hold still 0.48%; red-fall risk 7.6% / 7.0% / 4.75%. Gate passed
+  (results/program_b/bench2/baseline_dev.json).
+- **A2 (2026-10-17, after Stage 1, BEFORE any solver ran):** the Stage 2/3 gate was written for the old benchmark's ~14%
+  base risk; here per-decision risks are ~1-3%, so "+2 points" would allow tripling selection's risk. New gate: a solver
+  passes if neighbour risk <= selection + 0.5 points AND the paired one-sided 95% upper bound of (solver - selection)
+  <= +1.5 points AND red-fall risk <= selection + 1 point, with seconds per decision <= 30. Everything else unchanged.
