@@ -1,0 +1,192 @@
+"""Formulation G (docs/OPT_FILTER_REDESIGN.md, pre-registered 2026-10-17): optimise 4 coarse, universal transformations
+of the ONE given chunk instead of free mm offsets. theta = (v speed in [0,1], k pause steps in [0,8], s amplitude in [0,1],
+b back-off mm in [0,30] along the reverse of the chunk's own net direction). Gripper untouched. Certificate, cost and
+fallback as formulation F (eval/opt2.py). Solvers: cem | grad (separate).
+
+usage: python3 eval/opt3.py run <cem|grad> <dev|holdout> <tag> ; truth <set> <tag> ; report <set> <tag>
+env: OPT2_CERT = OIL+ENS (pre-registered) | OIL, OPT2_LIMIT
+"""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path[:0] = [str(ROOT / "eval")]
+import opt2  # noqa: E402  (sets env, CBF_WM / CBF_CALIB defaults)
+import bench2 as b2  # noqa: E402
+
+CFG = {**opt2.CFG, "CEM_POP": 16, "CEM_ITERS": 3, "CEM_ELITES": 6, "CEM_FINAL": 4, "CEM_SD": [0.4, 3.0, 0.4, 12.0],
+       "G_STARTS": 6, "G_STEPS": 15, "G_LR": [0.05, 0.4, 0.05, 1.5], "B_MIN_MOVE_MM": 2.0}
+LO, HI = np.array([0.0, 0.0, 0.0, 0.0]), np.array([1.0, 8.0, 1.0, 30.0])
+IDENTITY = np.array([1.0, 0.0, 1.0, 0.0])
+
+
+def transform(p16, theta):
+    """p16 (16, 4) torch, theta (S, 4) torch -> plans (S, 16, 4). Differentiable in theta."""
+    import torch
+    v, k, s, b = theta[:, 0:1], theta[:, 1:2], theta[:, 2:3], theta[:, 3:4] / 1000
+    t = torch.arange(16, device=theta.device, dtype=theta.dtype)[None]
+    tau = (v * torch.relu(t - k)).clamp(0, 15)                                   # (S, 16)
+    i = tau.detach().floor().clamp(0, 14).long(); w = (tau - i)[..., None]
+    xyz = p16[:, :3]
+    P = xyz[i] * (1 - w) + xyz[i + 1] * w                                         # (S, 16, 3)
+    q = xyz[0] + s[..., None] * (P - xyz[0])
+    net = xyz[15] - xyz[0]; nrm = net.norm()
+    if float(nrm) * 1000 >= CFG["B_MIN_MOVE_MM"]:
+        ramp = (t.clamp(max=8) / 8)[..., None]                                    # (1, 16, 1)
+        q = q - b[..., None] * ramp * (net / nrm)
+    return torch.cat([q, p16[None, :, 3:].expand(len(theta), -1, -1)], -1)
+
+
+class Problem(opt2.Problem):
+    """Same certificate as F; the candidate is theta instead of D."""
+
+    def __init__(self, *a):
+        import torch
+        super().__init__(*a)
+        self.p0t = torch.as_tensor(self.p0)
+
+    def plan(self, th):
+        import torch
+        return transform(self.p0t.double(), torch.as_tensor(np.asarray(th, np.float64))[None])[0].numpy().astype(np.float32)
+
+    def cost(self, th):
+        return super().cost(self.plan(th)[1:9, :3] - self.p0[1:9, :3])
+
+
+def solve_cem(P, seed):
+    rng = np.random.default_rng(seed); sd0 = np.array(CFG["CEM_SD"])
+    mu, sd = IDENTITY.copy(), sd0.copy(); pool = []
+    for it in range(CFG["CEM_ITERS"]):
+        T = np.clip(mu + sd * rng.standard_normal((CFG["CEM_POP"], 4)), LO, HI)
+        state = P.mon.rng.bit_generator.state
+        h, o = P.score([P.plan(th) for th in T], CFG["N_SEARCH"])
+        P.mon.rng.bit_generator.state = state
+        ok = P.cbf.ok(h, o, P.h_hold); cost = np.array([P.cost(th) for th in T])
+        key = [(0 if ok[c] else 1, cost[c] if ok[c] else -h[c], 0 if ok[c] else o[c]) for c in range(len(T))]
+        order = sorted(range(len(T)), key=lambda c: key[c])
+        el = T[order[:CFG["CEM_ELITES"]]]
+        mu, sd = el.mean(0), np.maximum(el.std(0), 0.02 * (HI - LO))
+        pool += [(key[c], T[c]) for c in order[:CFG["CEM_FINAL"]]]
+    pool.sort(key=lambda x: x[0])
+    finals = [th for _, th in pool[:CFG["CEM_FINAL"]]]
+    out, info = opt2.finish(P, finals, {"search_certified": int(sum(k[0] == 0 for k, _ in pool))})
+    return out, {**info, "theta": _chosen(P, out, finals)}
+
+
+def solve_grad(P, seed):
+    import torch
+    import cbf_barrier as cb
+    import cbf_qp as q
+    mon, z0 = P.mon, P.z0
+    req = [s for s in (0.5, 1.0, 2.0) if np.log2(s) < min(P.h_hold, opt2.HS) - 1e-9]
+    bars = {s: q.Barrier(mon, z0, seed + int(s * 10), CFG["G_N"], s) for s in set(req) | {1.0}}
+    rng = np.random.default_rng(seed)
+    starts = np.vstack([IDENTITY] + [LO + (HI - LO) * rng.random(4) for _ in range(CFG["G_STARTS"] - 1)])
+    lo, hi = torch.as_tensor(LO, device="cuda").float(), torch.as_tensor(HI, device="cuda").float()
+    th = torch.as_tensor(starts, device="cuda", dtype=torch.float32).requires_grad_(True)
+    p0 = torch.as_tensor(P.p0, device="cuda")
+    O_MAX = float(P.cbf_O_MAX); site = P.sim.data.site_xpos[P.sim.site].copy()
+    lam = torch.zeros(len(starts), 2, device="cuda"); mu_al = 10.0
+    lr = torch.as_tensor(CFG["G_LR"], device="cuda").float()
+    opt = torch.optim.Adam([th], lr=1.0)                                       # per-parameter step sizes via lr scaling below
+
+    def cons(p):                                                                # as opt2.solve_grad
+        g = []
+        ends = {s: bars[s].endpoints(p) for s in set(req) | {1.0}}
+        e30 = ends[1.0][1]
+        fm = [torch.minimum(bars[s].margin(ends[s][0]), bars[s].margin(ends[s][1])) for s in req]
+        g.append(torch.stack(fm).max(0).values + CFG["KAPPA"] if fm else torch.full((len(p),), -1.0, device="cuda"))
+        ob = []
+        for c in range(len(p)):
+            pts = np.vstack([site[None], p[c, 1:16, :3].detach().cpu().numpy()])
+            m = torch.as_tensor(~cb.hand_mask(pts), device="cuda").float()
+            o_f = ((e30[c].reshape(-1, 28, 28, 8) - z0[None]).pow(2).mean(-1) * m).sum((1, 2)) / m.sum()
+            ob.append(o_f.topk(max(1, len(o_f) // 4)).values.mean())
+        g.append(torch.stack(ob) / O_MAX - 1 + CFG["KAPPA_O"])
+        return torch.stack(g, 1)
+
+    def cost_t(p):
+        D = (p[:, 1:9, :3] - p0[1:9, :3]) * 1000
+        sd = torch.diff(torch.cat([torch.zeros_like(D[:, :1]), D], 1), 2, dim=1)
+        return ((D ** 2).sum((1, 2)) + CFG["ETA"] * (sd ** 2).sum((1, 2))) / 100
+
+    for it in range(CFG["G_STEPS"]):
+        p = transform(p0, th)
+        g = cons(p)
+        al = (torch.relu(lam + mu_al * g) ** 2 - lam ** 2).sum(1) / (2 * mu_al)
+        loss = (cost_t(p) + al).sum()
+        opt.zero_grad(); loss.backward()
+        with torch.no_grad():
+            th.grad.mul_(lr)
+        opt.step()
+        with torch.no_grad():
+            th.copy_(torch.maximum(torch.minimum(th, hi), lo))
+            if it % 5 == 4:
+                lam = torch.relu(lam + mu_al * g.detach())
+    finals = list(th.detach().cpu().numpy().astype(np.float64))
+    out, info = opt2.finish(P, finals, {"required_scales": req})
+    return out, {**info, "theta": _chosen(P, out, finals)}
+
+
+def _chosen(P, out, finals):
+    for th in finals:
+        if np.allclose(P.plan(th), out):
+            return [round(float(x), 3) for x in th]
+    return None                                                                 # fallback hold
+
+
+def progress(p0, out):
+    a = np.linalg.norm(p0[8, :3] - p0[0, :3]); b = np.linalg.norm(out[8, :3] - p0[0, :3])
+    return float(b / a) if a > 1e-4 else 1.0
+
+
+def run(solver, name, tag):
+    import torch
+    import cbf_filter as cbff
+    import cem_filter as cf
+    import inspector_data as insp
+    import step3_world_model as wm
+    cbff.CFG["H_SAFE"] = opt2.HS
+    C, R = b2.load(name); n = int(os.environ.get("OPT2_LIMIT", len(R)))
+    mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
+    certs = [None] + ([wm.WorldModel.load(ROOT / f"results/program_b/ens_v1/model_ENS{k}.pt") for k in range(4)] if CFG["CERT"] == "OIL+ENS" else [])
+    out, t0 = [], time.time()
+    for i in range(n):
+        t1 = time.time()
+        sim.restore((C["state"][i], C["ctrl"][i], C["target"][i], float(C["gripper"][i])))
+        z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
+        hold = np.repeat(np.r_[C["target"][i], C["plan16"][i][0, 3]][None], 16, 0).astype(np.float32)
+        hh, _ = cbf.score(sim, z0, hold[None], 64)
+        p16 = C["plan16"][i].copy(); p16[0, :3] = C["target"][i]                   # anchor at the current target (A4)
+        P = Problem(mon, cbf, sim, z0, p16, float(hh[0]), certs); P.cbf_O_MAX = cbff.CFG["O_MAX"]
+        plan, info = (solve_cem if solver == "cem" else solve_grad)(P, 7000 + i)
+        out.append({"i": i, **info, "progress": round(progress(P.p0, plan), 3), "seconds": round(time.time() - t1, 1),
+                    "chunk": plan[1:9].astype(np.float32).tolist()})
+        if i % 10 == 0:
+            print(f"G-{solver} {i + 1}/{n} {time.time() - t0:.0f}s {info['kind']} theta {info['theta']} {out[-1]['seconds']} s", flush=True)
+    (b2.OUT / f"opt3_{name}_{tag}.json").write_text(json.dumps({"cfg": CFG, "solver": solver, "rows": out}))
+    print("done", len(out), f"{time.time() - t0:.0f}s", flush=True)
+
+
+def truth(name, tag):
+    rows = json.loads((b2.OUT / f"opt3_{name}_{tag}.json").read_text())["rows"]
+    b2.truth_chunks(name, [(r["i"], np.asarray(r["chunk"], np.float32)) for r in rows])
+
+
+def report(name, tag):
+    src, dst = b2.OUT / f"opt3_{name}_{tag}.json", b2.OUT / f"opt2_{name}_g_{tag}.json"
+    dst.write_text(src.read_text())                                             # reuse F's report (same metrics and A2 gate)
+    opt2.report(name, f"g_{tag}"); dst.unlink()
+    rep = b2.OUT / f"report_{name}_g_{tag}.json"; res = json.loads(rep.read_text())
+    rows = json.loads(src.read_text())["rows"]; pr = np.array([r["progress"] for r in rows])
+    res["progress_kept_median"] = float(np.median(pr)); res["hold_equivalent_share"] = round(float((pr < 0.1).mean()), 3)
+    rep.write_text(json.dumps(res, indent=1)); print("progress kept (median)", res["progress_kept_median"], "hold-equivalent", res["hold_equivalent_share"])
+
+
+if __name__ == "__main__":
+    {"run": run, "truth": truth, "report": report}[sys.argv[1]](*sys.argv[2:])

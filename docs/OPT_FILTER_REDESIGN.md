@@ -137,3 +137,7 @@ policy samples.
   progress is decided by Stage 4 success (v4/v4b), not offline.
 - **Universality test (later, pre-registered now):** the frozen family and ranges, with no retuning, on a second task.
   The task-agnostic claim is only made if it transfers.
+- **A4 (2026-10-17, after a 3-decision smoke run, before any G result):** the transformations are anchored at the
+  CURRENT target (sim.target), not plan step 0 (the policy's first point; median 4.9 mm away), so that v = 0 is exactly
+  holding still as pre-registered. Identity unchanged (steps 1-15 are untouched; the scorer never reads step 0). Smoke
+  timing: G-CEM ~35 s, G-GRAD ~64 s per decision (the gate is 30 s); no tuning before the dev run.
