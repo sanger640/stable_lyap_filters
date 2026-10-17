@@ -90,3 +90,8 @@ failed), success (v4) 226 vs 252 vs policy 216. Diagnosis from the conf1 logs:
 - **A3 (2026-10-17, after Stage 0):** Stage 2 is run with OPT2_CERT=OIL+ENS for both solvers (as the plan prescribes).
   The CEM run started earlier with OIL-only certification is kept as an ablation (certifier effect), not as the Stage 2
   result; the OIL-only gradient run is dropped to save time.
+- **Ablation result, CEM with OIL-only certification (2026-10-17, dev 150):** neighbour risk 7.6% vs selection 0.71%,
+  policy 2.83%, hold 0.48% (worse than the uncertified policy chunk; 31 worse / 7 better vs selection); red-fall 8.3%.
+  136 certified, 13 hold, 1 best. DOSE-RESPONSE among certified fixes: change 0-6 mm risk 0.3% (policy 0.3%), 6-10 mm 4.8%
+  (2.1%), 10-15 mm 15.1% (4.8%), > 15 mm 12.8% (3.9%). The model certifies mm-scale bends it cannot resolve; real risk is
+  mm-sensitive (earlier: a 5 mm nudge moves real risk by 23 points on average). Hold fallback: 0.5% (13).
