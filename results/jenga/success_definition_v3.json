@@ -1,0 +1,7 @@
+{
+ "name": "Task outcome definition v3 (fixed 2026-10-16 ~21:30 with the user; used for all tests from now on)",
+ "success": "the red (middle) block ends >= 2 cm closer to the arm than its start (x toward the robot base at the origin), upright (tilt < 45 deg), and no neighbour block ever tilted >= 45 deg",
+ "failure_categories": ["neighbour toppled", "red block fallen (end tilt >= 45 deg)", "red block upright but moved < 2 cm toward the arm"],
+ "measured_by": "eval/outcome_audit.py: replay of the saved decision states with the run's noise (reproduces logged neighbour-topple flags exactly)",
+ "history": "v1 = red block ever 3 cm above rest + no neighbour topple (counted lifted-then-dropped as success); v2 = lifted >= 2 cm, held or placed upright (missed partial extractions); v3 = the user's task bar: pull the block out toward the arm."
+}

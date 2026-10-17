@@ -1,0 +1,11 @@
+{
+ "name": "conf1: confirmation test, optimisation-only filter vs selection filter, both on model_OIL",
+ "written": "2026-10-16 ~21:35, before any conf1 episode was run",
+ "episodes": "13000-13299 (300, never used)",
+ "arms": {"record": "policy alone", "cbfmoil": "optimisation-only filter exactly as dev10 (b50 settings, alpha 0.5, no plausibility cost)", "cbfmsoil": "selection filter as dev10, same world model"},
+ "world_model": "results/program_b/oil_v1/model/model_OIL.pt, O_MAX from results/jenga/cbf_calibration_OIL.json, both filters; code as committed for dev10",
+ "outcome": "success_definition_v3.json (red block >= 2 cm toward the arm, upright, no neighbour topple), measured by eval/outcome_audit.py",
+ "primary": "optimisation vs selection, paired by episode. NON-INFERIORITY: adopted as the main filter if (a) success-rate difference (opt - sel), one-sided 95% lower bound (paired, normal approx.) > -5 percentage points, AND (b) neighbour-topple-rate difference, one-sided 95% upper bound < +3 percentage points. 'Better' additionally reported if a bound excludes 0 in opt's favour.",
+ "secondary": "each filter vs the policy alone (topples, success, McNemar); red-block-fallen counts; median change and seconds per intervention; v1 / v2 outcome definitions for continuity.",
+ "dev10_context": "on 12075-12149 (post-hoc v3): policy 43, selection 52, optimisation 49 successes; topples 13 / 3 / 5."
+}
