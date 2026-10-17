@@ -102,3 +102,38 @@ failed), success (v4) 226 vs 252 vs policy 216. Diagnosis from the conf1 logs:
   chunk (CEM 6-10 mm: 1.4% vs 1.6%), fixes of 10-15 mm are 2-4x riskier (CEM 8.1% vs 3.7%; GRAD 28% vs 7.3%), > 15 mm
   worse still. Hold-still fallback: 0.3%. The ensemble certifier helped (CEM 7.6% -> 5.7%) but does not remove it.
   Per the plan, no solver goes to Stage 3. Next step to be decided with the user.
+
+## Formulation G: optimise coarse, universal transformations of the one given chunk (pre-registered 2026-10-17)
+
+Written after Stage 2 and BEFORE any G code ran. Motivation: Stage 2 dose-response (the world model judges THAT a moment
+is fragile but cannot resolve which chunk 10 mm away is safe; free mm offsets are where it is blind) and the human
+intuitive-physics view (a rough engine judges fragility; caution is expressed by changing HOW a motion is executed,
+not by re-planning it to the mm). Agreed with the user: no hand-engineered or task-specific safety moves, no extra
+policy samples.
+
+- **Input:** ONE chunk (16-step plan p, p[0] = current target), exactly as in F. No other policy candidates or samples.
+- **Decision variable theta (4 numbers, box-constrained), all defined from the chunk alone, none assumed safe:**
+  - v in [0, 1]: speed (time-scale). Step t is placed at plan time tau_t = v * max(0, t - k) along the plan's own path
+    (linear interpolation, clipped to 15).
+  - k in [0, 8] steps: pause before moving (continuous, interpolated).
+  - s in [0, 1]: amplitude ("do less"): q_t = p0 + s * (P(tau_t) - p0).
+  - b in [0, 30] mm: back-off along the REVERSE of the chunk's own net direction u = (p[15] - p[0]) / |.|, ramped
+    linearly over steps 1-8 and held after; inactive if |p[15] - p[0]| < 2 mm (no direction to reverse).
+  - Gripper column untouched (as in F). Identity = (1, 0, 1, 0); hold still = v = 0 (or s = 0, b = 0).
+  - Dropped vs the earlier chat sketch: the free "coarse shift" (a translation is a free spatial offset, the variable
+    Stage 2 showed the model cannot resolve).
+- **Certificate, cost, fallback:** identical to F (cost on the resulting xyz change of steps 1-8; certificate on fresh
+  64 futures with OIL + ENS0-3, all must pass; fallback hold if certified else best (h, -o)).
+- **Solvers (separate, evaluated separately):**
+  - G-CEM: Gaussian over theta, mean = identity, sd (0.4, 3, 0.4, 12 mm), clipped to the box; population 16,
+    3 iterations, 6 elites, 4 finals to certify; common random numbers; same ranking as F's CEM.
+  - G-GRAD: augmented Lagrangian on F's smooth surrogate (same constraint code), projected Adam on theta in the box,
+    starts = identity + 5 uniform random in the box, 15 steps.
+- **Evaluation:** benchmark v2 dev (150) with the A2 gate (vs selection; seconds <= 30), then holdout (Stage 3), then
+  closed loop (Stage 4) with an extra arm "hold and re-plan" (trigger fires -> hold one chunk) as the bar to beat.
+  Additional offline metric, reported but not gating: progress kept = |q_8 - p0| / |p_8 - p0| (median), and the
+  share of decisions whose output is hold-equivalent (progress < 0.1). Note in advance: holding still alone (0.48%)
+  already meets the risk part of the gate, so a solver that always holds would pass offline; whether G keeps task
+  progress is decided by Stage 4 success (v4/v4b), not offline.
+- **Universality test (later, pre-registered now):** the frozen family and ranges, with no retuning, on a second task.
+  The task-agnostic claim is only made if it transfers.
