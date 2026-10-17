@@ -83,7 +83,7 @@ def audit_runs(*runs):
     """Audit arbitrary runs (e.g. paired_record_test2x paired_cbf_test2x) -> results/jenga/outcome_audit_runs.json (merged)."""
     import inspector_data as insp
     import plausibility as pl
-    sim = insp._sim(); f = ROOT / "results/jenga/outcome_audit_runs.json"
+    sim = insp._sim(); f = ROOT / os.environ.get("AUDIT_OUT", "results/jenga/outcome_audit_runs.json")
     out = json.loads(f.read_text()) if f.exists() else {}
     for run in runs:
         res = {(r := json.loads(l))["episode"]: r for l in (ROOT / f"results/jenga/{run}.jsonl").read_text().splitlines()}
@@ -95,14 +95,26 @@ def audit_runs(*runs):
             with np.load(p) as f_:
                 S = {k: f_[k] for k in f_.files}
             L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1))
+            ext = (L >= 0.02) | (XY[:, 0] <= -0.02)                       # extracted: lifted >= 2 cm or pulled >= 2 cm toward the arm
+            i_ext = int(np.argmax(ext)) if ext.any() else None
+            i_fall = int(np.argmax(TT >= 45)) if (TT >= 45).any() else None
             x = {"ep": ep, "logged_neighbour_toppled": r["neighbour_toppled"], "replay_neighbour_toppled": bool(NT.max() >= 45),
+                 "min_dx_mm": round(float(XY[:, 0].min() * 1000), 1), "extracted": i_ext is not None,
+                 "red_fell_before_extraction": i_fall is not None and (i_ext is None or i_fall < i_ext),
+                 "red_fell_after_extraction": i_fall is not None and i_ext is not None and i_fall >= i_ext,
                  "logged_v1_success": r.get("seconds_to_3cm") is not None and not r["neighbour_toppled"],
                  "end_target_tilt": round(float(TT[-1]), 1), "end_dx_mm": round(float(XY[-1, 0] * 1000), 1),
                  "max_lift_mm": round(float(L.max() * 1000), 1)}
-            x["v3_success"] = v3(x); rows.append(x)
+            x["v3_success"] = v3(x)
+            # v4 (2026-10-16 late): extracted at some point, no neighbour topple, red block not knocked over before extraction;
+            # v4b additionally requires it not to fall afterwards (e.g. tipped when set down)
+            x["v4_success"] = (not x["logged_neighbour_toppled"]) and x["extracted"] and not x["red_fell_before_extraction"]
+            x["v4b_success"] = x["v4_success"] and not x["red_fell_after_extraction"]
+            rows.append(x)
         out[run] = {"episodes": len(rows), "replay_topple_flag_matches": sum(x["replay_neighbour_toppled"] == x["logged_neighbour_toppled"] for x in rows),
                     "neighbour_topples": sum(x["logged_neighbour_toppled"] for x in rows), "v1_success": sum(x["logged_v1_success"] for x in rows),
-                    "v3_success": sum(x["v3_success"] for x in rows),
+                    "v3_success": sum(x["v3_success"] for x in rows), "v4_success": sum(x["v4_success"] for x in rows),
+                    "v4b_success": sum(x["v4b_success"] for x in rows),
                     "red_fallen_no_neighbour_topple": sum((not x["logged_neighbour_toppled"]) and x["end_target_tilt"] >= 45 for x in rows),
                     "rows": rows}
         f.write_text(json.dumps(out, indent=1))
