@@ -176,3 +176,23 @@ policy samples.
   - G vs hold-and-replan (secondary): topples +1.0 pp (upper +3.74: NOT non-inferior to simply holding); success v4
     +1.7 pp, v4b +3.7 pp (both n.s.). G is not demonstrably better than holding still for one chunk.
   - Every filter vs the policy: topples -16 to -18 pp (p ~ 1e-11); success v4 +11.7 to +14.7 pp, v4b +10.7 to +14.3 pp.
+
+## G2: gripper time-warped with the arm (pre-registered 2026-10-18, before any G2 code or result)
+
+Found after Stage 4 (user question): in G (and hold-and-replan) the gripper column was copied step-by-step from the
+policy, NOT time-warped with the arm. A gripper switch occurs inside 18.2% of G's interventions (13.1% hold, 16.6%
+selection; 7.5% of all policy decisions), so slowing / pausing / holding the arm while the gripper switches on the
+original clock can grasp or release out of sync with the arm.
+
+- **G2 transformation:** identical to G for xyz; gripper command at step t = the policy's gripper command at plan step
+  round(tau_t) (tau_t = v * max(0, t - k), as for xyz), i.e. the gripper follows the arm's progress along the plan.
+  Amplitude s and back-off b do not change gripper timing. v = 0 (hold) keeps the step-0 gripper command throughout.
+  Still no new gripper decisions (only the policy's own commands, re-timed), so no counterfactual gripper data needed.
+- **Hold-and-replan 2 (cbfh2):** hold xyz at the current target AND the gripper at the policy's step-0 command.
+- Everything else (certificate, certifier OIL + ENS0-3, cost, solver G-CEM settings, fallback, A5 speed-up) unchanged.
+- **Offline gates:** G2-CEM on benchmark v2 dev, then holdout, each with the A2 gate (as G). Fail -> stop and report.
+- **Closed loop (Stage 4b), only if both pass:** 300 fresh episodes 14300-14599 on Nibi (as Stage 4), arms record,
+  cbfmsoil (selection), cbfh2, cbfg (G, unchanged), cbfg2. Outcomes v4 and v4b (both reported, user's choice).
+  Primary: G2 vs selection, non-inferiority as conf1 (success lower bound > -5 pp, topple upper bound < +3 pp), under
+  v4 and v4b. Key secondary: G2 vs G (does the gripper fix help: paired difference in topples, v4, v4b, red falls after
+  extraction); G2 vs hold-and-replan 2 (same bounds); all vs policy.
