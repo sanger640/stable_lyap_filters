@@ -1,0 +1,11 @@
+{
+ "name": "Stage 4 (docs/OPT_FILTER_REDESIGN.md): closed loop, formulation G (G-CEM) vs selection vs hold-and-replan vs policy",
+ "written": "2026-10-17 evening, before any Stage 4 episode and before the Stage 3 (holdout) result; launched only if Stage 3 passes",
+ "episodes": "14000-14299 (300, never used for anything)",
+ "arms": {"record": "policy alone", "cbfmsoil": "selection filter (as conf1), model_OIL", "cbfh": "hold and re-plan: same trigger, hold position for one chunk (gripper column untouched)", "cbfg": "G-CEM (eval/opt3.py solve_cem; certifier OIL + ENS0-3; fallback hold / best), same trigger"},
+ "settings": "as conf1: stress layouts (shrink 10 mm), settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max; model_OIL + cbf_calibration_OIL.json; h_safe log2 3; exact top-scale skip (A5) in all filter arms. Run locally (Nibi needs a Duo login): MUJOCO_GL=egl instead of osmesa, identical for all arms.",
+ "outcome": "primary v4 (extracted: lift >= 2 cm or pulled >= 2 cm toward the arm; no neighbour topple; red block not knocked over before extraction), v4b (also not tipped over afterwards) reported; the user picks v4 or v4b, both pre-registered here. Measured by eval/outcome_audit.py.",
+ "primary": "G-CEM vs selection, paired by episode, NON-INFERIORITY as conf1: (a) success difference one-sided 95% lower bound > -5 points AND (b) neighbour-topple difference one-sided 95% upper bound < +3 points.",
+ "secondary": "G-CEM vs hold-and-replan (same two bounds; G must not be worse than simply holding); each filter vs the policy (topples, success, McNemar); red-fall counts; interventions per episode, progress kept, seconds per intervention, episode length.",
+ "stopping": "none; all 300 episodes per arm. If the run is moved to Nibi part-way, episodes already done locally are kept (per-episode files)."
+}

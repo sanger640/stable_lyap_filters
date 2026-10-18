@@ -163,6 +163,21 @@ class CBF:
                 return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         elif self.ok(np.array([h_nom]), np.array([o_trig]), h_now)[0]:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
+        if CFG["FIX"] == "hold":               # hold and re-plan: keep position for one chunk (gripper column untouched)
+            out = np.asarray(plan, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy(); out[:, :3] = sim.target
+            return out, {**info, "intervened": True, "abstained": False, "kind": "hold", "seconds": round(time.time() - t0, 2)}
+        if CFG["FIX"] == "g3":                 # formulation G, G-CEM: coarse transformations of THIS chunk only (eval/opt3.py)
+            import opt3
+            import step3_world_model as wm
+            if getattr(self, "_certs", None) is None:
+                self._certs = [None] + [wm.WorldModel.load(Path(__file__).resolve().parent.parent / f"results/program_b/ens_v1/model_ENS{e}.pt")
+                                        for e in range(4)]
+            p16 = np.asarray(plan, np.float32).copy(); p16[0, :3] = sim.target
+            P = opt3.Problem(self.mon, self, sim, z0, p16, float(h_now), self._certs); P.cbf_O_MAX = CFG["O_MAX"]
+            best, oi = opt3.solve_cem(P, int(self.mon.rng.integers(2 ** 31)))
+            out = np.asarray(best, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
+            return out, {**info, "intervened": True, "abstained": False, **oi, "fix_kind": oi["kind"], "kind": "g3",
+                         "progress": round(opt3.progress(p16, best), 3), "seconds": round(time.time() - t0, 2)}
         rs = (torch.get_rng_state(), torch.cuda.get_rng_state())          # sampling candidates must not shift the policy's RNG
         try:
             samples = pr.policy_chunk(pol, hist, n=CFG["OPT_STARTS"] - 1 if CFG["FIX"] == "opt" else CFG["N_SAMPLES"])

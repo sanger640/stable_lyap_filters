@@ -312,6 +312,12 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "opt"; cbff.CFG["OPT_STARTS"] = 8
         cbf_opt.CFG.update({"ALPHA": 0.5, "STEPS": 10, "STARTS": 8, "N": 16})   # set in code (no cluster env vars)
         return _paired("cbfmo", "cbf", n, shrink)
+    if mode in ("cbfg", "cbfh"):               # Stage 4 (docs/OPT_FILTER_REDESIGN.md): G-CEM | hold and re-plan, model_OIL
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        import cbf_filter as cbff
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "g3" if mode == "cbfg" else "hold"
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfmoil", "cbfmsoil"):        # dev10: world model model_OIL (optimiser-in-the-loop round 1) + its calibration
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt")
         import cbf_filter as cbff
