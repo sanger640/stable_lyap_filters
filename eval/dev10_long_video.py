@@ -21,14 +21,48 @@ import numpy as np
 os.environ.setdefault("MUJOCO_GL", "egl"); os.environ["HARD_MASS"] = "0"; os.environ["EXEC_NOISE_SCALE"] = "2"
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-OUT = ROOT / "results/program_b/dev10_videos"
+TAG = os.environ.get("VID_TAG", "dev10")                 # s4: Stage 4 runs (policy | hold and re-plan | G-CEM)
+OUT = ROOT / ("results/program_b/dev10_videos" if TAG == "dev10" else f"results/program_b/{TAG}_videos")
 RUNS = ROOT / "results/program_b/policy_rollouts"
-ARMS = [("record", "POLICY ALONE"), ("cbfmsoil", "SELECTION FILTER"), ("cbfmoil", "OPTIMISATION FILTER")]
+ARMS = [("record", "POLICY ALONE"), ("cbfmsoil", "SELECTION FILTER"), ("cbfmoil", "OPTIMISATION FILTER")] if TAG == "dev10" else \
+    [("record", "POLICY ALONE"), ("cbfh", "HOLD AND RE-PLAN"), ("cbfg", "G-CEM (optimises the one chunk)")]
 EPS = [12101, 12111, 12115, 12144, 12102, 12135, 12075, 12103, 12110, 12084, 12099, 12097, 12096, 12080]
 CW, CH, SH, HH, PAD = 520, 390, 74, 64, 8
 BG, FG, GREY, ORANGE, GREEN, RED, WHITE = (18, 22, 21), (225, 232, 228), (140, 150, 146), (255, 150, 30), (80, 210, 120), (240, 90, 75), (250, 250, 250)
 LABEL = {"S": ("success", GREEN), "T": ("neighbour toppled", RED), "D": ("lifted, then dropped it", RED),
-         "F": ("knocked the red block over", RED), "M": ("never picked it up", ORANGE)}
+         "F": ("knocked the red block over", RED), "M": ("never picked it up", ORANGE),
+         "A": ("success; red block tipped over afterwards", ORANGE)}
+
+
+def audit_labels():
+    """v4 / v4b labels from the replay audit: S success (v4b), A v4 only (tipped after extraction), T neighbour toppled,
+    F red block knocked over before extraction, M never extracted."""
+    A = json.loads((ROOT / f"results/jenga/outcome_audit_{TAG}.json").read_text()); lab = {}
+    for a, _ in ARMS:
+        lab[a] = {}
+        for r in A[f"paired_{a}_{TAG}"]["rows"]:
+            lab[a][str(r["ep"])] = ("T" if r["logged_neighbour_toppled"] else "F" if r["red_fell_before_extraction"] else
+                                    "M" if not r["extracted"] else "A" if r["red_fell_after_extraction"] else "S")
+    return lab
+
+
+def g_text(entry):
+    """Plain description of a G-CEM / hold decision from its log entry."""
+    if entry.get("kind") == "hold" or entry.get("fix_kind") == "fallback_hold":
+        return "held still for this chunk"
+    th = entry.get("theta")
+    if not th:
+        return "no safe version found: least risky one"
+    v, k, s_, b = th; parts = []
+    if v < 0.95:
+        parts.append(f"speed {100 * v:.0f}%")
+    if k >= 0.5:
+        parts.append(f"paused {k * 0.1:.1f} s first")
+    if s_ < 0.95:
+        parts.append(f"did {100 * s_:.0f}% of the motion")
+    if b >= 2:
+        parts.append(f"backed off {b:.0f} mm")
+    return ", ".join(parts) or "policy's chunk kept (passed the check)"
 
 
 def project(scene, pts, W, H):
@@ -63,13 +97,19 @@ def describe(nom, exe):
 def render(job):
     """One arm's episode -> its column video (CW x (20 + CH + SH)) on disk."""
     arm, ep, k_total = job
+    log = {}
+    if TAG != "dev10":
+        for l in (ROOT / f"results/jenga/paired_{arm}_{TAG}.jsonl").read_text().splitlines():
+            r = json.loads(l)
+            if r["episode"] == ep:
+                log = {c["chunk"]: c for c in r["log"]}
     import mujoco
     import imageio_ffmpeg
     import inspector_data as insp
     import plausibility as pl
     from PIL import Image, ImageDraw
     from jenga_render_frames import close_camera
-    with np.load(RUNS / f"paired_{arm}_dev10" / f"ep{ep:03d}.npz") as f:
+    with np.load(RUNS / f"paired_{arm}_{TAG}" / f"ep{ep:03d}.npz") as f:
         S = {k: f[k] for k in f.files}
     noises = pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1)
     sim = insp._sim()
@@ -87,6 +127,8 @@ def render(job):
         nom, exe = S["nominal"][d], S["executed"][d]
         start = sim.data.site_xpos[sim.site].copy()
         msg = describe(nom, exe) if acted else None
+        if acted and TAG != "dev10":
+            msg = (msg[0], g_text(log.get(k, {})))
         for j, a in enumerate(exe):
             a = np.asarray(a, np.float32).copy(); a[:3] -= noises[k][j]; sim.execute(a)
             rc.update_scene(sim.data, camera=cam); img = Image.fromarray(rc.render())
@@ -147,25 +189,28 @@ def main():
     from PIL import Image, ImageDraw
     eps = [int(v) for v in sys.argv[1:]] or EPS
     (OUT / "cols").mkdir(parents=True, exist_ok=True)
-    lab = json.loads((ROOT / "results/program_b/dev10_videos/labels.json").read_text())
-    res = {a: {(r := json.loads(l))["episode"]: r for l in (ROOT / f"results/jenga/paired_{a}_dev10.jsonl").read_text().splitlines()} for a, _ in ARMS}
+    lab = json.loads((ROOT / "results/program_b/dev10_videos/labels.json").read_text()) if TAG == "dev10" else audit_labels()
+    res = {a: {(r := json.loads(l))["episode"]: r for l in (ROOT / f"results/jenga/paired_{a}_{TAG}.jsonl").read_text().splitlines()} for a, _ in ARMS}
     jobs = [(a, e, max(len(res[b][e]["log"]) for b, _ in ARMS)) for e in eps for a, _ in ARMS]
-    with mp.get_context("spawn").Pool(min(12, len(jobs))) as pool:
+    jobs = [j for j in jobs if not (OUT / "cols" / f"{j[0]}_{j[1]}.mp4").exists() or os.environ.get("RERENDER")]
+    with mp.get_context("spawn").Pool(max(1, min(12, len(jobs)))) as pool:
         for a, e in pool.imap_unordered(render, jobs):
             print("rendered", a, e, flush=True)
     W = 3 * CW + 4 * PAD; H = HH + 20 + CH + SH + PAD
-    wr = imageio_ffmpeg.write_frames(str(OUT / "long_comparison.mp4"), (W, H), fps=10, codec="libx264", quality=7, macro_block_size=1); wr.send(None)
+    wr = imageio_ffmpeg.write_frames(str(OUT / ("long_comparison.mp4" if TAG == "dev10" else f"{TAG}_long_comparison.mp4")), (W, H), fps=10, codec="libx264", quality=7, macro_block_size=1); wr.send(None)
     total = 0
     for n_e, e in enumerate(eps):
         F = [frames(OUT / "cols" / f"{a}_{e}.mp4") for a, _ in ARMS]; n = max(len(f) for f in F)
         for k in range(n):
             im = Image.new("RGB", (W, H), BG); dr = ImageDraw.Draw(im)
-            dr.text((PAD, 6), f"Episode {e}  ({n_e + 1} of {len(eps)}): same start and noise seeds in all three; both filters use the same world model (model_OIL)", fill=FG)
+            dr.text((PAD, 6), f"Episode {e}  ({n_e + 1} of {len(eps)}): same start and noise seeds in all three; both filters use the same trigger and world model (model_OIL)", fill=FG)
             for i, (a, name) in enumerate(ARMS):
                 x = PAD + i * (CW + PAD); t, c = LABEL[lab[a][str(e)]]
                 nint = sum(bool(z.get("intervened")) for z in res[a][e]["log"]) if a != "record" else None
                 dr.text((x, 26), name, fill=FG); dr.text((x, 42), f"outcome: {t}" + (f"   (acted {nint}x)" if nint is not None else ""), fill=c)
                 im.paste(Image.fromarray(F[i][min(k, len(F[i]) - 1)]), (x, HH))
+                if k >= len(F[i]):                         # this arm's episode already ended (block 5 cm up, or time)
+                    dr.rectangle([x, HH, x + CW, HH + 19], fill=(70, 70, 120)); dr.text((x + 6, HH + 4), "episode finished (frozen on its last frame)", fill=WHITE)
             wr.send(np.asarray(im)); total += 1
         card = Image.new("RGB", (W, H), BG); dr = ImageDraw.Draw(card)
         dr.text((60, 180), f"Episode {e}", fill=FG)
