@@ -141,3 +141,11 @@ policy samples.
   CURRENT target (sim.target), not plan step 0 (the policy's first point; median 4.9 mm away), so that v = 0 is exactly
   holding still as pre-registered. Identity unchanged (steps 1-15 are untouched; the scorer never reads step 0). Smoke
   timing: G-CEM ~35 s, G-GRAD ~64 s per decision (the gate is 30 s); no tuning before the dev run.
+- **G-CEM dev result (2026-10-17), certifier OIL + ENS0-3, 150 decisions:** neighbour risk 0.67% (selection 0.71%,
+  policy 2.83%, hold 0.48%; 7 better / 10 worse vs selection, paired one-sided upper bound +0.29 points); red-fall 6.98%
+  (selection 6.96%, policy 7.62%). Risk parts of A2: all PASS. Seconds: median 34.6 > 30 -> gate FAILS on time only.
+  125 certified (risk 0.68% vs policy 2.97% at the same decisions), 17 hold (0.37%), 8 best-fallback (1.17%; red-fall
+  32%). Progress kept median 0.64; hold-equivalent 12.7%. Chosen theta median (v 0.98, k 0, s 0.85, b 0.6 mm); s < 0.9
+  in 60%, v < 0.9 in 35%, pause in 15%, back-off > 3 mm in 24%. Contrast F (Stage 2): free mm offsets 5.73%.
+  results/program_b/bench2/report_dev_g_g_cem.json. Per the plan, not advanced to Stage 3 until the time criterion is
+  resolved with the user.
