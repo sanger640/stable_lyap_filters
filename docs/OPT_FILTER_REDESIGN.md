@@ -157,3 +157,10 @@ policy samples.
   2. G-GRAD dev run stopped at decision ~15/150: >= 61 s per decision alone on the GPU (65-96 s shared), so it cannot
      meet the 30 s criterion even with the 25% speed-up and cannot be the chosen solver; it was blocking the GPU for
      ~3 h. Its dev risk will be run later for completeness. Chosen solver for Stage 3: G-CEM (the only one that can pass).
+- **Stage 3 result (2026-10-17 ~21:45), G-CEM frozen, holdout 150 (untouched until now): PASS on every A2 criterion.**
+  Neighbour risk 2.25% (selection 2.38%, policy 5.75%, hold 1.77%; 8 better / 10 worse vs selection, upper bound
+  +0.66 points <= +1.5); red-fall 6.21% (selection 6.08%, policy 7.42%, hold 4.08%); 25.9 s per decision; 129 certified,
+  15 hold, 6 best; progress kept median 0.67, hold-equivalent 11.3%. Holdout baseline (Stage 1 check on the holdout):
+  selection vs policy -3.4 points (33 better / 4 worse). -> Stage 4 submitted on Nibi (job 24351148, 38 x 8 workers,
+  episodes 14000-14299, arms record / cbfmsoil / cbfh / cbfg; results/jenga/stage4_protocol.json). Nibi smoke (episode
+  19000): G-CEM ~8 s per intervention on an H100.
