@@ -20,7 +20,8 @@ import opt2  # noqa: E402  (sets env, CBF_WM / CBF_CALIB defaults)
 import bench2 as b2  # noqa: E402
 
 CFG = {**opt2.CFG, "CEM_POP": 16, "CEM_ITERS": 3, "CEM_ELITES": 6, "CEM_FINAL": 4, "CEM_SD": [0.4, 3.0, 0.4, 12.0],
-       "G_STARTS": 6, "G_STEPS": 15, "G_LR": [0.05, 0.4, 0.05, 1.5], "B_MIN_MOVE_MM": 2.0}
+       "G_STARTS": 6, "G_STEPS": 15, "G_LR": [0.05, 0.4, 0.05, 1.5], "B_MIN_MOVE_MM": 2.0,
+       "GRIP": os.environ.get("OPT3_GRIP", "fixed")}                              # fixed = G, warp = G2
 LO, HI = np.array([0.0, 0.0, 0.0, 0.0]), np.array([1.0, 8.0, 1.0, 30.0])
 IDENTITY = np.array([1.0, 0.0, 1.0, 0.0])
 
@@ -39,7 +40,11 @@ def transform(p16, theta):
     if float(nrm) * 1000 >= CFG["B_MIN_MOVE_MM"]:
         ramp = (t.clamp(max=8) / 8)[..., None]                                    # (1, 16, 1)
         q = q - b[..., None] * ramp * (net / nrm)
-    return torch.cat([q, p16[None, :, 3:].expand(len(theta), -1, -1)], -1)
+    if CFG["GRIP"] == "warp":                                                     # G2: gripper follows the arm's plan time
+        g = p16[:, 3][tau.detach().round().long()][..., None]
+    else:                                                                         # G: gripper on the policy's clock
+        g = p16[None, :, 3:].expand(len(theta), -1, -1)
+    return torch.cat([q, g], -1)
 
 
 class Problem(opt2.Problem):

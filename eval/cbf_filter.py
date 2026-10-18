@@ -165,6 +165,8 @@ class CBF:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         if CFG["FIX"] == "hold":               # hold and re-plan: keep position for one chunk (gripper column untouched)
             out = np.asarray(plan, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy(); out[:, :3] = sim.target
+            if CFG.get("HOLD_GRIP"):           # hold-and-replan 2: gripper also held at the policy's step-0 command
+                out[:, 3] = np.asarray(plan, np.float32)[0, 3]
             return out, {**info, "intervened": True, "abstained": False, "kind": "hold", "seconds": round(time.time() - t0, 2)}
         if CFG["FIX"] == "g3":                 # formulation G, G-CEM: coarse transformations of THIS chunk only (eval/opt3.py)
             import opt3
