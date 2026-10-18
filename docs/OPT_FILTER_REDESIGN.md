@@ -164,3 +164,15 @@ policy samples.
   selection vs policy -3.4 points (33 better / 4 worse). -> Stage 4 submitted on Nibi (job 24351148, 38 x 8 workers,
   episodes 14000-14299, arms record / cbfmsoil / cbfh / cbfg; results/jenga/stage4_protocol.json). Nibi smoke (episode
   19000): G-CEM ~8 s per intervention on an H100.
+- **G-GRAD dev (completed 2026-10-18, deferred under A5):** neighbour risk 0.65% (selection 0.71%), red-fall 6.27%,
+  certified 135 / hold 10 / best 5, 54.6 s per decision (fails time only), progress kept 0.44, hold-equivalent 27%.
+- **Stage 4 result (2026-10-18 ~02:00), 300 fresh episodes 14000-14299 on Nibi, outcome audit by replay
+  (results/jenga/outcome_audit_s4.json, eval/stage4_analysis.py -> results/jenga/stage4_result.json):**
+  topples / v4 / v4b: policy 69 / 206 / 177; selection 20 / 250 / 212; hold-and-replan 16 / 241 / 209; G-CEM 19 / 246 / 220.
+  - G vs selection (primary, non-inferiority): topples -0.3 pp (upper +2.2 < +3: PASS); success v4 -1.3 pp, lower bound
+    -5.59 (> -5 required: FAILS by 0.6 pp); success v4b +2.7 pp, lower bound -2.05 (PASS). The verdict therefore depends
+    on v4 vs v4b, which the protocol left to the user; this choice is now made after seeing the result and must be
+    reported as such.
+  - G vs hold-and-replan (secondary): topples +1.0 pp (upper +3.74: NOT non-inferior to simply holding); success v4
+    +1.7 pp, v4b +3.7 pp (both n.s.). G is not demonstrably better than holding still for one chunk.
+  - Every filter vs the policy: topples -16 to -18 pp (p ~ 1e-11); success v4 +11.7 to +14.7 pp, v4b +10.7 to +14.3 pp.
