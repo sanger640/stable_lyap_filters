@@ -196,3 +196,17 @@ original clock can grasp or release out of sync with the arm.
   Primary: G2 vs selection, non-inferiority as conf1 (success lower bound > -5 pp, topple upper bound < +3 pp), under
   v4 and v4b. Key secondary: G2 vs G (does the gripper fix help: paired difference in topples, v4, v4b, red falls after
   extraction); G2 vs hold-and-replan 2 (same bounds); all vs policy.
+
+**G2 offline results (2026-10-18): both gates PASS.** Neighbour risk dev 0.73% (selection 0.71, policy 2.83, hold 0.48;
+G 0.67), holdout 1.94% (selection 2.38, policy 5.75, hold 1.77; G 2.25). Red fall dev 6.6 vs selection 7.0, holdout
+6.3 vs 6.1. 26 s per decision; progress kept 0.62 / 0.66; hold-equivalent 13% / 10%.
+(results/program_b/bench2/report_{dev,holdout}_g_g2_cem.json)
+
+**Stage 4b amendment 1 (2026-10-18, before any Stage 4b outcome was looked at):** Nibi completed tasks 0-79
+(episodes 14400-14479) then stalled ~11 h (ReqNodeNotAvail, nodes draining for an image update). The pending tasks
+80-299 were cancelled and resubmitted unchanged (same code as Nibi, copied from Nibi; same models, verified by md5;
+same per-episode seeds and arms) on Rorqual. Smoke check on Rorqual, ep 14400 record + cbfg2 vs Nibi: identical
+outcomes, chunk counts, intervention chunks (20-23) and monitor scores; max lift differs by <= 2.8 mm (GPU
+non-determinism, as seen before between clusters). Two cbfg2 episodes on Nibi (14459, 14465) crashed at start-up
+(torch.hub GitHub check returned an HTTP error) and are rerun on Rorqual; not counted as filter failures. Episode
+set, arms and analysis unchanged.
