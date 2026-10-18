@@ -149,3 +149,11 @@ policy samples.
   in 60%, v < 0.9 in 35%, pause in 15%, back-off > 3 mm in 24%. Contrast F (Stage 2): free mm offsets 5.73%.
   results/program_b/bench2/report_dev_g_g_cem.json. Per the plan, not advanced to Stage 3 until the time criterion is
   resolved with the user.
+- **A5 (2026-10-17 evening; user asleep, mandate "speed up, then holdout, then closed loop"):**
+  1. Exact speed-up: CBF.score skips the largest noise scale (3x). It can never change h (a split only at 3x and no
+     split both give h = log2 3) nor o (scale 1), so certificates are unchanged. Verified: 4 + 6 dev decisions re-run,
+     chunks bit-identical; G-CEM 36.0 -> 27.0 s per decision on an idle GPU (CBF_SKIP_TOP=1, default now; =0 restores).
+     Dev outputs are therefore identical to the reported run -> G-CEM dev, all A2 criteria: PASS (27 s <= 30).
+  2. G-GRAD dev run stopped at decision ~15/150: >= 61 s per decision alone on the GPU (65-96 s shared), so it cannot
+     meet the 30 s criterion even with the 25% speed-up and cannot be the chosen solver; it was blocking the GPU for
+     ~3 h. Its dev risk will be run later for completeness. Chosen solver for Stage 3: G-CEM (the only one that can pass).

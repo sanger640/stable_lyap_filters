@@ -23,7 +23,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "N_LOOK": 15,
+CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "N_LOOK": 15,
        # variants (2026-10-15 diagnosis): TRIGGER "both" = barrier or regime check can trigger (final-test filter),
        # "barrier" = only the barrier triggers (regime check still screens candidates); SELECT "closest" = closest feasible
        # candidate (final-test filter), "margin" = largest barrier among feasible candidates, then closest
@@ -73,7 +73,8 @@ class CBF:
         C = len(plans)
         split = np.zeros((C, len(cb.SCALES)), bool); o = np.zeros(C)
         seed = int(mon.rng.integers(2 ** 31))
-        for si, s in enumerate(cb.SCALES):
+        # the largest scale never changes h (split only there and no split both give log2(SCALES[-1])): skip it (exact)
+        for si, s in enumerate(cb.SCALES[:-1] if CFG["SKIP_TOP"] else cb.SCALES):
             d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])
                            for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(n_fut))])
             if CFG["START"] == "gte":            # object-free starts: stationary Gaussian field in the latent (no objects)
