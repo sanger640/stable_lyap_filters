@@ -51,7 +51,7 @@ out = {"dir": str(DIR), "episodes": len(EPS),
                            "triggers_mean": round(float(np.mean([g(a, e, "triggers") for e in EPS])), 2),
                            "decisions_mean": round(float(np.mean([g(a, e, "decisions") for e in EPS])), 1),
                            "monitor_seconds_mean": round(float(np.mean([g(a, e, "monitor_seconds") for e in EPS])), 1)} for a in V}}
-for a, b in (("gcem", "policy"), ("hold", "policy"), ("gcem", "hold")):
+for a, b in (("gcem", "policy"), ("hold", "policy"), ("gcem", "hold"), ("gcem", "observe"), ("observe", "policy")):
     if a in V and b in V:
         out[f"{a}_vs_{b}"] = {k: paired(a, b, k) for k in KEYS}
 for a in V:
