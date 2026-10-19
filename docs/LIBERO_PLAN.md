@@ -119,7 +119,8 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
 
 - **Amendment (user decision 2026-10-19, before any model was trained): no ensemble for now.** The certificate is
   the base world model alone (64 fresh futures), as Jenga's single-model certificate; the 4-member ensemble is added
-  only once the filter shows promise. L3 primary becomes AUROC of o from the base model (same population, label and
+  only once the filter shows promise. O_MAX (label-free 99th percentile of o for the policy's own chunks) is computed
+  on a random 600 training-dev decisions (time). L3 primary becomes AUROC of o from the base model (same population, label and
   gate); the ensemble scores (h_ens, o_ens, u) are not computed.
 - **L4 scale (decided with the user 2026-10-19, before L3 and before any closed-loop result): start small.**
   Measured cost on the shared RTX 3090: ~2 s per decision for the trigger, ~43 s per G-CEM intervention.

@@ -322,17 +322,21 @@ def auroc(score, y):
 
 def stage_calib():
     """Label-free O_MAX = 99th percentile of o for the policy's own chunks (f0) at training-dev branch points (base
-    model, 64 futures), as Jenga's calibration; also the label-free trigger rate it implies."""
+    model, 64 futures) on a random 600 of them, as Jenga's calibration; also the label-free trigger rate it implies."""
     import torch
     import step3_world_model as wm
     _patch_wm()
     cam = json.loads((ROOT / "results/libero/camera.json").read_text())
     base = wm.WorldModel.load(OUT / "model_L.pt"); rows = []
-    for f in sorted(ENC.glob("*.npz")):
-        if f.name.endswith(".tmp.npz") or held_out(f.stem):
-            continue
+    pts = [(f, bi) for f in sorted(ENC.glob("*.npz")) if not f.name.endswith(".tmp.npz") and not held_out(f.stem)
+           for bi in range(len(np.load(f)["branch_t"]))]
+    pick = np.random.default_rng(20261023).choice(len(pts), min(600, len(pts)), replace=False)   # random 600 decisions
+    by = {}
+    for i in sorted(pick):
+        by.setdefault(pts[i][0], []).append(pts[i][1])
+    for f, bis in by.items():
         d = np.load(f); arm = np.load(ROOT / "results/libero/arm" / (f.stem + ".npy"))
-        for bi in range(len(d["branch_z"])):
+        for bi in bis:
             chunk = d["branch_actions"][bi][0].reshape(STEPS * 2, 7)[:10].astype(np.float64)
             hold = np.zeros_like(chunk); hold[:, 6] = chunk[0, 6]
             z0 = torch.as_tensor(d["branch_z"][bi][0, 0], device="cuda")
