@@ -57,6 +57,26 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
 - **L3 Offline check (dev states).** Does the fork-monitor score predict obstacle displacement in held-out dev rollouts?
   Gate: AUROC >= 0.7 for collision within the next chunk window. The labels are used for evaluation only, and the
   threshold is calibrated on the unlabelled intervention rate as in Jenga.
+- **L2/L3 implementation details (fixed 2026-10-19, before any encoded latent or L3 number was looked at;
+  code `libero/wm_libero.py`, `libero/camera_dump.py`).**
+  - PCA: channel PCA 8 on 48,000 DINOv2-392 tokens from 4 nominal frames each of 120 training dev files.
+  - Validation / L3 episodes: dev states with ep % 10 == 0 (0, 10, 20; 96 of 800 episodes). Training uses the rest.
+  - Model: eval/fast_train.py unchanged (batch 128, 7,500 steps), 10 model steps (chunk end = step 4, hold end =
+    step 9). Starts = the true start latent (LIBERO has no perception-error data, so no start sampler; uncertainty
+    comes from execution noise, exactly the data's noise model, scaled by s). Batch mix: 25% label-free rare-mode
+    branch futures (phase1e detect_modes), 25% other branch futures, 50% nominal-trajectory windows (every 5 model
+    steps). Ensemble: 4 members fine-tuned 3,000 steps at 0.3x LR, seeds 0-3.
+  - Monitor scores per decision (latent + proprioception only): 32 imagined futures of the chunk + 10 hold steps
+    under execution noise x s, s in (0.5, 1, 2, 3); h = log2 of the smallest s at which the hold-10 and hold-30
+    endings split (two-mode test, as Jenga), capped at log2 3; o = max over futures (s = 1) of the mean squared latent
+    change outside the hand mask (projected hand path discs + base-to-hand arm corridor, from the camera matrix and
+    the end-effector position); u = ensemble disagreement outside the hand.
+  - L3 labels (evaluation only): real future f0 (the chunk as-is + hold); collision = active-obstacle summed
+    |displacement| > 1 mm within the window; damage = >= 50 mm or tilt change >= 45 deg.
+  - **L3 primary**: AUROC of o (ensemble) for collision in f0, on branches where the obstacle had not yet moved
+    (> 1 mm) before the branch point (the question the filter faces: will this chunk cause the first contact?).
+    Gate >= 0.7. Secondary: damage label; all branches; h, u; o on the real encoded futures (ceiling without the
+    world model). If o fails and h passes (or the reverse) that is reported as is, with no re-gating.
 - **L4 Closed loop on test states (25-49, 800 episodes).** Arms: policy | trigger + hold | trigger + G-CEM. Paired by
   initial state. Metrics: collision rate (their metric), task success, safe success (success and no collision),
   obstacle knocked over (tilt change >= 45 deg). Primary: G-CEM vs policy on safe success, one-sided 95%. Secondary:
@@ -67,7 +87,8 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   knocking the obstacle over. Like v4 / v4b on Jenga, both are reported everywhere:
   - *Strict (benchmark)*: collision = summed |displacement| > 1 mm. CAR and strict safe success (success and no
     collision). Used for every comparison with AEGIS and other published numbers.
-  - *Damage*: obstacle knocked over (tilt change >= 45 deg) or moved >= 50 mm (max displacement norm).
+  - *Damage*: obstacle knocked over (tilt change >= 45 deg) or moved >= 50 mm (summed |displacement|, the same L1 measure as the 1 mm rule; this is what
+    `obstacle_max_disp_mm` logs).
     Damage-free rate and damage safe success (success and no damage).
   - Primary L4 test: G-CEM vs policy on damage safe success; strict safe success is the co-reported secondary with
     the same test. The filter is not designed for millimetre clearance, so a strict-metric gain is not expected to
