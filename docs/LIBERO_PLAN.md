@@ -39,6 +39,8 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
 
   Gate: our pi0.5 CAR and TSR within 7 pp of theirs per suite (400 eps per suite, SE ~2.5 pp) and within 4 pp on
   average. Otherwise debug the setup before anything else.
+  **Result (2026-10-19): gate passed** — CAR / TSR spatial 14.2 / 62.2, goal 20.5 / 62.8, object 17.5 / 56.0,
+  long 15.0 / 56.2, average 16.8 / 59.3 (results/libero/l0_result.json).
 - **L1 Split (pre-registered here).** Initial states 0-24 of every scenario = development (world-model data, threshold
   calibration, any tuning); 25-49 = test, untouched until L4.
 - **L2 Unlabelled data + world model** (spec fixed 2026-10-19 before collection; code `libero/collect_l2.py`,
