@@ -105,17 +105,18 @@ def main():
 def grip(env, value=None):
     """State the flattened simulator state does not hold: robosuite's ramped gripper command (current_action, +-0.01
     per step) and MuJoCo's solver warm start. Saved / restored with the state (fix 2026-10-19: files before it lack
-    gripper_state_restored; their f1-f7 and post-branch nominal steps start from a slightly different hidden state)."""
-    g = env.env.robots[0].gripper
+    gripper_state_restored; their f1-f7 and post-branch nominal steps start from a slightly different hidden state).
+    Also robosuite's step counter and done flag (branch steps must not count toward the episode horizon)."""
+    g, e = env.env.robots[0].gripper, env.env
     if value is None:
-        return np.array(g.current_action, copy=True), env.sim.data.qacc_warmstart.copy()
-    g.current_action = np.array(value[0], copy=True); env.sim.data.qacc_warmstart[:] = value[1]
+        return np.array(g.current_action, copy=True), env.sim.data.qacc_warmstart.copy(), e.timestep, e.done
+    g.current_action = np.array(value[0], copy=True); env.sim.data.qacc_warmstart[:] = value[1]; e.timestep, e.done = value[2], value[3]
 
 
 def branch(env, obs0, chunk, objs, rng, t):
     """8 futures from the current state; returns a dict (state is restored by the caller)."""
     st = env.sim.get_state().flatten().copy(); g0 = grip(env)
-    T = len(chunk); fut = []
+    T = len(chunk); fut = []; ign = env.env.ignore_done; env.env.ignore_done = True     # futures never end the episode
     for j in range(N_FUT):
         theta = G.IDENTITY.copy() if j < 3 else G.LO + (G.HI - G.LO) * rng.random(4)
         acts = G.transform(chunk, theta) + (G.exec_noise(rng, T) if j >= 1 else 0)
@@ -128,6 +129,7 @@ def branch(env, obs0, chunk, objs, rng, t):
             if (k + 1) % FRAME_EVERY == 0:
                 frames.append(jpg(frame(o))); ps.append(poses(env, o, objs))
         fut.append({"theta": theta.astype(np.float32), "actions": acts.astype(np.float32), "frames": frames, "evalonly_poses": np.array(ps)})
+    env.env.ignore_done = ign
     return {"t": t, "chunk": chunk.astype(np.float32), "futures": fut, "state": st, "grip": g0,
             "eef": np.r_[obs0["robot0_eef_pos"], obs0["robot0_eef_quat"], obs0["robot0_gripper_qpos"]].astype(np.float32)}
 

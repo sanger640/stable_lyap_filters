@@ -85,6 +85,10 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
     physics from the recorded start frame, so the files are kept for training (it acts as extra execution noise),
     and L3 labels use f0 only, which is exact. Files from the fix on save and restore both. The earlier note
     "restore + replay is bit-identical" held for the simulator state only.
+    Final composition: the 600 non-long episodes are all pre-fix (their runs had started before it); the 200 long
+    episodes crashed in the first run (branch steps counted toward robosuite's horizon -> "executing action in
+    terminated episode") and were re-collected with the full fix (gripper command, warm start, step counter / done
+    flag; futures run with ignore_done).
   - Arm links for the mask (libero/arm_links.py) come from replaying each episode, which is approximate for the
     same reason (and because hidden gripper state carries over between episodes in one env); the replayed arm is
     shifted so its end effector matches the recorded one at every frame.
