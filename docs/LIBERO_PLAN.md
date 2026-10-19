@@ -62,6 +62,18 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   obstacle knocked over (tilt change >= 45 deg). Primary: G-CEM vs policy on safe success, one-sided 95%. Secondary:
   G-CEM vs hold on success (does optimisation keep progress better than holding?), vs AEGIS's reported numbers.
   Exact thresholds are to be fixed before L4 starts.
+- **Safety metrics, both reported (amendment 2026-10-19, agreed with the user before any filter run on LIBERO).**
+  The benchmark's collision rule (obstacle summed |displacement| > 1 mm at any time) counts a brush the same as
+  knocking the obstacle over. Like v4 / v4b on Jenga, both are reported everywhere:
+  - *Strict (benchmark)*: collision = summed |displacement| > 1 mm. CAR and strict safe success (success and no
+    collision). Used for every comparison with AEGIS and other published numbers.
+  - *Damage*: obstacle knocked over (tilt change >= 45 deg) or moved >= 50 mm (max displacement norm).
+    Damage-free rate and damage safe success (success and no damage).
+  - Primary L4 test: G-CEM vs policy on damage safe success; strict safe success is the co-reported secondary with
+    the same test. The filter is not designed for millimetre clearance, so a strict-metric gain is not expected to
+    match AEGIS, and that is stated in advance.
+  - L0 baseline at amendment time (1,556 / 1,600 episodes, test and dev states pooled): CAR 14-21 % per suite;
+    damage-free 20-47 %; strict safe success 14-19 %; damage safe success 18-42 %.
 
 ## Compute
 - One RTX 3090: pi0.5 server (JAX) and the world model / DINOv2 encoder share it. Never run alongside the Jenga
