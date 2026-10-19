@@ -113,6 +113,18 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   - L0 baseline at amendment time (1,556 / 1,600 episodes, test and dev states pooled): CAR 14-21 % per suite;
     damage-free 20-47 %; strict safe success 14-19 %; damage safe success 18-42 %.
 
+- **L4 scale (decided with the user 2026-10-19, before L3 and before any closed-loop result): start small.**
+  Measured cost on the shared RTX 3090: ~2 s per decision for the trigger, ~43 s per G-CEM intervention.
+  - L4a dev pilot (only if L3 passes): G-CEM on 32 scenarios x 2 dev states (5, 15), to measure trigger rate and
+    time per episode and to catch bugs. Not a test; no claims.
+  - L4b small test: test states 25-34 of all 32 scenarios (320 episodes per arm). Arms: G-CEM and hold (both run
+    now); policy arm = the L0 episodes on the same initial states (same evaluation loop; pi0.5 sampling is random
+    either way, so pairing is by initial state). Primary: G-CEM vs policy on damage safe success, one-sided 95%
+    lower bound > 0; co-reported: strict safe success, success, collision, damage; G-CEM vs hold.
+  - Scale to all 800 test episodes (cluster) only if L4b is promising but not conclusive; states 35-49 stay untouched
+    until then.
+  - Speed-ups allowed before L4a only (torch.compile, idle GPU); settings stay fixed from L4a on.
+
 ## Compute
 - One RTX 3090: pi0.5 server (JAX) and the world model / DINOv2 encoder share it. Never run alongside the Jenga
   DINOv2 worker pools. Cluster (Rorqual slices) for the 1,600-episode baselines once the local smoke run works.
