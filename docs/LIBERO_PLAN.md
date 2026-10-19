@@ -157,3 +157,8 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
 - AEGIS itself needs a ZhipuAI API key (VLM obstacle detection) and GroundingDINO. Plan: compare to their reported
   numbers; rerun AEGIS only if the user provides a key.
 - Whether the success criterion here is LIBERO's own `done` (default) or something stricter.
+
+## Data retention
+- 2026-10-19: raw L2 frames (results/libero/l2_data, 13 GB, 800 episodes) deleted with the user's OK after SafeLIBERO was
+  closed as a negative transfer result. Kept: encoded latents (results/libero/wm/enc), arm links, world model,
+  L0/L3/pilot results. The frames can be regenerated with libero/collect_l2.py (same seeds).
