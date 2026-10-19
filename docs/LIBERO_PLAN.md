@@ -98,6 +98,10 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
     (> 1 mm) before the branch point (the question the filter faces: will this chunk cause the first contact?).
     Gate >= 0.7. Secondary: damage label; all branches; h, u; o on the real encoded futures (ceiling without the
     world model). If o fails and h passes (or the reverse) that is reported as is, with no re-gating.
+- **L3 result (2026-10-19 13:29): GATE FAILED.** Primary AUROC (fork h, collision, undisturbed branches) = 0.54
+  (n = 91, 17 collisions). Secondary: o 0.69 collision / 0.73 damage (4 events); all 330 branches: o 0.73 for
+  damage (49 events), h 0.52; real-future o ceiling 0.85-0.87 for damage, 0.59-0.72 for collision. Per the plan,
+  stop and report; whether to run the closed loop (as exploratory) is the user's decision.
 - **L4 Closed loop on test states (25-49, 800 episodes).** Arms: policy | trigger + hold | trigger + G-CEM. Paired by
   initial state. Metrics: collision rate (their metric), task success, safe success (success and no collision),
   obstacle knocked over (tilt change >= 45 deg). Primary: G-CEM vs policy on safe success, one-sided 95%. Secondary:
