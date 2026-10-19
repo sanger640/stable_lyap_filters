@@ -25,7 +25,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "libero"), str(ROOT / "eval"), str(ROOT / "src")]
 DATA = ROOT / "results/libero/l2_data"
-OUT = ROOT / "results/libero/wm"
+OUT = ROOT / os.environ.get("LIBERO_WM", "results/libero/wm")
 ENC = OUT / "enc"
 STEPS, HOLD10, HOLD30 = 10, 4, 9            # model steps; end of the chunk (10 env steps), end of the hold
 SCALES = (0.5, 1.0, 2.0, 3.0)
@@ -320,6 +320,33 @@ def auroc(score, y):
     return float((r[y].sum() - y.sum() * (y.sum() + 1) / 2) / (y.sum() * (~y).sum()))
 
 
+def stage_calib():
+    """Label-free O_MAX = 99th percentile of o for the policy's own chunks (f0) at training-dev branch points (base
+    model, 64 futures), as Jenga's calibration; also the label-free trigger rate it implies."""
+    import torch
+    import step3_world_model as wm
+    _patch_wm()
+    cam = json.loads((ROOT / "results/libero/camera.json").read_text())
+    base = wm.WorldModel.load(OUT / "model_L.pt"); rows = []
+    for f in sorted(ENC.glob("*.npz")):
+        if f.name.endswith(".tmp.npz") or held_out(f.stem):
+            continue
+        d = np.load(f); arm = np.load(ROOT / "results/libero/arm" / (f.stem + ".npy"))
+        for bi in range(len(d["branch_z"])):
+            chunk = d["branch_actions"][bi][0].reshape(STEPS * 2, 7)[:10].astype(np.float64)
+            hold = np.zeros_like(chunk); hold[:, 6] = chunk[0, 6]
+            z0 = torch.as_tensor(d["branch_z"][bi][0, 0], device="cuda")
+            seed = int(np.random.default_rng([20261022, len(rows)]).integers(2 ** 31))
+            h, o = score_plans(base, z0, [chunk, hold], d["branch_eef"][bi][:3], arm[int(d["branch_t"][bi]) // 2],
+                               cam[scenario(f.stem)], 64, seed)
+            rows.append([float(h[0]), float(o[0]), float(h[1])])
+    r = np.array(rows); o_max = float(np.quantile(r[:, 1], 0.99))
+    trig = ~((r[:, 0] >= np.minimum(r[:, 2], H_CAP)) & (r[:, 1] <= o_max))
+    res = {"O_MAX": o_max, "decisions": len(r), "label_free_trigger_rate": float(trig.mean()),
+           "share_h_below_hold_or_cap": float((r[:, 0] < np.minimum(r[:, 2], H_CAP)).mean()), "h_hold_mean": float(r[:, 2].mean())}
+    (OUT / "calibration.json").write_text(json.dumps(res, indent=1) + "\n"); print(json.dumps(res), flush=True)
+
+
 def stage_l3():
     import torch
     import step3_world_model as wm
@@ -370,4 +397,4 @@ def stage_l3():
 if __name__ == "__main__":
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     st = sys.argv[1]
-    {"pca": stage_pca, "encode": stage_encode, "train": stage_train, "l3": stage_l3}.get(st, lambda: stage_ens(int(sys.argv[2])))()
+    {"pca": stage_pca, "encode": stage_encode, "train": stage_train, "calib": stage_calib, "l3": stage_l3}.get(st, lambda: stage_ens(int(sys.argv[2])))()
