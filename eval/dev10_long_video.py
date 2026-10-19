@@ -25,6 +25,7 @@ TAG = os.environ.get("VID_TAG", "dev10")                 # s4: Stage 4 runs (pol
 OUT = ROOT / ("results/program_b/dev10_videos" if TAG == "dev10" else f"results/program_b/{TAG}_videos")
 RUNS = ROOT / "results/program_b/policy_rollouts"
 ARMS = [("record", "POLICY ALONE"), ("cbfmsoil", "SELECTION FILTER"), ("cbfmoil", "OPTIMISATION FILTER")] if TAG == "dev10" else \
+    [("record", "POLICY ALONE"), ("cbfg", "G-CEM FILTER (optimises the one chunk)")] if TAG == "s4b" else \
     [("record", "POLICY ALONE"), ("cbfh", "HOLD AND RE-PLAN"), ("cbfg", "G-CEM (optimises the one chunk)")]
 EPS = [12101, 12111, 12115, 12144, 12102, 12135, 12075, 12103, 12110, 12084, 12099, 12097, 12096, 12080]
 CW, CH, SH, HH, PAD = 520, 390, 74, 64, 8
@@ -196,14 +197,14 @@ def main():
     with mp.get_context("spawn").Pool(max(1, min(12, len(jobs)))) as pool:
         for a, e in pool.imap_unordered(render, jobs):
             print("rendered", a, e, flush=True)
-    W = 3 * CW + 4 * PAD; H = HH + 20 + CH + SH + PAD
+    W = len(ARMS) * CW + (len(ARMS) + 1) * PAD; H = HH + 20 + CH + SH + PAD
     wr = imageio_ffmpeg.write_frames(str(OUT / ("long_comparison.mp4" if TAG == "dev10" else f"{TAG}_long_comparison.mp4")), (W, H), fps=10, codec="libx264", quality=7, macro_block_size=1); wr.send(None)
     total = 0
     for n_e, e in enumerate(eps):
         F = [frames(OUT / "cols" / f"{a}_{e}.mp4") for a, _ in ARMS]; n = max(len(f) for f in F)
         for k in range(n):
             im = Image.new("RGB", (W, H), BG); dr = ImageDraw.Draw(im)
-            dr.text((PAD, 6), f"Episode {e}  ({n_e + 1} of {len(eps)}): same start and noise seeds in all three; both filters use the same trigger and world model (model_OIL)", fill=FG)
+            dr.text((PAD, 6), f"Episode {e}  ({n_e + 1} of {len(eps)}): " + ("same start and noise seeds in both; the filter only acts when the world model predicts a risky future" if len(ARMS) == 2 else "same start and noise seeds in all three; both filters use the same trigger and world model (model_OIL)"), fill=FG)
             for i, (a, name) in enumerate(ARMS):
                 x = PAD + i * (CW + PAD); t, c = LABEL[lab[a][str(e)]]
                 nint = sum(bool(z.get("intervened")) for z in res[a][e]["log"]) if a != "record" else None

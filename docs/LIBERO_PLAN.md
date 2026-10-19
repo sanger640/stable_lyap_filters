@@ -41,10 +41,19 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   average. Otherwise debug the setup before anything else.
 - **L1 Split (pre-registered here).** Initial states 0-24 of every scenario = development (world-model data, threshold
   calibration, any tuning); 25-49 = test, untouched until L4.
-- **L2 Unlabelled data + world model.** On dev states only: pi0.5 rollouts, plus rollouts where random G
-  transformations (and execution noise) are applied to random chunks, so that the model sees the consequences of
-  slowing, pausing, shrinking and backing off. Same architecture and training recipe as the Jenga model (DINOv2
-  latents, model_OIL recipe, ENS0-3 ensemble). No labels.
+- **L2 Unlabelled data + world model** (spec fixed 2026-10-19 before collection; code `libero/collect_l2.py`,
+  `libero/g_transform.py`). Dev states 0-24 of all 32 scenarios = 800 pi0.5 episodes. Per episode up to 4 random
+  decision points; at each, 8 futures branched from the exact simulator state (restore + replay is bit-identical):
+  f0 the policy's 10-step chunk as-is, f1-f2 with execution noise, f3-f7 a uniformly random G transformation
+  (v, k, s, b in [0,1] x [0,8] x [0,1] x [0,30 mm]) plus execution noise; each followed by 10 hold steps. Execution
+  noise = smoothed Gaussian on delta actions (sigma 0.15 xyz, 0.05 rot, 3-step box filter). G on LIBERO deltas acts on
+  the cumulative plan exactly as Jenga's G acts on targets (rotation re-timed only, gripper on the policy's clock).
+  Frames: agentview 392 px every 2 env steps (one model step = 0.1 s), JPEG q95. Object poses are stored as
+  `evalonly_*` for L3 scoring and never read by training.
+  World model: same recipe as Jenga (frozen DINOv2 392 -> 28 x 28 patch tokens -> channel PCA 8 fitted on LIBERO dev
+  nominal frames; deterministic residual FiLM transition, self-rollout batches; then a 4-member ensemble for the
+  certifier). Action input per model step = the 2 env delta actions (14-d). Train on scenarios' dev states with
+  tasks split 90/10 by episode for validation loss only.
 - **L3 Offline check (dev states).** Does the fork-monitor score predict obstacle displacement in held-out dev rollouts?
   Gate: AUROC >= 0.7 for collision within the next chunk window. The labels are used for evaluation only, and the
   threshold is calibrated on the unlabelled intervention rate as in Jenga.
