@@ -90,34 +90,45 @@ def main():
                     if dec in branch_at:
                         branches.append(branch(env, obs, chunk, objs, rng, t))
                         env.sim.set_state_from_flattened(branches[-1].pop("state")); env.sim.forward()
+                        grip(env, branches[-1].pop("grip"))
                     plan.extend(chunk[:5]); dec += 1
                 act = np.asarray(plan.popleft()); nom["actions"].append(act)
                 obs, _, done, _ = env.step(act.tolist()); t += 1
             np.savez(f, nominal_frames=np.array(nom["frames"], dtype=object), nominal_actions=np.array(nom["actions"], np.float32),
                      nominal_eef=np.array(nom["eef"], np.float32), evalonly_nominal_poses=np.array(nom["evalonly_poses"]),
                      branches=np.array(branches, dtype=object), objects=np.array(objs), success=done, steps=t,
-                     language=task.language, allow_pickle=True)
+                     language=task.language, gripper_state_restored=True, allow_pickle=True)
             print(json.dumps({"file": f.name, "steps": t, "success": bool(done), "branches": len(branches), "seconds": round(time.time() - t0, 1)}), flush=True)
         env.close()
 
 
+def grip(env, value=None):
+    """State the flattened simulator state does not hold: robosuite's ramped gripper command (current_action, +-0.01
+    per step) and MuJoCo's solver warm start. Saved / restored with the state (fix 2026-10-19: files before it lack
+    gripper_state_restored; their f1-f7 and post-branch nominal steps start from a slightly different hidden state)."""
+    g = env.env.robots[0].gripper
+    if value is None:
+        return np.array(g.current_action, copy=True), env.sim.data.qacc_warmstart.copy()
+    g.current_action = np.array(value[0], copy=True); env.sim.data.qacc_warmstart[:] = value[1]
+
+
 def branch(env, obs0, chunk, objs, rng, t):
     """8 futures from the current state; returns a dict (state is restored by the caller)."""
-    st = env.sim.get_state().flatten().copy()
+    st = env.sim.get_state().flatten().copy(); g0 = grip(env)
     T = len(chunk); fut = []
     for j in range(N_FUT):
         theta = G.IDENTITY.copy() if j < 3 else G.LO + (G.HI - G.LO) * rng.random(4)
         acts = G.transform(chunk, theta) + (G.exec_noise(rng, T) if j >= 1 else 0)
         acts = np.vstack([acts, np.tile(np.r_[np.zeros(6), chunk[-1, 6]], (HOLD, 1))])
         acts[:, :6] = np.clip(acts[:, :6], -1, 1)
-        env.sim.set_state_from_flattened(st); env.sim.forward()
+        env.sim.set_state_from_flattened(st); env.sim.forward(); grip(env, g0)
         o, frames, ps = obs0, [jpg(frame(obs0))], [poses(env, obs0, objs)]
         for k, a_ in enumerate(acts):
             o, _, _, _ = env.step(a_.tolist())
             if (k + 1) % FRAME_EVERY == 0:
                 frames.append(jpg(frame(o))); ps.append(poses(env, o, objs))
         fut.append({"theta": theta.astype(np.float32), "actions": acts.astype(np.float32), "frames": frames, "evalonly_poses": np.array(ps)})
-    return {"t": t, "chunk": chunk.astype(np.float32), "futures": fut, "state": st,
+    return {"t": t, "chunk": chunk.astype(np.float32), "futures": fut, "state": st, "grip": g0,
             "eef": np.r_[obs0["robot0_eef_pos"], obs0["robot0_eef_quat"], obs0["robot0_gripper_qpos"]].astype(np.float32)}
 
 

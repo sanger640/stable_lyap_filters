@@ -43,7 +43,7 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   calibration, any tuning); 25-49 = test, untouched until L4.
 - **L2 Unlabelled data + world model** (spec fixed 2026-10-19 before collection; code `libero/collect_l2.py`,
   `libero/g_transform.py`). Dev states 0-24 of all 32 scenarios = 800 pi0.5 episodes. Per episode up to 4 random
-  decision points; at each, 8 futures branched from the exact simulator state (restore + replay is bit-identical):
+  decision points; at each, 8 futures branched from the exact simulator state (see the data correction below):
   f0 the policy's 10-step chunk as-is, f1-f2 with execution noise, f3-f7 a uniformly random G transformation
   (v, k, s, b in [0,1] x [0,8] x [0,1] x [0,30 mm]) plus execution noise; each followed by 10 hold steps. Execution
   noise = smoothed Gaussian on delta actions (sigma 0.15 xyz, 0.05 rot, 3-step box filter). G on LIBERO deltas acts on
@@ -71,6 +71,18 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
     endings split (two-mode test, as Jenga), capped at log2 3; o = max over futures (s = 1) of the mean squared latent
     change outside the hand mask (projected hand path discs + base-to-hand arm corridor, from the camera matrix and
     the end-effector position); u = ensemble disagreement outside the hand.
+  - **Data correction (2026-10-19, found while building the arm replay, before any model was trained):** the
+    flattened MuJoCo state misses two pieces of hidden state, robosuite's ramped gripper command
+    (`gripper.current_action`, +-0.01 per step) and the solver warm start. In files collected before the fix
+    (no `gripper_state_restored` key; about 520 of 800), future f0 starts exactly from the policy's state, but f1-f7
+    and the nominal steps after a branch start from the hidden state the previous future left behind (gripper
+    command ahead by up to 20 steps per earlier future; warm start differs). Every recorded future is still real
+    physics from the recorded start frame, so the files are kept for training (it acts as extra execution noise),
+    and L3 labels use f0 only, which is exact. Files from the fix on save and restore both. The earlier note
+    "restore + replay is bit-identical" held for the simulator state only.
+  - Arm links for the mask (libero/arm_links.py) come from replaying each episode, which is approximate for the
+    same reason (and because hidden gripper state carries over between episodes in one env); the replayed arm is
+    shifted so its end effector matches the recorded one at every frame.
   - L3 labels (evaluation only): real future f0 (the chunk as-is + hold); collision = active-obstacle summed
     |displacement| > 1 mm within the window; damage = >= 50 mm or tilt change >= 45 deg.
   - **L3 primary**: AUROC of o (ensemble) for collision in f0, on branches where the obstacle had not yet moved

@@ -16,6 +16,7 @@ usage: python3 libero/wm_libero.py {pca|encode|train|ens K|l3}
 import io
 import json
 import os
+import time
 from pathlib import Path
 import sys
 
@@ -105,7 +106,7 @@ def stage_encode():
     lat = None
     for f in sorted(DATA.glob("*.npz")):
         out = ENC / f.name
-        if out.exists():
+        if out.exists() or time.time() - f.stat().st_mtime < 120:          # skip files the collector may still be writing
             continue
         if lat is None:
             lat = Latent()
@@ -130,10 +131,10 @@ def stage_encode():
                 dtilt = np.abs(tilt(P[:, :, 3:]) - tilt(P[:, :1, 3:])).max(1)
                 lab.append(np.stack([disp, dtilt], 1))
         np.savez(out.with_suffix(".tmp.npz"), nominal_z=nz, nominal_actions=d["nominal_actions"], nominal_eef=d["nominal_eef"],
-                 branch_z=np.array(bz, np.float16).reshape(len(bz), -1, STEPS + 1, 28, 28, 8),
-                 branch_actions=np.array(ba, np.float32).reshape(len(bz), -1, STEPS, 14), branch_t=np.array(bt),
-                 branch_eef=np.array(beef, np.float32).reshape(len(bz), -1), branch_theta=np.array(btheta, np.float32).reshape(len(bz), -1, 4),
-                 evalonly_disp_mm_tilt_deg=np.array(lab, np.float32).reshape(len(bz), -1, 2),
+                 branch_z=np.array(bz, np.float16).reshape(len(bz), 8, STEPS + 1, 28, 28, 8),
+                 branch_actions=np.array(ba, np.float32).reshape(len(bz), 8, STEPS, 14), branch_t=np.array(bt),
+                 branch_eef=np.array(beef, np.float32).reshape(len(bz), 9), branch_theta=np.array(btheta, np.float32).reshape(len(bz), 8, 4),
+                 evalonly_disp_mm_tilt_deg=np.array(lab, np.float32).reshape(len(bz), 8, 2),
                  evalonly_obstacle=-1 if ob is None else ob, success=d["success"], evalonly_pre_disp_mm=pre)
         out.with_suffix(".tmp.npz").replace(out)
         print("encoded", f.name, len(bz), flush=True)
@@ -226,20 +227,26 @@ def val_loss(path):
 
 
 # ------------------------------------------------------------------------------------------- monitor (latent only)
-def hand_mask(cam, eef, deltas, radius_px=36, corridor_px=30):
-    """(28, 28) True on the robot's own region: discs around the projected hand path (eef now + cumulative chunk deltas,
-    5 cm per unit) and a corridor from the projected robot base to each path point (the arm)."""
+def hand_mask(cam, eef, deltas, links, radius_px=36, corridor_px=24):
+    """(28, 28) True on the robot's own region (proprioception only): discs around the projected hand path (eef now +
+    cumulative chunk deltas, 5 cm per unit), capsules along the current arm (links 0-7 + hand, libero/arm_links.py)
+    and from the wrist to each planned hand point (the forearm follows the hand)."""
     from camera_dump import project
     pts = np.vstack([eef[None], eef[None] + 0.05 * np.cumsum(deltas[:, :3], 0)])
-    uv = project(cam, pts); base = project(cam, np.asarray(cam["robot_base"])[None])[0]
+    uv = project(cam, pts); arm = project(cam, np.asarray(links))
     c = (np.arange(28) + 0.5) * cam["res"] / 28
     U, V = np.meshgrid(c, c)
     m = np.zeros((28, 28), bool)
+
+    def capsule(p, q, r):
+        d = q - p; L2 = max(float(d @ d), 1e-9)
+        s_ = np.clip(((U - p[0]) * d[0] + (V - p[1]) * d[1]) / L2, 0, 1)
+        return (U - p[0] - s_ * d[0]) ** 2 + (V - p[1] - s_ * d[1]) ** 2 <= r ** 2
     for u, v in uv:
         m |= (U - u) ** 2 + (V - v) ** 2 <= radius_px ** 2
-        d = np.array([u, v]) - base; L2 = max(float(d @ d), 1e-9)
-        s = np.clip(((U - base[0]) * d[0] + (V - base[1]) * d[1]) / L2, 0, 1)
-        m |= (U - base[0] - s * d[0]) ** 2 + (V - base[1] - s * d[1]) ** 2 <= corridor_px ** 2
+        m |= capsule(arm[-3], np.array([u, v]), corridor_px)
+    for p, q in zip(arm[:-1], arm[1:]):
+        m |= capsule(p, q, corridor_px)
     return m
 
 
@@ -269,7 +276,7 @@ def imagine(models, z0, chunk_deltas, gripper, rng_seed, n=N_FUT):
     return out
 
 
-def scores(models, z0, chunk, eef, cam, seed):
+def scores(models, z0, chunk, eef, links, cam, seed):
     """-> h (fork barrier, log2 of the smallest splitting scale, capped), o (max over futures of the mean squared latent
     change outside the hand mask, at scale 1), u (ensemble disagreement outside the hand at scale 1)."""
     import torch
@@ -281,7 +288,7 @@ def scores(models, z0, chunk, eef, cam, seed):
         ok10, _, _ = cf.split_test_gpu(e[HOLD10].reshape(1, N_FUT, -1)); ok30, _, _ = cf.split_test_gpu(e[HOLD30].reshape(1, N_FUT, -1))
         if bool(ok10[0] & ok30[0]):
             h = float(np.log2(s)); break
-    m = torch.as_tensor(~hand_mask(cam, eef, chunk), device="cuda").float()
+    m = torch.as_tensor(~hand_mask(cam, eef, chunk, links), device="cuda").float()
     e30 = im[1.0][0][HOLD30]
     diff = (e30 - z0.float()[None]).pow(2).mean(-1)
     o = float(((diff * m).sum((1, 2)) / m.sum().clamp_min(1)).max())
@@ -290,9 +297,9 @@ def scores(models, z0, chunk, eef, cam, seed):
     return h, o, u
 
 
-def real_o(z0, zend, eef, chunk, cam):
+def real_o(z0, zend, eef, chunk, links, cam):
     """o on the REAL encoded futures (ceiling for the score, no world model)."""
-    m = ~hand_mask(cam, eef, chunk)
+    m = ~hand_mask(cam, eef, chunk, links)
     diff = ((zend.astype(np.float32) - z0.astype(np.float32)[None]) ** 2).mean(-1)
     return float((diff * m).sum((1, 2)).max() / max(m.sum(), 1))
 
@@ -324,14 +331,15 @@ def stage_l3():
             z = d["branch_z"][bi]; acts = d["branch_actions"][bi].reshape(-1, STEPS * 2, 7)
             chunk = acts[0, :10]                                                          # f0 = the policy's chunk as-is
             eef = d["branch_eef"][bi][:3]; c = cam[scenario(f.stem)]
+            links = np.load(ROOT / "results/libero/arm" / (f.stem + ".npy"))[int(d["branch_t"][bi]) // 2]
             z0 = torch.as_tensor(z[0, 0], device="cuda")
             seed = int(np.random.default_rng([20261021, bi, len(rows)]).integers(2 ** 31))
-            h, o, _ = scores([base], z0, chunk, eef, c, seed)
+            h, o, _ = scores([base], z0, chunk, eef, links, c, seed)
             r = {"file": f.stem, "branch": bi, "h": h, "o": o}
             if ens:
-                he, oe, ue = scores(ens, z0, chunk, eef, c, seed)
+                he, oe, ue = scores(ens, z0, chunk, eef, links, c, seed)
                 r.update({"h_ens": he, "o_ens": oe, "u_ens": ue})
-            r["o_real_f0"] = real_o(z[0, 0], z[:1, -1], eef, chunk, c)
+            r["o_real_f0"] = real_o(z[0, 0], z[:1, -1], eef, chunk, links, c)
             lab = d["evalonly_disp_mm_tilt_deg"][bi]
             r["coll_f0"] = bool(lab[0, 0] > 1.0); r["dmg_f0"] = bool(lab[0, 0] >= 50 or lab[0, 1] >= 45)
             r["coll_f012"] = float(np.mean(lab[:3, 0] > 1.0)); r["pre_disp_mm"] = float(d["evalonly_pre_disp_mm"][bi])
