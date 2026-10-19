@@ -250,51 +250,58 @@ def hand_mask(cam, eef, deltas, links, radius_px=36, corridor_px=24):
     return m
 
 
-def imagine(models, z0, chunk_deltas, gripper, rng_seed, n=N_FUT):
-    """Imagined endings under execution noise scaled by s: dict s -> (e10, e30) (n, D) for the mean model and the
-    per-member endings at scale 1 (for disagreement). chunk_deltas (10, 7) -> 10 chunk steps + 10 hold."""
+def score_plans(model, z0, plans, eef, links, cam, n, seed, return_e30=False):
+    """Fork barrier h and regime change o for C candidate chunks (C, 10, 7) under ONE world model.
+    Futures: chunk + 10 hold steps (zero deltas, the chunk's last gripper command), execution noise x s with common
+    random numbers (same draws for every candidate and scale), start = the true start latent.
+    h = log2 of the smallest s in SCALES whose hold-10 and hold-30 endings split (top scale skipped: it never changes h),
+    capped at log2 3; o = max over futures (s = 1) of the mean squared latent change outside the robot mask."""
     import torch
+    import cem_filter as cf
     import g_transform as G
-    out = {}
-    rng = np.random.default_rng(rng_seed)
-    noise = np.stack([G.exec_noise(rng, len(chunk_deltas)) for _ in range(n)])         # common random numbers across s
-    hold = np.tile(np.r_[np.zeros(6), gripper], (STEPS * 2 - len(chunk_deltas), 1))
-    for s in SCALES:
-        acts = np.stack([np.vstack([chunk_deltas + s * noise[j], hold]) for j in range(n)])
-        acts[..., :6] = np.clip(acts[..., :6], -1, 1)
-        a = torch.as_tensor(acts.reshape(n, STEPS, 14), dtype=torch.float32, device="cuda")
-        ends = []
-        for m in models:
-            z = z0.float()[None].expand(n, -1, -1, -1).contiguous(); e = {}
-            with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-                for t in range(STEPS):
-                    z = m.step(z, a[:, t]).float()
-                    if t in (HOLD10, HOLD30):
-                        e[t] = z.clone()
-            ends.append(e)
-        out[s] = ({t: torch.stack([e[t] for e in ends]).mean(0) for t in (HOLD10, HOLD30)}, ends)
-    return out
+    plans = np.asarray(plans, np.float64); C = len(plans)
+    rng = np.random.default_rng(seed)
+    noise = np.stack([G.exec_noise(rng, plans.shape[1]) for _ in range(n)])            # (n, 10, 7)
+    split = np.zeros((C, len(SCALES) - 1), bool); o = np.zeros(C); e30_1 = None
+    masks = torch.as_tensor(np.stack([~hand_mask(cam, eef, p, links) for p in plans]), device="cuda").float()
+    for si, s in enumerate(SCALES[:-1]):
+        acts = plans[:, None] + s * noise[None]                                          # (C, n, 10, 7)
+        hold = np.zeros((C, n, STEPS * 2 - plans.shape[1], 7)); hold[..., 6] = plans[:, None, -1:, 6]
+        acts = np.concatenate([acts, hold], 2); acts[..., :6] = np.clip(acts[..., :6], -1, 1)
+        a = torch.as_tensor(acts.reshape(C * n, STEPS, 14), dtype=torch.float32, device="cuda")
+        z = z0.float()[None].expand(C * n, -1, -1, -1).contiguous(); e = {}
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+            for t in range(STEPS):
+                z = model.step(z, a[:, t]).float()
+                if t in (HOLD10, HOLD30):
+                    e[t] = z.reshape(C, n, 28, 28, 8)
+        ok10, _, _ = cf.split_test_gpu(e[HOLD10].reshape(C, n, -1)); ok30, _, _ = cf.split_test_gpu(e[HOLD30].reshape(C, n, -1))
+        split[:, si] = (ok10 & ok30).cpu().numpy()
+        if s == 1.0:
+            diff = (e[HOLD30] - z0.float()[None, None]).pow(2).mean(-1)                 # (C, n, 28, 28)
+            o = (((diff * masks[:, None]).sum((2, 3)) / masks.sum((1, 2))[:, None].clamp_min(1)).max(1).values).cpu().numpy()
+            e30_1 = e[HOLD30] if return_e30 else None
+    h = np.full(C, H_CAP)
+    for c in range(C):
+        hit = np.flatnonzero(split[c])
+        if len(hit):
+            h[c] = float(np.log2(SCALES[hit[0]]))
+    return (h, o, e30_1, masks) if return_e30 else (h, o)
 
 
 def scores(models, z0, chunk, eef, links, cam, seed):
-    """-> h (fork barrier, log2 of the smallest splitting scale, capped), o (max over futures of the mean squared latent
-    change outside the hand mask, at scale 1), u (ensemble disagreement outside the hand at scale 1)."""
-    import torch
-    import cem_filter as cf
-    im = imagine(models, z0, chunk, chunk[-1, 6], seed)
-    h = H_CAP
-    for s in SCALES[:-1]:
-        e = im[s][0]
-        ok10, _, _ = cf.split_test_gpu(e[HOLD10].reshape(1, N_FUT, -1)); ok30, _, _ = cf.split_test_gpu(e[HOLD30].reshape(1, N_FUT, -1))
-        if bool(ok10[0] & ok30[0]):
-            h = float(np.log2(s)); break
-    m = torch.as_tensor(~hand_mask(cam, eef, chunk, links), device="cuda").float()
-    e30 = im[1.0][0][HOLD30]
-    diff = (e30 - z0.float()[None]).pow(2).mean(-1)
-    o = float(((diff * m).sum((1, 2)) / m.sum().clamp_min(1)).max())
-    mem = torch.stack([e[HOLD30] for e in im[1.0][1]])                                    # (M, n, 28, 28, 8)
-    u = float(((mem.var(0).mean(-1) * m).sum((1, 2)) / m.sum().clamp_min(1)).mean()) if len(models) > 1 else float("nan")
-    return h, o, u
+    """One chunk, several models (ensemble = every member must pass, so h = min and o = max over members);
+    u = ensemble disagreement outside the robot mask (variance over members of the s = 1 endings)."""
+    hs, os_, es = [], [], []
+    for m in models:
+        h, o, e30, masks = score_plans(m, z0, chunk[None], eef, links, cam, N_FUT, seed, return_e30=True)
+        hs.append(h[0]); os_.append(o[0]); es.append(e30[0])
+    u = float("nan")
+    if len(models) > 1:
+        import torch
+        v = torch.stack(es).var(0).mean(-1)                                               # (n, 28, 28)
+        u = float(((v * masks[0]).sum((1, 2)) / masks[0].sum().clamp_min(1)).mean())
+    return float(min(hs)), float(max(os_)), u
 
 
 def real_o(z0, zend, eef, chunk, links, cam):

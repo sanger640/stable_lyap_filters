@@ -70,7 +70,10 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
     under execution noise x s, s in (0.5, 1, 2, 3); h = log2 of the smallest s at which the hold-10 and hold-30
     endings split (two-mode test, as Jenga), capped at log2 3; o = max over futures (s = 1) of the mean squared latent
     change outside the hand mask (projected hand path discs + base-to-hand arm corridor, from the camera matrix and
-    the end-effector position); u = ensemble disagreement outside the hand.
+    the end-effector position); u = ensemble disagreement outside the hand. Ensemble versions follow the
+    certificate (every member must pass): h_ens = min over the 4 members, o_ens = max over members (set 2026-10-19
+    while writing the shared scorer, before any trained model existed). L3 and L4 use the same scorer
+    (`wm_libero.score_plans`).
   - **Data correction (2026-10-19, found while building the arm replay, before any model was trained):** the
     flattened MuJoCo state misses two pieces of hidden state, robosuite's ramped gripper command
     (`gripper.current_action`, +-0.01 per step) and the solver warm start. In files collected before the fix
