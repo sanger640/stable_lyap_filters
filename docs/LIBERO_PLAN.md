@@ -162,3 +162,6 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
 - 2026-10-19: raw L2 frames (results/libero/l2_data, 13 GB, 800 episodes) deleted with the user's OK after SafeLIBERO was
   closed as a negative transfer result. Kept: encoded latents (results/libero/wm/enc), arm links, world model,
   L0/L3/pilot results. The frames can be regenerated with libero/collect_l2.py (same seeds).
+- 2026-10-19: local SafeLIBERO venvs (openpi JAX env, client env) and the local pi0.5 checkpoint deleted (user OK);
+  Rorqual keeps working copies (/scratch/ali313/libero). Rebuild locally: `GIT_LFS_SKIP_SMUDGE=1 uv sync` in openpi/, client
+  env from the frozen requirements (see the Rorqual setup).
