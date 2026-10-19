@@ -41,6 +41,7 @@ def main():
         for _ in range(20):
             obs, _, _, _ = env.step(DUMMY)
         ids = [env.sim.model.body_name2id(n) for n in LINKS]
+        env.env.ignore_done = True            # the horizon only ends episodes; branch replays must not hit it
         rows, err = [], 0.0
         restored = "gripper_state_restored" in d.files
         br = {int(b["t"]): b for b in d["branches"]}
