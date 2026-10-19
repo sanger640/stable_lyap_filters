@@ -7,7 +7,7 @@ delta chunk, the end-effector position, the arm link positions (proprioception) 
   hold:    zero arm deltas for the chunk, gripper column untouched (hold-and-replan)
   gcem:    CEM over theta = (v, k, s, b) of THIS chunk (pop 16 x 3 iterations, 6 elites, 4 finals, 32 futures, common
            random numbers), certificate = every model (base + 4 ensemble members, 64 fresh futures) passes; cheapest
-           certified final, else hold if certified, else the final with the largest h (smallest o)
+           certified final (certificate = base model; 64 fresh futures), else hold if certified, else the final with the largest h (smallest o)
   cost:    executed part only (first 5 of 10 steps, as Jenga's 8 of 16): sum over steps of squared mm deviation of the
            cumulative position from the policy's + ETA x squared second differences, / 100
 No object state, no labels, no task goal.
@@ -50,7 +50,10 @@ class Filter:
         self.torch = torch
         self.lat = W.Latent()
         self.base = wm.WorldModel.load(W.OUT / "model_L.pt")
-        self.certs = [self.base] + [wm.WorldModel.load(W.OUT / f"model_ENS{k}.pt") for k in range(4)]
+        # certificate: the base model only (user decision 2026-10-19: ensemble deferred until the filter shows promise);
+        # LIBERO_CERT=ens adds the 4 members when they exist
+        self.certs = [self.base] + ([wm.WorldModel.load(W.OUT / f"model_ENS{k}.pt") for k in range(4)]
+                                    if os.environ.get("LIBERO_CERT") == "ens" else [])
         self.cam = json.loads((ROOT / "results/libero/camera.json").read_text())
         self.O_MAX = json.loads((W.OUT / "calibration.json").read_text())["O_MAX"]
 
