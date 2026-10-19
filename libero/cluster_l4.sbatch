@@ -14,7 +14,7 @@ SCR=/scratch/ali313/libero
 cd $SCR/repo
 TASK=${SLURM_ARRAY_TASK_ID:-0}; NCLI=${NCLI:-4}
 PP=$((8100 + (SLURM_JOB_ID + TASK) % 500)); MP=$((PP + 600))           # ports unique per job on a shared node
-L=logs/l4_${SLURM_ARRAY_JOB_ID:-0}_$TASK; mkdir -p logs $OUT
+L=$PWD/logs/l4_${SLURM_ARRAY_JOB_ID:-0}_$TASK; mkdir -p logs $OUT
 
 ( cd $SCR/vlsa-aegis && XLA_PYTHON_CLIENT_MEM_FRACTION=0.45 OPENPI_DATA_HOME=$SCR/openpi_cache \
   openpi/.venv/bin/python scripts/serve_policy.py --env LIBERO --port $PP > $L.policy.log 2>&1 ) &
