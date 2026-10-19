@@ -58,5 +58,16 @@ for a in V:
     suites = sorted({V[a][e]["suite"] for e in EPS})
     out.setdefault("per_suite_pct", {})[a] = {s: {k: round(100 * float(np.mean([V[a][e][k] for e in EPS if V[a][e]["suite"] == s])), 1)
                                                   for k in KEYS} for s in suites}
+O_MAX, HS = json.loads((Path(__file__).resolve().parent.parent / "results/libero/calibration.json").read_text())["O_MAX"], float(np.log2(3))
+for a in V:
+    logs = [x for e in EPS for x in V[a][e].get("log", []) if x.get("trigger")]
+    if logs:
+        fork = [x["h_nom"] < min(x["h_hold"], HS) for x in logs]; dist = [x["o_nom"] > O_MAX for x in logs]
+        out.setdefault("triggers", {})[a] = {
+            "n": len(logs), "fork_only": int(sum(f and not d for f, d in zip(fork, dist))),
+            "disturbance_only": int(sum(d and not f for f, d in zip(fork, dist))), "both": int(sum(f and d for f, d in zip(fork, dist))),
+            "fix_kinds": {k: sum(x.get("kind") == k for x in logs) for k in ("certified", "fallback_hold", "fallback_best", "hold")},
+            "median_seconds": float(np.median([x["seconds"] for x in logs])),
+            "median_progress_kept": float(np.median([x["progress"] for x in logs if "progress" in x])) if any("progress" in x for x in logs) else None}
 print(json.dumps(out, indent=1))
 (DIR / "analysis.json").write_text(json.dumps(out, indent=1) + "\n")
