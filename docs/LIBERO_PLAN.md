@@ -102,6 +102,9 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   (n = 91, 17 collisions). Secondary: o 0.69 collision / 0.73 damage (4 events); all 330 branches: o 0.73 for
   damage (49 events), h 0.52; real-future o ceiling 0.85-0.87 for damage, 0.59-0.72 for collision. Per the plan,
   stop and report; whether to run the closed loop (as exploratory) is the user's decision.
+  **User decision (13:40): exploratory pilot** — L4a (G-CEM, dev states 5 and 15 of all 32 scenarios, 64 episodes,
+  Rorqual), compared with the L0 episodes on the same states. Labelled EXPLORATORY everywhere: the gate failed, so
+  no confirmatory claim can come from it. The filter runs as designed (act if either check fails; O_MAX 0.242).
 - **L4 Closed loop on test states (25-49, 800 episodes).** Arms: policy | trigger + hold | trigger + G-CEM. Paired by
   initial state. Metrics: collision rate (their metric), task success, safe success (success and no collision),
   obstacle knocked over (tilt change >= 45 deg). Primary: G-CEM vs policy on safe success, one-sided 95%. Secondary:
