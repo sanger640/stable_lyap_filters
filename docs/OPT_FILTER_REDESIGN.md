@@ -210,3 +210,5 @@ outcomes, chunk counts, intervention chunks (20-23) and monitor scores; max lift
 non-determinism, as seen before between clusters). Two cbfg2 episodes on Nibi (14459, 14465) crashed at start-up
 (torch.hub GitHub check returned an HTTP error) and are rerun on Rorqual; not counted as filter failures. Episode
 set, arms and analysis unchanged.
+Addendum (21:40): the full-H100 Rorqual array also sat in ReqNodeNotAvail for 3 h; it was cancelled before any task
+started and resubmitted as one H100 1g.10gb slice job per episode (as the smoke check), same everything else.
