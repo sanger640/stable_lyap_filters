@@ -212,3 +212,30 @@ non-determinism, as seen before between clusters). Two cbfg2 episodes on Nibi (1
 set, arms and analysis unchanged.
 Addendum (21:40): the full-H100 Rorqual array also sat in ReqNodeNotAvail for 3 h; it was cancelled before any task
 started and resubmitted as one H100 1g.10gb slice job per episode (as the smoke check), same everything else.
+
+**Stage 4b result (2026-10-19; results/jenga/stage4b_result.json).** All 300 episodes x 5 arms complete; replay topple
+flags match 297-300/300. Topples / v4 / v4b / red fell after extraction:
+
+| arm | topples | v4 | v4b | red fell after extraction |
+|---|---|---|---|---|
+| policy | 68 | 211 | 173 | 43 |
+| selection | 19 | 243 | 203 | 43 |
+| hold-and-replan 2 (gripper held) | 24 | 222 | 181 | 44 |
+| G-CEM (unchanged) | 18 | 246 | 207 | 41 |
+| G2-CEM (gripper re-timed) | 23 | 239 | 202 | 39 |
+
+- **Primary, G2 vs selection: FAILS non-inferiority** on all three criteria (topples +1.33 pp, upper +4.02 > +3;
+  v4 -1.33, lower -5.59 < -5; v4b -0.33, lower -5.51 < -5). Point estimates are small; the test is underpowered,
+  but by the pre-registered rule G2 is not adopted.
+- **G2 vs G:** re-timing the gripper did not help (topples 23 vs 18, 11 / 6 discordant, p = 0.33; v4 -2.3 pp;
+  v4b -1.7 pp; red falls after extraction 39 vs 41). The hypothesis that G's success loss came from gripper desync
+  is not supported.
+- **G2 vs hold-and-replan 2:** passes (topples -0.3 pp, upper +2.6; v4 +5.7, lower +0.8; v4b +7.0, lower +1.4).
+- **All vs policy:** topples -15.0 to -16.7 pp (p <= 6e-8); success +3.7 (hold 2, n.s.) to +11.7 pp.
+- **Exploratory, not pre-registered:** unchanged G vs selection in 4b passes all three bounds (topples upper +2.3,
+  v4 lower -3.2, v4b lower -3.8). Pooled Stage 4 + 4b (600 paired eps): G vs selection topples 37 vs 39 (upper
+  +1.5 pp), v4 492 vs 493 (lower -3.2), v4b 427 vs 415 (lower -1.5) -> G-CEM matches the selection filter while
+  optimising only the one policy chunk. G vs hold-and-replan 2: v4 +8.0 pp (p = 0.01), v4b +8.7 (p = 0.01): holding
+  the gripper still hurts hold-and-replan (Stage 4's hold kept the policy's gripper: 241 / 209 on other eps).
+- **Decision:** keep G (gripper on the policy's clock) as the optimisation filter; drop G2. Hold-and-replan keeps the
+  policy's gripper.
