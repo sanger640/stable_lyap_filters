@@ -24,8 +24,10 @@ apptainer exec --nv --cleanenv --env "TORCH_HOME=/scratch/ali313/slf/torch_home,
 for i in $(seq 120); do grep -q "monitor server ready" $L.monitor.log 2>/dev/null && break; sleep 10; done      # the client itself waits for pi0.5
 grep -q "monitor server ready" $L.monitor.log || { echo "monitor server failed"; tail -20 $L.monitor.log; exit 1; }
 
-export LIBERO_CONFIG_PATH=$SCR/libero_config PYTHONPATH=$SCR/vlsa-aegis/safelibero:$PWD/libero MUJOCO_GL=${MUJOCO_GL:-egl} PYOPENGL_PLATFORM=${MUJOCO_GL:-egl}
+# clients run inside the container (its C++ runtime suits the bundled OSMesa; EGL does not work on MIG slices),
+# with the SafeLIBERO client venv; CPU rendering (OSMesa / llvmpipe), 2 threads per client
+CENV="LD_LIBRARY_PATH=$SCR/osmesa,MUJOCO_GL=osmesa,PYOPENGL_PLATFORM=osmesa,LP_NUM_THREADS=2,LIBERO_CONFIG_PATH=$SCR/libero_config,PYTHONPATH=$SCR/vlsa-aegis/safelibero:$PWD/libero"
 awk -v n=$NT -v t=$TASK 'NR % n == t' $UNITS | while read -r arm suite level task eps; do
-  echo "$SCR/clientenv/bin/python libero/filter_eval.py --arm $arm --suite $suite --level $level --tasks $task --episodes $eps --port $PP --mport $MP --out $OUT/$arm --videos ${VIDEOS:-0}"
+  echo "apptainer exec --cleanenv --env $CENV -B /scratch -B $HOME /scratch/ali313/slf/torch290.sif $SCR/clientenv/bin/python libero/filter_eval.py --arm $arm --suite $suite --level $level --tasks $task --episodes $eps --port $PP --mport $MP --out $OUT/$arm --videos ${VIDEOS:-0}"
 done | xargs -P $NCLI -I{} bash -c '{} 2>&1 | grep -E "^\{|Traceback|Error"' >> $L.clients.log
 pkill -P $$ ; echo "task $TASK done $(date)" >> $L.clients.log
