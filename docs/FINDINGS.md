@@ -96,6 +96,8 @@ Last updated 2026-10-16.
 
 ## Infrastructure facts
 
+- 2026-10-19 (user OK): raw data arrays (.npz/.npy/.hdf5/frames) deleted from finished experiment folders results/program_b/{phase2, phase1, phase1b, phase1f, threeblock_v2, visual_panel3, visual_pipeline} and results/jenga/bulk_data (~134 GB). All models (.pt), results (.json), logs and text kept; the data is regenerable with the scripts. Live filter data (threeblock_v3, closedloop_v1, cf_v1/v2, ens_*, bench2, policy_rollouts) untouched.
+
 - Alliance: user ali313, account def-soojeon; container torch 2.9 + MuJoCo 3.13; MIG slices have no OpenGL -> OSMesa CPU rendering; OSMesa vs EGL latents differ by 2.4% of between-state spread (not a cause of differences). EXTRA_ENV must be ';'-separated (sbatch splits commas). (cluster/README.md)
 - Nibi had maintenance 2026-10-15/16 (drained nodes); Rorqual most available.
 
