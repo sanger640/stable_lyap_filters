@@ -122,6 +122,11 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   only once the filter shows promise. O_MAX (label-free 99th percentile of o for the policy's own chunks) is computed
   on a random 600 training-dev decisions (time). L3 primary becomes AUROC of o from the base model (same population, label and
   gate); the ensemble scores (h_ens, o_ens, u) are not computed.
+- **Amendment (user decision 2026-10-19 ~12:00, while the world model was still training, before any L3 score):
+  L3 primary = AUROC of the FORK score (-h, base model) for collision in f0 on the undisturbed-obstacle branches,
+  gate >= 0.7. The fork monitor is the method's trigger; o (disturbance away from the robot) is the secondary
+  backstop and is reported (AUROC, and how often each check fires) but is not gated. The closed-loop trigger is
+  unchanged (either check fails -> act), as on Jenga. h takes 4 values, so ties are ranked by average rank.
 - **L4 scale (decided with the user 2026-10-19, before L3 and before any closed-loop result): start small.**
   Measured cost on the shared RTX 3090: ~2 s per decision for the trigger, ~43 s per G-CEM intervention.
   - L4a dev pilot (only if L3 passes): G-CEM on 32 scenarios x 2 dev states (5, 15), to measure trigger rate and

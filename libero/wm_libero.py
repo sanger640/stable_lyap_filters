@@ -392,7 +392,7 @@ def stage_l3():
                 for lab in ("coll_f0", "dmg_f0"):
                     q[f"AUROC_{key}_{lab}"] = auroc([sign * r[key] for r in sel], [r[lab] for r in sel])
         res[pop] = q
-    prim = res["undisturbed"].get("AUROC_o_ens_coll_f0", res["undisturbed"].get("AUROC_o_coll_f0"))
+    prim = res["undisturbed"]["AUROC_h_coll_f0"]            # fork score primary (user decision 2026-10-19, before results)
     res["gate_primary_AUROC"] = prim; res["gate_pass"] = bool(prim >= 0.7)
     (ROOT / "results/libero/l3_result.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1), flush=True)
