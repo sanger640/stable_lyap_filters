@@ -16,9 +16,22 @@ exact + 8 with smoothed Gaussian arm noise (0.05 xyz, 0.017 rot). Damage = egg h
 |---|---|---|---|---|---|---|---|
 | without live feedback | 222 | 176 | 23 | 23 | 15 | 50% | 97% agree |
 | with live feedback | 376 | 366 | 2 | 8 | 4 | 80% | 100% agree |
-Caveats: human teleop, not a policy; one noise level (sensitivity at 0.02 / 0.10 next). Check 2 (does our fork test
+Noise sensitivity (without-feedback split): fork share of damage moments 28% at 0.02 (11 split / 28 always), 50% at
+0.05, 82% at 0.10 (80 split / 18 always). Forks exist at every level; their share grows with the assumed uncertainty,
+which is what the barrier h measures (the smallest uncertainty scale at which futures split).
+Caveats: human teleop, not a policy. Check 2 (does our fork test
 detect these forks?) needs a world model on this environment; not done.
 
-## Physion — check 1 in progress
-Dominoes v1 used a config whose outcome is always positive (8/8 originals positive) -> 0 forks, invalid sample.
-v2 runs the four mixed-outcome configs that make up most of the Dominoes test set.
+## Physion — check 1 PASSES for Dominoes (fork prevalence)
+Code: ~/wksp/physion/dd (tdw_physics noisy Dominoes controller via dd/noisy_run.py; scene RNG fixed per trial,
+noise RNG varied). Perception-scale noise on all dynamic objects: position sd 5 mm (x, z), yaw von Mises kappa 1000
+(~1.8 deg). 8 scenes x 16 noise draws per config; outcome = Physion label (target ever contacts zone).
+v1 used a config whose outcome is always positive (8/8 originals positive) -> 0 forks, invalid sample (my selection).
+v2, the four mixed-outcome configs that make up most of the Dominoes test set:
+| config | contacts of 16, per scene | forks (2-14) |
+|---|---|---|
+| 1mid_J025R45_boxroom | 7 16 12 16 11 12 16 0 | 4/8 |
+| 2mid_J020R15_d3chairs_o1plants_tdwroom | 16 16 0 12 0 1 15 0 | 1/8 |
+| 2mid_J025R30_tdwroom | 0 15 3 0 0 7 15 7 | 3/8 |
+| SJ020_d3chairs_o1plants_tdwroom | 2 16 16 0 0 7 12 1 | 3/8 |
+Total 11 of 32 scenes (34%) fork under 5 mm noise (plus 4 near-forks at 1 or 15 of 16). Other scenarios not yet checked.
