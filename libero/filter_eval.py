@@ -53,7 +53,13 @@ def main():
     np.random.seed(a.seed)
     suite = benchmark.get_benchmark_dict()[a.suite](safety_level=a.level)
     client = wcp.WebsocketClientPolicy("0.0.0.0", a.port)
-    mon = Client(("localhost", a.mport), authkey=b"libero-filter")
+    for _ in range(120):                                      # the filter server may still be loading its models
+        try:
+            mon = Client(("localhost", a.mport), authkey=b"libero-filter"); break
+        except ConnectionRefusedError:
+            time.sleep(5)
+    else:
+        raise SystemExit("filter server not reachable")
     for tid in a.tasks:
         task = suite.get_task(tid); inits = suite.get_task_init_states(tid)
         bddl = pathlib.Path(get_libero_path("bddl_files")) / task.problem_folder / task.bddl_file

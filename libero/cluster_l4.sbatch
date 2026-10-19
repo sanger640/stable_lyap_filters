@@ -21,8 +21,8 @@ L=$PWD/logs/l4_${SLURM_ARRAY_JOB_ID:-0}_$TASK; mkdir -p logs $OUT
 module load apptainer
 apptainer exec --nv --cleanenv --env "TORCH_HOME=/scratch/ali313/slf/torch_home,PYTHONUNBUFFERED=1${EXTRA_ENV:+,${EXTRA_ENV//;/,}}" \
   -B /scratch -B $HOME /scratch/ali313/slf/torch290.sif /scratch/ali313/slf/pyenv/bin/python libero/monitor_server.py --port $MP > $L.monitor.log 2>&1 &
-for i in $(seq 120); do grep -q ready $L.monitor.log 2>/dev/null && break; sleep 10; done      # the client itself waits for pi0.5
-grep -q ready $L.monitor.log || { echo "monitor server failed"; tail -20 $L.monitor.log; exit 1; }
+for i in $(seq 120); do grep -q "monitor server ready" $L.monitor.log 2>/dev/null && break; sleep 10; done      # the client itself waits for pi0.5
+grep -q "monitor server ready" $L.monitor.log || { echo "monitor server failed"; tail -20 $L.monitor.log; exit 1; }
 
 export LIBERO_CONFIG_PATH=$SCR/libero_config PYTHONPATH=$SCR/vlsa-aegis/safelibero:$PWD/libero MUJOCO_GL=${MUJOCO_GL:-egl} PYOPENGL_PLATFORM=${MUJOCO_GL:-egl}
 awk -v n=$NT -v t=$TASK 'NR % n == t' $UNITS | while read -r arm suite level task eps; do
