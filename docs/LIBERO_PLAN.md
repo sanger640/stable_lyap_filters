@@ -105,6 +105,9 @@ Translation + rotation + gripper actions; pi0.5 replans every 5 steps.
   **User decision (13:40): exploratory pilot** — L4a (G-CEM, dev states 5 and 15 of all 32 scenarios, 64 episodes,
   Rorqual), compared with the L0 episodes on the same states. Labelled EXPLORATORY everywhere: the gate failed, so
   no confirmatory claim can come from it. The filter runs as designed (act if either check fails; O_MAX 0.242).
+  **Pilot result (2026-10-19 16:00):** no safety effect (damage 83.3 vs 85.0%, 60 paired, both arms on Rorqual);
+  success 50.0 vs 61.7% (n.s.). Most interventions certify the unchanged chunk; the fork trigger fires on noise.
+  The policy arm for any later test must run on the cluster too (renderer: cluster pi0.5 damages more than local).
 - **L4 Closed loop on test states (25-49, 800 episodes).** Arms: policy | trigger + hold | trigger + G-CEM. Paired by
   initial state. Metrics: collision rate (their metric), task success, safe success (success and no collision),
   obstacle knocked over (tilt change >= 45 deg). Primary: G-CEM vs policy on safe success, one-sided 95%. Secondary:
