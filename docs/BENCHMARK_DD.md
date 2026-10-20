@@ -49,3 +49,22 @@ Total 11 of 32 scenes (34%) fork under 5 mm noise (plus 4 near-forks at 1 or 15 
 - Amendment (22:30, before any check-2 data was encoded or any model trained): 3,000 training steps instead of 7,500
   (smoke test: ~1.5-3 s/step with 20 model steps; 3,000 x 128 samples = ~350 passes over ~1,080 trials). Labels are
   read from a JSON computed in the TDW env (h5py).
+
+### Physion check 2 RESULT (2026-10-20 01:30): GATE FAILS
+64 test scenes (17 real forks): AUROC(-h) 0.50; alarm rate on forks 12% vs non-forks 13%. Per config: 0.50 / 0.33 /
+0.67 / 0.43 (16 scenes each). results/benchmark_dd/physion_check2_result.json.
+Diagnosis (labels used for diagnosis only):
+- Imagined spread is NOT the problem here (unlike SafeLIBERO): end-latent spread across noisy versions of the same
+  40 scenes, real 8.7 vs imagined 8.4 (median).
+- The world model does not simulate the chain reaction: a linear readout of the outcome (target reaches zone) gets
+  AUROC 0.84 on REAL end latents of held-out trials but 0.59 on the model's IMAGINED end latents from frame 0
+  (start frame alone: 0.51). From frame 100 the imagined end gets 0.72 vs 0.66 for reading the frame at that time;
+  from frame 150, 0.81 vs 0.79 -> the model adds little beyond extrapolating what is visible.
+- End-latent MSE vs a "nothing moves" baseline: 0.038 vs 0.081 (held-out), 0.044 vs 0.095 (test).
+Conclusion: the fork test fails because the world model (1,080 trials, random camera per trial, 200-frame chains) cannot
+predict Dominoes outcomes; forks exist (check 1), the monitor's simulator is the gap.
+
+### Physion check 2b (EXPLORATORY, after the failure; set 2026-10-20 01:50 before data): is it the amount of data?
+Same everything (configs, camera randomisation, encoder, Gauss-TE, model, 3,000 steps, eval, gate) except 5x the
+training trials (+4,800 trials, seeds 20001+, so ~5,900 for training). Primary diagnostic: outcome readout on imagined
+end latents (0.59 now; real-latent ceiling 0.84); then the same fork gate. Not a confirmatory test.
