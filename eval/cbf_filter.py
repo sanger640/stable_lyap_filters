@@ -154,7 +154,7 @@ class CBF:
         import lsf as L
         torch = self.mon.torch
         if getattr(self, "_lsf", None) is None:
-            _, Critic, Actor = L.nets(); w = torch.load(L.OUT / "value.pt", map_location="cuda")
+            _, Critic, Actor = L.nets(); w = torch.load(L.OUT / os.environ.get("LSF_VALUE_NAME", "value.pt"), map_location="cuda")
             Q, A = Critic().cuda().eval(), Actor().cuda().eval(); Q.load_state_dict(w["critic"]); A.load_state_dict(w["actor"])
             self._lsf = (Q, A, float(os.environ.get("LSF_EPS", "0.3")))
         Q, A, eps = self._lsf
