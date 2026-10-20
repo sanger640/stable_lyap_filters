@@ -69,3 +69,11 @@ results/jenga/lsf_value_diag.json.
   the min propagates pessimism at once, so the critic drifts down from its initialisation. Fix (run 2): anneal g from
   0.9 to 0.9999 over the first 80% of training (as in the reachability-RL toolbox the paper builds on, to my
   understanding), 600 iterations; nothing else changed. Selection of the run uses the same validation sanity check.
+- Run 2 (gamma annealed 0.9 -> 0.9999, 600 iterations) also collapsed: critic ~-0.47 for every input although the
+  classifier scores safe resets ~0.8 and failed latents ~-0.33. The log shows the value rising until the buffer fills,
+  then sinking steadily: the min-backup with function approximation spreads the ~3% failed states' low values to all
+  similar latents, and with g near 1 nothing pulls it back.
+- **Tuning rule for g (fixed before running, validation data only, never test episodes):** fixed g in {0.9, 0.95,
+  0.99} (effective horizons ~1, 2, 10 s at 0.1 s per model step), 600 iterations each; choose the g with the highest
+  AUROC of -V for "any real future topples" on the 729 held-out validation decision points (eval/lsf_diag.py).
+  If none exceeds the classifier-only score at the current state (0.75), report that the learned value adds nothing.

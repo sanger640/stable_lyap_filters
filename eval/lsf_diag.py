@@ -4,6 +4,7 @@ Start latents and labels are read from the same validation files (no reliance on
 usage: python3 eval/lsf_diag.py
 """
 import glob
+import os
 import json
 from pathlib import Path
 import sys
@@ -20,7 +21,7 @@ def main():
     from wm_libero import auroc
     from fresh_fragility_panel import neighbour_tilts, TOPPLE_DEG
     _, Critic, Actor = L.nets()
-    w = torch.load(L.OUT / "value.pt", map_location="cuda")
+    w = torch.load(L.OUT / os.environ.get("LSF_VALUE_NAME", "value.pt"), map_location="cuda")
     Q, A = Critic().cuda().eval(), Actor().cuda().eval(); Q.load_state_dict(w["critic"]); A.load_state_dict(w["actor"])
     Clf, _, _ = L.nets(); clf = Clf().cuda().eval(); clf.load_state_dict(torch.load(L.OUT / "classifier.pt", map_location="cuda"))
     files = [f for src in ("cf_v1", "cf_v2", "closedloop_v1", "oil_v1")
@@ -41,7 +42,7 @@ def main():
            "AUROC_minus_l_now_vs_any_topple": auroc(-l0, anyf),
            "V_quantiles": np.quantile(V, [0.05, 0.25, 0.5, 0.75, 0.95]).round(3).tolist(),
            "share_V_below_0.3": float((V < 0.3).mean()), "share_V_below_0": float((V < 0).mean())}
-    (ROOT / "results/jenga/lsf_value_diag.json").write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1))
+    (ROOT / f"results/jenga/lsf_value_diag_{os.environ.get('LSF_VALUE_NAME', 'value.pt')[:-3]}.json").write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1))
 
 
 if __name__ == "__main__":

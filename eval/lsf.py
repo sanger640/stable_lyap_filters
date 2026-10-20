@@ -77,7 +77,8 @@ def stage_data():
 
 
 # ------------------------------------------------------------------------------------------- networks
-DELTA, GAMMA, TAU = 0.25, 0.9999, 0.005
+DELTA, TAU = 0.25, 0.005
+GAMMA = float(os.environ.get("LSF_GAMMA", 0.9999))
 DEV = os.environ.get("LSF_DEVICE", "cuda")
 WM_PATH = ROOT / "results/program_b/oil_v1/model/model_OIL.pt"
 MAX_STEP = 0.01                                  # m per control step (the policy's own range)
