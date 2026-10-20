@@ -21,9 +21,10 @@ import sys
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
+sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src"), str(ROOT / "libero")]
 PH = Path.home() / "wksp/physion/dd"
-OUT = ROOT / "results/physion_check2"
+OUT = ROOT / ("results/physion_check2" + os.environ.get("CHECK2_TAG", ""))     # "b": exploratory 2b (5x data)
+TRAIN_GLOBS = ["train/*/c*/*.npz"] + (["train2/*/c*/*.npz"] if os.environ.get("CHECK2_TAG") == "b" else [])
 STEPS, MID, END = 20, 9, 19
 SCALES = (0.5, 1.0, 2.0, 3.0)
 H_CAP = float(np.log2(SCALES[-1]))
@@ -77,11 +78,13 @@ def stage_pca():
 
 def stage_encode():
     lat = Latent()
-    jobs = {"train": sorted(glob.glob(str(PH / "train/*/c*/*.npz"))),
+    jobs = {"train": sorted(f for gl in TRAIN_GLOBS for f in glob.glob(str(PH / gl))),
             "test_old": sorted(glob.glob(str(PH / "test_clean_old/*/*.npz"))),
             "test_new": sorted(glob.glob(str(PH / "test_clean_new/*/*.npz"))),
             "gte": sorted(glob.glob(str(PH / "gte/*/n*/*.npz")))}
     for name, files in jobs.items():
+        if (OUT / f"z_{name}.npz").exists():
+            continue
         z = np.stack([lat(frames21(f)) for f in files]) if files else np.zeros((0, STEPS + 1, 28, 28, 8), np.float16)
         np.savez(OUT / f"z_{name}.npz", z=z, files=np.array([str(Path(f).relative_to(PH)) for f in files]))
         print("encoded", name, z.shape, flush=True)
