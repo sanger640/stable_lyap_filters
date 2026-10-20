@@ -182,6 +182,32 @@ def stage_eval():
     (OUT / "check2_result.json").write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1), flush=True)
 
 
+def stage_diag():
+    """World-model diagnostic (labels for diagnosis only): can the outcome (target reaches zone) be read from the
+    model's imagined end latent? Linear readout (7x7x8 pooled latents, logistic regression) fitted on REAL end latents
+    of training trials, applied to held-out trials' real ends (ceiling) and imagined ends from frames 0/50/100/150."""
+    import torch
+    import step3_world_model as wm
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    patch_wm(); model = wm.WorldModel.load(OUT / "model_P.pt")
+    tr = np.load(OUT / "z_train.npz"); lab = np.array([bool(np.load(PH / f)["label"]) for f in tr["files"]])
+    Z = tr["z"]; te = np.arange(len(Z)) % 10 == 0
+    pool = lambda z: z.astype(np.float32).reshape(len(z), 7, 4, 7, 4, 8).mean((2, 4)).reshape(len(z), -1)
+    clf = LogisticRegression(C=0.1, max_iter=3000).fit(pool(Z[~te, -1]), lab[~te])
+    res = {"heldout_trials": int(te.sum()), "real_end_readout_AUROC": roc_auc_score(lab[te], clf.predict_proba(pool(Z[te, -1]))[:, 1])}
+    for s0 in (0, 5, 10, 15):
+        z = torch.as_tensor(Z[te, s0], device="cuda").float(); outs = []
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+            for b in range(0, len(z), 256):
+                zz = z[b:b + 256]
+                for t in range(STEPS - s0):
+                    zz = model.step(zz, torch.zeros(len(zz), 1, device="cuda")).float()
+                outs.append(zz.cpu().numpy())
+        res[f"imagined_end_readout_AUROC_from_frame_{10 * s0}"] = roc_auc_score(lab[te], clf.predict_proba(pool(np.concatenate(outs)))[:, 1])
+    (OUT / "diag_result.json").write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1), flush=True)
+
+
 if __name__ == "__main__":
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
-    {"pca": stage_pca, "encode": stage_encode, "gte": stage_gte, "train": stage_train, "eval": stage_eval}[sys.argv[1]]()
+    {"pca": stage_pca, "encode": stage_encode, "gte": stage_gte, "train": stage_train, "eval": stage_eval, "diag": stage_diag}[sys.argv[1]]()
