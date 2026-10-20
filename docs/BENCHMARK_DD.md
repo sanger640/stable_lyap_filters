@@ -171,3 +171,10 @@ and robot0_eye_in_hand (secondary), 256 px. Frames are kept for all decision poi
 20% of the others. Score and gate as OopsieBench 2a: DINOv2-392 + channel PCA 8 (fitted on exact-replay frames),
 two-mode split test on the 8 noisy end latents; AUROC(separation, fork 2-6/8) >= 0.7 AND split rate on forks >= 2x
 non-forks.
+
+### SafeManip check 2a RESULT (2026-10-20 16:10): FAILS (wrist camera close)
+553 saved decision points (78 with any bad replay, 15 real forks). agentview_left (gate): AUROC 0.62, split rate 47% on
+forks vs 35% on non-forks (1.3x) -> fails. eye_in_hand (secondary): AUROC 0.75, 67% vs 37% (1.8x; fails the 2x rule).
+As on OopsieBench, about a third of non-fork moments split visually: the whole-image split test reacts to the arm's own
+trajectory variation under noise. Candidate fix (exploratory, not yet run): mask the robot's own pixels (proprioceptive
+robot segmentation) before the split test. results/benchmark_dd/safemanip_check2a_result.json.
