@@ -147,12 +147,44 @@ class CBF:
         back = np.repeat(cur[None], 16, 0); back[:, 2] += np.linspace(0, 0.03, 16); back[:, 3] = 0.0
         return [slow, vert, back]
 
+    def lsf(self, sim, z0, plan, t0):
+        """Least-restrictive latent safety filter (Nakamura et al. 2025) at chunk level: imagine the executed segment of
+        the policy's plan (8 control steps = 4 model steps) in the world model; execute it if V = Q(z, g, pi(z, g)) > eps
+        after every imagined step, else the safety actor's 4-model-step plan imagined from the current real latent."""
+        import lsf as L
+        torch = self.mon.torch
+        if getattr(self, "_lsf", None) is None:
+            _, Critic, Actor = L.nets(); w = torch.load(L.OUT / "value.pt", map_location="cuda")
+            Q, A = Critic().cuda().eval(), Actor().cuda().eval(); Q.load_state_dict(w["critic"]); A.load_state_dict(w["actor"])
+            self._lsf = (Q, A, float(os.environ.get("LSF_EPS", "0.3")))
+        Q, A, eps = self._lsf
+        S = CFG["PLAN_START"]; seg = np.asarray(plan, np.float32)[S:S + 8]
+        g = torch.as_tensor(np.r_[sim.target, plan[0][3]][None], dtype=torch.float32, device="cuda")
+        with torch.no_grad():
+            z, gg, vals = z0[None], g, []
+            for m in range(4):
+                a = torch.as_tensor(seg[2 * m:2 * m + 2].reshape(1, 8), device="cuda")
+                z = self.mon.model.step(z, a).float(); gg = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
+                vals.append(float(Q(z, gg, A(z, gg))))
+            v_min = min(vals)
+            if v_min > eps:
+                return seg.copy(), {"intervened": False, "lsf_vmin": v_min, "seconds": round(time.time() - t0, 2)}
+            z, gg, out = z0[None], g, []
+            for m in range(4):
+                a = A(z, gg); out.append(a.view(2, 4).cpu().numpy())
+                z = self.mon.model.step(z, a).float(); gg = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
+        out = np.concatenate(out).astype(np.float32)
+        return out, {"intervened": True, "abstained": False, "kind": "lsf", "lsf_vmin": v_min,
+                     "change_mm": float(np.abs(out[:, :3] - seg[:, :3]).max() * 1000), "seconds": round(time.time() - t0, 2)}
+
     def filter(self, sim, chunk, k, plan=None, hist=None, pol=None):
         import policy_rollout as pr
         torch = self.mon.torch
         t0 = time.time()
         frame = self.mon.frame(sim)
         z0 = torch.as_tensor(self.mon.latent(frame[None])[0], device="cuda").float()
+        if CFG["FIX"] == "lsf":                # latent safety filter baseline (docs/LATENT_SAFETY_FILTER.md); no fork score
+            return self.lsf(sim, z0, plan, t0)
         hold = np.repeat(np.r_[sim.target, 0.0][None].astype(np.float32), 16, 0)
         h, o = self.score(sim, z0, np.stack([plan, hold]), 64)
         h_nom, o_nom, h_now = h[0], o[0], h[1]
