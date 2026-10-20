@@ -167,6 +167,14 @@ def stage_eval():
            "alarm_rate_forks": float(alarm[y].mean()) if y.any() else None,
            "alarm_rate_nonforks": float(alarm[~y].mean()) if (~y).any() else None,
            "h_values": {str(v): int((h == v).sum()) for v in np.unique(h)}}
+    res["per_config"] = {}                                  # reporting only (occluder / distractor configs vs not)
+    for c in CFGS:
+        m = np.array([r["config"] == c for r in rows])
+        if m.any():
+            yc, hc = y[m], h[m]
+            res["per_config"][c] = {"scenes": int(m.sum()), "real_forks": int(yc.sum()),
+                                    "AUROC_minus_h": auroc(-hc, yc) if 0 < yc.sum() < len(yc) else None,
+                                    "alarms_forks": int((hc < H_CAP)[yc].sum()), "alarms_nonforks": int((hc < H_CAP)[~yc].sum())}
     res["gate_pass"] = bool(res["AUROC_minus_h"] >= 0.7 and res["alarm_rate_forks"] >= 2 * max(res["alarm_rate_nonforks"], 1e-9))
     (OUT / "check2_result.json").write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1), flush=True)
 
