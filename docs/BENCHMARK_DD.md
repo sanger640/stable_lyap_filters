@@ -91,3 +91,8 @@ image-based fork monitor can work and we stop before training a world model.)
 - Label: real damage fork (2..6 of 8 noisy replays drop egg health >= 10).
 - Gate: AUROC(separation, real fork) >= 0.7 over all decision points, AND split rate on real forks >= 2x that on
   non-forks. Also reported: damage readout from real end latents (linear, held-out demos).
+- Pre-run facts (2026-10-20, before rendering): in the RoboCasa backend damage is NOT visualised (colouring exists only
+  in OmniGibson); a crushed egg looks unchanged. All 107 damage events (> 5 health) in the 60 demos happen with the egg
+  at the gripper (none from drops); 24 coincide with the gripper closing. Prediction recorded now: 2a likely FAILS
+  (force-only damage, no visible consequence). Secondary view added before rendering: robot0_eye_in_hand (wrist
+  camera, egg large in view), reported alongside; the gate stays on agentview_right.
