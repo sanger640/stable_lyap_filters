@@ -178,3 +178,17 @@ forks vs 35% on non-forks (1.3x) -> fails. eye_in_hand (secondary): AUROC 0.75, 
 As on OopsieBench, about a third of non-fork moments split visually: the whole-image split test reacts to the arm's own
 trajectory variation under noise. Candidate fix (exploratory, not yet run): mask the robot's own pixels (proprioceptive
 robot segmentation) before the split test. results/benchmark_dd/safemanip_check2a_result.json.
+
+## SafeManip check 2a-masked (exploratory after the 2a failure; agreed with the user; spec fixed 2026-10-20 ~17:00)
+Hypothesis: the whole-image split test is swamped by the robot's own trajectory variation; masking the robot's pixels
+should remove false splits while keeping object outcomes (tips, knocks) visible.
+- Fresh rollouts, same tasks/branching/labels as 2a (seeds 31, 32; 2 episodes per task each).
+- For every replay end frame, three views at 256 px, each with the simulator's segmentation: (1) agentview_left (policy
+  camera; GATED), (2) a dedicated fixed monitor camera, one rule for all tasks: placed above the robot (base xy +
+  25% towards the gripper's start position, 0.6 m above it), aimed at the gripper's start position (exploratory),
+  (3) eye_in_hand (comparison).
+- Robot mask = pixels whose geom belongs to the robot (robot0_ / gripper0_ / mobilebase0_ bodies); latent patches
+  (28x28) with > 30% robot pixels in any of the 8 replays are excluded before the split test ("ideal mask", an upper
+  bound; a proprioceptive mask follows only if this passes).
+- Score and gate as 2a: AUROC(separation, fork 2-6/8) >= 0.7 AND split rate on forks >= 2x non-forks, gated on
+  view (1). Unmasked scores reported alongside.
