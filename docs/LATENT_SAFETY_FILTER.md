@@ -49,3 +49,8 @@ no extra training beyond the world model). Same world model, so differences come
   segment fails the check, the safety actor plans the 8-step segment in imagination (4 model steps) from the current
   real latent and that segment is executed; the next decision re-encodes the real frame. (The paper re-plans every
   control step at 15 Hz; per-step re-encoding is not possible in this harness without changing the comparison.)
+- Compute (2026-10-20 ~17:40, before training): training runs on Nibi (H100 slice) where cf_v1 / cf_v2 already live.
+  The data are built in two parts with the same stage and rules: cf_v1 + cf_v2 on Nibi (tag cf), closedloop_v1 +
+  oil_v1 locally (tag clo: train 59,618 latents / 25,013 failed / 2,569 resets; val 5,251 / 2,206 / 329) and
+  uploaded; merged with eval/lsf.py merge. Exact counts differ slightly from the earlier single local build (separate
+  random streams per part); the merged summary files record the final numbers.
