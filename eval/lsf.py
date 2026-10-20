@@ -21,8 +21,21 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 OUT = Path(os.environ.get("LSF_OUT", str(ROOT / "results/program_b/lsf_v1")))
-SOURCES = ["closedloop_v1", "cf_v1", "cf_v2", "oil_v1"]
+SOURCES = os.environ.get("LSF_SOURCES", "closedloop_v1,cf_v1,cf_v2,oil_v1").split(",")
+TAG = os.environ.get("LSF_TAG", "")                 # part files (data built where the sources live), merged by stage_merge
 SAFE_PER_FAIL, SEED = 3, 20261020
+
+
+def stage_merge():
+    """Concatenate part files (LSF_TAGS=a,b) into the canonical train_/val_ arrays."""
+    tags = os.environ["LSF_TAGS"].split(",")
+    for split in ("train", "val"):
+        for k in ("z", "prop", "fail", "reset_z", "reset_prop"):
+            parts = [np.load(OUT / f"{split}_{k}_{t}.npy") for t in tags if (OUT / f"{split}_{k}_{t}.npy").exists()]
+            np.save(OUT / f"{split}_{k}.npy", np.concatenate(parts))
+        y = np.load(OUT / f"{split}_fail.npy")
+        json.dump({"latents": int(len(y)), "failed": int(y.sum()), "resets": int(len(np.load(OUT / f"{split}_reset_z.npy"))), "tags": tags},
+                  open(OUT / f"{split}_summary.json", "w")); print(split, len(y), int(y.sum()), flush=True)
 
 
 def labels_for(path):
@@ -56,9 +69,10 @@ def stage_data():
                 R0.append(z0); RP.append(a0[0])
             print(split, src, len(files), "files", flush=True)
         Z, P, Y = np.concatenate(Z), np.concatenate(P), np.concatenate(Y)
-        np.save(OUT / f"{split}_z.npy", Z.astype(np.float16)); np.save(OUT / f"{split}_prop.npy", P); np.save(OUT / f"{split}_fail.npy", Y)
-        np.save(OUT / f"{split}_reset_z.npy", np.stack(R0).astype(np.float16)); np.save(OUT / f"{split}_reset_prop.npy", np.stack(RP))
-        json.dump({"latents": int(len(Y)), "failed": int(Y.sum()), "resets": len(R0)}, open(OUT / f"{split}_summary.json", "w"))
+        sfx = f"_{TAG}" if TAG else ""
+        np.save(OUT / f"{split}_z{sfx}.npy", Z.astype(np.float16)); np.save(OUT / f"{split}_prop{sfx}.npy", P); np.save(OUT / f"{split}_fail{sfx}.npy", Y)
+        np.save(OUT / f"{split}_reset_z{sfx}.npy", np.stack(R0).astype(np.float16)); np.save(OUT / f"{split}_reset_prop{sfx}.npy", np.stack(RP))
+        json.dump({"latents": int(len(Y)), "failed": int(Y.sum()), "resets": len(R0), "sources": SOURCES}, open(OUT / f"{split}_summary{sfx}.json", "w"))
         print(split, "latents", len(Y), "failed", int(Y.sum()), "resets", len(R0), flush=True)
 
 
@@ -190,4 +204,4 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
 
 
 if __name__ == "__main__":
-    {"data": stage_data, "classifier": stage_classifier, "value": stage_value}[sys.argv[1]]()
+    {"data": stage_data, "merge": stage_merge, "classifier": stage_classifier, "value": stage_value}[sys.argv[1]]()
