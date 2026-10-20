@@ -116,6 +116,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tasks", nargs="+", required=True); ap.add_argument("--episodes", type=int, default=4)
     ap.add_argument("--port", type=int, default=8100); ap.add_argument("--out", required=True); ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--render", action="store_true", help="check 2a: save end frames of replays (all bad points + 20%% of others)")
     a = ap.parse_args()
     import gymnasium as gym
     import robocasa  # noqa: F401
@@ -145,7 +146,11 @@ def main():
                                                      "observation/right_image": im("video.robot0_agentview_right"),
                                                      "observation/state": state, "prompt": lang})["actions"])
                     if dec % EVERY_DEC == 0 and len(chunk) >= 5:
-                        rows.append(branch(env.unwrapped, rs, chunk, convert_action, rng, task, ep, t))
+                        rows.append(branch(env.unwrapped, rs, chunk, convert_action, rng, task, ep, t, render=a.render))
+                        if a.render:
+                            fr = rows[-1].pop("frames")
+                            if rows[-1]["n_bad"] > 0 or rows[-1]["bad_exact"] or rng.random() < 0.2:
+                                np.save(out / f"{task}_s{a.seed}_e{ep}_t{t}.npy", fr)
                         exact_ok.append(rows[-1]["exact_ok"])
                     plan.extend(chunk[:5]); dec += 1
                 obs, reward, term, trunc, info = env.step(convert_action(plan.popleft()))
@@ -164,13 +169,13 @@ def cameras(rs, on):
             rs.modify_observable(name, "enabled", on)
 
 
-def branch(gw, rs, chunk, convert_action, rng, task, ep, t):
+def branch(gw, rs, chunk, convert_action, rng, task, ep, t, render=False):
     cameras(rs, False)
     s = snapshot(rs); held0 = grasped(rs)
     base = np.asarray(chunk[:H], np.float64)                       # policy action space (12-d)
     hold = base[-1].copy(); hold[:6] = 0; hold[7:11] = 0
     E = lambda acts: [to_env_action(gw, x, convert_action) for x in acts]
-    res, exact_traj = [], None
+    res, exact_traj, frames = [], None, []
     for k in range(N_FUT):
         restore(rs, s); a = base.copy()
         if k > 0:
@@ -182,6 +187,9 @@ def branch(gw, rs, chunk, convert_action, rng, task, ep, t):
             rs.step(act)
             traj.append((obj_state(rs), grasped(rs))); cmds.append(float(full[i, 6]))
         res.append(outcome(rs, traj, cmds, traj[-1][0]))
+        if render:
+            frames.append(np.stack([rs.sim.render(camera_name=cn, width=256, height=256)[::-1]
+                                    for cn in ("robot0_agentview_left", "robot0_eye_in_hand")]).astype(np.uint8))
         if k == 0:
             exact_traj = np.array([np.concatenate([x[0][n][0] for n in sorted(x[0])]) for x in traj[1:6]])
     restore(rs, s)
@@ -193,7 +201,8 @@ def branch(gw, rs, chunk, convert_action, rng, task, ep, t):
     bad = [any(r) for r in res]
     return {"task": task, "episode": ep, "t": t, "held_at_start": bool(held0), "bad_exact": bad[0], "n_bad": int(sum(bad[1:])),
             "n_slip": int(sum(r[0] for r in res[1:])), "n_unstable": int(sum(r[1] for r in res[1:])),
-            "n_knocked": int(sum(r[2] for r in res[1:])), "exact_ok": dev <= 1e-6, "exact_dev_m": dev}
+            "n_knocked": int(sum(r[2] for r in res[1:])), "exact_ok": dev <= 1e-6, "exact_dev_m": dev,
+            **({"frames": np.stack(frames)} if render else {})}
 
 
 if __name__ == "__main__":
