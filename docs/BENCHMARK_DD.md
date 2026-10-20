@@ -192,3 +192,12 @@ should remove false splits while keeping object outcomes (tips, knocks) visible.
   bound; a proprioceptive mask follows only if this passes).
 - Score and gate as 2a: AUROC(separation, fork 2-6/8) >= 0.7 AND split rate on forks >= 2x non-forks, gated on
   view (1). Unmasked scores reported alongside.
+
+### SafeManip check 2a-masked RESULT (2026-10-20 18:10): FAILS on every view
+586 decision points with frames (65 with any bad replay, 20 real forks). AUROC(split separation, fork), unmasked ->
+robot-masked: agentview_left (gate) 0.53 -> 0.60, split rate 50% vs 41% (1.2x); dedicated monitor camera 0.57 -> 0.68,
+55% vs 34% (1.6x); wrist 0.72 -> 0.72 (1.2x). Masking helps a little, but 34-42% of non-fork moments still split, so the
+arm was not the main source of false splits; likely candidates: held objects moving with the noisy hand (visible, not
+part of the robot mask) and the injected execution noise (5% of the action range, cm-scale here vs Jenga's mm-scale
+measured tracking error). Per the agreed timebox this closes the existing-benchmark search.
+results/benchmark_dd/safemanip_check2a_masked_result.json.
