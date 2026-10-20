@@ -207,7 +207,7 @@ Audit finding: checks 2a / 2a-masked used only 8 real futures per decision point
 n = 8 (non-fork split rates of 34-42% on every benchmark and view are consistent with that), whereas the Jenga monitor
 was validated with 64 futures. So the 2a negatives are under-powered rather than demonstrated.
 Re-test: 32 noisy replays (+ the exact one) per decision point; tasks StackBowlsCabinet and RecycleBottlesByType (most
-fork-rich in 1c), 4 episodes each (seeds 41, 42; 2 episodes each), branching every 3rd decision; same restore, labels
+fork-rich in 1c), 4 episodes each (seeds 41, 410, 42, 420; 1 episode each, run in parallel - amended at launch, same count), branching every 3rd decision; same restore, labels
 and robot masks. Gate on the ROBOT-MASKED MONITOR CAMERA (best view in 2a-masked; these are fresh episodes, so this
 confirms that choice): AUROC(split separation, fork) >= 0.7 AND split rate on forks >= 2x non-forks, with fork = 2..30
 of the 32 noisy replays bad (bad share strictly between ~5% and ~95%). agentview_left and wrist reported alongside.
