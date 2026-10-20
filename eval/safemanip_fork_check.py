@@ -78,31 +78,37 @@ def obj_state(rs):
 
 
 def grasped(rs):
-    try:
-        return bool(rs._check_grasp(gripper=rs.robots[0].gripper["right"], object_geoms=rs.objects["obj"]))
-    except Exception:
-        return False
+    """Set of object names currently grasped (works for single-object and composite tasks)."""
+    out = set()
+    for name, obj in rs.objects.items():
+        try:
+            if rs._check_grasp(gripper=rs.robots[0].gripper["right"], object_geoms=obj):
+                out.add(name)
+        except Exception:
+            pass
+    return frozenset(out)
 
 
 def outcome(rs, traj, cmds, st_end):
-    """traj: per step (obj_state dict, grasped); cmds: gripper command per step (> 0 = close).
-    slip_drop (P3): the target leaves the gripper while the gripper stays commanded closed (and falls > 2 cm);
-    unstable_release (P2): after a commanded release the target tilts > 45 deg or still moves > 5 cm/s at the end;
-    knocked: a non-target object tilts > 45 deg or falls > 5 cm."""
+    """traj: per step (obj_state dict, grasped set); cmds: gripper command per step (> 0 = close).
+    slip_drop (P3): an object leaves the gripper while the gripper stays commanded closed and then falls > 2 cm;
+    unstable_release (P2): an object held before a commanded release tilts > 45 deg after it or still moves > 5 cm/s
+    at the end; knocked: an object never held in the window tilts > 45 deg or falls > 5 cm."""
     s0 = traj[0][0]
+    held_any = set().union(*[g for _, g in traj])
     slip = False
     for i in range(1, len(traj)):
-        if traj[i - 1][1] and not traj[i][1] and cmds[i] > 0:
-            z_then = traj[i][0]["obj"][0][2]
-            if any(z_then - traj[j][0]["obj"][0][2] > 0.02 for j in range(i, len(traj))) or z_then - st_end["obj"][0][2] > 0.02:
-                slip = True; break
+        for n in traj[i - 1][1] - traj[i][1]:
+            if cmds[i] > 0 and traj[i][0][n][0][2] - min(traj[j][0][n][0][2] for j in range(i, len(traj))) > 0.02:
+                slip = True
     rel = next((i for i in range(1, len(cmds)) if cmds[i] <= 0 < cmds[i - 1]), None)
     unstable = False
     if rel is not None:
-        t_rel = traj[rel][0]["obj"][1]
-        v_end = np.linalg.norm(traj[-1][0]["obj"][0] - traj[-2][0]["obj"][0]) * 20.0
-        unstable = abs(st_end["obj"][1] - t_rel) > 45 or v_end > 0.05
-    knocked = any(n != "obj" and (abs(st_end[n][1] - s0[n][1]) > 45 or s0[n][0][2] - st_end[n][0][2] > 0.05) for n in s0)
+        for n in traj[rel - 1][1]:
+            v_end = np.linalg.norm(traj[-1][0][n][0] - traj[-2][0][n][0]) * 20.0
+            if abs(st_end[n][1] - traj[rel][0][n][1]) > 45 or v_end > 0.05:
+                unstable = True
+    knocked = any(n not in held_any and (abs(st_end[n][1] - s0[n][1]) > 45 or s0[n][0][2] - st_end[n][0][2] > 0.05) for n in s0)
     return bool(slip), bool(unstable), bool(knocked)
 
 
@@ -177,15 +183,15 @@ def branch(gw, rs, chunk, convert_action, rng, task, ep, t):
             traj.append((obj_state(rs), grasped(rs))); cmds.append(float(full[i, 6]))
         res.append(outcome(rs, traj, cmds, traj[-1][0]))
         if k == 0:
-            exact_traj = np.array([x[0]["obj"][0] for x in traj[1:6]])
+            exact_traj = np.array([np.concatenate([x[0][n][0] for n in sorted(x[0])]) for x in traj[1:6]])
     restore(rs, s)
     chk = []
     for act in E(base[:5]):
-        rs.step(act); chk.append(obj_state(rs)["obj"][0].copy())
+        rs.step(act); o = obj_state(rs); chk.append(np.concatenate([o[n][0] for n in sorted(o)]))
     dev = float(np.abs(np.array(chk) - exact_traj).max())
     restore(rs, s); cameras(rs, True)
     bad = [any(r) for r in res]
-    return {"task": task, "episode": ep, "t": t, "held_at_start": held0, "bad_exact": bad[0], "n_bad": int(sum(bad[1:])),
+    return {"task": task, "episode": ep, "t": t, "held_at_start": bool(held0), "bad_exact": bad[0], "n_bad": int(sum(bad[1:])),
             "n_slip": int(sum(r[0] for r in res[1:])), "n_unstable": int(sum(r[1] for r in res[1:])),
             "n_knocked": int(sum(r[2] for r in res[1:])), "exact_ok": dev <= 1e-6, "exact_dev_m": dev}
 

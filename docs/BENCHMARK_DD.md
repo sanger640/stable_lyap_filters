@@ -151,3 +151,6 @@ Same pi0.5 checkpoint, branching, restore, labels and gate (>= 15 forks with 2-6
 moments) as check 1. Tasks (P2 + P3 apply): StackBowlsCabinet, LoadDishwasher, SetUpCuttingStation,
 StoreLeftoversInBowl, PrepareCoffee, DeliverStraw (all seen in the checkpoint's pretraining) and RecycleBottlesByType
 (unseen; bottles). 4 episodes each (seeds 7 and 8, 2 episodes each).
+- 1c amendment (11:50, before any 1c result): composite tasks have no single "obj"; labels generalised to all task
+  objects (slip: any object leaving the closed gripper and falling > 2 cm; unstable: any object held before a commanded
+  release tips > 45 deg or still moves; knocked: any object not held in the window tips/falls). Same thresholds.
