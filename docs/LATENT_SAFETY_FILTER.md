@@ -63,3 +63,9 @@ with g = 0.9999 the value approaches the worst classifier score along imagined r
 under the untrained actor drift to latents the classifier calls failed. Not usable; next: measure l along imagined
 rollouts (hold still / dataset policy actions / actor) to locate the drift, then fix training (no test data used).
 results/jenga/lsf_value_diag.json.
+- Drift check (same day, validation states only): the classifier calls 2-3% of non-toppling imagined futures failed
+  under hold-still, dataset policy actions and the actor alike - the same as on real frames - so imagination is not the
+  problem. Diagnosis: with a fixed g = 0.9999 a safe state's value can rise only (1-g) l = 0.0001 per backup while
+  the min propagates pessimism at once, so the critic drifts down from its initialisation. Fix (run 2): anneal g from
+  0.9 to 0.9999 over the first 80% of training (as in the reachability-RL toolbox the paper builds on, to my
+  understanding), 600 iterations; nothing else changed. Selection of the run uses the same validation sanity check.

@@ -176,7 +176,9 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
            "a": torch.zeros(cap, 8, device=DEV), "z2": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV),
            "g2": torch.zeros(cap, 4, device=DEV), "l": torch.zeros(cap, device=DEV)}
     n, ptr, rng, log = 0, 0, np.random.default_rng(SEED), []
+    g0, g1 = float(os.environ.get("LSF_GAMMA0", 0.9)), GAMMA        # gamma annealed toward 1 (reachability-RL practice)
     for it in range(iters):
+        gam = 1 - (1 - g0) * ((1 - g1) / (1 - g0)) ** min(1.0, it / max(1, int(0.8 * iters)))
         i = rng.choice(len(R_z), envs); z = torch.as_tensor(R_z[i], device=DEV).float(); g = torch.as_tensor(R_g[i], device=DEV).float()
         with torch.no_grad():
             for t in range(horizon):                                   # imagined rollout of the (noisy) safety actor
@@ -189,7 +191,7 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
             j = torch.as_tensor(rng.integers(0, n, batch), device=DEV)
             zb, gb, ab, z2b, g2b, lb = (buf[k][j] for k in ("z", "g", "a", "z2", "g2", "l"))
             with torch.no_grad():
-                y = (1 - GAMMA) * lb + GAMMA * torch.minimum(lb, Qt(z2b, g2b, At(z2b, g2b)))
+                y = (1 - gam) * lb + gam * torch.minimum(lb, Qt(z2b, g2b, At(z2b, g2b)))
             lq = ((Q(zb, gb, ab) - y) ** 2).mean(); oq.zero_grad(); lq.backward(); oq.step()
             la = -Q(zb, gb, A(zb, gb)).mean(); oa.zero_grad(); la.backward(); oa.step()
             with torch.no_grad():
@@ -198,8 +200,8 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
                 for p, pt in zip(A.parameters(), At.parameters()):
                     pt.mul_(1 - TAU).add_(TAU * p)
         if it % 10 == 0 or it == iters - 1:
-            log.append({"iter": it, "critic_loss": float(lq), "actor_value": float(-la), "buffer": n}); print(log[-1], flush=True)
-    torch.save({"critic": Q.state_dict(), "actor": A.state_dict()}, OUT / "value.pt")
+            log.append({"iter": it, "gamma": gam, "critic_loss": float(lq), "actor_value": float(-la), "buffer": n}); print(log[-1], flush=True)
+    torch.save({"critic": Q.state_dict(), "actor": A.state_dict()}, OUT / os.environ.get("LSF_VALUE_NAME", "value.pt"))
     json.dump(log, open(OUT / "value_log.json", "w"))
 
 
