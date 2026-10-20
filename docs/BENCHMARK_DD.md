@@ -114,3 +114,10 @@ image-based fork monitor can work and we stop before training a world model.)
 - Exactness check: the exact replay's first 5 steps must match the nominal continuation (object poses).
 - Pass (fork-type failures exist in useful numbers): >= 15 decision points with 2-6 of 8 noisy replays bad, AND forks
   >= 25% of decision points where any replay is bad.
+
+### OopsieBench check 2a RESULT (2026-10-20): FAILS, as predicted
+598 decision points, 19 real damage forks. agentview_right (gate): AUROC(split separation, fork) 0.55, split rate
+37% forks vs 33% non-forks -> fails. Wrist camera (secondary): 0.71, 58% vs 42% (fails the 2x rule). Damage readout
+from real end latents 0.82 / 0.83 (correlates such as hand pose), but the futures split visually about as often without
+a damage fork (arm noise alone moves the hand visibly). Egg-crush damage is force-based and not a clean visual fork:
+OopsieBench pick_egg closed for the image-based fork monitor. results/benchmark_dd/oopsie_check2a_result.json.
