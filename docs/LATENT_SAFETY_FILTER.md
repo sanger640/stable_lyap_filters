@@ -84,3 +84,17 @@ results/jenga/lsf_value_diag.json.
   the final step). Added: LSF_TRUNC=1 (final imagined step terminal) and gamma = 0.98. Runs: fixed gamma 0.9 / 0.95 /
   0.99 without truncation (running) + 0.9 / 0.95 / 0.98 / 0.99 with truncation. Selection rule unchanged: highest
   validation AUROC across all seven; the chosen setting then goes to the dev eps sweep.
+
+## Value selection (Nibi job 24703953, 2026-10-20 19:33; rule above)
+AUROC(-V, any real topple) on the 729 held-out validation decision points (classifier at the current state: 0.755):
+| run | AUROC | share V < 0 |
+|---|---|---|
+| g 0.9999 (run 1) | 0.45 | 100% |
+| g annealed 0.9 -> 0.9999 (run 2) | 0.39 | 100% |
+| g 0.9 | 0.782 | 4% |
+| **g 0.95 (selected)** | **0.785** | 16% |
+| g 0.99 | 0.781 | 67% |
+| g 0.9 / 0.95 / 0.98 / 0.99 + truncation | 0.72 / 0.66 / 0.74 / 0.71 | 2 / 2 / 2 / 47% |
+Selected: fixed g = 0.95, no truncation (results/program_b/lsf_v1/value_g0.95.pt). The fixed-g runs are within noise of
+each other; all three beat the classifier alone, so the learned value adds a little foresight. Next: dev eps sweep.
+results/jenga/lsf_value_diag_value*.json.
