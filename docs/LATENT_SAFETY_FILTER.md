@@ -38,3 +38,14 @@ label-free G-CEM filter on the same world model, policy, episodes and seeds.
 ## What differs between the two methods (for the paper)
 LSF needs failure labels, a trained classifier, value function and safety policy; G-CEM needs none of these (no labels,
 no extra training beyond the world model). Same world model, so differences come from the safety logic, not the model.
+
+## Clarifications (fixed 2026-10-20 ~17:00, after the data stage, before any training)
+- Data stage result: train 231,748 labelled latents (93,484 failed), 5,969 imagination resets; val 32,796 (13,606
+  failed), 729 resets (validation episodes of the same sources). Failure share is 40% (not 25%) because many files have
+  few safe latents to sample; the hinge loss averages safe and failed terms separately, so balance does not matter.
+- Classifier margin DELTA = 0.25 on the tanh output (the paper does not report its value). Model selection: the epoch
+  with the lowest validation hinge loss.
+- Runtime with chunks: our harness re-decides every 8 control steps (0.8 s), as for every other filter. If the policy's
+  segment fails the check, the safety actor plans the 8-step segment in imagination (4 model steps) from the current
+  real latent and that segment is executed; the next decision re-encodes the real frame. (The paper re-plans every
+  control step at 15 Hz; per-step re-encoding is not possible in this harness without changing the comparison.)
