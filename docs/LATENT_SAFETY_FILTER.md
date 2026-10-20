@@ -98,3 +98,10 @@ AUROC(-V, any real topple) on the 729 held-out validation decision points (class
 Selected: fixed g = 0.95, no truncation (results/program_b/lsf_v1/value_g0.95.pt). The fixed-g runs are within noise of
 each other; all three beat the classifier alone, so the learned value adds a little foresight. Next: dev eps sweep.
 results/jenga/lsf_value_diag_value*.json.
+
+## Dev eps sweep spec (fixed 2026-10-20 ~19:45, before any closed-loop LSF episode ran)
+Episodes 15000-15099 (100 fresh dev episodes; no earlier run used 15000+), Stage 4 paired setup (stress layouts,
+settled start, execution noise x2, policy seeded per episode), arms record (policy alone) and lsfe1..lsfe5 (eps 0.1 -
+0.5), world model model_OIL, value_g0.95.pt. Packed on Nibi (paired_group.sbatch, 8 workers per GPU). Selection rule
+as above (fewest topples with v4 no more than 5 pp below the policy; ties -> larger eps); topples by the same replay
+outcome audit as Stage 4. Smoke first: episodes 15900-15901, record + lsfe3 (not part of any analysis).
