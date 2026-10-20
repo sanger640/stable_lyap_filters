@@ -21,14 +21,14 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 OUT = Path(os.environ.get("LSF_OUT", str(ROOT / "results/program_b/lsf_v1")))
-SOURCES = os.environ.get("LSF_SOURCES", "closedloop_v1,cf_v1,cf_v2,oil_v1").split(",")
+SOURCES = os.environ.get("LSF_SOURCES", "closedloop_v1,cf_v1,cf_v2,oil_v1").replace("+", ",").split(",")
 TAG = os.environ.get("LSF_TAG", "")                 # part files (data built where the sources live), merged by stage_merge
 SAFE_PER_FAIL, SEED = 3, 20261020
 
 
 def stage_merge():
     """Concatenate part files (LSF_TAGS=a,b) into the canonical train_/val_ arrays."""
-    tags = os.environ["LSF_TAGS"].split(",")
+    tags = os.environ["LSF_TAGS"].replace("+", ",").split(",")
     for split in ("train", "val"):
         for k in ("z", "prop", "fail", "reset_z", "reset_prop"):
             parts = [np.load(OUT / f"{split}_{k}_{t}.npy") for t in tags if (OUT / f"{split}_{k}_{t}.npy").exists()]
