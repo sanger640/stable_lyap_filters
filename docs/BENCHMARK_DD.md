@@ -121,3 +121,12 @@ image-based fork monitor can work and we stop before training a world model.)
 from real end latents 0.82 / 0.83 (correlates such as hand pose), but the futures split visually about as often without
 a damage fork (arm noise alone moves the hand visibly). Egg-crush damage is force-based and not a clean visual fork:
 OopsieBench pick_egg closed for the image-based fork monitor. results/benchmark_dd/oopsie_check2a_result.json.
+- **Amendment 1 (2026-10-20 ~11:15, after 2 of 5 tasks, before any fork result was interpreted):** run stopped as
+  INVALID. (a) The "dropped" stand-in counted deliberate placements (all 9 "bad" points on PickPlaceCounterToStove were
+  the placement moment in successful episodes). (b) Replays within a branch were not independent: the composite
+  controllers' internal goals (arm OSC, mobile base, torso) carried over from the previous replay (exact-replay deviation
+  up to 234 mm while holding). Fixes: snapshot/restore every numeric attribute of the composite controller, its part
+  controllers and the gripper with the sim state; labels per step: slip_drop = object leaves the gripper while the
+  policy's gripper command stays closed (P3); unstable_release = after a commanded release the object tilts > 45 deg or
+  still moves > 5 cm/s at the end (P2); knocked = a non-target object tilts > 45 deg or falls > 5 cm. Same tasks, gate.
+  Invalid run kept at ~/wksp/safemanip/dd_check1_invalid_labels (not used).
