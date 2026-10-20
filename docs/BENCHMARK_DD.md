@@ -138,3 +138,10 @@ always (8/8) 2 -> 75% of bad moments split (gate 25%: passes) but 5 forks < 15 (
 results/benchmark_dd/safemanip_check1/.
 - **Extension (declared 10:58 before running):** 40 more episodes (seeds 8 and 9, 4 per task each), same tasks,
   definitions and gate, pooled with the first 20.
+
+### SafeManip check 1 RESULT, pooled 60 episodes (2026-10-20 11:29): FAILS on count
+2,056 decision points, exact replay 0.0 mm everywhere; pi0.5 success 38/60. Bad moments 24 (slip 11, unstable release
+13, knocked 1): forks (2-6/8) 8, edge 6, always 10 -> forks are 33% of bad moments (gate 25%: passes) but 8 < 15
+(gate: fails). The physics is fork-type when failures happen, but hazards are rare (~1 in 85 decisions) because pi0.5
+is competent on these pick-and-place tasks; a closed-loop test would need hundreds of episodes per arm.
+results/benchmark_dd/safemanip_check1{,_ext}/.
