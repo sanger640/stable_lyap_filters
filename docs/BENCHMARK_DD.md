@@ -68,3 +68,12 @@ predict Dominoes outcomes; forks exist (check 1), the monitor's simulator is the
 Same everything (configs, camera randomisation, encoder, Gauss-TE, model, 3,000 steps, eval, gate) except 5x the
 training trials (+4,800 trials, seeds 20001+, so ~5,900 for training). Primary diagnostic: outcome readout on imagined
 end latents (0.59 now; real-latent ceiling 0.84); then the same fork gate. Not a confirmatory test.
+
+### Physion check 2b RESULT (exploratory, 2026-10-20 08:02): more data barely helps
+~5,900 training trials (5x), everything else identical. Fork test AUROC 0.46 (gate 0.7), alarms 12% forks vs 19%
+non-forks. Outcome readout on imagined end latents: from frame 0 0.65 (was 0.59), from 100 0.70, from 150 0.85;
+ceiling on real end latents 0.91. results/benchmark_dd/physion_check2b_*.json.
+Conclusion: our world-model recipe (DINOv2 latents + small FiLM transition, random camera per trial) cannot simulate
+multi-step Dominoes chains from one frame; data volume is not the main limit. The fork phenomenon exists (check 1);
+the learned simulator is the gap. Physion parked pending a much stronger world model; OopsieBench (short-horizon,
+gripper-local, Jenga-like) recommended next.
