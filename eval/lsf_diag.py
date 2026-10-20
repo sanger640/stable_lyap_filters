@@ -15,10 +15,19 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src"), str(ROOT / "libero")]
 
 
+def auroc(score, y):
+    """Same as libero/wm_libero.auroc (copied so this runs without the LIBERO code)."""
+    from scipy.stats import rankdata
+    y = np.asarray(y, bool); s = np.asarray(score, float)
+    if y.all() or (~y).all():
+        return float("nan")
+    r = rankdata(s)
+    return float((r[y].sum() - y.sum() * (y.sum() + 1) / 2) / (y.sum() * (~y).sum()))
+
+
 def main():
     import torch
     import lsf as L
-    from wm_libero import auroc
     from fresh_fragility_panel import neighbour_tilts, TOPPLE_DEG
     _, Critic, Actor = L.nets()
     w = torch.load(L.OUT / os.environ.get("LSF_VALUE_NAME", "value.pt"), map_location="cuda")
