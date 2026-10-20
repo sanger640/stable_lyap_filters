@@ -239,3 +239,12 @@ flags match 297-300/300. Topples / v4 / v4b / red fell after extraction:
   the gripper still hurts hold-and-replan (Stage 4's hold kept the policy's gripper: 241 / 209 on other eps).
 - **Decision:** keep G (gripper on the policy's clock) as the optimisation filter; drop G2. Hold-and-replan keeps the
   policy's gripper.
+
+## Planned (2026-10-20, user-agreed; AFTER the second-benchmark comparison and the latent safety filter head-to-head)
+G + bounded spatial edit with an ensemble trust region: keep formulation G as the method of record; test adding a
+small, smooth path offset of the given chunk (order 1-2 cm, bounded), allowed only where the world-model ensemble agrees
+(disagreement penalty / trust region), to reach failures that need a different path (G changes only timing and size).
+Policy-agnostic (edits only the proposed chunk). Offline first on bench2 risky decisions with exact-simulator truth:
+adopt only if true risk drops on held-out decisions, the imagined-vs-real gap does not grow, and intent is kept; then a
+pre-registered closed-loop test. Also planned for the real robot: teleoperation wrapper with an extrapolated chunk
+(hold the current command over the look-ahead window).
