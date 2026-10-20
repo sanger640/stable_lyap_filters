@@ -46,3 +46,6 @@ Total 11 of 32 scenes (34%) fork under 5 mm noise (plus 4 near-forks at 1 or 15 
   two-mode split test on the final latents (as Jenga); h = log2 of the smallest splitting s, capped at log2 3.
 - Test scenes: the 32 labelled in check 1 + 32 more labelled the same way (new seeds), real fork = 2..14 of 16.
 - Gate: AUROC(-h, real fork) >= 0.7 AND alarm rate (h < cap) on real forks >= 2x that on non-forks.
+- Amendment (22:30, before any check-2 data was encoded or any model trained): 3,000 training steps instead of 7,500
+  (smoke test: ~1.5-3 s/step with 20 model steps; 3,000 x 128 samples = ~350 passes over ~1,080 trials). Labels are
+  read from a JSON computed in the TDW env (h5py).

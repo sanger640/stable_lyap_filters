@@ -121,21 +121,15 @@ def stage_train():
                "actions": torch.zeros(1, STEPS, 1), "d": torch.zeros(1, 18)} for i in keep]
     g = gte_sampler()
     ft.train("P", OUT, states, lambda rng, b: rng.integers(0, len(states), b), seed=0, start_fn=lambda z0: g(z0),
-             compile_net=False)
+             compile_net=False, steps=3000)
     print("trained on", len(states), "trials", flush=True)
 
 
 def labels(kind):
-    """check-1 style real fork labels per test scene: (config, trial) -> number of noisy runs (of 16) with contact."""
-    import h5py
-    base = PH / ("d3_dom2" if kind == "test_old" else "test_new"); lab = {}
-    for c in CFGS:
-        for k in range(16):
-            for f in sorted(glob.glob(str(base / c / f"n{k}" / "*.hdf5"))):
-                h = h5py.File(f, "r"); fr = h["frames"]
-                hit = any(bool(np.array(fr[t]["labels"]["target_contacting_zone"])) for t in fr.keys())
-                lab.setdefault((c, Path(f).stem), []).append(hit)
-    return lab
+    """check-1 style real fork labels (computed by ~/wksp/physion/dd/labels.py in the TDW env, which has h5py):
+    (config, trial) -> contact per noisy run (16)."""
+    lab = json.loads((PH / "labels.json").read_text())
+    return {(k.split("|")[1], k.split("|")[2]): v for k, v in lab.items() if k.startswith(kind + "|")}
 
 
 def stage_eval():
