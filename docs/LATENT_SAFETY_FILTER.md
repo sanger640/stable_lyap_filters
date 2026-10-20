@@ -105,3 +105,10 @@ settled start, execution noise x2, policy seeded per episode), arms record (poli
 0.5), world model model_OIL, value_g0.95.pt. Packed on Nibi (paired_group.sbatch, 8 workers per GPU). Selection rule
 as above (fewest topples with v4 no more than 5 pp below the policy; ties -> larger eps); topples by the same replay
 outcome audit as Stage 4. Smoke first: episodes 15900-15901, record + lsfe3 (not part of any analysis).
+- **Smoke result and grid amendment (2026-10-20 19:50, before any dev episode ran).** Smoke (15900-15901, eps 0.3): the
+  LSF intervened on 60/60 chunks in both episodes (V of the policy's segment 0.05-0.28, never above 0.3); its safety
+  actor then kept moving the target away (up to ~1.7 m from the policy's plan; least-restrictive switching never hands
+  back while V < eps), so the block was never lifted. With g = 0.95 the validation V quantiles are 5/25/50/75/95% =
+  -0.20 / 0.09 / 0.15 / 0.24 / 0.43 (83% below 0.3), so the published eps (0.3-0.4, on that paper's own value scale)
+  means "always intervene" here. Amended grid, covering our value's range: eps in {0.00, 0.05, 0.10, 0.15, 0.20, 0.30}
+  (arms lsfe000 ... lsfe030); selection rule unchanged. Behaviour of the safety actor recorded as is (method as published).

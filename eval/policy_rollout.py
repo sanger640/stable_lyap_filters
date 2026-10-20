@@ -320,9 +320,9 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "g3" if mode.startswith("cbfg") else "hold"
         cbff.CFG["HOLD_GRIP"] = mode == "cbfh2"
         return _paired(mode, "cbf", n, shrink)
-    if mode.startswith("lsfe"):                # latent safety filter baseline (docs/LATENT_SAFETY_FILTER.md): lsfe3 = eps 0.3
+    if mode.startswith("lsfe"):                # latent safety filter baseline (docs/LATENT_SAFETY_FILTER.md): lsfe010 = eps 0.10
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf"
-        os.environ["LSF_EPS"] = str(int(mode[4:]) / 10); os.environ.setdefault("LSF_VALUE_NAME", "value_g0.95.pt")
+        os.environ["LSF_EPS"] = str(int(mode[4:]) / 100); os.environ.setdefault("LSF_VALUE_NAME", "value_g0.95.pt")
         import cbf_filter as cbff
         cbff.CFG["FIX"] = "lsf"
         return _paired(mode, "cbf", n, shrink)
