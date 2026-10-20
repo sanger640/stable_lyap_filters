@@ -54,3 +54,12 @@ no extra training beyond the world model). Same world model, so differences come
   oil_v1 locally (tag clo: train 59,618 latents / 25,013 failed / 2,569 resets; val 5,251 / 2,206 / 329) and
   uploaded; merged with eval/lsf.py merge. Exact counts differ slightly from the earlier single local build (separate
   random streams per part); the merged summary files record the final numbers.
+
+## Training run 1 (Nibi job 24697324, 2026-10-20 17:44-17:56) and sanity check
+Classifier: validation accuracy ~98.7% (best val hinge 0.018, epoch 3). Value (DDPG, 300 iterations): COLLAPSED -
+on 729 held-out decision points V = Q(z, g, pi) is about -0.47 everywhere (5-95% range -0.50 to -0.43; 100% below 0),
+AUROC(-V, any real topple) 0.45 (no signal), while the classifier at the current state alone gives 0.75. Likely cause:
+with g = 0.9999 the value approaches the worst classifier score along imagined rollouts, and 15-step imagined rollouts
+under the untrained actor drift to latents the classifier calls failed. Not usable; next: measure l along imagined
+rollouts (hold still / dataset policy actions / actor) to locate the drift, then fix training (no test data used).
+results/jenga/lsf_value_diag.json.
