@@ -77,3 +77,5 @@ Conclusion: our world-model recipe (DINOv2 latents + small FiLM transition, rand
 multi-step Dominoes chains from one frame; data volume is not the main limit. The fork phenomenon exists (check 1);
 the learned simulator is the gap. Physion parked pending a much stronger world model; OopsieBench (short-horizon,
 gripper-local, Jenga-like) recommended next.
+- 2026-10-20: raw 2b frames (~/wksp/physion/dd/train2, 101 GB) deleted with the user's OK; latents
+  (results/physion_check2b/z_train.npz) and all results kept; regenerable from seeds 20001+100*chunk.
