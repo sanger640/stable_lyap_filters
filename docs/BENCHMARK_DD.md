@@ -79,3 +79,15 @@ the learned simulator is the gap. Physion parked pending a much stronger world m
 gripper-local, Jenga-like) recommended next.
 - 2026-10-20: raw 2b frames (~/wksp/physion/dd/train2, 101 GB) deleted with the user's OK; latents
   (results/physion_check2b/z_train.npz) and all results kept; regenerable from seeds 20001+100*chunk.
+
+## OopsieBench check 2a — visibility (spec fixed 2026-10-20 before any images were rendered)
+Question: at real egg-damage forks, do the REAL futures' camera images split in our latent space? (If not, no
+image-based fork monitor can work and we stop before training a world model.)
+- Same decision points and noisy replays as check 1 (both splits, 5% arm noise, 9 replays: exact + 8 noisy), now also
+  rendering the fixed robot camera robot0_agentview_right (256 px) at the end of each 1 s window.
+- Encode with frozen DINOv2-392 + channel PCA 8 (fitted on these renders' exact-replay frames).
+- Score per decision point: the two-mode split test (Jenga's, eval/cem_filter.split_test_gpu) on the 8 noisy end
+  latents -> split yes/no and separation (continuous).
+- Label: real damage fork (2..6 of 8 noisy replays drop egg health >= 10).
+- Gate: AUROC(separation, real fork) >= 0.7 over all decision points, AND split rate on real forks >= 2x that on
+  non-forks. Also reported: damage readout from real end latents (linear, held-out demos).
