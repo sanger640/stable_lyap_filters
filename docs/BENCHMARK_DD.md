@@ -179,7 +179,7 @@ As on OopsieBench, about a third of non-fork moments split visually: the whole-i
 trajectory variation under noise. Candidate fix (exploratory, not yet run): mask the robot's own pixels (proprioceptive
 robot segmentation) before the split test. results/benchmark_dd/safemanip_check2a_result.json.
 
-## SafeManip check 2a-masked (exploratory after the 2a failure; agreed with the user; spec fixed 2026-10-20 ~17:00)
+## SafeManip check 2a-masked (exploratory after the 2a failure; agreed with the user; spec fixed 2026-10-20 16:10)
 Hypothesis: the whole-image split test is swamped by the robot's own trajectory variation; masking the robot's pixels
 should remove false splits while keeping object outcomes (tips, knocks) visible.
 - Fresh rollouts, same tasks/branching/labels as 2a (seeds 31, 32; 2 episodes per task each).
