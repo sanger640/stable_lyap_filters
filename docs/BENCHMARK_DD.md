@@ -96,3 +96,21 @@ image-based fork monitor can work and we stop before training a world model.)
   at the gripper (none from drops); 24 coincide with the gripper closing. Prediction recorded now: 2a likely FAILS
   (force-only damage, no visible consequence). Secondary view added before rendering: robot0_eye_in_hand (wrist
   camera, egg large in view), reported alongside; the gate stays on agentview_right.
+
+## SafeManip (RoboCasa365, pi0.5 multitask checkpoint) — check 1 (fork prevalence), spec fixed 2026-10-20 before running
+- Policy: pi0.5 `pi05_pretrain_human300/multitask_learning/75000` (robocasa/robocasa365_checkpoints), served with
+  SafeManip's serve_policy_wrapper; openpi's RoboCasa loop (3 cameras + state, replan every 5 steps). Smoke: 1/1
+  success on PickPlaceCounterToCabinet.
+- Tasks: the atomic pick-and-place tasks carrying SafeManip P2 (release stability) and P3 (grasp stability):
+  PickPlaceCounterToCabinet, PickPlaceCounterToStove, PickPlaceDrawerToCounter, PickPlaceSinkToCounter,
+  PickPlaceToasterToCounter; 4 episodes each (seed 7, pretrain split).
+- Branching: every 3rd decision (15 env steps), save the full state (sim state, solver warm start, gripper internal
+  command, env timestep); 9 replays of the policy's chunk (first 20 steps) + 10 hold steps: exact + 8 with smoothed
+  Gaussian arm noise (0.05 xyz, 0.017 rot, as OopsieBench); restore and continue the nominal episode.
+- Outcome per replay (physical stand-ins for P3 / P2, from simulator state; labels for this check only):
+  dropped = task object grasped at the branch start, not grasped at the end, and its height fell > 2 cm;
+  fell = any task/distractor object's tilt changed > 45 deg, or a non-grasped object fell > 5 cm.
+  bad = dropped or fell.
+- Exactness check: the exact replay's first 5 steps must match the nominal continuation (object poses).
+- Pass (fork-type failures exist in useful numbers): >= 15 decision points with 2-6 of 8 noisy replays bad, AND forks
+  >= 25% of decision points where any replay is bad.
