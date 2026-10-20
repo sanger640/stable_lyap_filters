@@ -19,17 +19,19 @@ BG, FG, GREEN, RED, ORANGE = (18, 22, 21), (225, 232, 228), (80, 210, 120), (240
 
 
 def place_view(rs):
-    """Move robot0_agentview_center to an elevated side view of the task objects (not a policy input)."""
+    """Viewing camera (visualisation only): robot0_agentview_center moved to a raised, pulled-back copy of the policy's
+    robot0_agentview_right pose (robot-mounted cameras are inside the room by construction), aimed at the same point."""
     import mujoco
     M, D = rs.sim.model, rs.sim.data
-    pts = np.array([D.body_xpos[M.body_name2id(o.root_body)] for o in rs.objects.values()])
-    base = D.body_xpos[M.body_name2id(rs.robots[0].robot_model.root_body)]
-    look = pts.mean(0); d = look[:2] - base[:2]; d /= np.linalg.norm(d); perp = np.array([-d[1], d[0]])
-    pos = np.r_[look[:2] - 0.75 * d + 0.6 * perp, look[2] + 0.85]
+    rid = M.camera_name2id("robot0_agentview_right")
+    p0 = D.cam_xpos[rid].copy(); R0 = D.cam_xmat[rid].reshape(3, 3); fwd = -R0[:, 2]
+    look = p0 + 1.2 * fwd
+    pos = p0 + np.array([0, 0, 0.3]) - 0.25 * np.r_[fwd[:2], 0] / max(np.linalg.norm(fwd[:2]), 1e-6)
     z = -(look - pos); z /= np.linalg.norm(z); x = np.cross([0, 0, 1], z); x /= np.linalg.norm(x); y = np.cross(z, x)
     cid = M.camera_name2id("robot0_agentview_center"); bid = M.cam_bodyid[cid]
     Rb = D.body_xmat[bid].reshape(3, 3); q = np.zeros(4); mujoco.mju_mat2Quat(q, (Rb.T @ np.stack([x, y, z], 1)).reshape(-1))
-    M.cam_pos[cid] = Rb.T @ (pos - D.body_xpos[bid]); M.cam_quat[cid] = q; rs.sim.forward()
+    M.cam_pos[cid] = Rb.T @ (pos - D.body_xpos[bid]); M.cam_quat[cid] = q; M.cam_fovy[cid] = 55.0
+    rs.sim.forward()
 
 
 def tilt(q):
