@@ -117,6 +117,7 @@ def main():
     ap.add_argument("--tasks", nargs="+", required=True); ap.add_argument("--episodes", type=int, default=4)
     ap.add_argument("--port", type=int, default=8100); ap.add_argument("--out", required=True); ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--render", action="store_true", help="check 2a: save end frames of replays (all bad points + 20%% of others)")
+    ap.add_argument("--masked", action="store_true", help="2a-masked: 3 views (agentview_left, monitor cam, wrist) + robot masks")
     a = ap.parse_args()
     import gymnasium as gym
     import robocasa  # noqa: F401
@@ -135,6 +136,8 @@ def main():
         horizon = get_task_horizon(task); rows, eps = [], []
         for ep in range(a.episodes):
             t0 = time.time(); obs, info = env.reset(); lang = obs["annotation.human.task_description"]
+            if a.masked:
+                place_monitor_cam(rs)
             plan, t, dec, done, exact_ok = collections.deque(), 0, 0, False, []
             while t < horizon and not done:
                 if not plan:
@@ -146,11 +149,13 @@ def main():
                                                      "observation/right_image": im("video.robot0_agentview_right"),
                                                      "observation/state": state, "prompt": lang})["actions"])
                     if dec % EVERY_DEC == 0 and len(chunk) >= 5:
-                        rows.append(branch(env.unwrapped, rs, chunk, convert_action, rng, task, ep, t, render=a.render))
-                        if a.render:
-                            fr = rows[-1].pop("frames")
+                        rows.append(branch(env.unwrapped, rs, chunk, convert_action, rng, task, ep, t, render=a.render or a.masked, masked=a.masked))
+                        if a.render or a.masked:
+                            fr = rows[-1].pop("frames"); mk = rows[-1].pop("masks", None)
                             if rows[-1]["n_bad"] > 0 or rows[-1]["bad_exact"] or rng.random() < 0.2:
                                 np.save(out / f"{task}_s{a.seed}_e{ep}_t{t}.npy", fr)
+                                if mk is not None:
+                                    np.save(out / f"{task}_s{a.seed}_e{ep}_t{t}_mask.npy", np.packbits(mk, axis=-1))
                         exact_ok.append(rows[-1]["exact_ok"])
                     plan.extend(chunk[:5]); dec += 1
                 obs, reward, term, trunc, info = env.step(convert_action(plan.popleft()))
@@ -169,13 +174,37 @@ def cameras(rs, on):
             rs.modify_observable(name, "enabled", on)
 
 
-def branch(gw, rs, chunk, convert_action, rng, task, ep, t, render=False):
+def place_monitor_cam(rs):
+    """Dedicated fixed monitor camera (one rule for all tasks): robot0_agentview_center moved 0.6 m above the gripper's
+    start position and 35% of the way back towards the robot's right camera, aimed at the gripper's start position."""
+    import mujoco
+    M, D = rs.sim.model, rs.sim.data
+    look = D.site_xpos[rs.robots[0].eef_site_id["right"]].copy()
+    ref = D.cam_xpos[M.camera_name2id("robot0_agentview_right")]     # robot-mounted reference (inside the room)
+    pos = np.r_[look[:2] + 0.35 * (ref[:2] - look[:2]), look[2] + 0.6]
+    z = -(look - pos); z /= np.linalg.norm(z); x = np.cross([0, 0, 1], z); x /= np.linalg.norm(x); y = np.cross(z, x)
+    cid = M.camera_name2id("robot0_agentview_center"); bid = M.cam_bodyid[cid]
+    Rb = D.body_xmat[bid].reshape(3, 3); q = np.zeros(4); mujoco.mju_mat2Quat(q, (Rb.T @ np.stack([x, y, z], 1)).reshape(-1))
+    M.cam_pos[cid] = Rb.T @ (pos - D.body_xpos[bid]); M.cam_quat[cid] = q; M.cam_fovy[cid] = 60.0; rs.sim.forward()
+
+
+def robot_geoms(rs):
+    M = rs.sim.model
+    pre = ("robot0_", "gripper0_", "mobilebase0_")
+    bodies = {i for i in range(M.nbody) if (M.body(i).name or "").startswith(pre)}
+    return np.array([M.geom_bodyid[g] in bodies for g in range(M.ngeom)], bool)
+
+
+VIEWS = ("robot0_agentview_left", "robot0_agentview_center", "robot0_eye_in_hand")
+
+
+def branch(gw, rs, chunk, convert_action, rng, task, ep, t, render=False, masked=False):
     cameras(rs, False)
     s = snapshot(rs); held0 = grasped(rs)
     base = np.asarray(chunk[:H], np.float64)                       # policy action space (12-d)
     hold = base[-1].copy(); hold[:6] = 0; hold[7:11] = 0
     E = lambda acts: [to_env_action(gw, x, convert_action) for x in acts]
-    res, exact_traj, frames = [], None, []
+    res, exact_traj, frames, masks = [], None, [], []
     for k in range(N_FUT):
         restore(rs, s); a = base.copy()
         if k > 0:
@@ -187,9 +216,17 @@ def branch(gw, rs, chunk, convert_action, rng, task, ep, t, render=False):
             rs.step(act)
             traj.append((obj_state(rs), grasped(rs))); cmds.append(float(full[i, 6]))
         res.append(outcome(rs, traj, cmds, traj[-1][0]))
-        if render:
+        if render and not masked:
             frames.append(np.stack([rs.sim.render(camera_name=cn, width=256, height=256)[::-1]
                                     for cn in ("robot0_agentview_left", "robot0_eye_in_hand")]).astype(np.uint8))
+        if masked:
+            rg = robot_geoms(rs); fv, mv = [], []
+            for cn in VIEWS:
+                fv.append(rs.sim.render(camera_name=cn, width=256, height=256)[::-1])
+                sg = rs.sim.render(camera_name=cn, width=256, height=256, segmentation=True)[::-1]
+                gid = sg[..., 1] if sg.ndim == 3 else sg
+                mv.append(np.where((gid >= 0) & (gid < len(rg)), rg[np.clip(gid, 0, len(rg) - 1)], False))
+            frames.append(np.stack(fv).astype(np.uint8)); masks.append(np.stack(mv))
         if k == 0:
             exact_traj = np.array([np.concatenate([x[0][n][0] for n in sorted(x[0])]) for x in traj[1:6]])
     restore(rs, s)
@@ -202,7 +239,7 @@ def branch(gw, rs, chunk, convert_action, rng, task, ep, t, render=False):
     return {"task": task, "episode": ep, "t": t, "held_at_start": bool(held0), "bad_exact": bad[0], "n_bad": int(sum(bad[1:])),
             "n_slip": int(sum(r[0] for r in res[1:])), "n_unstable": int(sum(r[1] for r in res[1:])),
             "n_knocked": int(sum(r[2] for r in res[1:])), "exact_ok": dev <= 1e-6, "exact_dev_m": dev,
-            **({"frames": np.stack(frames)} if render else {})}
+            **({"frames": np.stack(frames)} if render else {}), **({"masks": np.stack(masks)} if masked else {})}
 
 
 if __name__ == "__main__":
