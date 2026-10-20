@@ -15,7 +15,10 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src"), str(ROOT / "libero")]
-DIRS = {31: Path.home() / "wksp/safemanip/dd_masked_s31", 32: Path.home() / "wksp/safemanip/dd_masked_s32"}
+import os
+DIRS = {int(k): Path.home() / f"wksp/safemanip/{v}" for k, v in (x.split(":") for x in os.environ.get("SM_DIRS", "31:dd_masked_s31,32:dd_masked_s32").split(","))}
+FORK_LO = int(os.environ.get("SM_FORK_LO", 2))
+OUT_NAME = os.environ.get("SM_OUT_NAME", "safemanip_check2a_masked_result.json")
 VIEWS = ("agentview_left", "monitor_cam", "eye_in_hand")
 OUT = ROOT / "results/benchmark_dd"
 
@@ -41,7 +44,8 @@ def main():
                 f = d / f"{r['task']}_s{seed}_e{r['episode']}_t{r['t']}.npy"
                 if f.exists():
                     pts.append((f, f.with_name(f.stem + "_mask.npy"), r))
-    fork = np.array([2 <= r["n_bad"] <= 6 for *_, r in pts])
+    nf = len(np.load(pts[0][0], mmap_mode="r")) - 1                     # noisy replays per point
+    fork = np.array([FORK_LO <= r["n_bad"] <= nf - FORK_LO for *_, r in pts])
     res = {"saved_points": len(pts), "real_forks": int(fork.sum()), "points_with_any_bad": int(sum(r["n_bad"] > 0 for *_, r in pts))}
     for v, name in enumerate(VIEWS):
         rng = np.random.default_rng(0)
@@ -52,12 +56,12 @@ def main():
         for f, mf, _ in pts:
             fr = np.load(f)[1:, v]
             mk = np.unpackbits(np.load(mf), axis=-1)[1:, v, :, :256].astype(bool)
-            z = (((dino_tokens(enc, fr, "cuda") - mean) @ basis - zm) / zs).reshape(8, 28, 28, 8)
+            z = (((dino_tokens(enc, fr, "cuda") - mean) @ basis - zm) / zs).reshape(len(fr), 28, 28, 8)
             keep = np.max(np.stack([patch_mask(m) for m in mk]), 0) <= 0.3
             kept.append(float(keep.mean()))
-            zm_ = z[:, torch.as_tensor(keep, device="cuda")].reshape(1, 8, -1)
+            zm_ = z[:, torch.as_tensor(keep, device="cuda")].reshape(1, len(fr), -1)
             o, _, s = cf.split_test_gpu(zm_); ok_m.append(bool(o[0])); sep_m.append(float(s[0]))
-            o, _, s = cf.split_test_gpu(z.reshape(1, 8, -1)); ok_u.append(bool(o[0])); sep_u.append(float(s[0]))
+            o, _, s = cf.split_test_gpu(z.reshape(1, len(fr), -1)); ok_u.append(bool(o[0])); sep_u.append(float(s[0]))
         ok_m, ok_u = np.array(ok_m), np.array(ok_u)
         res[name] = {"masked": {"AUROC_separation_vs_fork": auroc(np.array(sep_m), fork), "split_rate_forks": float(ok_m[fork].mean()),
                                 "split_rate_nonforks": float(ok_m[~fork].mean())},
@@ -65,9 +69,11 @@ def main():
                                   "split_rate_nonforks": float(ok_u[~fork].mean())},
                      "share_of_patches_kept_median": float(np.median(kept))}
         print(name, json.dumps(res[name]), flush=True)
+    gm = res["monitor_cam"]["masked"]
+    res["gate_pass_monitor_cam_masked"] = bool(gm["AUROC_separation_vs_fork"] >= 0.7 and gm["split_rate_forks"] >= 2 * max(gm["split_rate_nonforks"], 1e-9))
     g = res["agentview_left"]["masked"]
     res["gate_pass_agentview_left_masked"] = bool(g["AUROC_separation_vs_fork"] >= 0.7 and g["split_rate_forks"] >= 2 * max(g["split_rate_nonforks"], 1e-9))
-    (OUT / "safemanip_check2a_masked_result.json").write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1))
+    (OUT / OUT_NAME).write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1))
 
 
 if __name__ == "__main__":

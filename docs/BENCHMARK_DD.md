@@ -201,3 +201,13 @@ arm was not the main source of false splits; likely candidates: held objects mov
 part of the robot mask) and the injected execution noise (5% of the action range, cm-scale here vs Jenga's mm-scale
 measured tracking error). Per the agreed timebox this closes the existing-benchmark search.
 results/benchmark_dd/safemanip_check2a_masked_result.json.
+
+## SafeManip check 2b-powered (spec fixed 2026-10-20 18:25, before running; agreed with the user after an audit)
+Audit finding: checks 2a / 2a-masked used only 8 real futures per decision point; the two-mode split test is weak at
+n = 8 (non-fork split rates of 34-42% on every benchmark and view are consistent with that), whereas the Jenga monitor
+was validated with 64 futures. So the 2a negatives are under-powered rather than demonstrated.
+Re-test: 32 noisy replays (+ the exact one) per decision point; tasks StackBowlsCabinet and RecycleBottlesByType (most
+fork-rich in 1c), 4 episodes each (seeds 41, 42; 2 episodes each), branching every 3rd decision; same restore, labels
+and robot masks. Gate on the ROBOT-MASKED MONITOR CAMERA (best view in 2a-masked; these are fresh episodes, so this
+confirms that choice): AUROC(split separation, fork) >= 0.7 AND split rate on forks >= 2x non-forks, with fork = 2..30
+of the 32 noisy replays bad (bad share strictly between ~5% and ~95%). agentview_left and wrist reported alongside.

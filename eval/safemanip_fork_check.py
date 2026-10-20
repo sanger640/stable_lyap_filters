@@ -117,8 +117,11 @@ def main():
     ap.add_argument("--tasks", nargs="+", required=True); ap.add_argument("--episodes", type=int, default=4)
     ap.add_argument("--port", type=int, default=8100); ap.add_argument("--out", required=True); ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--render", action="store_true", help="check 2a: save end frames of replays (all bad points + 20%% of others)")
+    ap.add_argument("--n-fut", type=int, default=9, help="replays per decision point incl. the exact one")
     ap.add_argument("--masked", action="store_true", help="2a-masked: 3 views (agentview_left, monitor cam, wrist) + robot masks")
     a = ap.parse_args()
+    global N_FUT
+    N_FUT = a.n_fut
     import gymnasium as gym
     import robocasa  # noqa: F401
     from openpi_client import image_tools
