@@ -77,3 +77,10 @@ results/jenga/lsf_value_diag.json.
   0.99} (effective horizons ~1, 2, 10 s at 0.1 s per model step), 600 iterations each; choose the g with the highest
   AUROC of -V for "any real future topples" on the 729 held-out validation decision points (eval/lsf_diag.py).
   If none exceeds the classifier-only score at the current state (0.75), report that the learned value adds nothing.
+- Reference code checked (2026-10-20 ~18:35, before any of the gamma runs finished): the DINO-WM-based reference
+  implementation (github.com/tabz23/Latent-Safety-Filters, train_HJ_mani_configs.yaml) uses gamma = 0.98, batch 128,
+  actor lr 1e-4, critic lr 1e-3, tau 0.005; the Bajcsy group's UNISafe (github.com/CMU-IntentLab/UNISafe) anneals gamma
+  0.85 -> 0.9999 in steps every 4,000 updates, uses twin critics (SAC), and truncates imagined episodes (target = l at
+  the final step). Added: LSF_TRUNC=1 (final imagined step terminal) and gamma = 0.98. Runs: fixed gamma 0.9 / 0.95 /
+  0.99 without truncation (running) + 0.9 / 0.95 / 0.98 / 0.99 with truncation. Selection rule unchanged: highest
+  validation AUROC across all seven; the chosen setting then goes to the dev eps sweep.

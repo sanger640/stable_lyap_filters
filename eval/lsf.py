@@ -175,7 +175,8 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
     R_z = np.load(OUT / "train_reset_z.npy"); R_g = np.load(OUT / "train_reset_prop.npy")
     buf = {"z": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV), "g": torch.zeros(cap, 4, device=DEV),
            "a": torch.zeros(cap, 8, device=DEV), "z2": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV),
-           "g2": torch.zeros(cap, 4, device=DEV), "l": torch.zeros(cap, device=DEV)}
+           "g2": torch.zeros(cap, 4, device=DEV), "l": torch.zeros(cap, device=DEV), "done": torch.zeros(cap, dtype=torch.bool, device=DEV)}
+    trunc = os.environ.get("LSF_TRUNC") == "1"          # UNISafe-style: the last imagined step is terminal (target = l)
     n, ptr, rng, log = 0, 0, np.random.default_rng(SEED), []
     g0, g1 = float(os.environ.get("LSF_GAMMA0", 0.9)), GAMMA        # gamma annealed toward 1 (reachability-RL practice)
     for it in range(iters):
@@ -187,12 +188,14 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
                 z2 = model.step(z, a).float(); g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1); l = clf(z, g)
                 k = torch.arange(ptr, ptr + envs, device=DEV) % cap
                 buf["z"][k], buf["g"][k], buf["a"][k], buf["z2"][k], buf["g2"][k], buf["l"][k] = z.half(), g, a, z2.half(), g2, l
+                buf["done"][k] = trunc and t == horizon - 1
                 ptr = (ptr + envs) % cap; n = min(n + envs, cap); z, g = z2, g2
         for _ in range(grad_steps):
             j = torch.as_tensor(rng.integers(0, n, batch), device=DEV)
-            zb, gb, ab, z2b, g2b, lb = (buf[k][j] for k in ("z", "g", "a", "z2", "g2", "l"))
+            zb, gb, ab, z2b, g2b, lb, db = (buf[k][j] for k in ("z", "g", "a", "z2", "g2", "l", "done"))
             with torch.no_grad():
                 y = (1 - gam) * lb + gam * torch.minimum(lb, Qt(z2b, g2b, At(z2b, g2b)))
+                y = torch.where(db, lb, y)
             lq = ((Q(zb, gb, ab) - y) ** 2).mean(); oq.zero_grad(); lq.backward(); oq.step()
             la = -Q(zb, gb, A(zb, gb)).mean(); oa.zero_grad(); la.backward(); oa.step()
             with torch.no_grad():
