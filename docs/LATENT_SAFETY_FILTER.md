@@ -204,3 +204,7 @@ uncertainty margin) does. Only value_unisafe.pt goes to closed loop.
 - Scheduling note (18:30): Fir and Nibi GPU partitions down (PartitionDown); the smoke and sweep move to Rorqual (code
   synced; src/ and model_OIL identical). Reproduction check PASSED (18:38): episode 15000, record arm, Rorqual vs Nibi:
   32 chunks, lifted, max lift 52.6 mm, neighbour tilt 6.2 deg, 25.6 s, success - identical. The reused record arm stands.
+- Smoke (Rorqual 24879926, 15900-15901, lsfe030, not analysed): runs cleanly (~0.22 s per chunk); V of the policy's
+  segment stays 0.54-0.94, so at eps 0.3 it never intervened, and both episodes equal the policy-alone smoke exactly
+  (15900 success, 31 chunks; 15901 timeout, 60 chunks). Dev sweep submitted unchanged: Rorqual job 24880394 (50 tasks x
+  2 episodes x 6 arms, tag _unidev).
