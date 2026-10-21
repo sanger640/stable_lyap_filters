@@ -15,6 +15,7 @@ usage: SM_VIEW=monitor python3 eval/safemanip_wm.py {pca|encode|train|ens K|chec
 """
 import json
 import os
+import time
 from pathlib import Path
 import sys
 
@@ -98,7 +99,7 @@ def stage_encode():
         (ENC / split).mkdir(parents=True, exist_ok=True)
         for f in files(split):
             out = ENC / split / f"{f.parent.name}_{f.name}"
-            if out.exists():
+            if out.exists() or time.time() - f.stat().st_mtime < 120:      # skip files the collector may still be writing
                 continue
             lat = lat or Latent()
             d = np.load(f); F = d["frames"][:, :, VI]; M = unpack(d["masks"][:, :, VI])        # (K, T, 256, 256, 3)
