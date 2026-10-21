@@ -241,3 +241,23 @@ wrist view: AUROC 0.742, split rate 54% on forks vs 20% on non-forks (2.6x) -> P
 real futures in the latent of the policy's own wrist camera. Next (per spec): check 2b-WM - does our world model's
 IMAGINED fork test detect these forks (needs a SafeManip world model on wrist latents + proprioception).
 results/benchmark_dd/safemanip_check2c_confirm_result.json.
+
+## SafeManip check 2b-WM: does the IMAGINED fork test detect real forks? (spec fixed 2026-10-21 ~09:20, before any data)
+User decision (2026-10-21): try BOTH views and see which is best: the fixed monitor camera and pi0.5's wrist camera,
+each with robot pixels masked.
+- Recipe: as Jenga / the SafeLIBERO world model (libero/wm_libero.py: frozen DINOv2-392 tokens -> channel PCA 8 ->
+  28x28x8 latent; deterministic residual FiLM transition, eval/fast_train.py unchanged; proprioception as input; robot-
+  pixel patches (> 30% robot) zeroed in every latent, the same mask rule as checks 2a-2c). One model per view, same data,
+  same hyper-parameters. 1 model step = 2 control steps (as Jenga); horizon = the policy's chunk + hold (as the checks).
+- Training data (label-free): pi0.5 episodes on StackBowlsCabinet + RecycleBottlesByType with branched noisy futures
+  from regular decision points (exactly the 2b/2c branching, 32 noisy + exact replay, 5% arm noise), now saving the start
+  frame, proprioception and executed actions of every replay at every model step. Seeds 61-...; amount set by a small
+  run first (target ~ the Jenga closedloop data scale), all on Fir.
+- Evaluation set (held out, never used for training or tuning): fresh episodes, seeds 71, 710, 72, 720 (8 episodes as in
+  2b/2c), same branching; per-replay outcomes (slip / unstable release / knocked) saved. Fork = 2..30 of 32 noisy replays
+  bad (as 2b/2c).
+- Imagined fork test: as Jenga (fork score h from the two-mode split test on imagined futures under the Gauss-TE
+  perception-noise model fitted on this data, hold-10 / hold-30 endings, scales 0.5-3).
+- GATE per view: AUROC(h vs real fork) >= 0.7 AND imagined split rate on forks >= 2x non-forks. Both views reported.
+  "Best view" = the one passing with the higher AUROC; it is used for the closed-loop SafeManip filter test (spec to be
+  written after this result). If neither passes: diagnose as for Physion (outcome readout from imagined vs real endings).
