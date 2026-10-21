@@ -8,6 +8,7 @@ with > 30% robot pixels in any of the 8 noisy replays are excluded; two-mode spl
 usage: python3 eval/safemanip_check2a_masked.py
 """
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -19,7 +20,7 @@ import os
 DIRS = {int(k): Path.home() / f"wksp/safemanip/{v}" for k, v in (x.split(":") for x in os.environ.get("SM_DIRS", "31:dd_masked_s31,32:dd_masked_s32").split(","))}
 FORK_LO = int(os.environ.get("SM_FORK_LO", 2))
 OUT_NAME = os.environ.get("SM_OUT_NAME", "safemanip_check2a_masked_result.json")
-VIEWS = ("agentview_left", "monitor_cam", "eye_in_hand")
+VIEWS = tuple(os.environ.get("SM_VIEWS", "agentview_left monitor_cam eye_in_hand").split())   # ToolHang: agentview sideview robot0_eye_in_hand
 OUT = ROOT / "results/benchmark_dd"
 
 
@@ -40,8 +41,9 @@ def main():
     pts = []
     for seed, d in DIRS.items():
         for jf in sorted(d.glob("*.json")):
+            m = re.search(r"_s(\d+)$", jf.stem); sd = int(m.group(1)) if m else seed   # ToolHang: one dir, <task>_s<seed>.json
             for r in json.loads(jf.read_text())["rows"]:
-                f = d / f"{r['task']}_s{seed}_e{r['episode']}_t{r['t']}.npy"
+                f = d / f"{r['task']}_s{sd}_e{r['episode']}_t{r['t']}.npy"
                 if f.exists():
                     pts.append((f, f.with_name(f.stem + "_mask.npy"), r))
     nf = len(np.load(pts[0][0], mmap_mode="r")) - 1                     # noisy replays per point
@@ -69,12 +71,9 @@ def main():
                                   "split_rate_nonforks": float(ok_u[~fork].mean())},
                      "share_of_patches_kept_median": float(np.median(kept))}
         print(name, json.dumps(res[name]), flush=True)
-    gw = res["eye_in_hand"]["masked"]
-    res["gate_pass_eye_in_hand_masked"] = bool(gw["AUROC_separation_vs_fork"] >= 0.7 and gw["split_rate_forks"] >= 2 * max(gw["split_rate_nonforks"], 1e-9))
-    gm = res["monitor_cam"]["masked"]
-    res["gate_pass_monitor_cam_masked"] = bool(gm["AUROC_separation_vs_fork"] >= 0.7 and gm["split_rate_forks"] >= 2 * max(gm["split_rate_nonforks"], 1e-9))
-    g = res["agentview_left"]["masked"]
-    res["gate_pass_agentview_left_masked"] = bool(g["AUROC_separation_vs_fork"] >= 0.7 and g["split_rate_forks"] >= 2 * max(g["split_rate_nonforks"], 1e-9))
+    for name in VIEWS:
+        g = res[name]["masked"]
+        res[f"gate_pass_{name}_masked"] = bool(g["AUROC_separation_vs_fork"] >= 0.7 and g["split_rate_forks"] >= 2 * max(g["split_rate_nonforks"], 1e-9))
     (OUT / OUT_NAME).write_text(json.dumps(res, indent=1)); print(json.dumps(res, indent=1))
 
 
