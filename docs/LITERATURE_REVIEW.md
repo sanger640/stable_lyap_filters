@@ -430,3 +430,25 @@ evaluation, and the diagnosis that a stochastic world model's spread is state-bl
 | ML weather ensembles: GenCast (Price et al., Nature 2025), FuXi-ENS (arXiv 2405.05925) | GenCast draws fresh diffusion noise every step and stays well dispersed; FuXi-ENS perturbs at init and every step; random IC-only perturbations under-disperse at long lead times | "Uncertainty in initial conditions vs per-step noise" | IMPORTANT: our diagnosis must NOT claim per-step noise is wrong in general. Scope: in short-horizon contact with perception-dominated uncertainty, our per-step model placed its spread state-blind. |
 
 **Updated verdict.** Partially novel, as before, with two corrections. (1) Sampling measured perception AND execution error through a simulator to judge physical stability exists for block stacking (COBRA-PPM), so it cannot be a contribution; our contribution is the goal-free outcome-structure test used as a monitor for arbitrary chunks, plus the evidence with a learned camera model on fresh panels. (2) Evaluating world models on action branches is now proposed (Yu et al. 2026), as per-branch error; our distinct contribution is branching fidelity under small realistic perturbations (do outcome sets split where physics splits) and the finding that low error coexists with lost forks. No full-text-read work combines the goal-free split test, measured perception and execution uncertainty, pre-execution use on policy chunks, and a branching-fidelity evaluation of a learned world model.
+
+## World Action Models (WAMs) and world-model runtime monitors — scan 2026-10-21
+Definition: a WAM couples future-world prediction with action generation (joint video+action prediction, or predict
+future then inverse dynamics); the predicted future sits in the action path (surveys arXiv 2609.16074, 2606.20781;
+tutorial 2607.00836). Representatives: GR-1/GR-2, UVA, DreamZero (2602.15922, 14B video-diffusion backbone, 7 Hz,
+>2x generalisation vs VLAs in their real-robot tests), Cosmos Policy (2601.16163: LIBERO 98.5%, RoboCasa 24 tasks 67.1%
+with 50 demos), Motus, Fast-WAM, OA-WAM (LIBERO 97.8, SimplerEnv 79.3), Kairos (RoboTwin 2.0 avg 96.1 self-reported vs
+pi0.5 79.8). pi0.7 (PI, Apr 2026) is a VLA whose "world model" only generates subgoal images (no consequence simulation).
+Independent check: Cosmos 3 on RoboLab (120 tasks) 39.7% vs pi0.5 28.1% vs DreamZero 25.2%.
+Physics fidelity is the weak point: WorldOracle (2610.18826) - action-conditioned video WMs follow the ARM well
+(IRASim 78.8) but OBJECTS poorly (29.1); physical-state correctness best 60.3 (GE-Sim 2.0); degrades over long rollouts.
+RoboWM-Bench (2604.19092): execution success of generated futures falls with task complexity / contact.
+WM-based runtime monitors / filters (closest related work): Pre-VLA (2605.22446, verify chunks before execution; LIBERO
+30.8 -> 37.6%), CheckVLA (2607.26789, action-conditioned WM + learned risk head, then the VLA rewrites the suffix),
+FARM (2609.11445, failure signals from a frozen WM's internal states), Foresight (WM-latent failure detector), SAFE,
+RESCUE (2610.13516, counterfactual evaluation of monitors: is an alarm worth acting on), PiL-World (2606.05773).
+**ForkCast (2610.18650, MBZUAI, Oct 2026) - name clash with our "fork":** V-JEPA 2-AC latent WM trained on branched
+rollouts WITH progress labels; chooses among commit / re-observe camera / motion-planner replan by predicted progress.
+No execution-noise branching, no outcome bimodality, needs progress labels -> different from our label-free fork test,
+but must be cited and contrasted.
+Our position: label-free (no failure / progress labels), the trigger is outcome BIMODALITY under execution noise (not a
+learned risk head), the fix edits only the policy's own chunk; scope = fragile contact physics in a fixed cell.
