@@ -329,3 +329,7 @@ the scene is fixed (only object poses are randomised), and a fixed third-person 
   pixels dropped), DINOv2-392 features of the 32 real endings, two-mode split test: AUROC(split separation, fork) >= 0.7
   AND split rate on forks >= 2x non-forks. Not gated, reported: sideview (masked), wrist (masked).
 - Pass both -> world-model check (2b-WM recipe) on ToolHang; fail -> stop ToolHang.
+- Note (2026-10-21 18:50, fork-check run already in progress, gate unaffected): in ToolHang robosuite places `sideview`
+  at the same orientation as `agentview`, 5 cm lower ((0.484, 0.251, 1.214) vs 1.264 m). So the non-gated "sideview"
+  result is not a second viewpoint; it is reported as a near-duplicate of the gate view. (Dashboard videos use
+  `frontview` as the second panel.)

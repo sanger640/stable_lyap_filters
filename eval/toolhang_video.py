@@ -1,6 +1,6 @@
 """ToolHang policy videos for the lab dashboard: our robomimic Diffusion Policy (epoch-600 checkpoint) running alone, same
 seeding as eval/toolhang_fork_check.py (so outcomes match the 50-episode re-measure). Agentview (the fork check's gate
-view) and sideview side by side, real time (20 Hz control), banner with the outcome from the start and the step count.
+view) and frontview side by side (in ToolHang robosuite puts sideview 5 cm below agentview, same angle), real time (20 Hz control), banner with the outcome from the start and the step count.
 Runs in ~/wksp/robomimic_bench/.venv.
 usage: MUJOCO_GL=egl python eval/toolhang_video.py --ckpt CKPT --seeds 103 101 --out DIR
 """
@@ -35,7 +35,7 @@ def main():
             act = policy(ob=obs)
             obs, _, _, _ = env.step(act); t += 1
             done = bool(env.is_success()["task"])
-            img = np.concatenate([rs.sim.render(camera_name=c, width=RES, height=RES)[::-1] for c in ("agentview", "sideview")], 1)
+            img = np.concatenate([rs.sim.render(camera_name=c, width=RES, height=RES)[::-1] for c in ("agentview", "frontview")], 1)
             frames.append(img)
         tag = "success" if done else "fail"
         col = (40, 150, 60) if done else (190, 50, 40)
