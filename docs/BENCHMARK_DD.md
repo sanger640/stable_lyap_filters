@@ -276,3 +276,28 @@ each with robot pixels masked.
   (24 episodes; no overlap with the eval seeds 71, 710, 72, 720). Training data total: 32 episodes.
 - Note: RecycleBottlesByType seed 67 starts in a layout that already meets the task's success check, so its episode
   ends after step 1 (1 training point). A property of that scene, kept as is. Measured on Fir: ~19 s per training point.
+
+### SafeManip check 2b-WM RESULT (2026-10-21 14:48): GATE FAILS on both views
+Held-out eval set: 8 episodes (seeds 71, 710, 72, 720 x 2 tasks), 1,193 decision points, 16 real forks (2..30 of 32
+replays bad; 1.3%, vs 29 / 279 in 2b-powered). Models: 7,500 steps on 4,903 training points (32 episodes); final loss
+monitor 0.016, wrist 0.078.
+
+| view | AUROC(-h, fork) | imagined split @ s=1, forks / non-forks | gate |
+|---|---|---|---|
+| fixed monitor camera (masked) | 0.45 | 0% / 5% | FAIL |
+| wrist (masked) | 0.50 | 0% / 1% | FAIL |
+
+Diagnosis (eval/safemanip_wm_diag.py, imagining with the real replays' own executed actions; results/safemanip/wm_*/diag_result.json):
+- **The model does not generalise to new kitchens.** End-of-hold latent error vs the copy baseline (start latent as
+  the ending): training points 0.020 vs 0.078 (monitor; 75% better), held-out points 0.052 vs 0.069 (25% better).
+  Wrist: 0.096 vs 0.347 on training, 0.211 vs 0.339 held out. Every seed is a new kitchen layout; 32 episodes is too few.
+- **Imagined spread is half the real spread** (monitor 0.020 vs 0.039, wrist 0.075 vs 0.180). It follows how much the
+  arm moves (correlation 0.83 / 0.85 with the real spread), but not forks (AUROC 0.48 / 0.51).
+- **Per replay, the model does not tell bad endings from good ones:** distance from the exact replay's ending vs replay
+  bad, AUROC 0.53 (monitor) / 0.52 (wrist) imagined, 0.61 / 0.61 real.
+- **Even REAL endings are a weak fork signal on this set:** split test on the 32 real endings, forks vs non-forks 69% vs
+  38% (monitor, 1.8x) and 38% vs 17% (wrist, 2.2x); real spread AUROC 0.64 / 0.62. So a perfect world model in this
+  latent would still be at or below the gate here (2c: 0.74 with a different, smaller eval set).
+Conclusion: two problems stacked. (1) world-model generalisation (data-limited, as Physion); (2) at SafeManip's hazard
+rate (1 in ~75 decisions) and with the robot masked, the forks are only weakly visible in the frozen DINOv2 latent at
+the endings. Scaling data could fix (1) but not (2).

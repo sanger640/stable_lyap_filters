@@ -195,4 +195,6 @@ def stage_check():
 
 if __name__ == "__main__":
     st = sys.argv[1]
+    if st == "diag":
+        import safemanip_wm_diag; safemanip_wm_diag.main(); sys.exit()
     {"pca": stage_pca, "encode": stage_encode, "train": stage_train, "check": stage_check}.get(st, lambda: stage_ens(int(sys.argv[2])))()
