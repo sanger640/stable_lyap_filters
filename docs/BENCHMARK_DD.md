@@ -301,3 +301,31 @@ Diagnosis (eval/safemanip_wm_diag.py, imagining with the real replays' own execu
 Conclusion: two problems stacked. (1) world-model generalisation (data-limited, as Physion); (2) at SafeManip's hazard
 rate (1 in ~75 decisions) and with the robot masked, the forks are only weakly visible in the frozen DINOv2 latent at
 the endings. Scaling data could fix (1) but not (2).
+
+## Next second benchmark (user decision 2026-10-21 ~16:00): real robot + a standard sim task with frequent, visible forks, in parallel
+Lessons from SafeManip / Physion / OopsieBench: hazards must be FREQUENT (SafeManip: 1 in ~75 decisions), VISIBLE in
+the scene (not slips inside the gripper), and in a FIXED scene a world model can learn from tens of episodes (SafeManip:
+a new kitchen per seed). Real-robot plan: docs/REAL_ROBOT_PLAN.md.
+
+## robomimic ToolHang — check 1 + 2 (fork prevalence + visibility), spec fixed 2026-10-21 ~16:00, before any branching
+Why ToolHang: the standard robomimic benchmark's hardest task (insert a frame into a stand, hang a tool on it). Its
+failures are physical and visible (frame tips or falls out of the stand, tool slides off and falls, stand knocked over),
+the scene is fixed (only object poses are randomised), and a fixed third-person camera sees everything.
+- Policy: the robomimic v0.1 zoo checkpoints (BC-RNN image, robosuite offline_study) do NOT run on robosuite 1.5
+  (ported config / weights / controller frame: 0/10 success; open-loop demo replay also drifts). So we train the policy
+  ourselves with robomimic's own Diffusion Policy template (eval/../robomimic_bench/configs_toolhang_dp.json: low-dim
+  obs, official ToolHang PH v1.5 dataset (200 demos), DDIM 10 steps, obs horizon 2, action chunk 8, 600 epochs).
+  Checkpoint rule (fixed now): the LAST saved checkpoint whose training-rollout success (20 episodes) is in [50%, 90%];
+  if none is below 90%, the earliest checkpoint >= 50%. Re-measured on 50 fresh episodes before branching.
+- Branching (as SafeManip 2b-powered): every 2nd decision (16 env steps); save full sim state; 33 replays of the
+  policy's chunk (8 steps) + 20 hold steps (gripper command kept): exact + 32 with the same smoothed Gaussian arm noise
+  (0.05 xyz, 0.017 rot); restore and continue. 8 episodes (seeds 1-8).
+- Outcome per replay (simulator state, labels for the checks only; same rules as SafeManip):
+  dropped = object grasped at branch start, not grasped at end, height fell > 2 cm;
+  fell = any object's (stand, frame, tool) tilt changed > 45 deg, or a non-grasped object fell > 5 cm. bad = either.
+- Check 1 PASS: >= 15 decision points with 2..30 of 32 noisy replays bad, AND forks >= 25% of points where any replay is
+  bad, AND forks >= 5% of all decision points (new: the SafeManip lesson).
+- Check 2 (same run, gate view fixed now): robot-masked AGENTVIEW camera (fixed, third person; patches > 30% robot
+  pixels dropped), DINOv2-392 features of the 32 real endings, two-mode split test: AUROC(split separation, fork) >= 0.7
+  AND split rate on forks >= 2x non-forks. Not gated, reported: sideview (masked), wrist (masked).
+- Pass both -> world-model check (2b-WM recipe) on ToolHang; fail -> stop ToolHang.
