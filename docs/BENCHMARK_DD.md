@@ -261,3 +261,11 @@ each with robot pixels masked.
 - GATE per view: AUROC(h vs real fork) >= 0.7 AND imagined split rate on forks >= 2x non-forks. Both views reported.
   "Best view" = the one passing with the higher AUROC; it is used for the closed-loop SafeManip filter test (spec to be
   written after this result). If neither passes: diagnose as for Physion (outcome readout from imagined vs real endings).
+- **Amendment 1 (2026-10-21 ~09:50, before any 2b-WM data):** (a) imagined futures use the SAME execution-noise model
+  that generated the real forks (smoothed Gaussian on the 6 arm dims, 5% x scale s, s in {0.5, 1, 2, 3}; as
+  libero/wm_libero.score_plans), not Gauss-TE; (b) robot pixels: the world model's TARGET latents have robot patches
+  (> 30% robot pixels in that frame) zeroed, so it learns to predict the masked scene from proprioception + actions; the
+  imagined split test then uses all patches (no future mask needed at test time). On a real robot the masks come from the
+  kinematic model + camera calibration; here from MuJoCo segmentation (same information). (c) Endings: end of the chunk
+  (20 control steps = model step 10) and end of the hold (30 = model step 15), as hold-10 / hold-30 on Jenga.
+  (d) Data: train mode saves exact + 4 noisy replays per point (rendering cost); eval mode exact + 32.
