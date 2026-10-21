@@ -144,3 +144,11 @@ to the head-to-head if selected; LSF as published is reported regardless.
   busy or unavailable"), unrelated to episode content. On the 87 complete episodes the rule selects eps 0.10 (topples /
   v4 / v4b: policy 27 / 54 / 49, eps 0.10: 17 / 50 / 46, eps 0.00: 18 / 51 / 42; results/jenga/lsfh_dev_result_partial87.json).
   The 12 tasks are re-run with that node excluded; the selection is made on the full set.
+- **LSF-hold dev RESULT, full set (2026-10-21 01:06; results/jenga/lsfh_dev_result.json):** 99 episodes complete in
+  every arm (replay flags match 99-100/100). Topples / v4 / v4b: policy 27 / 66 / 58; eps 0.00: 20 / 60 / 50; 0.05:
+  19 / 58 / 50; 0.10: 19 / 59 / 54; 0.15: 3 / 17 / 16; 0.20: 0 / 3 / 3; 0.30: 0 / 0 / 0. v4 bar = policy - 5 pp =
+  61.7%; best is eps 0.00 at 60.6% (-6.1 pp) -> by the rule NO eps is selected (the 87-episode partial had picked
+  0.10; the 12 re-run episodes moved it below the bar). Per the head-to-head launch rule the head-to-head is NOT
+  launched automatically; decision on an exploratory head-to-head left to the user.
+  Reading: the learned value works as a trigger (topples -26 to -30%), but it costs 6-8 pp of success; for comparison
+  (different episodes, Stage 4) G-CEM cut topples 69 -> 19 while RAISING v4 206 -> 246 out of 300.
