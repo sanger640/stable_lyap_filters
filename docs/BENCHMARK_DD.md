@@ -368,3 +368,12 @@ find out FAST whether they fork, before training any policy, then videos + the w
 LiftPegUpright forks are real outcome splits, not pose jitter: at 64 points the task's own success flag splits under
 2.5 mm noise (the peg either ends upright or falls back). Caveat: this is the expert (PPO) policy; the deployed
 policy (a chunked Diffusion Policy) must be re-checked once trained. Next: videos + world-model camera choice.
+### Correction + strict count (2026-10-21 19:55, after viewing the fork clip; not part of the pre-registered label)
+The pre-registered label (> 2 cm / > 20 deg from the exact replay) and the env success flag (within 4.6 deg of vertical
+AND 5 mm of table height) both also count smooth tilt SPREAD (e.g. all replays between 1 and 10 deg). Strict physical
+count from the per-replay final peg tilt (re-run, same seeds, identical 73 loose forks): two-mode moments (>= 2 replays
+standing < 20 deg AND >= 2 flat > 60 deg) = **20** of 192 (10.4%); moments where any replay falls flat = 31, so forks
+are 65% of them; all-or-nearly-all flat = 1. Still passes all three bars. We quote the strict 20, not the loose 73.
+World-model camera (chosen from 6 candidates, frames inspected): fixed side camera at (0, -0.5, 0.15) m looking at
+(0, 0, 0.05), fov 1.0 rad: peg tilt visible in profile, robot only in the top of the frame. ManiSkill's default
+base_camera looks down (tilt foreshortened, gripper occludes the peg). Videos: eval/maniskill_video.py.

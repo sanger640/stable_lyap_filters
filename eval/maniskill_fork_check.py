@@ -73,9 +73,10 @@ def main():
                 dq = 2 * torch.arccos(torch.clamp((q * q[0:1]).sum(1).abs(), max=1.0)) * 180 / np.pi
                 bad |= (dp > 0.02) | (dq > 20); dmax = torch.maximum(dmax, dp)
             succ = u.evaluate()["success"].cpu().numpy()
+            fin = {o: torch.cat([pq[0], pq[1]], 1).cpu().numpy().round(5).tolist() for o, pq in ps.items()}   # per-replay final pose (p, q)
             nb = int(bad[1:].sum())
             rows.append({"demo": di, "t": t, "T": T, "n_bad": nb, "succ_exact": bool(succ[0]), "n_succ_noisy": int(succ[1:].sum()),
-                         "dpos_max_median_mm": float(dmax[1:].median() * 1000)})
+                         "dpos_max_median_mm": float(dmax[1:].median() * 1000), "final_pose": fin})
         print(di, T, [r["n_bad"] for r in rows if r["demo"] == di], round(time.time() - t0, 1), flush=True)
     nb = [r["n_bad"] for r in rows]
     fork, anyb = sum(2 <= x <= 30 for x in nb), sum(x > 0 for x in nb)
