@@ -112,3 +112,6 @@ outcome audit as Stage 4. Smoke first: episodes 15900-15901, record + lsfe3 (not
   -0.20 / 0.09 / 0.15 / 0.24 / 0.43 (83% below 0.3), so the published eps (0.3-0.4, on that paper's own value scale)
   means "always intervene" here. Amended grid, covering our value's range: eps in {0.00, 0.05, 0.10, 0.15, 0.20, 0.30}
   (arms lsfe000 ... lsfe030); selection rule unchanged. Behaviour of the safety actor recorded as is (method as published).
+- Scheduling note (21:05, nothing had run): the packed whole-GPU job (24705559) was held behind a node in maintenance
+  (est. start 02:37); cancelled and resubmitted unchanged in content as a 100-task slice array (paired_array.sbatch,
+  1g.10gb, job 24709409; same episodes, arms, code).
