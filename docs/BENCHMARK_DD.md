@@ -274,3 +274,5 @@ each with robot pixels masked.
   training point, ~70 s per eval point (OSMesa). Training data will be scaled up after batch 1 is checked.
 - Data batch 2 (2026-10-21 ~10:05, Fir job 66559649, 3 slices x 8 clients): training seeds 65-69 and 81-87 x 2 tasks
   (24 episodes; no overlap with the eval seeds 71, 710, 72, 720). Training data total: 32 episodes.
+- Note: RecycleBottlesByType seed 67 starts in a layout that already meets the task's success check, so its episode
+  ends after step 1 (1 training point). A property of that scene, kept as is. Measured on Fir: ~19 s per training point.
