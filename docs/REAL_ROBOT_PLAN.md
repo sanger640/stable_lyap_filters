@@ -1,5 +1,7 @@
 # Real-robot benchmark plan (Franka Panda) — draft 2026-10-21, for the user to confirm
 
+**Status (user, 2026-10-21): deferred to the end; sim track (ToolHang) first.**
+
 Goal: the same filter (fork test trigger + G-CEM on the policy's own chunk, ensemble certificate, hold fallback) on a
 real Panda, with a policy that is not ours to modify, and a fragile task whose failures are visible. Target: RSS 2027
 Stage 1 (Dec 4) -> about 6 weeks.
