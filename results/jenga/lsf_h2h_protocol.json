@@ -1,0 +1,18 @@
+{
+ "name": "Head-to-head: our label-free filter (G-CEM) vs the latent safety filter baseline (LSF-hold) on Jenga (docs/LATENT_SAFETY_FILTER.md)",
+ "written": "2026-10-21 ~00:30, before the final LSF-hold eps selection (12 dev tasks re-running) and before any head-to-head episode",
+ "episodes": "16000-16299 (300, never used for anything)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg": "G-CEM (Stage 4 arm, unchanged): fork-test trigger, G transformations, ensemble certificate, hold fallback; no failure labels",
+  "cbfh": "hold-and-replan (Stage 4 arm, unchanged): same label-free fork-test trigger, hold fix",
+  "lsfh<eps>": "LSF-hold: learned latent safety value V (failure classifier from privileged topple labels + discounted reachability, g 0.95), least-restrictive switch at the eps selected on the full dev set by the pre-registered rule, hold fix"
+ },
+ "not_run": "LSF as published (DDPG safety actor): no eps passed the dev rule (results/jenga/lsf_dev_result.json); reported from dev only.",
+ "settings": "as Stage 4: stress layouts (shrink 10 mm), settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max; model_OIL for every arm; Fir, cluster/paired_array.sbatch, all 4 arms per task, osmesa.",
+ "outcome": "neighbour topples (logged, checked by replay), v4 and v4b success, by eval/outcome_audit.py.",
+ "primary": "G-CEM vs LSF-hold, paired by episode: (1) non-inferiority as in Stage 4 (success v4 one-sided 95% lower bound > -5 pp AND topple one-sided 95% upper bound < +3 pp); (2) superiority on topples (exact McNemar, two-sided, alpha 0.05). Both reported whatever the outcome.",
+ "secondary": "Trigger comparison with the fix held fixed: hold-and-replan (label-free fork trigger) vs LSF-hold (labelled learned value), same bounds and McNemar; each filter vs the policy; v4b; interventions per episode; seconds per decision.",
+ "stopping": "none; all 300 episodes per arm. Tasks that fail for infrastructure reasons (node errors, time limit) are re-run with the same settings before analysis; the analysis uses episodes complete in all four arms.",
+ "launch_rule": "launched once the full-dev LSF-hold selection is in. If the full set selects no eps, the LSF-hold arm uses none and the head-to-head is not run (LSF-hold is then reported from dev only)."
+}
