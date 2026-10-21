@@ -272,3 +272,5 @@ each with robot pixels masked.
 - Data batch 1 (2026-10-21 09:52, Fir job 66554611, 2 x 3g.40gb slices, 8 clients each): held-out eval set complete
   (seeds 71, 710, 72, 720 x 2 tasks, exact + 32) + training seeds 61-64 x 2 tasks (exact + 4). Fir smoke: ~32 s per
   training point, ~70 s per eval point (OSMesa). Training data will be scaled up after batch 1 is checked.
+- Data batch 2 (2026-10-21 ~10:05, Fir job 66559649, 3 slices x 8 clients): training seeds 65-69 and 81-87 x 2 tasks
+  (24 episodes; no overlap with the eval seeds 71, 710, 72, 720). Training data total: 32 episodes.
