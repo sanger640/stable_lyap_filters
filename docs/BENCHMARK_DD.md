@@ -346,3 +346,17 @@ Verdict: ToolHang is not a fork benchmark for this policy. Per the plan agreed 2
 here: Jenga is the sim evidence, the real robot is the second domain; ToolHang is reported as a scope limit
 (failures are precision/timeout, not noise-sensitive).
 (Worker note: seeds were run by 3 parallel workers; seed 6 ran twice with identical results, confirming determinism.)
+
+## ManiSkill3 quick fork check: StackPyramid + LiftPegUpright (spec fixed 2026-10-21 19:20, before any branching)
+User (19:15): two ManiSkill3 tasks, StackPyramid-v1 and LiftPegUpright-v1 (PickClutterYCB has no demos/solver); first
+find out FAST whether they fork, before training any policy, then videos + the world-model camera.
+- Policy for this check = the shipped expert demos (StackPyramid: motion planner, pd_joint_pos; LiftPegUpright: PPO,
+  pd_ee_delta_pose); branch along the demo trajectory (restored from its saved env_states) at every 8th step: exact + 32
+  noisy replays of the next 8 demo actions + 20 hold steps, on the GPU simulator (33 parallel envs). Demos 0-15
+  (StackPyramid) / 0-39 (LiftPegUpright).
+- Noise: 3-tap smoothed Gaussian, ~2.5 mm per step as before: joint targets sigma 0.004 rad (StackPyramid);
+  normalised ee-delta actions sigma 0.025 xyz / 0.0083 rot (LiftPegUpright; 1 unit = 0.1 m).
+- Bad replay: any object's final pose differs from the exact replay's by > 2 cm or > 20 deg (task-agnostic "outcome
+  changed"); the env's success flag at the end is also recorded. Fork: 2..30 of 32 bad.
+- Worth-it bar (same as check 1): >= 15 forks per task AND forks >= 25% of points with any bad replay AND >= 5% of all
+  points. A task that passes goes on to videos + camera choice + its own policy; one that fails is dropped.
