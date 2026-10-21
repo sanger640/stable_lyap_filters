@@ -140,3 +140,7 @@ untouched, exactly the Stage 4 hold-and-replan fix) instead of the DDPG actor. I
 trigger) from its actor. Arms lsfh000 ... lsfh030 (same 6 eps), same 100 dev episodes 15000-15099 (record arm reused
 from the sweep above: same episodes, seeds, code), Fir, same selection rule. Both LSF (as published) and LSF-hold go
 to the head-to-head if selected; LSF as published is reported regardless.
+- LSF-hold dev, partial (2026-10-21 00:23): 12 of 100 Fir tasks failed at start-up on one node (fc10713, "CUDA device
+  busy or unavailable"), unrelated to episode content. On the 87 complete episodes the rule selects eps 0.10 (topples /
+  v4 / v4b: policy 27 / 54 / 49, eps 0.10: 17 / 50 / 46, eps 0.00: 18 / 51 / 42; results/jenga/lsfh_dev_result_partial87.json).
+  The 12 tasks are re-run with that node excluded; the selection is made on the full set.
