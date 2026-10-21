@@ -231,3 +231,13 @@ as 2b), 32 noisy replays + the exact one, branching as in 2b. GATE: robot-masked
 separation, fork) >= 0.7 AND split rate on forks >= 2x non-forks. Other views reported, not gated. Pass -> SafeManip is
 the second benchmark: next is check 2b-WM (does the world model's imagined fork test detect these forks). Fail -> build
 our own task.
+
+### SafeManip check 2c-confirm RESULT (2026-10-21 01:10): PASSES
+Fresh episodes (seeds 51, 510, 52, 520), 279 decision points, 43 with any bad replay, 28 real forks. GATE robot-masked
+wrist view: AUROC 0.742, split rate 54% on forks vs 20% on non-forks (2.6x) -> PASS. Also: masked monitor camera 0.740
+(46% vs 12%, 3.8x; would pass), masked agentview_left 0.687 (46% vs 17%). Unmasked wrist 0.746. Across the two
+32-replay sets (2b, 2c; 57 forks) the wrist view gives 0.83 and 0.74.
+=> SafeManip is the second benchmark: real forks are common in its multi-object tasks AND they are visible as a split of
+real futures in the latent of the policy's own wrist camera. Next (per spec): check 2b-WM - does our world model's
+IMAGINED fork test detect these forks (needs a SafeManip world model on wrist latents + proprioception).
+results/benchmark_dd/safemanip_check2c_confirm_result.json.
