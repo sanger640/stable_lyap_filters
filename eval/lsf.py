@@ -128,6 +128,78 @@ def nets():
     return Classifier, Critic, Actor
 
 
+def sac_nets():
+    """UNISafe-style SAC (CMU-IntentLab/UNISafe reachability/policy/SAC_Reachability_Env.py): tanh-Gaussian actor over the
+    NORMALISED target motion d in [-1, 1]^6 (2 control steps x xyz, x MAX_STEP), twin critics Q(z, g, d)."""
+    import torch
+    from torch import nn
+    Classifier, _, _ = nets()
+
+    def mlp(i, o, h=512, n=3):
+        layers, d = [], i
+        for _ in range(n):
+            layers += [nn.Linear(d, h), nn.ReLU()]; d = h
+        return nn.Sequential(*layers, nn.Linear(d, o))
+
+    def Trunk():
+        return nn.Sequential(nn.Conv2d(8, 32, 3, 2, 1), nn.ReLU(), nn.Conv2d(32, 64, 3, 2, 1), nn.ReLU(),
+                             nn.Conv2d(64, 64, 3, 2, 1), nn.ReLU(), nn.Flatten())
+
+    class QNet(nn.Module):
+        def __init__(self):
+            super().__init__(); self.t = Trunk(); self.m = mlp(1024 + 4 + 6, 1)
+
+        def forward(self, z, g, d):
+            return self.m(torch.cat([self.t(z.float().permute(0, 3, 1, 2)), g, d], 1)).squeeze(1)
+
+    class SACActor(nn.Module):
+        def __init__(self):
+            super().__init__(); self.t = Trunk(); self.m = mlp(1024 + 4, 12)
+
+        def dist(self, z, g):
+            mu, ls = self.m(torch.cat([self.t(z.float().permute(0, 3, 1, 2)), g], 1)).chunk(2, 1)
+            return mu, ls.clamp(-5, 2)
+
+        def sample(self, z, g):
+            mu, ls = self.dist(z, g); u = mu + ls.exp() * torch.randn_like(mu); d = torch.tanh(u)
+            logp = (-0.5 * ((u - mu) / ls.exp()) ** 2 - ls - 0.9189385).sum(1) - torch.log(1 - d.pow(2) + 1e-6).sum(1)
+            return d, logp
+
+        def mean(self, z, g):
+            return torch.tanh(self.dist(z, g)[0])
+    return QNet, SACActor
+
+
+def plan_from_d(g, d):
+    """normalised motion (B, 6) from the current target g (B, 4) -> absolute 2-step plan (B, 8) as the policy's format."""
+    import torch
+    d = d.view(-1, 2, 3) * MAX_STEP; p1 = g[:, :3] + d[:, 0]; p2 = p1 + d[:, 1]
+    return torch.cat([p1, g[:, 3:], p2, g[:, 3:]], 1)
+
+
+class ValueFn:
+    """Uniform interface for the deployed filter / diagnostics: V(z, g) under the safety policy, act(z, g) -> plan (B, 8)."""
+    def __init__(self, name, dev="cuda"):
+        import torch
+        w = torch.load(OUT / name, map_location=dev); self.sac = w.get("algo") == "sac"
+        if self.sac:
+            QNet, SACActor = sac_nets()
+            self.q1, self.q2, self.a = QNet().to(dev).eval(), QNet().to(dev).eval(), SACActor().to(dev).eval()
+            self.q1.load_state_dict(w["q1"]); self.q2.load_state_dict(w["q2"]); self.a.load_state_dict(w["actor"])
+        else:
+            _, Critic, Actor = nets(); self.q, self.a = Critic().to(dev).eval(), Actor().to(dev).eval()
+            self.q.load_state_dict(w["critic"]); self.a.load_state_dict(w["actor"])
+
+    def act(self, z, g):
+        return plan_from_d(g, self.a.mean(z, g)) if self.sac else self.a(z, g)
+
+    def V(self, z, g):
+        import torch
+        if self.sac:
+            d = self.a.mean(z, g); return torch.minimum(self.q1(z, g, d), self.q2(z, g, d))
+        return self.q(z, g, self.a(z, g))
+
+
 def stage_classifier(epochs=int(os.environ.get("LSF_EPOCHS", 20)), batch=512, limit=None):
     import torch
     Classifier, _, _ = nets()
@@ -176,6 +248,8 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
     buf = {"z": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV), "g": torch.zeros(cap, 4, device=DEV),
            "a": torch.zeros(cap, 8, device=DEV), "z2": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV),
            "g2": torch.zeros(cap, 4, device=DEV), "l": torch.zeros(cap, device=DEV), "done": torch.zeros(cap, dtype=torch.bool, device=DEV)}
+    pess = os.environ.get("LSF_PESS") == "1"
+    models = ensemble() if pess else None
     trunc = os.environ.get("LSF_TRUNC") == "1"          # UNISafe-style: the last imagined step is terminal (target = l)
     n, ptr, rng, log = 0, 0, np.random.default_rng(SEED), []
     g0, g1 = float(os.environ.get("LSF_GAMMA0", 0.9)), GAMMA        # gamma annealed toward 1 (reachability-RL practice)
@@ -185,7 +259,11 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
         with torch.no_grad():
             for t in range(horizon):                                   # imagined rollout of the (noisy) safety actor
                 a = A(z, g); a[:, [0, 1, 2, 4, 5, 6]] += torch.randn(envs, 6, device=DEV) * 0.3 * MAX_STEP
-                z2 = model.step(z, a).float(); g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1); l = clf(z, g)
+                g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
+                if pess:
+                    z2, l, _ = pessimistic_step(models, clf, z, a, g2)               # margin of the pessimistic next state
+                else:
+                    z2 = model.step(z, a).float(); l = clf(z, g)
                 k = torch.arange(ptr, ptr + envs, device=DEV) % cap
                 buf["z"][k], buf["g"][k], buf["a"][k], buf["z2"][k], buf["g2"][k], buf["l"][k] = z.half(), g, a, z2.half(), g2, l
                 buf["done"][k] = trunc and t == horizon - 1
@@ -209,5 +287,106 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
     json.dump(log, open(OUT / "value_log.json", "w"))
 
 
+def ensemble():
+    import step3_world_model as wm
+    ms = [wm.WorldModel.load(WM_PATH)] + [wm.WorldModel.load(ROOT / f"results/program_b/ens_v1/model_ENS{e}.pt") for e in range(4)]
+    for m in ms:
+        m.net.eval()
+    return ms
+
+
+def disagreement(models, z, a):
+    """Epistemic uncertainty of the transition (z, a): std over the 5 world models of the predicted next latent."""
+    import torch
+    p = torch.stack([m.step(z, a).float() for m in models]); return p[0], p.std(0).mean((1, 2, 3))
+
+
+def pessimistic_step(models, clf, z, a, g2):
+    """Original LSF (CMU-IntentLab/latent-safety, PyHJ/reach_rl_gym_envs/franka-wm.py): sample the world model N times and
+    keep the MOST PESSIMISTIC transition (lowest safety margin). Our world model is deterministic, so the N samples are the
+    5 ensemble members. -> next latent (B, ...), its margin l(z', g') and the disagreement u."""
+    import torch
+    p = torch.stack([m.step(z, a).float() for m in models])                        # (5, B, 28, 28, 8)
+    lm = torch.stack([clf(p[k], g2) for k in range(len(models))])                   # (5, B)
+    w = lm.argmin(0); idx = torch.arange(len(w), device=w.device)
+    return p[w, idx], lm.min(0).values, p.std(0).mean((1, 2, 3))
+
+
+def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horizon=15, batch=512, cap=400_000):
+    """UNISafe recipe in our world model's imagination. Margin l = min(failure margin of the classifier, uncertainty
+    margin); uncertainty margin = clip(2 (thr - u) / thr, -1, 1), u = ensemble disagreement of the transition,
+    thr = 95th percentile of u under the POLICY's own actions on training resets (data-calibrated OOD threshold, as
+    UNISafe's ood_threshold). Twin critics, entropy term in the target, learned alpha (target entropy -6), gamma
+    annealed 0.85 -> 0.9999 (UNISafe StepLRMargin: period 4000 updates, decay 0.95), episodes of 15 model steps
+    (30 control steps) truncated as terminal (target = l), lr 1e-4, tau 0.005."""
+    import copy
+    import torch
+    import step3_world_model as wm
+    wm.DEVICE = DEV
+    torch.manual_seed(SEED)
+    Classifier, _, _ = nets(); QNet, SACActor = sac_nets()
+    clf = Classifier().to(DEV); clf.load_state_dict(torch.load(OUT / "classifier.pt", map_location=DEV)); clf.eval()
+    models = ensemble()
+    q1, q2, A = QNet().to(DEV), QNet().to(DEV), SACActor().to(DEV); q1t, q2t = copy.deepcopy(q1), copy.deepcopy(q2)
+    oq = torch.optim.Adam(list(q1.parameters()) + list(q2.parameters()), lr=1e-4); oa = torch.optim.Adam(A.parameters(), lr=1e-4)
+    log_alpha = torch.zeros(1, device=DEV, requires_grad=True); oal = torch.optim.Adam([log_alpha], lr=1e-4)
+    R_z = np.load(OUT / "train_reset_z.npy"); R_g = np.load(OUT / "train_reset_prop.npy")
+    rng = np.random.default_rng(SEED); use_uq = os.environ.get("LSF_UQ", "1") == "1"; pess = os.environ.get("LSF_PESS") == "1"
+    # OOD threshold from the policy's own actions (hold-out of nothing: training resets + the recorded policy targets)
+    pol = np.load(OUT / "train_reset_plan.npy") if (OUT / "train_reset_plan.npy").exists() else None
+    with torch.no_grad():
+        i = rng.choice(len(R_z), 2048); z = torch.as_tensor(R_z[i], device=DEV).float(); g = torch.as_tensor(R_g[i], device=DEV).float()
+        a = torch.cat([g, g], 1) if pol is None else torch.as_tensor(pol[i, :2].reshape(-1, 8), device=DEV).float()
+        us = torch.cat([disagreement(models, z[k:k + 256], a[k:k + 256])[1] for k in range(0, 2048, 256)])
+        thr = float(torch.quantile(us, 0.95))
+    print("ood threshold", thr, "from", "policy" if pol is not None else "hold", flush=True)
+    buf = {"z": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV), "g": torch.zeros(cap, 4, device=DEV),
+           "d": torch.zeros(cap, 6, device=DEV), "z2": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV),
+           "g2": torch.zeros(cap, 4, device=DEV), "l": torch.zeros(cap, device=DEV), "done": torch.zeros(cap, dtype=torch.bool, device=DEV)}
+    n, ptr, upd, log = 0, 0, 0, []
+    while upd < updates:
+        i = rng.choice(len(R_z), envs); z = torch.as_tensor(R_z[i], device=DEV).float(); g = torch.as_tensor(R_g[i], device=DEV).float()
+        for t in range(horizon):
+            with torch.no_grad():
+                d, _ = A.sample(z, g); a = plan_from_d(g, d); g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
+                if pess:
+                    z2, lf, u = pessimistic_step(models, clf, z, a, g2)
+                else:
+                    (z2, u), lf = disagreement(models, z, a), clf(z, g)
+                l = torch.minimum(lf, (2 * (thr - u) / thr).clamp(-1, 1)) if use_uq else lf
+                k = torch.arange(ptr, ptr + envs, device=DEV) % cap
+                buf["z"][k], buf["g"][k], buf["d"][k], buf["z2"][k], buf["g2"][k], buf["l"][k] = z.half(), g, d, z2.half(), g2, l
+                buf["done"][k] = t == horizon - 1
+                ptr = (ptr + envs) % cap; n = min(n + envs, cap); z, g = z2, g2
+            for _ in range(4):                                               # 4 updates per imagined step of 256 envs
+                gam = 0.9999 - (0.9999 - 0.85) * 0.95 ** (upd // 4000); alpha = float(log_alpha.exp())
+                j = torch.as_tensor(rng.integers(0, n, batch), device=DEV)
+                zb, gb, db, z2b, g2b, lb, dn = (buf[x][j] for x in ("z", "g", "d", "z2", "g2", "l", "done"))
+                with torch.no_grad():
+                    d2, lp2 = A.sample(z2b, g2b)
+                    vn = torch.minimum(q1t(z2b, g2b, d2), q2t(z2b, g2b, d2)) - alpha * lp2
+                    y = torch.where(dn, lb, gam * torch.minimum(lb, vn) + (1 - gam) * lb)
+                lq = ((q1(zb, gb, db) - y) ** 2).mean() + ((q2(zb, gb, db) - y) ** 2).mean()
+                oq.zero_grad(); lq.backward(); oq.step()
+                dn_, lp = A.sample(zb, gb)
+                la = (alpha * lp - torch.minimum(q1(zb, gb, dn_), q2(zb, gb, dn_))).mean()
+                oa.zero_grad(); la.backward(); oa.step()
+                lal = -(log_alpha * (lp.detach() - 6).mean()); oal.zero_grad(); lal.backward(); oal.step()
+                with torch.no_grad():
+                    for net, tgt in ((q1, q1t), (q2, q2t)):
+                        for p, pt in zip(net.parameters(), tgt.parameters()):
+                            pt.mul_(1 - TAU).add_(TAU * p)
+                upd += 1
+                if upd % 2000 == 0:
+                    with torch.no_grad():
+                        sat = float((A.mean(zb, gb).abs() > 0.95).float().mean())
+                    log.append({"update": upd, "gamma": gam, "alpha": alpha, "critic_loss": float(lq), "actor_loss": float(la),
+                                "l_mean": float(lb.mean()), "unc_fail_share": float((l < 0).float().mean()), "actor_saturated": sat})
+                    print(log[-1], flush=True)
+    torch.save({"algo": "sac", "q1": q1.state_dict(), "q2": q2.state_dict(), "actor": A.state_dict(), "ood_threshold": thr, "uq": use_uq, "pess": pess},
+               OUT / os.environ.get("LSF_VALUE_NAME", "value_sac.pt"))
+    json.dump(log, open(OUT / f"{os.environ.get('LSF_VALUE_NAME', 'value_sac.pt')[:-3]}_log.json", "w"))
+
+
 if __name__ == "__main__":
-    {"data": stage_data, "merge": stage_merge, "classifier": stage_classifier, "value": stage_value}[sys.argv[1]]()
+    {"data": stage_data, "merge": stage_merge, "classifier": stage_classifier, "value": stage_value, "sac": stage_sac}[sys.argv[1]]()

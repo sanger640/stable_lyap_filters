@@ -29,9 +29,7 @@ def main():
     import torch
     import lsf as L
     from fresh_fragility_panel import neighbour_tilts, TOPPLE_DEG
-    _, Critic, Actor = L.nets()
-    w = torch.load(L.OUT / os.environ.get("LSF_VALUE_NAME", "value.pt"), map_location="cuda")
-    Q, A = Critic().cuda().eval(), Actor().cuda().eval(); Q.load_state_dict(w["critic"]); A.load_state_dict(w["actor"])
+    vf = L.ValueFn(os.environ.get("LSF_VALUE_NAME", "value.pt"))
     Clf, _, _ = L.nets(); clf = Clf().cuda().eval(); clf.load_state_dict(torch.load(L.OUT / "classifier.pt", map_location="cuda"))
     files = [f for src in ("cf_v1", "cf_v2", "closedloop_v1", "oil_v1")
              for f in sorted(glob.glob(str(ROOT / f"results/program_b/{src}/val/ep*.npz"))) if not f.endswith(".tmp.npz")]
@@ -44,7 +42,7 @@ def main():
     share, anyf, rz, rp = np.array(share), np.array(anyf), np.stack(rz), np.stack(rp)
     with torch.no_grad():
         z = torch.as_tensor(rz, device="cuda").float(); g = torch.as_tensor(rp, device="cuda").float()
-        V = np.concatenate([Q(z[i:i + 256], g[i:i + 256], A(z[i:i + 256], g[i:i + 256])).cpu().numpy() for i in range(0, len(z), 256)])
+        V = np.concatenate([vf.V(z[i:i + 256], g[i:i + 256]).cpu().numpy() for i in range(0, len(z), 256)])
         l0 = np.concatenate([clf(z[i:i + 256], g[i:i + 256]).cpu().numpy() for i in range(0, len(z), 256)])
     res = {"decision_points": int(len(V)), "with_any_toppling_future": int(anyf.sum()),
            "AUROC_minusV_vs_any_topple": auroc(-V, anyf), "spearman_minusV_vs_topple_share": float(np.corrcoef(np.argsort(np.argsort(-V)), np.argsort(np.argsort(share)))[0, 1]),

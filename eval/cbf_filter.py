@@ -154,10 +154,8 @@ class CBF:
         import lsf as L
         torch = self.mon.torch
         if getattr(self, "_lsf", None) is None:
-            _, Critic, Actor = L.nets(); w = torch.load(L.OUT / os.environ.get("LSF_VALUE_NAME", "value.pt"), map_location="cuda")
-            Q, A = Critic().cuda().eval(), Actor().cuda().eval(); Q.load_state_dict(w["critic"]); A.load_state_dict(w["actor"])
-            self._lsf = (Q, A, float(os.environ.get("LSF_EPS", "0.3")))
-        Q, A, eps = self._lsf
+            self._lsf = (L.ValueFn(os.environ.get("LSF_VALUE_NAME", "value.pt")), float(os.environ.get("LSF_EPS", "0.3")))
+        vf, eps = self._lsf
         S = CFG["PLAN_START"]; seg = np.asarray(plan, np.float32)[S:S + 8]
         g = torch.as_tensor(np.r_[sim.target, plan[0][3]][None], dtype=torch.float32, device="cuda")
         with torch.no_grad():
@@ -165,7 +163,7 @@ class CBF:
             for m in range(4):
                 a = torch.as_tensor(seg[2 * m:2 * m + 2].reshape(1, 8), device="cuda")
                 z = self.mon.model.step(z, a).float(); gg = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
-                vals.append(float(Q(z, gg, A(z, gg))))
+                vals.append(float(vf.V(z, gg)))
             v_min = min(vals)
             if v_min > eps:
                 return seg.copy(), {"intervened": False, "lsf_vmin": v_min, "seconds": round(time.time() - t0, 2)}
@@ -175,7 +173,7 @@ class CBF:
                              "seconds": round(time.time() - t0, 2)}
             z, gg, out = z0[None], g, []
             for m in range(4):
-                a = A(z, gg); out.append(a.view(2, 4).cpu().numpy())
+                a = vf.act(z, gg); out.append(a.view(2, 4).cpu().numpy())
                 z = self.mon.model.step(z, a).float(); gg = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
         out = np.concatenate(out).astype(np.float32)
         return out, {"intervened": True, "abstained": False, "kind": "lsf", "lsf_vmin": v_min,
