@@ -194,3 +194,10 @@ episodes do not touch the filter code; same episodes and seeds). Value value_uni
 paired_array. Selection rule unchanged (fewest replay-audited topples among eps with v4 no more than 5 pp below the
 policy; ties -> larger eps). If an eps is selected, it goes to a head-to-head with G-CEM on fresh episodes (spec to be
 fixed before that run). Smoke first: episodes 15900-15901, lsfe030 (not part of any analysis).
+
+## Re-audit RESULT, original-LSF pessimism on our DDPG (2026-10-21 18:35; results/jenga/lsf_audit_value_pess_g0.95.json)
+value_pess_g0.95.pt = the selected g0.95 DDPG run with ONLY the original LSF's pessimistic transition added (worst of
+the 5 ensemble members per imagined step). FAILS the gate: actor saturated on 100% of outputs; median imagined V after
+its own plan -0.05 vs hold 0.12; ensemble disagreement of its plans 3.4x the policy's (93% above the policy's p95);
+value AUROC 0.78. Pessimism over the ensemble does not stop the DDPG actor collapsing; the UNISafe recipe (SAC +
+uncertainty margin) does. Only value_unisafe.pt goes to closed loop.
