@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src"), str(ROOT / "libero")]
 VIEW = os.environ.get("SM_VIEW", "monitor"); VI = {"monitor": 0, "wrist": 1}[VIEW]
 DATA = Path(os.environ.get("SM_DATA", str(Path.home() / "wksp/safemanip/wm_data")))   # <DATA>/train/s*/, <DATA>/eval/s*/
-OUT = ROOT / f"results/safemanip/wm_{VIEW}"
+OUT = Path(os.environ.get("SM_OUT", str(ROOT / f"results/safemanip/wm_{VIEW}")))
 ENC = OUT / "enc"
 STEPS, END_CHUNK, END_HOLD = 15, 9, 14          # model steps (30 control steps); indices of the two endings
 SCALES = (0.5, 1.0, 2.0, 3.0)
