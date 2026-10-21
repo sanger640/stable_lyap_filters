@@ -119,3 +119,6 @@ outcome audit as Stage 4. Smoke first: episodes 15900-15901, record + lsfe3 (not
   (job 66192391; same container, environment and code; Fir mirrors Nibi's user-site packages). Reproduction check:
   episode 15000 (record + lsfe010) re-run on Fir (tag _firrepro) must match Nibi's logged outcome; if not, tasks 70-99
   are re-run on Nibi instead.
+  Reproduction check PASSED (22:20): episode 15000 on Fir vs Nibi, record: 32 chunks, lifted, no topple, max lift
+  52.7 vs 52.6 mm, 25.6 s both; lsfe010: 60 chunks, no lift, neighbour toppled, peak tilt 95.0 vs 96.1 deg (same
+  outcomes; sub-mm floating-point differences as in the Narval check). Fir's tasks 70-99 are kept.
