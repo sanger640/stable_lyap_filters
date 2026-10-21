@@ -242,6 +242,7 @@ def branch(gw, rs, chunk, convert_action, rng, task, ep, t, render=False, masked
     return {"task": task, "episode": ep, "t": t, "held_at_start": bool(held0), "bad_exact": bad[0], "n_bad": int(sum(bad[1:])),
             "n_slip": int(sum(r[0] for r in res[1:])), "n_unstable": int(sum(r[1] for r in res[1:])),
             "n_knocked": int(sum(r[2] for r in res[1:])), "exact_ok": dev <= 1e-6, "exact_dev_m": dev,
+            "bad_replays": [bool(b) for b in bad],
             **({"frames": np.stack(frames)} if render else {}), **({"masks": np.stack(masks)} if masked else {})}
 
 
