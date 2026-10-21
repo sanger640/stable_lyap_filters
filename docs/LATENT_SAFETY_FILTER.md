@@ -201,3 +201,6 @@ the 5 ensemble members per imagined step). FAILS the gate: actor saturated on 10
 its own plan -0.05 vs hold 0.12; ensemble disagreement of its plans 3.4x the policy's (93% above the policy's p95);
 value AUROC 0.78. Pessimism over the ensemble does not stop the DDPG actor collapsing; the UNISafe recipe (SAC +
 uncertainty margin) does. Only value_unisafe.pt goes to closed loop.
+- Scheduling note (18:30): Fir and Nibi GPU partitions down (PartitionDown); the smoke and sweep move to Rorqual (code
+  synced; src/ and model_OIL identical). Reproduction check PASSED (18:38): episode 15000, record arm, Rorqual vs Nibi:
+  32 chunks, lifted, max lift 52.6 mm, neighbour tilt 6.2 deg, 25.6 s, success - identical. The reused record arm stands.
