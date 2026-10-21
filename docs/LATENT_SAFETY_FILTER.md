@@ -115,3 +115,7 @@ outcome audit as Stage 4. Smoke first: episodes 15900-15901, record + lsfe3 (not
 - Scheduling note (21:05, nothing had run): the packed whole-GPU job (24705559) was held behind a node in maintenance
   (est. start 02:37); cancelled and resubmitted unchanged in content as a 100-task slice array (paired_array.sbatch,
   1g.10gb, job 24709409; same episodes, arms, code).
+- Scheduling note 2 (22:10): Nibi ran dev tasks 0-69; the never-started tasks 70-99 were cancelled there and run on Fir
+  (job 66192391; same container, environment and code; Fir mirrors Nibi's user-site packages). Reproduction check:
+  episode 15000 (record + lsfe010) re-run on Fir (tag _firrepro) must match Nibi's logged outcome; if not, tasks 70-99
+  are re-run on Nibi instead.
