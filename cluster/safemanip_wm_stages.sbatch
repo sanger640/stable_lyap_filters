@@ -14,7 +14,7 @@ for v in ${VIEWS:-monitor wrist}; do
   for st in $STAGES; do
     a=$st; [[ $st == ens* ]] && a="ens ${st#ens}"
     apptainer exec --nv --cleanenv --env "TORCH_HOME=$PWD/../torch_home,PYTHONUNBUFFERED=1,PYTHONUSERBASE=/scratch/ali313/slf/userbase,SM_VIEW=$v,SM_DATA=/scratch/ali313/safemanip/wm_data" \
-      -B /scratch -B $HOME ../torch290.sif ../pyenv/bin/python eval/safemanip_wm.py $a 2>&1 | grep -v -iE "warn|emb_dim"
+      -B /scratch -B $HOME ../torch290.sif ../pyenv/bin/python eval/safemanip_wm.py $a 2>&1 | grep --line-buffered -v -iE "warn|emb_dim"
     echo "== $v $st done $(date)"
   done
 done
