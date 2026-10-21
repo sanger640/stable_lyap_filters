@@ -152,3 +152,9 @@ to the head-to-head if selected; LSF as published is reported regardless.
   launched automatically; decision on an exploratory head-to-head left to the user.
   Reading: the learned value works as a trigger (topples -26 to -30%), but it costs 6-8 pp of success; for comparison
   (different episodes, Stage 4) G-CEM cut topples 69 -> 19 while RAISING v4 206 -> 246 out of 300.
+
+## Open item (user, 2026-10-21 morning)
+The user expects the LSF as published (with its DDPG safety actor) to work without the hold variant and suspects an
+implementation problem. To revisit AFTER the SafeManip benchmark work: re-check the actor (saturation, action
+bounds/scaling, exploration noise, training length, imagined-rollout horizon, data distribution of resets) against the
+reference implementations (tabz23/Latent-Safety-Filters, CMU-IntentLab/UNISafe) before any further LSF claims.
