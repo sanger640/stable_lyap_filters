@@ -377,3 +377,14 @@ are 65% of them; all-or-nearly-all flat = 1. Still passes all three bars. We quo
 World-model camera (chosen from 6 candidates, frames inspected): fixed side camera at (0, -0.5, 0.15) m looking at
 (0, 0, 0.05), fov 1.0 rad: peg tilt visible in profile, robot only in the top of the frame. ManiSkill's default
 base_camera looks down (tilt foreshortened, gripper occludes the peg). Videos: eval/maniskill_video.py.
+
+## LiftPegUpright policies (spec fixed 2026-10-21 19:40, before training; user: "do diff policy then but i want to also test on ppo")
+- Main policy: ManiSkill's state-based Diffusion Policy baseline (examples/baselines/diffusion_policy/train.py, unchanged
+  defaults: obs horizon 2, action chunk 8, prediction 16), trained on 100 of the PPO demos (state obs, pd_ee_delta_pose,
+  physx_cuda; replayed from the shipped demos, 927 kept), 30k iterations, eval every 5k on 100 GPU episodes,
+  max_episode_steps 100. Checkpoint rule (as ToolHang): the LAST checkpoint with eval success in [50%, 90%]; if none is
+  below 90%, the earliest >= 50%; if none reaches 50%, train on more demos (all 927) and repeat once.
+- Second policy: the shipped PPO checkpoint (ppo_pd_ee_delta_pose_ckpt.pt), per-step (not chunked). How the filter
+  wraps a per-step policy is decided before any PPO filter episode runs.
+- Next: fork check on the DP's OWN closed-loop rollouts (same branching as the quick check, strict stand-vs-flat count,
+  same three bars) before any world-model work.
