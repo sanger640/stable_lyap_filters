@@ -269,3 +269,6 @@ each with robot pixels masked.
   kinematic model + camera calibration; here from MuJoCo segmentation (same information). (c) Endings: end of the chunk
   (20 control steps = model step 10) and end of the hold (30 = model step 15), as hold-10 / hold-30 on Jenga.
   (d) Data: train mode saves exact + 4 noisy replays per point (rendering cost); eval mode exact + 32.
+- Data batch 1 (2026-10-21 09:52, Fir job 66554611, 2 x 3g.40gb slices, 8 clients each): held-out eval set complete
+  (seeds 71, 710, 72, 720 x 2 tasks, exact + 32) + training seeds 61-64 x 2 tasks (exact + 4). Fir smoke: ~32 s per
+  training point, ~70 s per eval point (OSMesa). Training data will be scaled up after batch 1 is checked.
