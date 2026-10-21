@@ -211,3 +211,23 @@ fork-rich in 1c), 4 episodes each (seeds 41, 410, 42, 420; 1 episode each, run i
 and robot masks. Gate on the ROBOT-MASKED MONITOR CAMERA (best view in 2a-masked; these are fresh episodes, so this
 confirms that choice): AUROC(split separation, fork) >= 0.7 AND split rate on forks >= 2x non-forks, with fork = 2..30
 of the 32 noisy replays bad (bad share strictly between ~5% and ~95%). agentview_left and wrist reported alongside.
+
+### SafeManip check 2b-powered RESULT (2026-10-20 22:52): pre-registered gate (masked monitor camera) FAILS; two other views pass
+279 decision points (44 with any bad replay, 29 real forks = 2..30 of 32 replays bad). With 32 replays the false-split
+rate on non-forks fell from 34-42% (n = 8) to 10-21%, confirming the audit (n = 8 was under-powered).
+| view (robot-masked) | AUROC (sep vs fork) | split rate forks / non-forks | gate (>= 0.7 and >= 2x) |
+|---|---|---|---|
+| monitor camera (pre-registered gate) | 0.65 | 34% / 14% (2.4x) | FAIL (AUROC) |
+| agentview_left | 0.72 | 55% / 17% (3.2x) | would pass |
+| eye_in_hand (wrist) | 0.83 (unmasked 0.83) | 52% / 20% (2.5x) | would pass |
+Per protocol the result is a FAIL for the gated view; switching the view after seeing results is not allowed. The gated
+view was chosen from the n = 8 run, which this audit showed was too noisy to rank views. The wrist view was the best in
+both independent sets (0.72 at n = 8, 0.83 here) and is one of the policy's own cameras.
+Next (spec below, fixed before running): a confirmation run on fresh episodes with the wrist view as the gate.
+
+## SafeManip check 2c-confirm (spec fixed 2026-10-20 22:55, before running)
+Fresh episodes: seeds 51, 510, 52, 520 (one episode each), tasks StackBowlsCabinet and RecycleBottlesByType (8 episodes,
+as 2b), 32 noisy replays + the exact one, branching as in 2b. GATE: robot-masked eye_in_hand (wrist) view, AUROC(split
+separation, fork) >= 0.7 AND split rate on forks >= 2x non-forks. Other views reported, not gated. Pass -> SafeManip is
+the second benchmark: next is check 2b-WM (does the world model's imagined fork test detect these forks). Fail -> build
+our own task.
