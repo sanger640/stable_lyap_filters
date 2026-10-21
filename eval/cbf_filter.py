@@ -169,6 +169,10 @@ class CBF:
             v_min = min(vals)
             if v_min > eps:
                 return seg.copy(), {"intervened": False, "lsf_vmin": v_min, "seconds": round(time.time() - t0, 2)}
+            if os.environ.get("LSF_FALLBACK") == "hold":   # LSF-hold: same switch, Stage 4 hold-and-replan fix
+                out = seg.copy(); out[:, :3] = sim.target
+                return out, {"intervened": True, "abstained": False, "kind": "lsf_hold", "lsf_vmin": v_min,
+                             "seconds": round(time.time() - t0, 2)}
             z, gg, out = z0[None], g, []
             for m in range(4):
                 a = A(z, gg); out.append(a.view(2, 4).cpu().numpy())
