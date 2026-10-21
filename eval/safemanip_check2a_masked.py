@@ -69,6 +69,8 @@ def main():
                                   "split_rate_nonforks": float(ok_u[~fork].mean())},
                      "share_of_patches_kept_median": float(np.median(kept))}
         print(name, json.dumps(res[name]), flush=True)
+    gw = res["eye_in_hand"]["masked"]
+    res["gate_pass_eye_in_hand_masked"] = bool(gw["AUROC_separation_vs_fork"] >= 0.7 and gw["split_rate_forks"] >= 2 * max(gw["split_rate_nonforks"], 1e-9))
     gm = res["monitor_cam"]["masked"]
     res["gate_pass_monitor_cam_masked"] = bool(gm["AUROC_separation_vs_fork"] >= 0.7 and gm["split_rate_forks"] >= 2 * max(gm["split_rate_nonforks"], 1e-9))
     g = res["agentview_left"]["masked"]
