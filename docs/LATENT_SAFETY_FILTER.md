@@ -176,3 +176,21 @@ threshold = 95th percentile under the policy's own actions); `LSF_PESS=1` = orig
 the 5 ensemble members as samples (both trainers). Training run 1: UNISafe (value_unisafe.pt), 60k updates.
 Gate before any closed-loop use (fixed now): actor not saturated (< 20%), its imagined V after its own plan >= hold's,
 value AUROC (eval/lsf_diag.py) >= 0.7.
+
+## Re-audit RESULT, UNISafe recipe (2026-10-21 17:37; results/jenga/lsf_audit_value_unisafe.json, lsf_value_diag_value_unisafe.json)
+value_unisafe.pt (SAC + ensemble-uncertainty margin, 60k updates) PASSES the gate on all three counts: actor saturated
+on 0.03% of outputs (< 20%; was 100%); median imagined V after its own plan 0.85 vs hold 0.76 / policy 0.76 (>= hold;
+was 0.01 vs 0.15); value AUROC for "any real future topples" 0.81 (>= 0.7; g0.95 DDPG was in the same range). Its
+plans are also the most in-distribution of the three (median ensemble disagreement 0.0051 vs policy 0.0066 / hold
+0.0027; 0.1% above the policy's 95th percentile, was 99%). So the earlier LSF failure was our DDPG actor collapsing,
+as the user suspected.
+
+## Dev eps sweep, UNISafe value (spec fixed 2026-10-21 17:50, before any closed-loop episode with this value)
+Same protocol as the sweep above: episodes 15000-15099, Stage 4 paired setup, world model model_OIL, least-restrictive
+switch to the SAC actor (the method as published, no hold), record arm REUSED from the lsfdev sweep (policy-only
+episodes do not touch the filter code; same episodes and seeds). Value value_unisafe.pt. The value's scale differs
+(validation V quantiles 5/25/50/75/95% = 0.15 / 0.67 / 0.74 / 0.88 / 0.94), so the grid is eps in {0.00, 0.10, 0.20,
+0.30, 0.50, 0.70} (includes the published 0.3; 0.70 is below the median), arms lsfe000 ... lsfe070, tag _unidev, Fir
+paired_array. Selection rule unchanged (fewest replay-audited topples among eps with v4 no more than 5 pp below the
+policy; ties -> larger eps). If an eps is selected, it goes to a head-to-head with G-CEM on fresh episodes (spec to be
+fixed before that run). Smoke first: episodes 15900-15901, lsfe030 (not part of any analysis).
