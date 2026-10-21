@@ -388,3 +388,19 @@ base_camera looks down (tilt foreshortened, gripper occludes the peg). Videos: e
   wraps a per-step policy is decided before any PPO filter episode runs.
 - Next: fork check on the DP's OWN closed-loop rollouts (same branching as the quick check, strict stand-vs-flat count,
   same three bars) before any world-model work.
+- Amendment (2026-10-21 20:05, before any DP checkpoint was evaluated): episodes are the task's default 50 steps and
+  success = peg upright AT THE END (ManiSkill success_at_end); the demos run to 50 steps and keep the peg upright, and
+  the quick-check forks were in that post-pivot "leave it standing" phase. (A first PPO run at 100 steps went out of
+  distribution after step 50 and knocked every peg over; discarded.) The DP checkpoint rule uses success_at_end from
+  eval/maniskill_policies.py rollout() on 100 episodes (seed 0).
+- PPO (deterministic mean), 50 steps: success_at_end 38% (200 episodes), upright at some step 100%.
+  **PPO closed-loop fork check PASSES** (fc_policy/ppo_result.json; 32 episodes, 224 points): 24 strict forks (bar 15),
+  78 points with any flat replay (forks 31%, bar 25%), 10.7% of points (bar 5%); 42 points all/nearly all flat
+  (deterministic falls also common).
+- DP on 100 PPO demos FAILED (training's own eval and our rollout both 0-1% at 5k/10k/15k; RL demos are jerky and DP
+  executes 8-step chunks open-loop). Per the rule: retraining on all 927 PPO demos (dp_liftpeg_all, 50-step episodes).
+  Exploratory in parallel (decided 20:15, before any result): motion-planner demos (ManiSkill's own DP baselines use
+  these; the LiftPegUpright solver grasps, lifts, rotates the peg upright in the air, lowers and OPENS the gripper -
+  the release is the stand-or-fall moment). 1000 demos, converted to state obs + pd_ee_delta_pose, DP same defaults,
+  episodes 250 steps. (mplib segfaulted under numpy 2.2; numpy pinned < 2 in this venv.) If both DPs qualify, the
+  one with the higher success_at_end in [50%, 90%] is the main policy; reported either way.

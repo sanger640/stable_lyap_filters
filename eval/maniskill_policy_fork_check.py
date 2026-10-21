@@ -1,0 +1,97 @@
+"""LiftPegUpright fork check on a policy's OWN closed-loop rollouts (docs/BENCHMARK_DD.md "LiftPegUpright policies").
+E episodes run in parallel on the GPU sim (nominal execution). Every 8 steps (a DP chunk boundary) the state and the
+next 8 executed actions are recorded (DP: its chunk; PPO: the 8 actions it actually took next, i.e. the same open-loop
+replay of closed-loop actions as the quick check on the demos). Episodes run the task's default 50 steps (success = peg upright at the END; the demos also hold it upright to the end).
+Each point is then branched 33 ways: exact + 32 with
+~2.5 mm smoothed noise (sigma 0.025 xyz / 0.0083 rot, normalised ee-delta) + 20 hold steps.
+Strict label (as the quick-check correction): a replay STANDS if the peg ends < 20 deg from vertical, is FLAT if > 60 deg.
+Fork = >= 2 standing AND >= 2 flat among the 32 noisy replays. Bars: >= 15 forks, forks >= 25% of points where any
+replay is flat, forks >= 5% of all points.
+Runs in ~/wksp/maniskill_bench/.venv.  usage: python eval/maniskill_policy_fork_check.py ppo|dp [CKPT] --out DIR [--episodes 16]
+"""
+import argparse
+import json
+import pathlib
+import time
+
+import numpy as np
+
+import maniskill_policies as P
+
+H, HOLD, N = 8, 20, 33
+SIG = np.array([0.025] * 3 + [0.025 / 3] * 3)
+
+
+def tilt_t(q):
+    """(B, 4) wxyz -> (B,) deg of the peg's long axis (local x) from vertical."""
+    import torch
+    w, x, y, z = q.unbind(1)
+    return torch.rad2deg(torch.arccos(torch.clamp((2 * (x * z - w * y)).abs(), max=1.0)))
+
+
+def sel(d, e, n):
+    if isinstance(d, dict):
+        return {k: sel(v, e, n) for k, v in d.items()}
+    return d[e:e + 1].expand(n, *d.shape[1:]).contiguous()
+
+
+def main():
+    import torch
+    ap = argparse.ArgumentParser(); ap.add_argument("policy"); ap.add_argument("ckpt", nargs="?")
+    ap.add_argument("--out", required=True); ap.add_argument("--episodes", type=int, default=32); ap.add_argument("--seed", type=int, default=1)
+    a = ap.parse_args()
+    pol = P.PPO() if a.policy == "ppo" else P.DP(a.ckpt)
+    E = a.episodes; t0 = time.time()
+    env = P.make_env(E); obs, _ = env.reset(seed=a.seed); u = env.unwrapped; pol.reset(E)
+    pts, acts, succ_once = [], [], torch.zeros(E, dtype=torch.bool, device=obs.device)
+    first = torch.full((E,), 10 ** 6, device=obs.device)                     # step of first success (reported only)
+    t = 0
+    while t < P.MAX_STEPS:
+        st = u.get_state_dict(); st = {g: {k: v.clone() for k, v in d.items()} if isinstance(d, dict) else d.clone() for g, d in st.items()}
+        if pol.chunked:
+            ch = pol.chunk(obs); seq = []
+            for k in range(H):
+                seq.append(ch[:, k]); obs, _, _, _, info = env.step(ch[:, k]); succ_once |= info["success"]; t += 1
+                first = torch.where(info["success"] & (first > t), torch.full_like(first, t), first)
+                if k < H - 1:
+                    pol.push(obs)
+        else:
+            seq = []
+            for k in range(H):
+                ac = pol.act(obs); seq.append(ac); obs, _, _, _, info = env.step(ac); succ_once |= info["success"]; t += 1
+                first = torch.where(info["success"] & (first > t), torch.full_like(first, t), first)
+        pts.append((t - H, st)); acts.append(torch.stack(seq, 1))                     # (E, H, 7)
+    final_tilt = tilt_t(u.peg.pose.q).cpu().numpy(); succ_end = info["success"].cpu().numpy()
+    env.close()
+    print("rollouts done", round(time.time() - t0, 1), "s; success_once", float(succ_once.float().mean()), "upright at end", float(succ_end.mean()), flush=True)
+    first = first.cpu().numpy()
+    benv = P.make_env(N * E); benv.reset(seed=0); bu = benv.unwrapped          # all episodes' branches of one time step at once
+    rng = np.random.default_rng(20261021); rows = []
+    rep = lambda d: {k: rep(v) for k, v in d.items()} if isinstance(d, dict) else d.repeat_interleave(N, 0).contiguous()
+    for (tt, st), ac in zip(pts, acts):
+        live = list(range(E))
+        if not live:
+            continue
+        bu.set_state_dict(rep(st))
+        base = ac.repeat_interleave(N, 0).double().cpu().numpy()               # (E*N, H, 7)
+        nz = rng.normal(size=(E * N, H + 2, 6)) * SIG; nz = (nz[:, :-2] + nz[:, 1:-1] + nz[:, 2:]) / 3; nz[::N] = 0
+        base[:, :, :6] = np.clip(base[:, :, :6] + nz, -1, 1); hold = base[:, -1].copy(); hold[:, :6] = 0
+        for k in range(H + HOLD):
+            benv.step(torch.as_tensor(base[:, k] if k < H else hold, device=bu.device).float())
+        angs = tilt_t(bu.peg.pose.q).cpu().numpy().reshape(E, N)
+        for e in live:
+            ang = angs[e]; ns, nf = int((ang[1:] < 20).sum()), int((ang[1:] > 60).sum())
+            rows.append({"episode": e, "t": tt, "n_stand": ns, "n_flat": nf, "exact_tilt": float(ang[0]), "fork": ns >= 2 and nf >= 2,
+                         "tilts": ang.round(1).tolist()})
+    benv.close()
+    fork = sum(r["fork"] for r in rows); anyflat = sum(r["n_flat"] > 0 for r in rows)
+    res = {"policy": a.policy, "ckpt": a.ckpt, "episodes": E, "success_once": float(succ_once.float().mean()), "upright_at_end": float(succ_end.mean()),
+           "first_success_step": first.tolist(), "points": len(rows), "forks": fork, "points_any_flat": anyflat, "all_or_nearly_all_flat": sum(r["n_flat"] >= 31 for r in rows),
+           "pass": bool(fork >= 15 and fork >= 0.25 * max(anyflat, 1) and fork >= 0.05 * len(rows)), "seconds": round(time.time() - t0, 1)}
+    out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    (out / f"{a.policy}_rows.json").write_text(json.dumps(rows)); (out / f"{a.policy}_result.json").write_text(json.dumps(res, indent=1))
+    print(json.dumps(res, indent=1))
+
+
+if __name__ == "__main__":
+    main()
