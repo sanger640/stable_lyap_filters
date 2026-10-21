@@ -333,3 +333,16 @@ the scene is fixed (only object poses are randomised), and a fixed third-person 
   at the same orientation as `agentview`, 5 cm lower ((0.484, 0.251, 1.214) vs 1.264 m). So the non-gated "sideview"
   result is not a second viewpoint; it is reported as a near-duplicate of the gate view. (Dashboard videos use
   `frontview` as the second panel.)
+
+## robomimic ToolHang RESULT (2026-10-21 19:05; results/benchmark_dd/toolhang_check1_result.json): check 1 FAILS
+Checkpoint by the rule: epoch 600 (20-episode rollout 65%; re-measured 31/50 = 62% on fresh seeds 101-150). Seeds 1-8
+(5 successes, 3 timeouts), 289 decision points branched (exact + 32 noisy replays of the chunk + 20 hold steps).
+Forks (2..30 of 32 bad): **1** (bar: >= 15). Points with any bad replay: 7, and 6 of them are all-or-nearly-all bad
+(32, 32, 32, 32, 32, 31 of 32; the one fork is 19/32) - deterministic outcomes of the chunk, not splits. Labels do see
+ToolHang's motion (the tool swinging after release at seed 1 t528 is flagged in all 32), so the null is not a label
+blind spot; the 3 failed episodes are timeouts where noise does not change the outcome. Exact-replay restore deviates
+<= 0.6 mm (26 of 289 points above 1e-6 m), negligible against the noise. Check 2 is moot (no forks to score).
+Verdict: ToolHang is not a fork benchmark for this policy. Per the plan agreed 2026-10-21, sim-benchmark hunting stops
+here: Jenga is the sim evidence, the real robot is the second domain; ToolHang is reported as a scope limit
+(failures are precision/timeout, not noise-sensitive).
+(Worker note: seeds were run by 3 parallel workers; seed 6 ran twice with identical results, confirming determinism.)
