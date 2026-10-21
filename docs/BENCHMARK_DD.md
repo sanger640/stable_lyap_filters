@@ -360,3 +360,11 @@ find out FAST whether they fork, before training any policy, then videos + the w
   changed"); the env's success flag at the end is also recorded. Fork: 2..30 of 32 bad.
 - Worth-it bar (same as check 1): >= 15 forks per task AND forks >= 25% of points with any bad replay AND >= 5% of all
   points. A task that passes goes on to videos + camera choice + its own policy; one that fails is dropped.
+### RESULT (2026-10-21 19:40; results/benchmark_dd/maniskill/; 0.65-2.2 s per decision point on the GPU sim)
+| task | points | forks (2..30 of 32 bad; bar 15) | any bad | env success flag split (2..30 of 32) | verdict |
+|---|---|---|---|---|---|
+| LiftPegUpright (PPO demos 0-39) | 192 | **73** (in 30 of 40 demos) | 86 | **64** | **PASS** |
+| StackPyramid (motion-planner demos 0-15) | 373 | 10 | 18 | 0 | FAIL (dropped) |
+LiftPegUpright forks are real outcome splits, not pose jitter: at 64 points the task's own success flag splits under
+2.5 mm noise (the peg either ends upright or falls back). Caveat: this is the expert (PPO) policy; the deployed
+policy (a chunked Diffusion Policy) must be re-checked once trained. Next: videos + world-model camera choice.
