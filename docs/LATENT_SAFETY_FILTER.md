@@ -158,3 +158,21 @@ The user expects the LSF as published (with its DDPG safety actor) to work witho
 implementation problem. To revisit AFTER the SafeManip benchmark work: re-check the actor (saturation, action
 bounds/scaling, exploration noise, training length, imagined-rollout horizon, data distribution of resets) against the
 reference implementations (tabz23/Latent-Safety-Filters, CMU-IntentLab/UNISafe) before any further LSF claims.
+
+## Re-audit (2026-10-21 afternoon): our DDPG safety actor had collapsed
+Audit (eval/lsf_audit.py, results/jenga/lsf_audit_value_g0.95.json; 729 held-out decision points): the deployed actor
+(value_g0.95.pt) is saturated on 100% of outputs and outputs the SAME action everywhere (-10 mm/step straight down);
+ensemble disagreement of its imagined transitions is 3.6x the policy's (99% above the policy's 95th percentile); and its
+own critic rates it WORSE than holding still (median V after its plan 0.01 vs 0.15 hold / 0.15 policy). So the actor
+optimised nothing: a DDPG actor-saturation failure plus model exploitation. Comparison with the authors' code:
+- Original LSF (CMU-IntentLab/latent-safety, franka-wm.py): each imagined step samples the stochastic world model N
+  times and keeps the MOST PESSIMISTIC transition; the world model is trained on 50% random-exploration data; resets from
+  random offline timesteps. Ours: deterministic model, no pessimism, policy-only data.
+- UNISafe (CMU-IntentLab/UNISafe, same group, follow-up): SAC (twin critics, entropy in the target, learned alpha),
+  gamma annealed 0.85 -> 0.9999, episodes truncated as terminal, and an epistemic-uncertainty margin (ensemble
+  disagreement above an OOD threshold counts as failure) to stop the actor exploiting the model.
+Fix (eval/lsf.py): `sac` stage = UNISafe recipe in our world model (uncertainty = disagreement of model_OIL + ENS0-3,
+threshold = 95th percentile under the policy's own actions); `LSF_PESS=1` = original LSF's pessimistic transition with
+the 5 ensemble members as samples (both trainers). Training run 1: UNISafe (value_unisafe.pt), 60k updates.
+Gate before any closed-loop use (fixed now): actor not saturated (< 20%), its imagined V after its own plan >= hold's,
+value AUROC (eval/lsf_diag.py) >= 0.7.
