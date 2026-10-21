@@ -122,3 +122,21 @@ outcome audit as Stage 4. Smoke first: episodes 15900-15901, record + lsfe3 (not
   Reproduction check PASSED (22:20): episode 15000 on Fir vs Nibi, record: 32 chunks, lifted, no topple, max lift
   52.7 vs 52.6 mm, 25.6 s both; lsfe010: 60 chunks, no lift, neighbour toppled, peak tilt 95.0 vs 96.1 deg (same
   outcomes; sub-mm floating-point differences as in the Narval check). Fir's tasks 70-99 are kept.
+
+## Dev sweep RESULT (2026-10-20 23:33; results/jenga/lsf_dev_result.json, outcome_audit_lsfdev.json)
+92 episodes complete in every arm (some arms lost 1-8 episodes to the 2 h job limit; analysis on the common 92; replay
+topple flag matches the log in 91-99 per arm). Topples / v4 / v4b: policy 25 / 62 / 54; eps 0.00: 80 / 2 / 1;
+0.05: 83 / 0 / 0; 0.10: 64 / 0 / 0; 0.15: 0 / 0 / 0; 0.20: 0 / 0 / 0; 0.30: 0 / 0 / 0. No eps keeps v4 within 5 pp
+of the policy -> by the rule NO eps is selected; the LSF as published fails on Jenga.
+Diagnosis (not a switching bug): the value falls sensibly as the policy nears the block (ep 15003: 0.28 -> ~0.1, then
+< 0 at contact), but the DDPG safety actor is saturated: once in control it moves the target 10 mm per step in -x, -y
+and -z every step (ep 15003, eps 0: (485, -1, 497) -> (-523, -1045, -542) mm over 13 chunks), i.e. down through the
+blocks and the table. Imagined training let it exploit world-model blind spots for large off-distribution moves. At
+eps >= 0.15 it takes control early (before any contact), so nothing topples but the task is never done.
+
+## Variant LSF-hold (spec fixed 2026-10-20 23:40, before running; agreed direction: strongest fair version of the baseline)
+Same learned value V and least-restrictive switch; the fallback is HOLD (target held for the chunk, gripper column
+untouched, exactly the Stage 4 hold-and-replan fix) instead of the DDPG actor. Isolates the learned value (the method's
+trigger) from its actor. Arms lsfh000 ... lsfh030 (same 6 eps), same 100 dev episodes 15000-15099 (record arm reused
+from the sweep above: same episodes, seeds, code), Fir, same selection rule. Both LSF (as published) and LSF-hold go
+to the head-to-head if selected; LSF as published is reported regardless.
