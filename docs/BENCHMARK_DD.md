@@ -470,3 +470,12 @@ demos. Stopped here pending the user's decision.
   matched) running. Policy: robomimic Diffusion Policy (low-dim incl. object poses, 1000 demos, 600 epochs, same
   config as ToolHang), checkpoint rule as ToolHang (horizon 400; success on 50 fresh episodes); its own closed-loop
   fork check (eval/stack_three_policy_check.py, 1.4x) decides.
+- **StackThree with OUR low-dim Diffusion Policy (epoch 600; 20-episode success 85%; object poses as input) FAILS its
+  closed-loop fork check at matched noise (1.4x, eef 3.2 mm): 1 fork / 145 points** (8 seeds; 6 successes, 2 timeouts;
+  ~/wksp/mimicgen_bench/policy_fc). Same pattern as LiftPeg: a policy trained on 1000 demos with exact object poses is
+  precise, and its failures are timeouts. The demo forks (48) come from MimicGen's own generation noise, which the
+  policy averages away.
+- Exploratory next (decided 00:55, before training): an IMAGE-based Diffusion Policy on StackThree (agentview + wrist
+  84 px, ResNet18 + spatial softmax + crop; gripper proprioception only, no object poses), like our Jenga policy, which
+  sees through cameras. MimicGen reports image DP at ~38% on this task, i.e. much less precise. Same checkpoint rule and
+  closed-loop fork check (the check script must render camera observations for this policy).
