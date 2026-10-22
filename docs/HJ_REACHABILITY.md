@@ -23,6 +23,21 @@ Question asked by HJ: "after the policy's next chunk, can I still escape?" inste
 - **Advance R to closed loop if (recall_R >= recall_C - 0.03 AND FPR_R <= FPR_C) OR (recall_R >= recall_C + 0.05 AND
   FPR_R <= FPR_C + 0.02).** Otherwise idea 2 stops here.
 
+**Result (2026-10-22 12:15; results/jenga/hj/trigger_report.json): FAIL, idea 2 stops here.** 1221 decisions (600
+negatives, 69 toppled episodes).
+
+| trigger | FPR | recall (4 decisions to topple) | median lead (chunks) | TPR |
+|---|---|---|---|---|
+| C (current, plan vs hold) | 5.2% | 92.8% | 3 | 51.4% |
+| R (any backup certifies) | 1.0% | 73.9% | 1 | 25.4% |
+| R-hold (hold backup only) | 3.7% | 88.4% | 2 | 39.1% |
+
+R fires less often: false alarms fall from 5.2% to 1.0%, but recall falls 19 points and the warning comes later
+(1 chunk vs 3). Neither advance condition holds. Reading: after the policy's first chunk, some backup usually still
+certifies even 1-2 chunks before a topple. The cheap retreats keep the certificate happy, so "can I still escape?"
+answers yes too late. The current trigger already gives a 3-chunk lead at 93% recall; the gap to close is in the fix,
+not the trigger.
+
 ## Idea 3: learned viability value V(z) (spec fixed 2026-10-22, before any target is computed; eval/hj_value.py)
 V(z) = probability that a safe BACKUP exists from latent state z (HJ viability, sampled). Targets are label-free: our own
 certificate, absolute form (h >= h_safe = log2 3 AND o <= O_MAX; model_OIL, 64 futures, Stage 4 settings), applied to
