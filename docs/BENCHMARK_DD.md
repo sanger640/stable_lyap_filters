@@ -452,3 +452,21 @@ demos. Stopped here pending the user's decision.
    only appears ~200 steps later is not something our filter (chunk + short imagined hold) can see or prevent. The
    short look-ahead remains the measure aligned with the filter; by it these tasks have few forks at Jenga-level noise.
    PPO run-to-end (56 / 224 strict) has no zero-noise control yet.
+
+## KinDER + MimicGen StackThree quick checks (user 2026-10-21 ~22:30: "go ahead with kinder and stack three, quick checks first")
+- KinDER (github.com/Princeton-Robot-Planning-and-Learning/kindergarden; MuJoCo dynamic3d, TidyBot++ mobile base + Kinova
+  arm): BalanceBeam3D ships NO demos, no scripted (ds) policy and no planner model -> no policy to branch on; a quick
+  check would first need a scripted balancing policy or teleop demos. Dynamic 3D tasks with demos (Shelf3D 9,
+  SweepIntoDrawer3D, ConstrainedCupboard3D) are not fragile-physics tasks. Parked.
+- MimicGen StackThree_D1 (spec fixed 22:50, before running; eval/mimicgen_fork_check.py): 1000 shipped demos (robosuite
+  1.4.1 + mimicgen, OSC_POSE 20 Hz). Branch along demos 0-31 at every 8th step: exact + 32 noisy replays of the next 8
+  demo actions (ToolHang noise) + 20 hold. Strict label vs the exact replay's end: BAD = a cube ends > 2 cm lower or
+  > 45 deg more tilted; GOOD = every cube within 1 cm. Fork = >= 2 BAD and >= 2 GOOD. Same three bars as before.
+  Zero-noise control (--scale 0, 8 demos) must give 0 forks. Also run at 2x as information (not gated).
+- **StackThree RESULT (demos 0-31, 1006 points; results in ~/wksp/mimicgen_bench/fc_quick):** 1x (realised ~2.3 mm, below
+  Jenga's 3.2): 38 forks, 45 points with any bad (forks 84%), 0 all-bad, 3.8% of points -> misses only the 5% bar.
+  2x (~4.6 mm): 55 forks / 74 any bad / 0 all-bad / 5.5% -> passes all bars. Zero-noise control (2 demos, 67 points): 0
+  (after the gripper-ramp fix). Profile = Jenga's: when a cube falls it is almost always noise-decided. 1.4x (Jenga-
+  matched) running. Policy: robomimic Diffusion Policy (low-dim incl. object poses, 1000 demos, 600 epochs, same
+  config as ToolHang), checkpoint rule as ToolHang (horizon 400; success on 50 fresh episodes); its own closed-loop
+  fork check (eval/stack_three_policy_check.py, 1.4x) decides.
