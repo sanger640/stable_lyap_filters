@@ -17,7 +17,7 @@ Checklist per benchmark:
 |---|---|---|---|---|---|---|
 | SafeLIBERO | sigma 0.15 (3x the robosuite checks); not low | gripper and warm-start bug found and fixed 2026-10-19; 600/800 episodes pre-fix, with f1-f7 starting from a slightly different hidden state (this adds spread, i.e. biases toward MORE splits) | not run | contact / damage | chunk + 10 hold | **weak: 3 futures (f0-f2) per moment**, so a 20%-bad moment shows as a split only ~half the time; the 3.8% fork rate may be understated ~2x |
 | SafeManip | sigma 0.05 normalised OSC (same as ToolHang) | snapshot keeps grippers, controllers, warm start, step counter; exact-replay check | not run | **damage only** (slip / unstable release / knocked) | chunk + 20 hold | 32 replays (2b-powered) |
-| ToolHang | same as SafeManip; realised gripper deviation: see the recheck | same snapshot; exact replay <= 0.6 mm | recheck running (seed 1, scale 0) | **damage only**; recheck adds a generic pose label + success-flag split | chunk + 20 hold | 32 |
+| ToolHang | **realised gripper deviation 2.3 mm at 1x (below Jenga's 3.2)**; rerun at 1.4x = 3.16 mm | same snapshot; exact replay <= 0.6 mm | **0 forks** (seed 1, 35 points) | **damage only**; recheck adds a generic pose label + success-flag split | chunk + 20 hold | 32 |
 | ManiSkill StackPyramid | joint-target sigma 0.004 rad | GPU set_state_dict; controllers stateless (absolute joint targets) | **0 forks** (4 demos, 94 points) | generic pose label + success flag | chunk + 20 hold | 32 |
 | ManiSkill LiftPeg (PPO demos) | realised gripper deviation 3.7 mm at the chunk's end (about Jenga scale 2.3) | GPU; parallel envs differ by ~0.01 mm (float) | **NOT clean: 2 strict forks with zero noise vs 5 at 1x on the same 10 demos (46 points)**, so ~40% of the strict forks are GPU float chaos and the "20 / 192 PASS" is marginal (noise-attributable ~12) | strict stand vs flat | chunk + 20 hold | 32 |
 | ManiSkill LiftPeg DP (planner demos) | 3.7 mm | as above | **0 forks** (1024 points) | strict | chunk + 20 hold | 32 |
@@ -33,3 +33,18 @@ Checklist per benchmark:
     "Re-check");
   - low power in SafeLIBERO;
   - ManiSkill GPU float nondeterminism, which inflated LiftPeg's strict fork count by ~40%; its pass is marginal.
+
+## ToolHang recheck result (eval/toolhang_recheck.py; ~/wksp/robomimic_bench/recheck/)
+Same policy, 8 seeds; the episodes differ from the original run (rendering off changes the policy's random draws), so
+this is a fresh set. Generic label (object > 2 cm / 20 deg from the exact replay's end vs all within 1 cm):
+- 1x (2.3 mm): 331 points, 6 forks, 9 with any bad, 1 all-bad, 0 success splits.
+- **1.4x (3.16 mm, Jenga-matched): 365 points, 7 forks (bar 15), 12 with any bad, 0 all-bad, 1 success split.**
+Verdict unchanged: ToolHang has few forks even with generic labels at matched noise.
+
+## StackThree at matched noise
+1.4x (~3.2 mm): 1006 points, **48 forks**, 57 with any bad (84%), 0 all-bad, 4.8% of points (bar 5%). It misses only
+the dilution bar, narrowly; its own Diffusion Policy's rollouts decide.
+
+## Still owed
+SafeManip at matched noise with generic labels (needs the pi0.5 server and RoboCasa; the 2b-powered run found 29 forks,
+so prevalence was not its problem: the world model's generalisation was). SafeLIBERO with 32 futures instead of 3.
