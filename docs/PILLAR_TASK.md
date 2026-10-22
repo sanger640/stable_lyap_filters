@@ -148,3 +148,18 @@ True episode-failure risk of one intervention (16 continuation draws, policy alo
 Conclusion: on the pillar the world model's fork ranking is fine (0.78), but the pipeline fails at three points: (1) the
 score sees spread, not certain failure (needs Jenga's disturbance readout o); (2) the decisive action is the gripper,
 which G never touches; (3) holding is not a safe backup.
+
+### Follow-up: why the score misses the doomed releases (exploratory, 2026-10-22 14:30; eval/pillar_o_check.py)
+Checked whether a Jenga-style disturbance readout would flag them: o = largest imagined latent change between end of
+chunk and end of hold (whole image, or the 16 most-changed patches), max over 33 futures.
+- All 1225 diagnostic moments: AUROC vs true risk >= 0.25 is 0.50-0.54 (d 0.55). No better than d.
+- The 61 real release moments (chunk all-open right after a closed chunk; 28 doomed, risk >= 0.5): the world model
+  imagines doomed releases as CALMER than safe ones: AUROC o_top 0.37, o_mean 0.38, d 0.36 (below chance). The chunk
+  before the release: 0.18-0.25.
+- Cause: resolution. At the release, the cube's lateral offset from the pillar centre (x, across the camera's view)
+  is median 4.4 mm when doomed vs 2.3 mm when safe (|y| 1.1 vs 1.2 mm). The side camera is 0.51 m away (fovy 45,
+  256 px): 0.61 px/mm, so one 28x28 latent patch spans about 15 mm. The 2 mm that decides the outcome is ~1 pixel,
+  1/7 of a patch. The world model cannot imagine a fall its input does not resolve.
+- Correction of the diagnostic's reading above: "needs o" is wrong; the score is not the bottleneck at the release.
+  The bottleneck is what the camera can see. The policy's own 2 mm perception error makes this a mm-precision task,
+  while Jenga's failures (topples) are cm-scale.
