@@ -404,3 +404,15 @@ base_camera looks down (tilt foreshortened, gripper occludes the peg). Videos: e
   the release is the stand-or-fall moment). 1000 demos, converted to state obs + pd_ee_delta_pose, DP same defaults,
   episodes 250 steps. (mplib segfaulted under numpy 2.2; numpy pinned < 2 in this venv.) If both DPs qualify, the
   one with the higher success_at_end in [50%, 90%] is the main policy; reported either way.
+- DP checkpoints (success_at_end / once, 100 episodes): PPO-demo DP on all 927 demos, 50 steps: <= 5% at every
+  checkpoint (fails, as with 100 demos). Planner-demo DP, 250 steps: 10k 57%, 15k 69%, 20k 73%, **25k 79%** -> by the
+  rule the main DP is dp_liftpeg_mp 25000.pt.
+- **Planner-demo DP closed-loop fork check FAILS** (results/benchmark_dd/maniskill/dp_policy_fork_result.json; 32 episodes,
+  1024 points): 1 strict fork. Its 6 failures of 32 are deterministic (never lifts; rotates to ~45 deg and stalls);
+  when it succeeds it sets the peg fully upright (0 deg) and releases, which is robust to noise. PPO instead holds the
+  peg balanced against the table, which forks (24). Fork prevalence on this task is a property of the policy's style.
+  Videos: LiftPeg_DP_rollouts.mp4, LiftPeg_PPO_rollouts.mp4. (The planner DP lifts the peg ~30 cm, partly out of the
+  side camera's frame; the camera would need widening for that policy.)
+- Exploratory next (decided 20:40, before training): DP on the 927 PPO demos with SHORTER chunks (act_horizon 2 and 4;
+  ManiSkill's own RL-demo DP baseline uses 1), hoping for a chunked policy with PPO's fork-prone style; same checkpoint
+  rule (50-step episodes) and the same closed-loop fork check.

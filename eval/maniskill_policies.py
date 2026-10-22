@@ -1,7 +1,8 @@
 """LiftPegUpright policies (docs/BENCHMARK_DD.md "LiftPegUpright policies"): the shipped PPO checkpoint (per-step) and our
 ManiSkill Diffusion Policy (chunked). Both act on the flat state observation of LiftPegUpright-v1 (pd_ee_delta_pose).
 Runs in ~/wksp/maniskill_bench/.venv.
-usage: python eval/maniskill_policies.py eval ppo|dp [CKPT] [--n 100]
+usage: python eval/maniskill_policies.py eval ppo|dp [CKPT] [--n 100] [--steps 250]
+       python eval/maniskill_policies.py video ppo|dp [CKPT] --episodes 3 0 5 --out f.mp4 [--steps 250]
 """
 import argparse
 import pathlib
@@ -113,10 +114,43 @@ def rollout(policy, n=100, seed=0):
     return float(info["success"].float().mean()), float(succ.float().mean())
 
 
+def video(policy, out, episodes, label, n=32, seed=1, steps=None):
+    """Render chosen episodes of a closed-loop batch (same seeding as the fork check) from the world-model camera."""
+    import cv2
+    import imageio
+    import torch
+    steps = steps or MAX_STEPS
+    env = make_env(n, render=True); obs, _ = env.reset(seed=seed); policy.reset(n); frames = []; t = 0
+    while t < steps:
+        acts = policy.chunk(obs) if policy.chunked else policy.act(obs)[:, None]
+        for k in range(acts.shape[1]):
+            obs, _, _, _, info = env.step(acts[:, k]); t += 1
+            if policy.chunked and k < acts.shape[1] - 1:
+                policy.push(obs)
+            frames.append(env.render().cpu().numpy()[list(episodes)])
+    ok = info["success"].cpu().numpy()[list(episodes)]
+    env.close()
+    vid = []
+    for i, f in enumerate(frames):
+        tiles = []
+        for j, e in enumerate(episodes):
+            bar = np.full((34, f.shape[2], 3), (40, 150, 60) if ok[j] else (190, 50, 40), np.uint8)
+            cv2.putText(bar, f"{label} ep {e}  step {i + 1}/{steps}  {'UPRIGHT AT END' if ok[j] else 'FAILS'}", (8, 23),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            tiles.append(np.concatenate([bar, f[j]], 0))
+        vid.append(np.concatenate(tiles, 1))
+    imageio.mimwrite(out, vid + [vid[-1]] * 30, fps=20 if steps > 100 else 10, quality=6, macro_block_size=2)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("cmd"); ap.add_argument("policy"); ap.add_argument("ckpt", nargs="?")
     ap.add_argument("--n", type=int, default=100); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--steps", type=int, default=MAX_STEPS, help="episode length (planner-demo DP: 250)")
+    ap.add_argument("--episodes", type=int, nargs="*", default=[0, 1]); ap.add_argument("--out", default="video.mp4")
     a = ap.parse_args(); MAX_STEPS = a.steps
     pol = PPO() if a.policy == "ppo" else DP(a.ckpt)
-    print(a.policy, "success at end / once", rollout(pol, a.n, a.seed))
+    if a.cmd == "video":                                                     # video ppo|dp [CKPT] --episodes 3 0 5 --out f.mp4
+        video(pol, a.out, a.episodes, a.policy.upper(), steps=MAX_STEPS)
+    else:
+        print(a.policy, "success at end / once", rollout(pol, a.n, a.seed))
+
