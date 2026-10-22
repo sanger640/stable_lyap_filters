@@ -116,3 +116,16 @@ results/pillar/filter/tau.json). Trigger: d(policy chunk) > TAU.
   G vs hold (two-sided McNemar on failure and success), trigger rate, intervention kinds, chosen theta, and on the record
   arm the AUROC of the episode's largest d vs failure.
 - Smoke (seeds 9000-9001, not test seeds; checked only for crashes and timing): runs; 1-2 triggers per episode.
+
+**Result (2026-10-22 ~05:30): FAIL; universality NOT claimed.** 300 paired episodes (results/pillar/filter_result.json).
+Failures / successes: policy 33 / 267, hold-and-replan 63 / 237, G-CEM 43 / 257 (every failure is a cube fall; pillar
+tipped 18 / 27 / 26). H1 (G fewer failures): 30 G-only vs 20 policy-only failures, p = 0.94 -> FAIL. H2 (success
+non-inferior): -3.3 pp, lower bound -7.0 -> FAIL. Secondary: hold is worse than the policy (failures 63 vs 33; success
+-10 pp); G beats hold (p = 0.015) but not the policy. Trigger rate 9-14% of decisions; G: 607 certified, 46 hold, 62 best
+fallbacks; median theta (v 1.0, k 0, s 0.92, b 4.5 mm); 0.4 s per decision. On the policy arm the episode's largest d
+does not predict failure (AUROC 0.50; failure 12% in triggered vs 5.6% in untriggered episodes).
+Exploratory (after the result, not tests): the perception bias does not explain failures (|bias| vs failure AUROC
+0.46-0.55). Held chunks also receive execution noise, and the hold arm ran 6261 decisions vs the policy's 5109; on this
+task waiting near the pillar adds noisy exposure instead of removing risk. Hypothesis, untested: a fork-ranking world
+model (moment-level AUROC 0.78) is not enough when the fix (slower / smaller / back off / hold) does not remove the
+noise's effect at the moment of placement.

@@ -112,3 +112,4 @@ Last updated 2026-10-16.
 - Swap the object-centric G for object-free Gauss-TE in the final filter (fully task-agnostic runtime).
 - Second environment (LIBERO + SafeVLA bystander metrics); literature baselines (Sentinel, FAIL-Detect).
 - Speed (15.7 s per intervention) and a real-robot pilot.
+| **Pillar task (custom MuJoCo placement), world model + closed-loop universality test** (pre-registered, docs/PILLAR_TASK.md) | WM (SafeManip recipe, side camera, label-free): split-score gate FAIL (AUROC 0.54); v2 distance score d (pre-registered after) PASS on fresh seeds, AUROC 0.78 (27 forks / 405 points). Closed loop, frozen Jenga G-CEM with d, 300 paired episodes: failures policy 33, hold 63, G 43 -> H1 FAIL (p = 0.94), H2 FAIL (-3.3 pp, lower -7.0). Universality NOT shown; holding hurts on this task. | results/pillar/wm/check2_eval2_result.json, results/pillar/filter_result.json |
