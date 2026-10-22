@@ -70,3 +70,12 @@ chunk 33 copies (the policy's internal random state copied, so only the chunk's 
 The pillar task has a closed-loop chunked policy whose own rollouts fork. Next: world-model data from the side camera
 (label-free noisy rollouts of this policy), world-model check (does the imagined fork test see the real forks?), then
 closed-loop filter tests (G-CEM), as for Jenga.
+
+## World-model check (spec fixed 2026-10-22 01:25, before any data; eval/pillar_wm.py)
+SafeManip 2b-WM recipe on the pillar side camera. Training data (label-free): closed-loop policy episodes, seeds
+3000-3099, every 2nd decision, exact + 4 noisy replays of chunk (8) + hold (22), frames every 2 actions with robot masks.
+Held-out eval: seeds 4000-4023, every decision, exact + 32 noisy replays, generic hold labels. DINOv2 -> channel PCA 8
+(fitted on training start frames, robot patches excluded) -> 28x28x8; FiLM transition (fast_train), input = targets
+relative to the start gripper position + gripper + start proprio. Imagined fork score h with the real branching noise
+model at s in {0.5, 1, 2} (cap log2 3). **Gate (as SafeManip): AUROC(-h, real fork) >= 0.7 AND imagined split rate at
+s = 1 on forks >= 2x non-forks.** If it passes: closed-loop filter tests (G-CEM with this world model), spec first.
