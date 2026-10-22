@@ -177,10 +177,11 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cmd"); ap.add_argument("--episodes", type=int, default=4)
     ap.add_argument("--noise", type=float, default=0.0); ap.add_argument("--out", default="pillar.mp4")
     ap.add_argument("--branch-noise", type=float, default=2.0); ap.add_argument("--procs", type=int, default=16)
+    ap.add_argument("--closed", action="store_true", help="fork check on the closed-loop ExpertPolicy (with PILLAR_PERC)")
     a = ap.parse_args()
     os.environ.setdefault("MUJOCO_GL", "egl")
     if a.cmd == "fork":                                                       # fork --episodes 16 --noise 2 --branch-noise 2 --out f.json
-        return fork_check(a.episodes, a.noise, a.branch_noise, a.procs, a.out)
+        return fork_check(a.episodes, a.noise, a.branch_noise, a.procs, a.out, closed=a.closed)
     sim = PillarSim()
     if a.cmd == "demo":
         res = [run_episode(sim, s, a.noise)[0] for s in range(a.episodes)]
@@ -194,9 +195,94 @@ def main():
             lab = "SUCCESS" if r["success"] else ("CUBE FELL" if r["cube_fell"] else "PILLAR TIPPED")
             vids += [banner(f, f"Pillar task, scripted expert, 2x Jenga execution noise   episode {s}   {lab}", r["success"]) for f in fr]
         np.savez_compressed(a.out, frames=np.stack(vids))
+    elif a.cmd == "closed":                                                   # closed --episodes 40 --noise 2
+        res = [run_closed_loop(sim, s, a.noise)[0] for s in range(2000, 2000 + a.episodes)]
+        for s, r in zip(range(2000, 2000 + a.episodes), res):
+            if not r["success"]:
+                print(s, r)
+        print("closed-loop success", np.mean([r["success"] for r in res]), "cube fell", np.mean([r["cube_fell"] for r in res]),
+              "pillar tipped", np.mean([r["pillar_tipped"] for r in res]))
     elif a.cmd == "forkvideo":                                                # a real HOLD fork from results/pillar/fork_w8.json
         np.savez_compressed(a.out, frames=fork_clip(sim))
 
+
+
+class ExpertPolicy:
+    """Closed-loop chunked policy (the Jenga interface): at every decision it reads the current state and returns its next
+    16 targets [x, y, z, grip] (the first 8 are executed). Phases: PICK (go above the cube, descend, close), CARRY (above
+    the pillar, descend to the place height, open), RETREAT (up). If the cube is dropped it re-opens and picks again."""
+    SPEED, APPROACH, LIFT, CLEAR = 0.012, 0.06, 0.10, 0.004
+
+    def __init__(self, sim, perc_sigma=0.0, seed=0):
+        """perc_sigma: the policy's perception error of the pillar's xy (metres): a per-episode offset ~ N(0, sigma) plus
+        a per-decision jitter ~ N(0, sigma / 3), as a camera-based estimate would have (the policy never sees true poses
+        of the pillar exactly)."""
+        self.sim, self.closing, self.opened_on_pillar = sim, 0, False
+        self.rng = np.random.default_rng([31, seed]); self.sig = perc_sigma
+        self.bias = self.rng.normal(size=2) * perc_sigma
+
+    def plan(self, n=16):
+        sim, g = self.sim, self.sim.geom
+        site = sim.data.site_xpos[sim.site].copy(); c, p = body_pos(sim, "cube"), body_pos(sim, "pillar")
+        p[:2] += self.bias + self.rng.normal(size=2) * self.sig / 3                # perceived, not true, pillar position
+        top = p[2] + g["pillar_half"][2]; place = np.r_[p[:2], top + g["cube_half"] + self.CLEAR]
+        closed = sim.gripper < 50; near = np.linalg.norm(c - site) < 0.02
+        on_pillar = c[2] > top and np.linalg.norm(c[:2] - p[:2]) < g["pillar_half"][0] + g["cube_half"]
+        if self.opened_on_pillar or (on_pillar and not closed):            # RETREAT and stay
+            self.opened_on_pillar = True
+            way = [(np.r_[site[:2], max(site[2], top + g["cube_half"] + self.LIFT)], -1)]
+        elif closed and near:                                               # CARRY
+            if np.linalg.norm(site - place) < 0.003:
+                self.opened_on_pillar = True
+                return np.array([np.r_[site, -1]] * n, np.float32)          # open in place
+            if np.linalg.norm(site[:2] - place[:2]) < 0.005:                # already over the pillar: straight down
+                way = [(place, 1)]
+            else:
+                way = [(np.r_[site[:2], max(site[2], top + g["cube_half"] + self.LIFT)], 1),
+                       (np.r_[p[:2], top + g["cube_half"] + self.LIFT], 1), (place, 1)]
+        elif not closed and np.linalg.norm(c - site) < 0.004:                # at the cube: close
+            return np.array([np.r_[site, 1]] * n, np.float32)
+        else:                                                               # PICK (also after a drop: open first)
+            if np.linalg.norm(site[:2] - c[:2]) < 0.005:                    # already over the cube: straight down
+                way = [(c.copy(), -1)]
+            else:
+                way = [(np.r_[site[:2], max(site[2], c[2] + self.APPROACH)], -1), (np.r_[c[:2], c[2] + self.APPROACH], -1), (c.copy(), -1)]
+        acts, cur = [], site
+        for w, grip in way:
+            k = max(1, int(np.ceil(np.linalg.norm(w - cur) / self.SPEED)))
+            acts += [np.r_[cur + (w - cur) * (i + 1) / k, grip] for i in range(k)]; cur = w
+            if len(acts) >= n:
+                break
+        acts = acts[:n] + [acts[-1]] * max(0, n - len(acts))
+        return np.array(acts, np.float32)
+
+
+PERC = float(os.environ.get("PILLAR_PERC", 0.0))                           # policy perception error sigma (m)
+
+
+def run_closed_loop(sim, seed, noise_scale=2.0, max_chunks=30, record=False, hook=None):
+    """Closed-loop episode with the ExpertPolicy in 8-action chunks and Jenga's execution noise (one snippet x scale per
+    chunk). hook(sim, chunk, k) -> chunk (filter goes here). Ends after the cube is released on the pillar and the arm is
+    up, or after max_chunks. Returns (outcome, frames, chunks)."""
+    import uncertainty_monitor_dev as um
+    reset(sim, seed); pol = ExpertPolicy(sim, PERC, seed)
+    snippets = np.load(um.BENCH)["snippets"]; rng = np.random.default_rng([20261502, seed])
+    pillar0 = body_pos(sim, "pillar"); frames, chunks = [], []
+    for k in range(max_chunks):
+        plan = pol.plan(); chunk = plan[:8].copy()
+        if hook is not None:
+            chunk = hook(sim, chunk, k)
+        chunks.append(chunk)
+        nz = snippets[rng.integers(len(snippets))] * noise_scale
+        for j, a in enumerate(chunk):
+            a = a.copy(); a[:3] -= nz[j]; sim.execute(a)
+            if record:
+                frames.append(sim.render())
+        if pol.opened_on_pillar and sim.data.site_xpos[sim.site][2] > body_pos(sim, "pillar")[2] + 0.12:
+            break
+    for _ in range(15):
+        sim.execute(np.r_[sim.target, -1.0])
+    return outcome(sim, pillar0), frames, chunks
 
 
 def banner(img, txt, ok):
@@ -279,12 +365,61 @@ def fork_job(args):
     return rows
 
 
-def fork_check(episodes, noise_main, noise_branch, procs, out):
+def fork_closed_job(args):
+    """As fork_job, on the CLOSED-LOOP ExpertPolicy (perception error PERC): at every chunk branch 33 ways; HOLD = chunk +
+    20 hold (generic label vs the exact replay); REST = chunk, then the policy keeps re-planning to the episode's end
+    (no further noise; every copy starts from an identical copy of the policy's internal state) + settle; task label."""
+    import copy
+    seed, noise_main, noise_branch = args
+    import uncertainty_monitor_dev as um
+    sim = PillarSim(); reset(sim, seed); pol = ExpertPolicy(sim, PERC, seed)
+    snippets = np.load(um.BENCH)["snippets"]; rng = np.random.default_rng([20261502, seed]); brng = np.random.default_rng([7, seed])
+    pillar0 = body_pos(sim, "pillar"); rows = []
+    for k in range(30):
+        plan = pol.plan(); chunk = plan[:8].copy(); snap = sim.snapshot(); pstate = copy.deepcopy((pol.rng.bit_generator.state, pol.opened_on_pillar))
+        res, ends = [], []
+        for mode in ("hold", "rest"):
+            for b in range(33):
+                sim.restore(snap); pol.rng.bit_generator.state = pstate[0]; pol.opened_on_pillar = pstate[1]
+                nz = np.zeros((8, 3)) if b == 0 else snippets[brng.integers(len(snippets))] * noise_branch
+                for j, a in enumerate(chunk):
+                    a = a.copy(); a[:3] -= nz[j]; sim.execute(a)
+                if mode == "hold":
+                    for _ in range(20):
+                        sim.execute(np.r_[sim.target, chunk[-1, 3]])
+                    ends.append((body_pos(sim, "cube"), body_pos(sim, "pillar"), float(sim.block_diagnostics()["tilt"][1])))
+                else:
+                    for kk in range(k + 1, 30):
+                        for a in pol.plan()[:8]:
+                            sim.execute(a)
+                        if pol.opened_on_pillar and sim.data.site_xpos[sim.site][2] > body_pos(sim, "pillar")[2] + 0.12:
+                            break
+                    for _ in range(15):
+                        sim.execute(np.r_[sim.target, -1.0])
+                    res.append(not outcome(sim, pillar0)["success"])
+        sim.restore(snap); pol.rng.bit_generator.state = pstate[0]; pol.opened_on_pillar = pstate[1]
+        (c_ex, p_ex, t_ex) = ends[0]
+        bad = [bool(c[2] < c_ex[2] - 0.02 or tl > t_ex + 45) for c, pp, tl in ends[1:]]
+        good = [bool(np.linalg.norm(c - c_ex) < 0.01 and np.linalg.norm(pp - p_ex) < 0.01) for c, pp, tl in ends[1:]]
+        nb = int(sum(res[1:]))
+        rows.append({"seed": seed, "t": k, "hold_n_bad": int(sum(bad)), "hold_n_good": int(sum(good)), "hold_fork": bool(sum(bad) >= 2 and sum(good) >= 2),
+                     "rest_n_bad": nb, "rest_bad_exact": bool(res[0]), "rest_fork": 2 <= nb <= 30})
+        nz = snippets[rng.integers(len(snippets))] * noise_main                 # the main episode continues
+        for j, a in enumerate(chunk):
+            a = a.copy(); a[:3] -= nz[j]; sim.execute(a)
+        if pol.opened_on_pillar and sim.data.site_xpos[sim.site][2] > body_pos(sim, "pillar")[2] + 0.12:
+            break
+    return rows
+
+
+def fork_check(episodes, noise_main, noise_branch, procs, out, closed=False):
     import json
     import multiprocessing as mp
     with mp.get_context("spawn").Pool(procs) as pool:
-        rows = [r for rs in pool.map(fork_job, [(s, noise_main, noise_branch) for s in range(1000, 1000 + episodes)]) for r in rs]
-    res = {"episodes": episodes, "noise_main": noise_main, "noise_branch": noise_branch, "points": len(rows)}
+        rows = [r for rs in pool.map(fork_closed_job if closed else fork_job,
+                                     [(s, noise_main, noise_branch) for s in range(1000, 1000 + episodes)]) for r in rs]
+    res = {"episodes": episodes, "noise_main": noise_main, "noise_branch": noise_branch, "points": len(rows), "closed_loop_policy": closed,
+           "perception_sigma": PERC}
     for mode in ("hold", "rest"):
         nb = [r[f"{mode}_n_bad"] for r in rows]; fk = sum(r[f"{mode}_fork"] for r in rows); anyb = sum(x > 0 for x in nb)
         res[mode] = {"forks": fk, "points_any_bad": anyb, "all_or_nearly_all_bad": sum(x >= 31 for x in nb),
