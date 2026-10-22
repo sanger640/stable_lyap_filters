@@ -92,3 +92,6 @@ Score d = the largest distance, over 32 imagined noisy replays (real branching n
 end-of-hold latent and the imagined zero-noise replay's end-of-hold latent. Fresh held-out eval seeds 4100-4123 (data
 generated after this spec; same protocol as seeds 4000-4023). **Gate: AUROC(d, real fork) >= 0.7 on seeds 4100-4123.**
 Also reported, not gated: the same on seeds 4000-4023. If it passes: closed-loop filter spec next.
+
+**Result v2 (2026-10-22 04:40): PASS.** Seeds 4100-4123: 405 points, 27 real forks, **AUROC(d, fork) = 0.78**. Seeds
+4000-4023 (not gated): 0.84. The world model trained label-free on the pillar camera ranks the policy's real forks.

@@ -81,7 +81,7 @@ def main():
     import torch
     import robomimic.utils.file_utils as FU
     policy, ckpt = FU.policy_from_checkpoint(ckpt_path=a.ckpt, device="cuda", verbose=False)
-    env, _ = FU.env_from_checkpoint(ckpt_dict=ckpt, render=False, render_offscreen=False, verbose=False)
+    env, _ = FU.env_from_checkpoint(ckpt_dict=ckpt, render=False, render_offscreen=bool(ckpt["shape_metadata"]["use_images"]), verbose=False)
     rs = env
     while not hasattr(rs, "sim"):
         rs = rs.env
