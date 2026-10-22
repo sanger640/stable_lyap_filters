@@ -100,8 +100,8 @@ def stage_tau():
     OUT.mkdir(parents=True, exist_ok=True); (OUT / "tau.json").write_text(json.dumps(out, indent=1)); print(out)
 
 
-def make_hook(arm, sc, cam, tau, log, seed):
-    rng = np.random.default_rng([20261025, seed])
+def make_hook(arm, sc, cam, tau, log, seed, rng=None, force=False):
+    rng = rng if rng is not None else np.random.default_rng([20261025, seed])
 
     def hook(sim, plan, k):
         t0 = time.time()
@@ -109,7 +109,7 @@ def make_hook(arm, sc, cam, tau, log, seed):
         z0, p0 = sc.latent(sim, cam), W.proprio(sim)
         nz = sc.noise(rng)
         d_pol = float(sc.d(z0, p0, plan[None, :8], nz)[0])
-        row = {"k": k, "d": round(d_pol, 3), "trig": bool(d_pol > tau)}
+        row = {"k": k, "d": round(d_pol, 3), "trig": bool(d_pol > tau or force)}
         out = plan[:8]
         hold = np.repeat(np.r_[sim.target, plan[0, 3]][None], 8, 0).astype(np.float32)
         if row["trig"] and arm == "hold":

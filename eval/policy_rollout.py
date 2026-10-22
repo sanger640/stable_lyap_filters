@@ -312,6 +312,13 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "opt"; cbff.CFG["OPT_STARTS"] = 8
         cbf_opt.CFG.update({"ALPHA": 0.5, "STEPS": 10, "STARTS": 8, "N": 16})   # set in code (no cluster env vars)
         return _paired("cbfmo", "cbf", n, shrink)
+    if mode == "cbfrh":                        # matched-rate RANDOM hold (results/jenga/rbase_protocol.json): cbfh's fix at
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt")   # random decisions, at cbfh's
+        import cbf_filter as cbff                                                          # Stage 4 rate (1463 / 14973)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "hold"; cbff.CFG["HOLD_GRIP"] = False
+        cbff.CFG["TRIGGER"] = "random"; cbff.CFG["RAND_P"] = 1463 / 14973
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfg", "cbfh", "cbfg2", "cbfh2"):   # Stage 4 / 4b: G-CEM | hold and re-plan (2 = gripper time-warped / held)
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "warp" if mode == "cbfg2" else "fixed"

@@ -1,0 +1,12 @@
+{
+ "name": "Matched-rate random-hold baseline (methodology review 2026-10-22, item 3): does the trigger know WHEN, or does any pause help?",
+ "written": "2026-10-22 ~09:30, before any episode of this test",
+ "episodes": "18000-18199 (200, never used; h2h2 uses 17000-17299)",
+ "arms": {"record": "policy alone", "cbfh": "Stage 4 hold-and-replan exactly (model_OIL trigger, hold one chunk, gripper untouched)",
+          "cbfrh": "same hold, at RANDOM decisions with p = 1463/14973 = 9.77% (cbfh's realised Stage 4 rate); per-episode trigger seed"},
+ "settings": "Stage 4 settings (eval/stage4_local.sh): stress layouts, settled start, execution noise x2 (old noise model, for comparability with Stage 4), HARD_OFF=1, per-episode seeds, 60 chunks; run locally, all arms on the same machine.",
+ "outcome": "neighbour topples (primary), v4 and v4b success via eval/outcome_audit.py",
+ "primary": "cbfh has fewer neighbour topples than cbfrh: paired one-sided exact McNemar, alpha 0.05. If it fails, the Jenga benefit cannot be attributed to the trigger's timing.",
+ "secondary": "cbfrh vs record (topples, McNemar one-sided); v4 / v4b differences cbfh - cbfrh with paired bootstrap 95% CIs; realised intervention rates per arm.",
+ "stopping": "none; all 200 per arm"
+}
