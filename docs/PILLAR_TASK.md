@@ -163,3 +163,12 @@ chunk and end of hold (whole image, or the 16 most-changed patches), max over 33
 - Correction of the diagnostic's reading above: "needs o" is wrong; the score is not the bottleneck at the release.
   The bottleneck is what the camera can see. The policy's own 2 mm perception error makes this a mm-precision task,
   while Jenga's failures (topples) are cm-scale.
+- Resolution probe (eval/pillar_res_probe.py, results/pillar/diag/res_probe.json): ridge probe, 5-fold by seed, from the
+  REAL image latent to the cube-pillar x offset, 890 moments with the cube over the pillar (offset sd 7.1 mm).
+  Current camera: PCA8 latent RMSE 2.98 mm (R2 0.82), raw DINOv2 tokens 2.63 mm. Zoomed camera (fovy 20, 2.2x):
+  2.96 / 2.59 mm. Neither zoom nor the uncompressed features get below ~2.6 mm, more than the 2 mm gap between doomed
+  and safe releases. Frozen DINOv2 features (linear readout) do not resolve the deciding quantity; the policy's own
+  perception error (2 mm) is what creates the failures, so a monitor would need sharper perception than the policy.
+- Consequence: as tuned, the pillar is a mm-precision placement task. Its failures are decided below the resolution of
+  our perception stack, which is outside the monitor's intended domain (coarse intuitive physics; Jenga's failures are
+  cm-scale topples). A redo needs a pillar variant whose failures are decided at cm scale (user decision).
