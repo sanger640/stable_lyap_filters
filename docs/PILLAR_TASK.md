@@ -87,16 +87,16 @@ also fires at non-forks (end of hold: forks 0.35 vs non-forks 0.31), while the l
 exact replay at the end of the hold separates forks well (AUROC 0.93). So the representation sees the outcome; the
 split statistic is the weak link on this task.
 
-### World-model check v2 (spec fixed 2026-10-22 04:00, before computing it; same model, no retraining)
+### World-model check v2 (spec fixed 2026-10-22 03:52, commit 85b0470, before computing it; same model, no retraining)
 Score d = the largest distance, over 32 imagined noisy replays (real branching noise, s = 1), between the imagined
 end-of-hold latent and the imagined zero-noise replay's end-of-hold latent. Fresh held-out eval seeds 4100-4123 (data
 generated after this spec; same protocol as seeds 4000-4023). **Gate: AUROC(d, real fork) >= 0.7 on seeds 4100-4123.**
 Also reported, not gated: the same on seeds 4000-4023. If it passes: closed-loop filter spec next.
 
-**Result v2 (2026-10-22 04:40): PASS.** Seeds 4100-4123: 405 points, 27 real forks, **AUROC(d, fork) = 0.78**. Seeds
+**Result v2 (2026-10-22 04:00): PASS.** Seeds 4100-4123: 405 points, 27 real forks, **AUROC(d, fork) = 0.78**. Seeds
 4000-4023 (not gated): 0.84. The world model trained label-free on the pillar camera ranks the policy's real forks.
 
-## Closed-loop filter: universality test (spec fixed 2026-10-22 05:10, before any test episode; eval/pillar_filter.py)
+## Closed-loop filter: universality test (spec fixed 2026-10-22 04:06, commit cc554ad, before any test episode; eval/pillar_filter.py)
 This is the test pre-registered in docs/OPT_FILTER_REDESIGN.md ("the frozen family and ranges, with no retuning, on a
 second task"). Frozen from Jenga: the G family (speed, pause, amplitude, back-off along the chunk's own reverse
 direction; gripper on the policy's clock; anchored at the current target), its box, CEM settings (population 16, 3
