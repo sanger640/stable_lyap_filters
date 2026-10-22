@@ -416,3 +416,14 @@ base_camera looks down (tilt foreshortened, gripper occludes the peg). Videos: e
 - Exploratory next (decided 20:40, before training): DP on the 927 PPO demos with SHORTER chunks (act_horizon 2 and 4;
   ManiSkill's own RL-demo DP baseline uses 1), hoping for a chunked policy with PPO's fork-prone style; same checkpoint
   rule (50-step episodes) and the same closed-loop fork check.
+- Short-chunk DP on the 927 PPO demos: act_horizon 2: <= 3% success_at_end at every checkpoint; act_horizon 4: <= 11%.
+  No checkpoint qualifies -> DP cannot imitate PPO on this task (chunks 2, 4, 8 all fail).
+- PPO made chunked by action repeat (exploratory): success_at_end 38% / 11.5% / 1% / 0% for repeat 1 / 2 / 4 / 8 (200
+  episodes) -> PPO needs per-step control; it cannot be given a chunk without breaking it.
+- PPO branched on a SINGLE action + 20 hold steps (what a per-step filter could see; --branch-h 1): 2 forks in 224 points
+  (bar 15; results/benchmark_dd/maniskill/ppo_bh1_policy_fork_result.json). PPO's 24 forks need ~8 steps of accumulated
+  execution error, which a per-step policy never commits to at decision time.
+**LiftPegUpright summary (2026-10-21 21:30):** forks exist (expert demos: 20 strict; PPO closed loop: 24), but no
+policy we have is both chunked AND fork-prone: the planner-demo DP (79%) is chunked but robust (1 fork); PPO forks but
+is per-step (its forks are invisible to a single-action check, and chunking it destroys it); DP cannot learn from PPO's
+demos. Stopped here pending the user's decision.

@@ -49,6 +49,20 @@ class PPO:
             return torch.clamp(self.net(obs), -1, 1)
 
 
+class PPOChunk(PPO):
+    """PPO made chunked by action repeat: query once, the chunk is that action repeated k times (exploratory)."""
+    chunked = True
+
+    def __init__(self, k=4, dev="cuda"):
+        super().__init__(dev); self.k = k
+
+    def chunk(self, obs):
+        return self.act(obs)[:, None].repeat(1, self.k, 1)
+
+    def push(self, obs):
+        pass
+
+
 class DP:
     """Chunked policy: ManiSkill's state Diffusion Policy; returns the next act_horizon actions for each env."""
     chunked = True
@@ -149,7 +163,7 @@ if __name__ == "__main__":
     ap.add_argument("--episodes", type=int, nargs="*", default=[0, 1]); ap.add_argument("--out", default="video.mp4")
     ap.add_argument("--act-h", type=int, default=8, help="DP chunk length (must match training act_horizon)")
     a = ap.parse_args(); MAX_STEPS = a.steps
-    pol = PPO() if a.policy == "ppo" else DP(a.ckpt, act_h=a.act_h)
+    pol = PPO() if a.policy == "ppo" else PPOChunk(a.act_h) if a.policy == "ppochunk" else DP(a.ckpt, act_h=a.act_h)
     if a.cmd == "video":                                                     # video ppo|dp [CKPT] --episodes 3 0 5 --out f.mp4
         video(pol, a.out, a.episodes, a.policy.upper(), steps=MAX_STEPS)
     else:

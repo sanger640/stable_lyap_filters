@@ -41,7 +41,8 @@ def main():
     ap.add_argument("--out", required=True); ap.add_argument("--episodes", type=int, default=32); ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--steps", type=int, default=P.MAX_STEPS, help="episode length (planner-demo DP: 250)")
     ap.add_argument("--act-h", type=int, default=8, help="DP chunk length; branch points stay every 8 steps")
-    a = ap.parse_args(); P.MAX_STEPS = a.steps
+    ap.add_argument("--branch-h", type=int, default=H, help="actions replayed per branch before the hold (1 = per-step filter)")
+    a = ap.parse_args(); P.MAX_STEPS = a.steps; BH = a.branch_h
     pol = P.PPO() if a.policy == "ppo" else P.DP(a.ckpt, act_h=a.act_h)
     E = a.episodes; t0 = time.time()
     env = P.make_env(E); obs, _ = env.reset(seed=a.seed); u = env.unwrapped; pol.reset(E)
@@ -77,11 +78,11 @@ def main():
         if not live:
             continue
         bu.set_state_dict(rep(st))
-        base = ac.repeat_interleave(N, 0).double().cpu().numpy()               # (E*N, H, 7)
-        nz = rng.normal(size=(E * N, H + 2, 6)) * SIG; nz = (nz[:, :-2] + nz[:, 1:-1] + nz[:, 2:]) / 3; nz[::N] = 0
+        base = ac[:, :BH].repeat_interleave(N, 0).double().cpu().numpy()      # (E*N, BH, 7): first BH executed actions
+        nz = rng.normal(size=(E * N, BH + 2, 6)) * SIG; nz = (nz[:, :-2] + nz[:, 1:-1] + nz[:, 2:]) / 3; nz[::N] = 0
         base[:, :, :6] = np.clip(base[:, :, :6] + nz, -1, 1); hold = base[:, -1].copy(); hold[:, :6] = 0
-        for k in range(H + HOLD):
-            benv.step(torch.as_tensor(base[:, k] if k < H else hold, device=bu.device).float())
+        for k in range(BH + HOLD):
+            benv.step(torch.as_tensor(base[:, k] if k < BH else hold, device=bu.device).float())
         angs = tilt_t(bu.peg.pose.q).cpu().numpy().reshape(E, N)
         for e in live:
             ang = angs[e]; ns, nf = int((ang[1:] < 20).sum()), int((ang[1:] > 60).sum())
@@ -93,7 +94,7 @@ def main():
            "first_success_step": first.tolist(), "points": len(rows), "forks": fork, "points_any_flat": anyflat, "all_or_nearly_all_flat": sum(r["n_flat"] >= 31 for r in rows),
            "pass": bool(fork >= 15 and fork >= 0.25 * max(anyflat, 1) and fork >= 0.05 * len(rows)), "seconds": round(time.time() - t0, 1)}
     out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    (out / f"{a.policy}_rows.json").write_text(json.dumps(rows)); (out / f"{a.policy}_result.json").write_text(json.dumps(res, indent=1))
+    (out / f"{a.policy}{'' if BH == H else f'_bh{BH}'}_rows.json").write_text(json.dumps(rows)); (out / f"{a.policy}{'' if BH == H else f'_bh{BH}'}_result.json").write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))
 
 
