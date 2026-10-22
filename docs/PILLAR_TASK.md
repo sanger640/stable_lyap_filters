@@ -129,3 +129,22 @@ Exploratory (after the result, not tests): the perception bias does not explain 
 task waiting near the pillar adds noisy exposure instead of removing risk. Hypothesis, untested: a fork-ranking world
 model (moment-level AUROC 0.78) is not enough when the fix (slower / smaller / back off / hold) does not remove the
 noise's effect at the moment of placement.
+
+## Diagnostic of the failed filter test (exploratory, 2026-10-22; eval/pillar_diag.py, results/pillar/diag/)
+True episode-failure risk of one intervention (16 continuation draws, policy alone afterwards) on the record arm.
+- A, fixes at the 459 triggered moments: mean risk policy 12.0%, G 14.3%, hold 15.1%, still (hold, no noise) 13.6%;
+  G better / worse than the policy at 79 / 149 moments. At the 84 triggered moments with policy risk >= 25%: 36.5% ->
+  G 31.7%, hold 31.7%, still 28.5%. The fixes help a little only where the risk is high, and the trigger rarely
+  selects such moments.
+- B, trigger vs true risk (all moments of the 33 failed + 33 control episodes): AUROC(d, risk >= 25%) 0.55; the trigger
+  catches 9% of the risky moments; in 32 of 33 failed episodes the moment where the risk first reaches 50% is not
+  triggered.
+- Where failures are decided: in 31 of 33 failed episodes the risk is <= ~0.2 through the carry and jumps to ~1.0 at the
+  RELEASE decision: a rare noise draw in the last descent chunk leaves the cube off-centre, and opening the gripper
+  then makes the fall certain. At the release every future fails, so there is no spread for d (and the fork score) to
+  see ("no fork is not safe"), and the filter cannot act there because the gripper column is never changed.
+- Release check (scratchpad script, results/pillar/diag/release_check.json): at 28 release moments (27 doomed, policy
+  risk 97%), keeping the gripper closed and lifting 3 cm for one chunk, then the policy alone: risk 68%.
+Conclusion: on the pillar the world model's fork ranking is fine (0.78), but the pipeline fails at three points: (1) the
+score sees spread, not certain failure (needs Jenga's disturbance readout o); (2) the decisive action is the gripper,
+which G never touches; (3) holding is not a safe backup.
