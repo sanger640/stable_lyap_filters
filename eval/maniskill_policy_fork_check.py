@@ -40,8 +40,9 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("policy"); ap.add_argument("ckpt", nargs="?")
     ap.add_argument("--out", required=True); ap.add_argument("--episodes", type=int, default=32); ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--steps", type=int, default=P.MAX_STEPS, help="episode length (planner-demo DP: 250)")
+    ap.add_argument("--act-h", type=int, default=8, help="DP chunk length; branch points stay every 8 steps")
     a = ap.parse_args(); P.MAX_STEPS = a.steps
-    pol = P.PPO() if a.policy == "ppo" else P.DP(a.ckpt)
+    pol = P.PPO() if a.policy == "ppo" else P.DP(a.ckpt, act_h=a.act_h)
     E = a.episodes; t0 = time.time()
     env = P.make_env(E); obs, _ = env.reset(seed=a.seed); u = env.unwrapped; pol.reset(E)
     pts, acts, succ_once = [], [], torch.zeros(E, dtype=torch.bool, device=obs.device)
@@ -50,12 +51,14 @@ def main():
     while t < P.MAX_STEPS:
         st = u.get_state_dict(); st = {g: {k: v.clone() for k, v in d.items()} if isinstance(d, dict) else d.clone() for g, d in st.items()}
         if pol.chunked:
-            ch = pol.chunk(obs); seq = []
-            for k in range(H):
-                seq.append(ch[:, k]); obs, _, _, _, info = env.step(ch[:, k]); succ_once |= info["success"]; t += 1
-                first = torch.where(info["success"] & (first > t), torch.full_like(first, t), first)
-                if k < H - 1:
-                    pol.push(obs)
+            seq = []
+            while len(seq) < H:                                                # chunks of act_h (2, 4 or 8) until 8 steps ran
+                ch = pol.chunk(obs)
+                for k in range(ch.shape[1]):
+                    seq.append(ch[:, k]); obs, _, _, _, info = env.step(ch[:, k]); succ_once |= info["success"]; t += 1
+                    first = torch.where(info["success"] & (first > t), torch.full_like(first, t), first)
+                    if k < ch.shape[1] - 1:
+                        pol.push(obs)
         else:
             seq = []
             for k in range(H):

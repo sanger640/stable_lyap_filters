@@ -219,3 +219,11 @@ stopping the task. For comparison only (different episodes): G-CEM in Stage 4 cu
 of 300. Per the spec, eps 0.10 goes to a head-to-head with G-CEM on fresh episodes 17000-17299
 (results/jenga/lsf_h2h2_protocol.json, written before any episode). Rorqual cbfg reproduction check (Stage 4 ep 14000)
 first.
+- Head-to-head 2 NOT launched (2026-10-21 20:50): the pre-set cbfg reproduction check FAILED on Rorqual. Stage 4 ep 14000
+  (Nibi): 22 chunks, lifted, success; Rorqual: 60 chunks, never lifted. Same trigger decisions (interventions at chunks
+  13, 15, 17, 20), but G-CEM's seeded search picked a slightly different edit already at chunk 13 (theta differs) and
+  the episodes diverged. Rorqual repeats ITSELF exactly (second run identical), so it is a cross-cluster numerical
+  difference amplified by the search, not a broken setup. A Fir check was submitted (66693831), but the Fir and Nibi
+  sessions expired (need the user's Duo login), so its result is unread. Decision for the user: run head-to-head 2 on
+  Rorqual (all arms per episode on the same cluster, so pairing stays valid, but the rule as written is not met), or
+  wait for Fir/Nibi.

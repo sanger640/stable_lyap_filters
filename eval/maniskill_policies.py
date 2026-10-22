@@ -53,12 +53,12 @@ class DP:
     """Chunked policy: ManiSkill's state Diffusion Policy; returns the next act_horizon actions for each env."""
     chunked = True
 
-    def __init__(self, ckpt, dev="cuda"):
+    def __init__(self, ckpt, dev="cuda", act_h=8):
         import torch
         from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
         from diffusion_policy.conditional_unet1d import ConditionalUnet1D
         w = torch.load(ckpt, map_location=dev, weights_only=False)
-        self.obs_h, self.act_h, self.pred_h = 2, 8, 16
+        self.obs_h, self.act_h, self.pred_h = 2, act_h, 16
         sd = w["ema_agent"] if "ema_agent" in w else w["agent"]
         sd = {k.replace("noise_pred_net.", ""): v for k, v in sd.items() if k.startswith("noise_pred_net.")}
         self.act_dim = sd["final_conv.1.weight"].shape[0]
@@ -147,8 +147,9 @@ if __name__ == "__main__":
     ap.add_argument("--n", type=int, default=100); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--steps", type=int, default=MAX_STEPS, help="episode length (planner-demo DP: 250)")
     ap.add_argument("--episodes", type=int, nargs="*", default=[0, 1]); ap.add_argument("--out", default="video.mp4")
+    ap.add_argument("--act-h", type=int, default=8, help="DP chunk length (must match training act_horizon)")
     a = ap.parse_args(); MAX_STEPS = a.steps
-    pol = PPO() if a.policy == "ppo" else DP(a.ckpt)
+    pol = PPO() if a.policy == "ppo" else DP(a.ckpt, act_h=a.act_h)
     if a.cmd == "video":                                                     # video ppo|dp [CKPT] --episodes 3 0 5 --out f.mp4
         video(pol, a.out, a.episodes, a.policy.upper(), steps=MAX_STEPS)
     else:
