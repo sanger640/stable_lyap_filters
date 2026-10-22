@@ -53,4 +53,17 @@ any backup certifies.
   V(imagined state after the policy's first chunk, world-model mean) < 0.5. Reported against C and R; it advances to
   idea 4 if 3a passes (3b is descriptive, because idea 4 uses V as a barrier, not as a trigger).
 
-## Idea 4: V as the CBF barrier with a gradient solver (spec to be written after idea 3's gate, before any run)
+
+**Result (2026-10-22 13:45; results/jenga/hj/value_report.json, value_train.json): gate 3a FAIL; idea 4 not run.**
+- Targets: 98.6% of the 3000 training states and 96.3% of the 300 held-out states have a backup that certifies (41 and
+  11 non-viable states). With so few negatives, V learned almost nothing: early-stopping validation AUROC 0.53.
+- 3a: AUROC(V, certificate target) 0.756 on the held-out states (< 0.85) -> FAIL.
+- 3b (descriptive): V3 = V < 0.5 never fires (FPR 0, recall 0), because V sits near the 98% base rate. As a continuous score,
+  -V3 vs the topple label gives AUROC 0.72 (C and R are binary: C FPR 5.2% / recall 92.8%, R 1.0% / 73.9%).
+- Reading, shared with idea 2: under our certificate, a cheap backup (hold / lift / small retreat) certifies from
+  almost every state the policy visits, including 1-2 chunks before most topples. A viability set this large gives
+  neither a sharper trigger (idea 2) nor a learnable value (idea 3). The current trigger (plan vs hold, 3-chunk lead,
+  93% recall) stays; the open problem on Jenga is the fix itself, which G-CEM addresses directly.
+- Idea 4: solver drafted (eval/hj_barrier.py) but, per this spec, NOT run; no spec written.
+
+## Idea 4: V as the CBF barrier with a gradient solver (not run: gate 3a failed)
