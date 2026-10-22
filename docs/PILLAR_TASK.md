@@ -95,3 +95,24 @@ Also reported, not gated: the same on seeds 4000-4023. If it passes: closed-loop
 
 **Result v2 (2026-10-22 04:40): PASS.** Seeds 4100-4123: 405 points, 27 real forks, **AUROC(d, fork) = 0.78**. Seeds
 4000-4023 (not gated): 0.84. The world model trained label-free on the pillar camera ranks the policy's real forks.
+
+## Closed-loop filter: universality test (spec fixed 2026-10-22 05:10, before any test episode; eval/pillar_filter.py)
+This is the test pre-registered in docs/OPT_FILTER_REDESIGN.md ("the frozen family and ranges, with no retuning, on a
+second task"). Frozen from Jenga: the G family (speed, pause, amplitude, back-off along the chunk's own reverse
+direction; gripper on the policy's clock; anchored at the current target), its box, CEM settings (population 16, 3
+iterations, 6 elites, 4 finals, sd (0.4, 3, 0.4, 12 mm)), opt2's cost (eta 4), and the fallback order (cheapest
+certified, else hold if certified, else best). Task-specific, by necessity: the world model (pillar camera) and its
+validated score d (v2 above) in place of Jenga's (h, o). Certificate: d <= TAU on 32 fresh noise draws.
+TAU = 23.48, the 90th percentile of d over the policy's own chunks at 912 training decisions (label-free;
+results/pillar/filter/tau.json). Trigger: d(policy chunk) > TAU.
+- Arms: record (policy alone; d logged, never acted on), hold (trigger -> hold one chunk, re-plan), g (trigger -> G-CEM).
+- Episodes: fresh seeds 5000-5299 (300), paired by seed (same layout, perception bias, noise sequence). Execution noise
+  2x Jenga snippets, pillar 8 mm, perception sigma 2 mm (the configuration that passed the fork check).
+- Failure = cube_fell OR pillar_tipped at the end; success = `outcome()["success"]`.
+- **H1 (primary): G reduces failures vs record**, one-sided exact McNemar on discordant pairs, alpha 0.05.
+- **H2: G's success is non-inferior to record**: paired bootstrap (10,000) one-sided 95% lower bound on the success
+  difference > -5 pp.
+- Universality is claimed only if H1 and H2 both pass. Secondary (reported, not gated): hold vs record (same tests),
+  G vs hold (two-sided McNemar on failure and success), trigger rate, intervention kinds, chosen theta, and on the record
+  arm the AUROC of the episode's largest d vs failure.
+- Smoke (seeds 9000-9001, not test seeds; checked only for crashes and timing): runs; 1-2 triggers per episode.

@@ -260,9 +260,10 @@ class ExpertPolicy:
 PERC = float(os.environ.get("PILLAR_PERC", 0.0))                           # policy perception error sigma (m)
 
 
-def run_closed_loop(sim, seed, noise_scale=2.0, max_chunks=30, record=False, hook=None):
+def run_closed_loop(sim, seed, noise_scale=2.0, max_chunks=30, record=False, hook=None, plan_hook=None):
     """Closed-loop episode with the ExpertPolicy in 8-action chunks and Jenga's execution noise (one snippet x scale per
-    chunk). hook(sim, chunk, k) -> chunk (filter goes here). Ends after the cube is released on the pillar and the arm is
+    chunk). hook(sim, chunk, k) -> chunk (filter goes here); plan_hook(sim, plan16, k) -> chunk (filters that read the
+    whole plan, eval/pillar_filter.py). Ends after the cube is released on the pillar and the arm is
     up, or after max_chunks. Returns (outcome, frames, chunks)."""
     import uncertainty_monitor_dev as um
     reset(sim, seed); pol = ExpertPolicy(sim, PERC, seed)
@@ -272,6 +273,8 @@ def run_closed_loop(sim, seed, noise_scale=2.0, max_chunks=30, record=False, hoo
         plan = pol.plan(); chunk = plan[:8].copy()
         if hook is not None:
             chunk = hook(sim, chunk, k)
+        if plan_hook is not None:
+            chunk = plan_hook(sim, plan, k)
         chunks.append(chunk)
         nz = snippets[rng.integers(len(snippets))] * noise_scale
         for j, a in enumerate(chunk):
