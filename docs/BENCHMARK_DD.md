@@ -479,3 +479,9 @@ demos. Stopped here pending the user's decision.
   84 px, ResNet18 + spatial softmax + crop; gripper proprioception only, no object poses), like our Jenga policy, which
   sees through cameras. MimicGen reports image DP at ~38% on this task, i.e. much less precise. Same checkpoint rule and
   closed-loop fork check (the check script must render camera observations for this policy).
+
+### StackThree image Diffusion Policy (robomimic, agentview + wrist cameras; 2026-10-22, exploratory, training ongoing)
+Success on 20 episodes: epoch 100 1/10, epoch 200 6/20 (training is ~0.9 epochs/min; 600 planned). Closed-loop fork
+check on the epoch-200 checkpoint, seeds 1-4, 1.4x (realised gripper deviation 3.16 mm, Jenga-matched): 94 points,
+**3 forks**, 5 with any bad. Even a less precise image policy rarely forks on StackThree; low-dim DP gave 1 / 145, and
+its re-measured success is 37/50 (74%). A later checkpoint will be checked, but the trend does not favour StackThree.
