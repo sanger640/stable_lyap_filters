@@ -44,3 +44,7 @@ selected by the rule.** Fork check at 8 mm, 64 episodes, 551 points (results/pil
 The pillar task is a second fork benchmark with Jenga's failure profile, from a different contact mode.
 Next: a chunked closed-loop policy (expert re-planning every chunk; a Diffusion Policy from expert demos later),
 then world-model data from the fixed camera, the world-model check, and closed-loop filter tests, as for Jenga.
+World-model camera (chosen 00:45 from 4 rendered candidates): `cam_fixed` at (0.5, -0.55, 0.62) aimed at (0.5, -0.02,
+0.49), fovy 45: side-on to the pillar, so the cube on top and any tilt / fall are visible in profile and the arm only
+enters the top of the frame. A front view puts the gripper over the pillar top at the critical moment; the views from
+the robot's side and the far corner are dominated by the arm. Videos: dashboard "Pillar (custom)".

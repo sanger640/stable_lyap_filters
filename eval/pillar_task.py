@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 
 TABLE_Z = 0.425
+CAM = "0.5 -0.55 0.62"                                                      # world-model camera: fixed, side-on to the pillar
 _W = float(os.environ.get("PILLAR_HALF_W", 0.0125))                     # pillar half-width (task difficulty)
 GEOM = dict(pillar_half=(_W, _W, 0.05), cube_half=0.015, pillar_mass=0.05, cube_mass=0.03, friction=0.6)
 
@@ -52,7 +53,8 @@ SCENE = """<mujoco model="panda_pillar_setup">
       <joint type="free"/>
       <geom size="{px} {py} {pz}" type="box" rgba="0.8 0.6 0.4 1" mass="{pillar_mass}" friction="{friction} 0.005 0.0001"/>
     </body>
-    <camera name="cam_fixed" pos="0.9 0 1.2" mode="targetbody" target="table"/>
+    <body name="cam_target" pos="0.5 -0.02 0.49"/>
+    <camera name="cam_fixed" pos="{cam}" mode="targetbody" target="cam_target" fovy="{fovy}"/>
   </worldbody>
   <keyframe>
     <key name="home" qpos="0 -0.93 0 -2.77 0 2.72 0.7853 0.04 0.04
@@ -70,8 +72,10 @@ def scene_xml(geom=GEOM):
     jenga_xml = Path(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="pillar_")))
     px, py, pz = geom["pillar_half"]; ch = geom["cube_half"]
     xml = SCENE.format(px=px, py=py, pz=pz, ch=ch, cube_z=TABLE_Z + ch + 0.001, pillar_z=TABLE_Z + pz + 0.001,
-                       cube_mass=geom["cube_mass"], pillar_mass=geom["pillar_mass"], friction=geom["friction"])
-    tag = "_".join(f"{v}" for v in (px, py, pz, ch, geom["cube_mass"], geom["pillar_mass"], geom["friction"]))
+                       cube_mass=geom["cube_mass"], pillar_mass=geom["pillar_mass"], friction=geom["friction"],
+                       cam=os.environ.get("PILLAR_CAM", CAM), fovy=os.environ.get("PILLAR_FOVY", "45"))
+    tag = "_".join(f"{v}" for v in (px, py, pz, ch, geom["cube_mass"], geom["pillar_mass"], geom["friction"],
+                                     os.environ.get("PILLAR_CAM", CAM).replace(" ", ","), os.environ.get("PILLAR_FOVY", "45")))
     out = jenga_xml.parent / f"panda_pillar_setup_{tag}.xml"
     if not out.exists():
         out.write_text(xml)
@@ -183,13 +187,54 @@ def main():
         for s, r in enumerate(res):
             print(s, r)
         print("success", np.mean([r["success"] for r in res]))
-    elif a.cmd == "video":
-        import imageio
+    elif a.cmd == "video":                                                    # frames -> .npz (encode with tools/encode_mp4)
         vids = []
-        for s in range(a.episodes):
-            r, fr, n = run_episode(sim, s, a.noise, record=True); vids += fr; print(s, r, n)
-        imageio.mimwrite(a.out, vids, fps=10, quality=7, macro_block_size=16)
+        for s in range(1000, 1000 + a.episodes):
+            r, fr, n = run_episode(sim, s, a.noise, record=True); print(s, r, n)
+            lab = "SUCCESS" if r["success"] else ("CUBE FELL" if r["cube_fell"] else "PILLAR TIPPED")
+            vids += [banner(f, f"Pillar task, scripted expert, 2x Jenga execution noise   episode {s}   {lab}", r["success"]) for f in fr]
+        np.savez_compressed(a.out, frames=np.stack(vids))
+    elif a.cmd == "forkvideo":                                                # a real HOLD fork from results/pillar/fork_w8.json
+        np.savez_compressed(a.out, frames=fork_clip(sim))
 
+
+
+def banner(img, txt, ok):
+    import cv2
+    bar = np.full((28, img.shape[1], 3), (40, 150, 60) if ok else (190, 50, 40), np.uint8)
+    cv2.putText(bar, txt, (6, 19), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
+    return np.concatenate([bar, img], 0)
+
+
+def fork_clip(sim):
+    """Re-run the episode of a HOLD fork up to its chunk, then replay the chunk + hold with fresh 2x noise until one
+    replay keeps the cube on top and one drops it; render exact | stays | falls side by side."""
+    import json
+    import uncertainty_monitor_dev as um
+    rows = json.loads((ROOT / "results/pillar/fork_w8.json").read_text())["rows"]
+    snippets = np.load(um.BENCH)["snippets"]
+    for r in sorted((r for r in rows if r["hold_fork"]), key=lambda r: abs(r["hold_n_bad"] - 16)):
+        seed, c0 = r["seed"], r["t"]
+        reset(sim, seed); rng = np.random.default_rng([20261022, seed]); plan = expert_plan(sim)
+        nz_main = [snippets[rng.integers(len(snippets))] * 2.0 for _ in range(len(plan) // 8 + 1)]
+        for i in range(c0):
+            a = plan[i].copy(); a[:3] += nz_main[i // 8][i % 8]; sim.execute(a)
+        snap = sim.snapshot(); brng = np.random.default_rng(5); vids, ends = [], []
+        for k in range(24):
+            sim.restore(snap); fr = [sim.render()]
+            nz = 0 if k == 0 else snippets[brng.integers(len(snippets))] * 2.0
+            ch = plan[c0:c0 + 8].copy(); ch[:, :3] += nz if np.ndim(nz) == 0 else nz[:len(ch)]
+            for a in list(ch) + [np.r_[ch[-1, :3], ch[-1, 3]]] * 20:
+                sim.execute(a); fr.append(sim.render())
+            vids.append(fr); ends.append(body_pos(sim, "cube")[2])
+        ex = ends[0]
+        fall = [k for k in range(1, 24) if ends[k] < ex - 0.02]; stay = [k for k in range(1, 24) if abs(ends[k] - ex) < 0.01]
+        if fall and stay:
+            i, j = stay[0], fall[0]
+            out = [np.concatenate([banner(vids[0][t], "exact chunk", True), banner(vids[i][t], "noise draw A: cube stays", True),
+                                   banner(vids[j][t], "noise draw B: cube falls", False)], 1) for t in range(len(vids[0]))]
+            print("fork clip from episode", seed, "chunk start", c0); return np.stack([f for f in out for _ in range(3)])
+    raise RuntimeError("no clip found")
 
 
 def fork_job(args):
