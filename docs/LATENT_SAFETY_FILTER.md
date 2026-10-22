@@ -208,3 +208,14 @@ uncertainty margin) does. Only value_unisafe.pt goes to closed loop.
   segment stays 0.54-0.94, so at eps 0.3 it never intervened, and both episodes equal the policy-alone smoke exactly
   (15900 success, 31 chunks; 15901 timeout, 60 chunks). Dev sweep submitted unchanged: Rorqual job 24880394 (50 tasks x
   2 episodes x 6 arms, tag _unidev).
+
+## Dev sweep RESULT, UNISafe value (2026-10-21 20:25; results/jenga/lsf_dev_result_unidev.json, outcome_audit_unidev.json)
+99 episodes complete in every arm (replay flags match 99-100/100). Topples / v4 / v4b: policy 27 / 66 / 58;
+eps 0.00: 24 / 70 / 59; **0.10: 23 / 70 / 59 (selected)**; 0.20: 24 / 69 / 59; 0.30: 24 / 66 / 56; 0.50: 26 / 66 / 53;
+0.70: 8 / 5 / 4. Eligible (v4 within 5 pp): 0.00-0.50; fewest topples -> eps 0.10.
+Reading: trained correctly, the LSF as published no longer collapses (success up 4 points instead of to ~0), but at
+every eps that keeps success it removes only 1-4 of 27 topples (-4 to -15%); at eps 0.70 it stops topples by
+stopping the task. For comparison only (different episodes): G-CEM in Stage 4 cut topples 69 -> 19 with v4 206 -> 246
+of 300. Per the spec, eps 0.10 goes to a head-to-head with G-CEM on fresh episodes 17000-17299
+(results/jenga/lsf_h2h2_protocol.json, written before any episode). Rorqual cbfg reproduction check (Stage 4 ep 14000)
+first.

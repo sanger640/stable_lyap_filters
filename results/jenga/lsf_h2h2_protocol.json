@@ -1,0 +1,16 @@
+{
+ "name": "Head-to-head 2: G-CEM vs the latent safety filter AS PUBLISHED, trained correctly (UNISafe recipe), on Jenga",
+ "written": "2026-10-21 20:30, after the UNISafe dev sweep selected eps 0.10 (results/jenga/lsf_dev_result_unidev.json) and before any head-to-head-2 episode",
+ "episodes": "17000-17299 (300, never used for anything)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg": "G-CEM (Stage 4 arm, unchanged): fork-test trigger, G transformations, ensemble certificate, hold fallback; no failure labels",
+  "lsfe010": "LSF as published with its own safety policy (UNISafe recipe: SAC + ensemble-uncertainty margin; value_unisafe.pt), least-restrictive switch at eps 0.10 (dev-selected)"
+ },
+ "settings": "as Stage 4 / head-to-head 1: stress layouts (shrink 10 mm), settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max; model_OIL; Rorqual (Fir and Nibi partitions down; Rorqual record arm reproduced Nibi exactly), cluster/paired_array.sbatch, all 3 arms per task, osmesa. Before launch: cbfg reproduction check on one Stage 4 episode (must match its logged outcome).",
+ "outcome": "neighbour topples (logged, checked by replay), v4 and v4b success, by eval/outcome_audit.py.",
+ "primary": "G-CEM vs LSF (UNISafe), paired by episode: (1) non-inferiority as in Stage 4 (success v4 one-sided 95% lower bound > -5 pp AND topple one-sided 95% upper bound < +3 pp); (2) superiority on topples (exact McNemar, two-sided, alpha 0.05). Both reported whatever the outcome.",
+ "secondary": "each filter vs the policy (same statistics); v4b; interventions per episode; seconds per decision.",
+ "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms.",
+ "dev_context": "dev (99 episodes 15000-15099): policy 27 topples / v4 66 / v4b 58; LSF-UNISafe eps 0.10: 23 / 70 / 59 (eligible eps 0.00-0.50; eps 0.70: 8 / 5 / 4)."
+}

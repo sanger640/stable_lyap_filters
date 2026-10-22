@@ -116,6 +116,7 @@ def rollout(policy, n=100, seed=0):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("cmd"); ap.add_argument("policy"); ap.add_argument("ckpt", nargs="?")
     ap.add_argument("--n", type=int, default=100); ap.add_argument("--seed", type=int, default=0)
-    a = ap.parse_args()
+    ap.add_argument("--steps", type=int, default=MAX_STEPS, help="episode length (planner-demo DP: 250)")
+    a = ap.parse_args(); MAX_STEPS = a.steps
     pol = PPO() if a.policy == "ppo" else DP(a.ckpt)
     print(a.policy, "success at end / once", rollout(pol, a.n, a.seed))

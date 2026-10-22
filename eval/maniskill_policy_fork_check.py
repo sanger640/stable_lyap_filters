@@ -39,7 +39,8 @@ def main():
     import torch
     ap = argparse.ArgumentParser(); ap.add_argument("policy"); ap.add_argument("ckpt", nargs="?")
     ap.add_argument("--out", required=True); ap.add_argument("--episodes", type=int, default=32); ap.add_argument("--seed", type=int, default=1)
-    a = ap.parse_args()
+    ap.add_argument("--steps", type=int, default=P.MAX_STEPS, help="episode length (planner-demo DP: 250)")
+    a = ap.parse_args(); P.MAX_STEPS = a.steps
     pol = P.PPO() if a.policy == "ppo" else P.DP(a.ckpt)
     E = a.episodes; t0 = time.time()
     env = P.make_env(E); obs, _ = env.reset(seed=a.seed); u = env.unwrapped; pol.reset(E)
