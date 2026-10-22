@@ -95,7 +95,8 @@ class DP:
             self.hist = torch.cat([self.hist[:, 1:], obs[:, None]], 1)
         n = len(obs)
         with torch.no_grad():
-            a = torch.randn(n, self.pred_h, self.act_dim, device=self.dev)
+            g = getattr(self, "group", 1)                                     # copies of one moment share the sampling noise
+            a = torch.randn(n // g, self.pred_h, self.act_dim, device=self.dev).repeat_interleave(g, 0)
             self.sched.set_timesteps(100)
             cond = self.hist.flatten(1)
             for k in self.sched.timesteps:

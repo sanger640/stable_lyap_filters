@@ -41,6 +41,8 @@ def main():
     ap.add_argument("--out", required=True); ap.add_argument("--episodes", type=int, default=32); ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--steps", type=int, default=P.MAX_STEPS, help="episode length (planner-demo DP: 250)")
     ap.add_argument("--act-h", type=int, default=8, help="DP chunk length; branch points stay every 8 steps")
+    ap.add_argument("--scale", type=float, default=1.0, help="noise multiplier")
+    ap.add_argument("--to-end", action="store_true", help="after the noisy chunk run the policy to the episode end; fork = final success splits")
     ap.add_argument("--branch-h", type=int, default=H, help="actions replayed per branch before the hold (1 = per-step filter)")
     a = ap.parse_args(); P.MAX_STEPS = a.steps; BH = a.branch_h
     pol = P.PPO() if a.policy == "ppo" else P.DP(a.ckpt, act_h=a.act_h)
@@ -79,22 +81,50 @@ def main():
             continue
         bu.set_state_dict(rep(st))
         base = ac[:, :BH].repeat_interleave(N, 0).double().cpu().numpy()      # (E*N, BH, 7): first BH executed actions
-        nz = rng.normal(size=(E * N, BH + 2, 6)) * SIG; nz = (nz[:, :-2] + nz[:, 1:-1] + nz[:, 2:]) / 3; nz[::N] = 0
+        nz = rng.normal(size=(E * N, BH + 2, 6)) * SIG * a.scale; nz = (nz[:, :-2] + nz[:, 1:-1] + nz[:, 2:]) / 3; nz[::N] = 0
         base[:, :, :6] = np.clip(base[:, :, :6] + nz, -1, 1); hold = base[:, -1].copy(); hold[:, :6] = 0
+        if a.to_end:                                                           # noisy chunk, then the policy closed loop to the episode's end
+            ob = None
+            for k in range(BH):
+                ob, _, _, _, info = benv.step(torch.as_tensor(base[:, k], device=bu.device).float())
+                if k == BH - 1:
+                    tcp = bu.agent.tcp.pose.p.reshape(E, N, 3); tdev = (tcp - tcp[:, :1]).norm(dim=-1)[:, 1:].cpu().numpy() * 1000
+            pol.reset(E * N); pol.group = N; t2 = tt + BH
+            while t2 < P.MAX_STEPS:
+                if pol.chunked:
+                    ch = pol.chunk(ob)
+                    for k in range(ch.shape[1]):
+                        ob, _, _, _, info = benv.step(ch[:, k]); t2 += 1
+                        if k < ch.shape[1] - 1:
+                            pol.push(ob)
+                else:
+                    ob, _, _, _, info = benv.step(pol.act(ob)); t2 += 1
+            pol.group = 1
+            se = info["success"].cpu().numpy().reshape(E, N); angs = tilt_t(bu.peg.pose.q).cpu().numpy().reshape(E, N)
+            for e in live:
+                ns = int(se[e, 1:].sum())
+                rows.append({"episode": e, "t": tt, "n_succ": ns, "exact_succ": bool(se[e, 0]), "fork": 2 <= ns <= 30,
+                             "n_flat": int((angs[e, 1:] > 60).sum()), "tcp_dev_mm_median": float(np.median(tdev[e])), "tilts": angs[e].round(1).tolist()})
+            continue
         for k in range(BH + HOLD):
             benv.step(torch.as_tensor(base[:, k] if k < BH else hold, device=bu.device).float())
+            if k == BH - 1:                                                    # realized gripper deviation at the end of the chunk
+                tcp = bu.agent.tcp.pose.p.reshape(E, N, 3); tdev = (tcp - tcp[:, :1]).norm(dim=-1)[:, 1:].cpu().numpy() * 1000
         angs = tilt_t(bu.peg.pose.q).cpu().numpy().reshape(E, N)
         for e in live:
             ang = angs[e]; ns, nf = int((ang[1:] < 20).sum()), int((ang[1:] > 60).sum())
-            rows.append({"episode": e, "t": tt, "n_stand": ns, "n_flat": nf, "exact_tilt": float(ang[0]), "fork": ns >= 2 and nf >= 2,
+            rows.append({"episode": e, "t": tt, "n_stand": ns, "n_flat": nf, "exact_tilt": float(ang[0]), "fork": ns >= 2 and nf >= 2, "tcp_dev_mm_median": float(np.median(tdev[e])),
                          "tilts": ang.round(1).tolist()})
     benv.close()
     fork = sum(r["fork"] for r in rows); anyflat = sum(r["n_flat"] > 0 for r in rows)
-    res = {"policy": a.policy, "ckpt": a.ckpt, "episodes": E, "success_once": float(succ_once.float().mean()), "upright_at_end": float(succ_end.mean()),
+    if a.to_end:                                                               # bad = episode ends unsuccessful
+        anyflat = sum(r["n_succ"] < 32 for r in rows)
+    res = {"policy": a.policy, "noise_scale": a.scale, "ckpt": a.ckpt, "episodes": E, "success_once": float(succ_once.float().mean()), "upright_at_end": float(succ_end.mean()),
            "first_success_step": first.tolist(), "points": len(rows), "forks": fork, "points_any_flat": anyflat, "all_or_nearly_all_flat": sum(r["n_flat"] >= 31 for r in rows),
+           "tcp_dev_mm_median": float(np.median([r["tcp_dev_mm_median"] for r in rows])),
            "pass": bool(fork >= 15 and fork >= 0.25 * max(anyflat, 1) and fork >= 0.05 * len(rows)), "seconds": round(time.time() - t0, 1)}
     out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    (out / f"{a.policy}{'' if BH == H else f'_bh{BH}'}_rows.json").write_text(json.dumps(rows)); (out / f"{a.policy}{'' if BH == H else f'_bh{BH}'}_result.json").write_text(json.dumps(res, indent=1))
+    (out / f"{a.policy}{'' if BH == H else f'_bh{BH}'}{'' if a.scale == 1 else f'_x{a.scale:g}'}{'_toend' if a.to_end else ''}_rows.json").write_text(json.dumps(rows)); (out / f"{a.policy}{'' if BH == H else f'_bh{BH}'}{'' if a.scale == 1 else f'_x{a.scale:g}'}{'_toend' if a.to_end else ''}_result.json").write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))
 
 

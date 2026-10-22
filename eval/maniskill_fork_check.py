@@ -32,6 +32,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("env"); ap.add_argument("--demos", type=int, default=16); ap.add_argument("--out", required=True)
     ap.add_argument("--root", default=str(pathlib.Path.home() / "wksp/maniskill_bench"))
+    ap.add_argument("--scale", type=float, default=1.0, help="noise multiplier (Jenga closed-loop tests use 2x its base noise)")
     a = ap.parse_args()
     import gymnasium as gym
     import h5py
@@ -42,7 +43,7 @@ def main():
     env.reset(seed=0); u = env.unwrapped; dev = u.device
     f = h5py.File(pathlib.Path(a.root) / c["h5"], "r")
     rng = np.random.default_rng(20261021)
-    sig = np.asarray(c["sig"])
+    sig = np.asarray(c["sig"]) * a.scale
     rows, t0 = [], time.time()
 
     def poses():
@@ -80,11 +81,11 @@ def main():
         print(di, T, [r["n_bad"] for r in rows if r["demo"] == di], round(time.time() - t0, 1), flush=True)
     nb = [r["n_bad"] for r in rows]
     fork, anyb = sum(2 <= x <= 30 for x in nb), sum(x > 0 for x in nb)
-    res = {"env": a.env, "points": len(rows), "forks": fork, "points_any_bad": anyb,
+    res = {"env": a.env, "noise_scale": a.scale, "points": len(rows), "forks": fork, "points_any_bad": anyb,
            "n_bad_hist": {str(k): nb.count(k) for k in sorted(set(nb))},
            "pass": bool(fork >= 15 and fork >= 0.25 * max(anyb, 1) and fork >= 0.05 * len(rows)), "seconds": round(time.time() - t0, 1)}
     out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    (out / f"{a.env}_rows.json").write_text(json.dumps(rows)); (out / f"{a.env}_result.json").write_text(json.dumps(res, indent=1))
+    (out / f"{a.env}{'' if a.scale == 1 else f'_x{a.scale:g}'}_rows.json").write_text(json.dumps(rows)); (out / f"{a.env}{'' if a.scale == 1 else f'_x{a.scale:g}'}_result.json").write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))
 
 

@@ -427,3 +427,20 @@ base_camera looks down (tilt foreshortened, gripper occludes the peg). Videos: e
 policy we have is both chunked AND fork-prone: the planner-demo DP (79%) is chunked but robust (1 fork); PPO forks but
 is per-step (its forks are invisible to a single-action check, and chunking it destroys it); DP cannot learn from PPO's
 demos. Stopped here pending the user's decision.
+
+## Re-check after the user challenged the "no forks" results (2026-10-21 22:00)
+1. Noise level - NOT the error. Jenga closed-loop tests (scale 2): median gripper-target offset at chunk end 3.2 mm
+   (scale 3: 4.8 mm). ManiSkill checks realised a 3.7 mm median gripper deviation at chunk end (1x); ToolHang and
+   SafeManip use the same normalised per-step noise. Forks do grow steeply with noise (planner-demo DP: 1 / 29-33 / 55
+   forks at 1x / 2x / 3x, 1024 points; 2x = 7.4 mm, beyond anything Jenga was judged at; DP sampling is unseeded, so
+   counts vary by a few between runs).
+2. A REAL blind spot: the look-ahead. Every check so far judged the outcome 20 hold steps after the chunk (robot
+   stopped). New mode (--to-end): after the noisy chunk the policy runs CLOSED LOOP to the episode's end in all 33 copies
+   (copies of one moment share the policy's sampling noise, so policy randomness cannot fake a split). PPO, 1x noise:
+   final success splits at 106 / 224 points; strict two-mode (>= 2 copies end standing < 20 deg AND >= 2 flat > 60 deg)
+   at **56 / 224** (vs 24 with the 28-step look-ahead), including 19 of 32 episodes at the very FIRST chunk. ToolHang,
+   SafeManip, StackPyramid and SafeLIBERO were all judged with the short look-ahead (and ToolHang/SafeManip with
+   damage-only labels: slip / tip / knock, not "the step succeeds vs fails"), so their "few forks" verdicts may be
+   understated and should be re-checked with run-to-end labels.
+   Caveat: a split that appears only at the episode's end may not be visible to our filter, which imagines the chunk +
+   a short hold in the world model; check 2 (world-model visibility) decides that.
