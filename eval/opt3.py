@@ -4,7 +4,7 @@ b back-off mm in [0,30] along the reverse of the chunk's own net direction). Gri
 fallback as formulation F (eval/opt2.py). Solvers: cem | grad (separate).
 
 usage: python3 eval/opt3.py run <cem|grad> <dev|holdout> <tag> ; truth <set> <tag> ; report <set> <tag>
-env: OPT2_CERT = OIL+ENS (pre-registered) | OIL, OPT2_LIMIT
+env: OPT2_CERT = OIL+ENS (pre-registered) | OIL, OPT2_LIMIT, OPT3_ABS=1 (absolute requirement h >= h_safe)
 """
 import json
 import os
@@ -168,7 +168,8 @@ def run(solver, name, tag):
         hold = np.repeat(np.r_[C["target"][i], C["plan16"][i][0, 3]][None], 16, 0).astype(np.float32)
         hh, _ = cbf.score(sim, z0, hold[None], 64)
         p16 = C["plan16"][i].copy(); p16[0, :3] = C["target"][i]                   # anchor at the current target (A4)
-        P = Problem(mon, cbf, sim, z0, p16, float(hh[0]), certs); P.cbf_O_MAX = cbff.CFG["O_MAX"]
+        h_req = opt2.HS if os.environ.get("OPT3_ABS") == "1" else float(hh[0])       # ABS: require h >= h_safe, not >= h_hold
+        P = Problem(mon, cbf, sim, z0, p16, h_req, certs); P.cbf_O_MAX = cbff.CFG["O_MAX"]
         plan, info = (solve_cem if solver == "cem" else solve_grad)(P, 7000 + i)
         out.append({"i": i, **info, "progress": round(progress(P.p0, plan), 3), "seconds": round(time.time() - t1, 1),
                     "chunk": plan[1:9].astype(np.float32).tolist()})
