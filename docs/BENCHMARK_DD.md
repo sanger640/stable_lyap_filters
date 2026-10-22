@@ -444,3 +444,11 @@ demos. Stopped here pending the user's decision.
    understated and should be re-checked with run-to-end labels.
    Caveat: a split that appears only at the episode's end may not be visible to our filter, which imagines the chunk +
    a short hold in the world model; check 2 (world-model visibility) decides that.
+3. Run-to-end on the chunked planner-demo DP, 1x: final success splits at 365 / 1024; strict two-mode at **194 / 1024
+   (19%), in all 32 episodes** (vs 1 with the 28-step look-ahead). **Zero-noise CONTROL (8 episodes, 256 points): 27
+   strict two-mode (10.5%)** - identical copies diverge (0.006 mm after the chunk, GPU float differences between parallel
+   envs) and the closed-loop task amplifies it over ~200 steps. So run-to-end over-counts: the outcome over long horizons
+   is chaotic; only the excess over the control (~9% of points) is attributable to noise-sized errors, and a split that
+   only appears ~200 steps later is not something our filter (chunk + short imagined hold) can see or prevent. The
+   short look-ahead remains the measure aligned with the filter; by it these tasks have few forks at Jenga-level noise.
+   PPO run-to-end (56 / 224 strict) has no zero-noise control yet.
