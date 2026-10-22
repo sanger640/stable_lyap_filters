@@ -79,3 +79,16 @@ Held-out eval: seeds 4000-4023, every decision, exact + 32 noisy replays, generi
 relative to the start gripper position + gripper + start proprio. Imagined fork score h with the real branching noise
 model at s in {0.5, 1, 2} (cap log2 3). **Gate (as SafeManip): AUROC(-h, real fork) >= 0.7 AND imagined split rate at
 s = 1 on forks >= 2x non-forks.** If it passes: closed-loop filter tests (G-CEM with this world model), spec first.
+
+**Result (2026-10-22 03:50): FAIL.** 362 held-out points, 23 real forks; AUROC(-h, fork) = 0.54; imagined split rate at
+s = 1: forks 0.26 vs non-forks 0.14 (1.84x; bar 2x). Training: 7500 steps, final loss ~0.006.
+Diagnostic, after the result and not a gate: the same split test applied to the REAL latents of the 32 noisy replays
+also fires at non-forks (end of hold: forks 0.35 vs non-forks 0.31), while the largest real latent distance from the
+exact replay at the end of the hold separates forks well (AUROC 0.93). So the representation sees the outcome; the
+split statistic is the weak link on this task.
+
+### World-model check v2 (spec fixed 2026-10-22 04:00, before computing it; same model, no retraining)
+Score d = the largest distance, over 32 imagined noisy replays (real branching noise, s = 1), between the imagined
+end-of-hold latent and the imagined zero-noise replay's end-of-hold latent. Fresh held-out eval seeds 4100-4123 (data
+generated after this spec; same protocol as seeds 4000-4023). **Gate: AUROC(d, real fork) >= 0.7 on seeds 4100-4123.**
+Also reported, not gated: the same on seeds 4000-4023. If it passes: closed-loop filter spec next.

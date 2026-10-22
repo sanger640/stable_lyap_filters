@@ -36,7 +36,7 @@ STEPS, END_CHUNK, END_HOLD = 15, 3, 14          # model steps (2 actions each); 
 SCALES = (0.5, 1.0, 2.0, 3.0)
 H_CAP = float(np.log2(SCALES[-1]))
 N_IMAG = 32
-SEEDS = {"train": range(3000, 3100), "eval": range(4000, 4024)}
+SEEDS = {"train": range(3000, 3100), "eval": range(4000, 4024), "eval2": range(4100, 4124)}
 
 
 # ------------------------------------------------------------------------------------------------ data
@@ -76,7 +76,7 @@ def data_job(args):
     K = 5 if split == "train" else 33
     for k in range(30):
         plan = pol.plan(); chunk = plan[:H].copy()
-        if split == "eval" or k % 2 == 0:
+        if split != "train" or k % 2 == 0:
             snap = sim.snapshot(); pst = copy.deepcopy((pol.rng.bit_generator.state, pol.opened_on_pillar))
             frames, masks, acts, p0s, ends = [], [], [], [], []
             for b in range(K):
@@ -86,13 +86,13 @@ def data_job(args):
                 seq = [np.r_[chunk[j, :3] - nz[j], chunk[j, 3]] for j in range(H)] + [np.r_[chunk[-1, :3] - nz[-1], chunk[-1, 3]]] * HOLD
                 for i, a in enumerate(seq):
                     sim.execute(np.asarray(a, np.float32))
-                    if (split == "train" and i % 2 == 1) or (split == "eval" and i in (H - 1, H + HOLD - 1)):
+                    if (split == "train" and i % 2 == 1) or (split != "train" and i in (H - 1, H + HOLD - 1)):
                         f, m = cam(); fr.append(f); mk.append(m)
                 frames.append(np.stack(fr)); masks.append(np.stack(mk)); acts.append(np.stack(seq).astype(np.float32))
                 ends.append((P.body_pos(sim, "cube"), P.body_pos(sim, "pillar"), float(sim.block_diagnostics()["tilt"][1])))
             sim.restore(snap); pol.rng.bit_generator.state = pst[0]; pol.opened_on_pillar = pst[1]
             row = {"seed": seed, "t": k}
-            if split == "eval":
+            if split != "train":
                 (c_ex, p_ex, t_ex) = ends[0]
                 bad = [bool(c[2] < c_ex[2] - 0.02 or tl > t_ex + 45) for c, pp, tl in ends[1:]]
                 good = [bool(np.linalg.norm(c - c_ex) < 0.01 and np.linalg.norm(pp - p_ex) < 0.01) for c, pp, tl in ends[1:]]
@@ -180,7 +180,7 @@ def stage_pca():
 
 def stage_encode():
     lat = None
-    for split in ("train", "eval"):
+    for split in ("train", "eval", "eval2"):
         (ENC / split).mkdir(parents=True, exist_ok=True)
         for f in files(split):
             out = ENC / split / f"{f.parent.name}_{f.name}"
@@ -263,6 +263,33 @@ def stage_check():
     (OUT / "check_rows.json").write_text(json.dumps(res)); (OUT / "check_result.json").write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1))
 
+def stage_check2(split):
+    """v2 score d: largest imagined end-of-hold latent distance from the imagined zero-noise replay (s = 1)."""
+    import torch
+    import step3_world_model as wm
+    import uncertainty_monitor_dev as um
+    from wm_libero import auroc
+    _patch_wm()
+    model = wm.WorldModel.load(OUT / "model_PW.pt")
+    snippets = np.load(um.BENCH)["snippets"]; rng = np.random.default_rng(20261023); res = []
+    for f in sorted((ENC / split).glob("*.npz")):
+        d = np.load(f); r = json.loads(str(d["row"])); src = np.load(DATA / split / f.name.split("_", 1)[0] / f.name.split("_", 1)[1])
+        base = src["actions"][0]; p0 = src["proprio"][0]
+        nz = np.concatenate([np.zeros((1, H, 3)), snippets[rng.integers(len(snippets), size=N_IMAG)] * 2.0])
+        acts = np.repeat(base[None], N_IMAG + 1, 0); acts[:, :H, :3] -= nz; acts[:, H:, :3] -= nz[:, -1:]
+        inp = torch.as_tensor(model_inputs(acts, np.repeat(p0[None], N_IMAG + 1, 0)), device="cuda")
+        z = torch.as_tensor(d["z"][0, 0], device="cuda").float()[None].expand(N_IMAG + 1, -1, -1, -1).contiguous()
+        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+            for t in range(STEPS):
+                z = model.step(z, inp[:, t]).float()
+        e = z.reshape(N_IMAG + 1, -1)
+        res.append({"file": f.name, "d": float((e[1:] - e[0]).norm(dim=1).max()), "n_bad": r["n_bad"], "fork": r["fork"]})
+    fork = np.array([x["fork"] for x in res]); dd = np.array([x["d"] for x in res])
+    out = {"split": split, "points": len(res), "real_forks": int(fork.sum()), "AUROC_d_vs_fork": auroc(dd, fork)}
+    out["gate_pass"] = bool(split == "eval2" and fork.any() and out["AUROC_d_vs_fork"] >= 0.7)
+    (OUT / f"check2_{split}_rows.json").write_text(json.dumps(res)); (OUT / f"check2_{split}_result.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1))
+
 
 if __name__ == "__main__":
     st = sys.argv[1]
@@ -270,5 +297,7 @@ if __name__ == "__main__":
         stage_data(sys.argv[2], *(sys.argv[3:4] or []))
     elif st == "ens":
         stage_ens(int(sys.argv[2]))
+    elif st == "check2":
+        stage_check2(sys.argv[2])
     else:
         {"pca": stage_pca, "encode": stage_encode, "train": stage_train, "check": stage_check}[st]()
