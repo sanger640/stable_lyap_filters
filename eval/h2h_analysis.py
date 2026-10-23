@@ -9,9 +9,11 @@ import sys
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-STAGE = "h2h"
-A = json.loads((ROOT / "results/jenga/outcome_audit_h2h.json").read_text())
-ARMS = {"policy": "record", "G_CEM": "cbfg", "hold_replan": "cbfh", "LSF_hold": "lsfh000"}
+import os
+STAGE = os.environ.get("H2H_STAGE", "h2h")                                  # h2h2 = head-to-head 2 (lsf_h2h2_protocol.json)
+A = json.loads((ROOT / f"results/jenga/outcome_audit_{STAGE}.json").read_text())
+ARMS = ({"policy": "record", "G_CEM": "cbfg", "LSF": "lsfe010"} if STAGE == "h2h2"
+        else {"policy": "record", "G_CEM": "cbfg", "hold_replan": "cbfh", "LSF_hold": "lsfh000"})
 V = {a: {r["ep"]: r for r in A[f"paired_{run}_{STAGE}"]["rows"]} for a, run in ARMS.items()}
 EPS = sorted(set.intersection(*(set(v) for v in V.values())))
 KEYS = ("topple", "v4_success", "v4b_success")
@@ -39,11 +41,14 @@ def noninf(a, b):
     return r
 
 
-out = {"stage": STAGE, "exploratory": True, "episodes": len(EPS),
+out = {"stage": STAGE, "exploratory": STAGE != "h2h2", "episodes": len(EPS),
        "counts": {a: {"topples": int(vec(a, "topple").sum()), "v4": int(vec(a, "v4_success").sum()),
                       "v4b": int(vec(a, "v4b_success").sum())} for a in ARMS}}
-out["PRIMARY_G_vs_LSF_hold"] = noninf("G_CEM", "LSF_hold")          # (1) non-inferiority; (2) topple McNemar inside
-out["trigger_hold_replan_vs_LSF_hold"] = noninf("hold_replan", "LSF_hold")
-for a in ("G_CEM", "hold_replan", "LSF_hold"):
+if STAGE == "h2h2":
+    out["PRIMARY_G_vs_LSF"] = noninf("G_CEM", "LSF")
+else:
+    out["PRIMARY_G_vs_LSF_hold"] = noninf("G_CEM", "LSF_hold")          # (1) non-inferiority; (2) topple McNemar inside
+    out["trigger_hold_replan_vs_LSF_hold"] = noninf("hold_replan", "LSF_hold")
+for a in [x for x in ARMS if x != "policy"]:
     out[f"{a}_vs_policy"] = {k: paired(a, "policy", k) for k in KEYS}
-(ROOT / "results/jenga/lsf_h2h_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+(ROOT / f"results/jenga/lsf_{STAGE}_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
