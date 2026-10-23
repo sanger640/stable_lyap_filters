@@ -1,0 +1,17 @@
+{
+ "name": "Fork-distance CBF with a decrease condition (early-warning trend) in closed loop (docs/LITERATURE_PLAN.md step 2)",
+ "written": "2026-10-23 ~11:15, after the exploratory trend analysis on the margin-check rows (policy-alone episodes of ocem_cl: relative d<=2 OR (d fell since the previous decision and d<=4) -> alarms 12.7% on safe episodes, topples warned >= 3 chunks ahead 87% vs 48% for the G trigger) and BEFORE the 3x-margin result (margin3_protocol) is seen",
+ "episodes": "19800-20099 (300, never used)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg": "G-CEM, unchanged",
+  "cbfg3m": "G-CEM with the 3x margin (as margin3_protocol)",
+  "cbfgtr": "G-CEM with the fork-distance CBF trigger: scales 0.5 / 1 / 2 / 3 / 4 evaluated (8 = none); act if h_plan < min(h_hold, log2 3) (level, unchanged) OR [h_plan < h_plan at the previous decision AND h_plan <= log2 4 AND h_plan < h_hold] (decrease condition) OR o > O_MAX; when acting on the decrease condition, the certificate requires h >= min(h_hold, max(log2 3, h_previous)); same G-CEM optimiser, ensemble certificate and hold fallback"
+ },
+ "settings": "as ocem_cl / margin3: stress layouts (shrink 10 mm), settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max; model_OIL; Rorqual cluster/paired_array.sbatch, all arms of an episode in the same job.",
+ "outcome": "neighbour topples (primary), v4 and v4b success, by eval/outcome_audit.py",
+ "primary": "cbfgtr vs cbfg, paired by episode: (1) fewer neighbour topples, exact McNemar one-sided, alpha 0.05; (2) success v4 non-inferior: one-sided 95% lower bound of (cbfgtr - cbfg) > -5 pp (paired bootstrap). Adopt only if both pass.",
+ "secondary": "cbfgtr vs cbfg3m and cbfg3m vs cbfg (topples McNemar one-sided; v4 / v4b bootstrap); each vs the policy; interventions per episode; share of trend-triggered interventions.",
+ "analysis": "eval/ocl_analysis.py with CL_TAG=tr CL_ARMS='record cbfg cbfg3m cbfgtr' CL_PRIMARY=cbfgtr,cbfg",
+ "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms."
+}
