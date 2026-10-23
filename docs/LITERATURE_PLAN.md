@@ -132,3 +132,15 @@ needs a fresh pre-registered test.
   | CVaR 10% | 0.791 / 0.787 | 0.671 / 0.671 |
 
   The single most extreme imagined future is the most informative; the max stays. Closed.
+- **Selector ceiling (exploratory, same rows).** Within-state concordance at 64 / 256 futures:
+
+  | ranking | dev | relpass |
+  |---|---|---|
+  | fork scale h first, then the disturbance max (lexicographic) | 0.75 / 0.72 | 0.70 / 0.72 |
+  | disturbance max alone | 0.79 / 0.81 | 0.68 / 0.74 |
+  | max then h | 0.79 / 0.81 | 0.69 / 0.74 |
+
+  No readout combination ranks chunks within a state beyond about 0.74-0.81. Choosing among nearby chunks is at its
+  ceiling, so the lever is WHEN the filter acts (steps 1-2), not WHICH chunk it picks.
+- **Step 2 pre-registered:** results/jenga/trend_protocol.json (episodes 19800-20099). Arms: policy, G-CEM, 3x margin,
+  trend. Launched on Rorqual 2026-10-23 ~11:15, before the margin result.
