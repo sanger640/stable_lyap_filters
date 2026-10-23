@@ -82,6 +82,48 @@ Compared with the world model's scores (rank_check) against real risk, on the sa
 - real-full ranks better than real-PCA8 -> the representation is too;
 - even real-full ranks badly -> the criterion (fork + disturbance) is wrong for ranking chunks.
 
+### 1g. Decomposition results (2026-10-22 night; results/jenga/deep_dive/)
+Within-state concordance: the share of chunk pairs from the same state, differing by >= 2 of 32 futures in real risk,
+that a readout orders correctly (ties excluded). Every chunk is scored as chunk + hold tail, the actions the truth
+executes.
+
+| set | readout | world model (model_OIL) | real futures, PCA8 | real futures, full tokens |
+|---|---|---|---|---|
+| dev (150 decisions, 1350 chunks; real: 10 decisions) | h | 0.72 (190/74) | 0.71 | 0.14 (2/12, few pairs) |
+| dev | o | 0.80 (476/116) | 0.73 | 0.59 |
+| relpass, same chunks (38+ decisions) | h | 0.83 (72/15) | 0.70 (52/22) | 0.68 (58/27) |
+| relpass, same chunks | o | 0.67 (82/40) | 0.66 (81/41) | 0.65 (79/43) |
+
+- relpass, all 403 decisions, world model: h concordance 0.80; pooled AUROC 0.76 (h), 0.70 (o). Certified
+  (absolute) chunks carry real risk 2.8%, uncertified ones 11.4%.
+- Reading 1: the world model is NOT worse than real futures at ranking chunks under this criterion. The criterion
+  itself (fork + disturbance from about 32 futures) is a noisy, moderate ranker even on exact futures (0.65-0.75).
+- Reading 2 (dev, by arm): the free-offset optimisers' chunks (s2_cem / s2e_cem / s2e_grad) have real risk 5.7-7.6%,
+  yet the world model certifies 87-90% of them (hold: 0.5% risk, 92% certified). The model is fooled by large
+  off-distribution edits; G's coarse family stays nearer the data.
+- Reading 3 (dev, 10 decisions with both): real futures fork much more than imagined ones (hold h 1.0 real vs 1.585
+  imagined). The learned model under-imagines branching, the "erased branching" seen before.
+- Reading 4 (relpass): of G-CEM's 136 certified-and-changed edits, 124 also certify as chunk + hold (real risk 4.6%,
+  about the policy's); the 12 certified only through the 15-step plan carry 16.9%. Choosing among {policy, edit,
+  hold} by the chunk + hold certificate gives 5.95% vs policy 5.06%. At these hard states, a ranking accuracy of
+  0.7-0.8 is not enough to find a reliably safer chunk.
+
+**Where this leaves the diagnosis.**
+1. Not the representation: full tokens don't rank better than PCA8 on real futures.
+2. Not mainly a dynamics bug: the model ranks about as well as real futures.
+3. The limits are:
+   - (a) the criterion's statistical resolution: a fork test on about 32 futures is a coarse risk estimate;
+   - (b) model exploitation by unconstrained edits, which needs a trust region / data support;
+   - (c) under-imagined branching, which makes the model optimistic.
+
+**Implications for the rebuild.**
+- Use continuous readouts with a margin rather than a binary certificate.
+- Stay inside the edit support the model was trained on.
+- Correct the optimism: calibrate thresholds on the model's own scale, and/or train the model on more branching
+  (counterfactual) data.
+- The full-token DINO-WM is still worth testing as the off-the-shelf model (step 2). The gate is improvement on
+  these ranking numbers, not on token fidelity.
+
 ## 2. Plan (each step gated offline on benchmark v2 real risk before any closed loop)
 1. Decomposition (1f) + ranking test -> decide where to spend.
 2. World model: DINO-WM recipe (off-the-shelf architecture and code, vendored), full DINOv2 tokens, proprio + actions.
