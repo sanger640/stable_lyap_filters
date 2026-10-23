@@ -94,6 +94,8 @@ def main(name):
             r = {"i": i, "arm": a, "risk": d[a][1]}
             for n in NS:
                 x = o[j, :n]
+                xs = np.sort(x)[::-1]
+                r.update({f"o_cvar{a}_{n}": float(xs[:max(1, int(round(a / 100 * n)))].mean()) for a in (2, 5, 10)})
                 r.update({f"o_max_{n}": float(x.max()), f"o_mean_{n}": float(x.mean()), f"o_q90_{n}": float(np.quantile(x, 0.9)),
                           f"o_exc_{n}": float((x > O_MAX).mean()), f"h_{n}": float(hs[n][j])})
             rows.append(r)
@@ -105,8 +107,8 @@ def analyse(name):
     import tok_rank as tr
     R = json.loads((D / f"res_{name}_rows.json").read_text())
     out = {"set": name, "chunks": len(R), "decisions": len({r["i"] for r in R}), "exploratory": True}
-    for k in ("o_max", "o_mean", "o_q90", "o_exc", "h"):
-        out[k] = {n: tr.conc(R, f"{k}_{n}", -1 if k == "h" else 1) for n in NS}
+    for k in ("o_max", "o_cvar2", "o_cvar5", "o_cvar10", "o_mean", "o_q90", "o_exc", "h"):
+        out[k] = {n: tr.conc(R, f"{k}_{n}", -1 if k == "h" else 1) for n in NS if f"{k}_{n}" in R[0]}
     (D / f"res_{name}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 

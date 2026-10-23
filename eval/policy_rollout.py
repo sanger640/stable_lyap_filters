@@ -319,6 +319,15 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "hold"; cbff.CFG["HOLD_GRIP"] = False
         cbff.CFG["TRIGGER"] = "random"; cbff.CFG["RAND_P"] = 1463 / 14973
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfgtr":                       # fork-distance CBF with decrease condition (docs/LITERATURE_PLAN.md step 2): G-CEM fix;
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"      # scales 0.5..4 evaluated (8 = none), level h_safe log2 3, trend up to h <= log2 4
+        import cbf_barrier
+        import cbf_filter as cbff
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0, 8.0)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "g3"; cbff.CFG["TRIGGER"] = "trend"; cbff.CFG["TREND_MAX"] = 2.0
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfg3m", "cbfo3m"):           # larger barrier margin (docs/FILTER_DEEP_DIVE.md 5c): no fork up to 3x the errors,
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # scales (0.5, 1, 2, 3, 4), h_safe = log2 4, in trigger AND certificate

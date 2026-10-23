@@ -23,7 +23,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-CFG = {"O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "N_LOOK": 15,
+CFG = {"TREND_MAX": 2.0, "O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "N_LOOK": 15,
        # variants (2026-10-15 diagnosis): TRIGGER "both" = barrier or regime check can trigger (final-test filter),
        # "barrier" = only the barrier triggers (regime check still screens candidates); SELECT "closest" = closest feasible
        # candidate (final-test filter), "margin" = largest barrier among feasible candidates, then closest
@@ -195,6 +195,17 @@ class CBF:
         if CFG["TRIGGER"] == "random":       # matched-rate baseline: act at random decisions (same fix procedure)
             if not (self.trig_rng.random() < CFG["RAND_P"]):
                 return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
+        elif CFG["TRIGGER"] == "trend":      # fork-distance CBF with a decrease condition (docs/LITERATURE_PLAN.md step 2):
+            if k <= getattr(self, "_last_k", -1):     # act if h < min(h_hold, H_SAFE) (level), OR h fell since the previous
+                self._prev_h = None                   # decision while h <= TREND_MAX and h < h_hold (early-warning trend);
+            self._last_k = k                          # the fix must then restore h >= min(h_hold, max(H_SAFE, h_prev))
+            prev, self._prev_h = getattr(self, "_prev_h", None), float(h_nom)
+            lvl = h_nom < min(h_now, CFG["H_SAFE"]) - 1e-9
+            trd = prev is not None and h_nom < prev - 1e-9 and h_nom <= CFG["TREND_MAX"] + 1e-9 and h_nom < h_now - 1e-9
+            info.update({"h_prev": prev, "trend": bool(trd and not lvl)})
+            if not (lvl or trd or o_nom > (CFG["O_MAX"] if CFG["O_MAX"] is not None else np.inf)):
+                return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
+            self._req = max(CFG["H_SAFE"], prev) if (trd and not lvl) else CFG["H_SAFE"]
         elif CFG["TRIGGER"] == "abs":        # absolute trigger (O-CEM closed loop): also act at relative passes
             if self.ok(np.array([h_nom]), np.array([o_nom]), CFG["H_SAFE"])[0]:
                 return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
@@ -229,7 +240,13 @@ class CBF:
                                         for e in range(4)]
             p16 = np.asarray(plan, np.float32).copy(); p16[0, :3] = sim.target
             P = opt3.Problem(self.mon, self, sim, z0, p16, float(h_now), self._certs); P.cbf_O_MAX = CFG["O_MAX"]
-            best, oi = opt3.solve_cem(P, int(self.mon.rng.integers(2 ** 31)))
+            saved = CFG["H_SAFE"]
+            if CFG["TRIGGER"] == "trend":
+                CFG["H_SAFE"] = self._req                 # certificate level for this decision (restored below)
+            try:
+                best, oi = opt3.solve_cem(P, int(self.mon.rng.integers(2 ** 31)))
+            finally:
+                CFG["H_SAFE"] = saved
             out = np.asarray(best, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
             return out, {**info, "intervened": True, "abstained": False, **oi, "fix_kind": oi["kind"], "kind": "g3",
                          "progress": round(opt3.progress(p16, best), 3), "seconds": round(time.time() - t0, 2)}
