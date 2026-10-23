@@ -23,7 +23,10 @@ import bench2 as b2  # noqa: E402
 CFG = {**opt2.CFG, "CEM_POP": 16, "CEM_ITERS": 3, "CEM_ELITES": 6, "CEM_FINAL": 4, "CEM_SD": [0.4, 3.0, 0.4, 12.0],
        "G_STARTS": 6, "G_STEPS": 15, "G_LR": [0.05, 0.4, 0.05, 1.5], "B_MIN_MOVE_MM": 2.0,
        "GRIP": os.environ.get("OPT3_GRIP", "fixed"),                              # fixed = G, warp = G2, shift = G-grip
-       "GRIP_COST": 2.0, "GRIP_SD": 3.0}                                          # shift: cost per step^2 (= a 5 mm offset over 8 steps)
+       "GRIP_COST": 2.0, "GRIP_SD": 3.0,                                          # shift: cost per step^2 (= a 5 mm offset over 8 steps)
+       "OBJ": os.environ.get("OPT3_OBJ", "cost"),     # cost = G (cheapest certified); o = GO: min o + LAMBDA_O * cost over certified + hold
+       "LAMBDA_O": float(os.environ.get("OPT3_LAMBDA_O", 0.003)),                 # (docs/FILTER_DEEP_DIVE.md 5f; = O-CEM's dev choice)
+       "MARGIN": os.environ.get("OPT3_MARGIN", "2")}                              # 3 = no fork up to 3x (as closed-loop cbfg3m)
 LO, HI = np.array([0.0, 0.0, 0.0, 0.0]), np.array([1.0, 8.0, 1.0, 30.0])
 IDENTITY = np.array([1.0, 0.0, 1.0, 0.0])
 if CFG["GRIP"] == "shift":                                                        # 5th knob: gripper timing d in [-4, 8] steps
@@ -81,15 +84,48 @@ def solve_cem(P, seed):
         h, o = P.score([P.plan(th) for th in T], CFG["N_SEARCH"])
         P.mon.rng.bit_generator.state = state
         ok = P.cbf.ok(h, o, P.h_hold); cost = np.array([P.cost(th) for th in T])
-        key = [(0 if ok[c] else 1, cost[c] if ok[c] else -h[c], 0 if ok[c] else o[c]) for c in range(len(T))]
+        obj = cost if CFG["OBJ"] == "cost" else o + CFG["LAMBDA_O"] * cost
+        key = [(0 if ok[c] else 1, obj[c] if ok[c] else -h[c], 0 if ok[c] else o[c]) for c in range(len(T))]
         order = sorted(range(len(T)), key=lambda c: key[c])
         el = T[order[:CFG["CEM_ELITES"]]]
         mu, sd = el.mean(0), np.maximum(el.std(0), 0.02 * (HI - LO))
         pool += [(key[c], T[c]) for c in order[:CFG["CEM_FINAL"]]]
     pool.sort(key=lambda x: x[0])
     finals = [th for _, th in pool[:CFG["CEM_FINAL"]]]
-    out, info = opt2.finish(P, finals, {"search_certified": int(sum(k[0] == 0 for k, _ in pool))})
+    if CFG["OBJ"] == "o":
+        out, info = finish_o(P, finals, {"search_certified": int(sum(k[0] == 0 for k, _ in pool))})
+    else:
+        out, info = opt2.finish(P, finals, {"search_certified": int(sum(k[0] == 0 for k, _ in pool))})
     return out, {**info, "theta": _chosen(P, out, finals)}
+
+
+def finish_o(P, finals, extra):
+    """GO: certify the finals AND hold (gripper held at its current command) with fresh draws on every certifier model;
+    among the certified, minimise the pessimistic imagined disturbance (max o over models) + LAMBDA_O * change cost.
+    None certified -> as opt2.finish (best (h, -o) among the finals)."""
+    plans = [P.plan(th) for th in finals]
+    hold = np.repeat(np.r_[P.sim.target, P.p0[0, 3]][None], 16, 0).astype(np.float32)
+    ok, H, Os = None, None, []
+    for k, m in enumerate(P.cert_models):
+        if m is not None:
+            saved, P.mon.model = P.mon.model, m
+        h, o = P.score(plans + [hold], opt2.CFG["N_CERT"])
+        if m is not None:
+            P.mon.model = saved
+        okk = P.cbf.ok(h, o, P.h_hold); ok = okk if ok is None else ok & okk; Os.append(o)
+        if k == 0:
+            H = h
+    O = np.max(np.stack(Os), 0)
+    costs = np.array([P.cost(th) for th in finals] + [opt2.Problem.cost(P, hold[1:9, :3] - P.p0[1:9, :3])])
+    J = O + CFG["LAMBDA_O"] * costs
+    if ok.any():
+        j = int(np.flatnonzero(ok)[np.argmin(J[ok])])
+        out, kind = (plans + [hold])[j], ("certified_hold" if j == len(finals) else "certified")
+    else:
+        j = int(np.lexsort((O[:-1], -H[:-1]))[0]); out, kind = plans[j], "fallback_best"
+    change = float(np.abs(out[1:9, :3] - P.p0[1:9, :3]).max() * 1000)
+    return out, {"kind": kind, "n_certified": int(ok[:-1].sum()), "hold_certified": bool(ok[-1]), "n_final": len(finals),
+                 "change_mm": round(change, 1), "cost": round(float(costs[j]), 2), "O": round(float(O[j]), 4), **extra}
 
 
 def solve_grad(P, seed):
@@ -165,12 +201,16 @@ def run(solver, name, tag):
     import cem_filter as cf
     import inspector_data as insp
     import step3_world_model as wm
+    if CFG["MARGIN"] == "3":                                                    # as policy_rollout cbfg3m
+        import cbf_barrier
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0); opt2.HS = float(np.log2(4.0))
     cbff.CFG["H_SAFE"] = opt2.HS
     C, R = b2.load(name); n = int(os.environ.get("OPT2_LIMIT", len(R)))
+    si, sn = (int(x) for x in os.environ.get("OPT3_SHARD", "0/1").split("/"))     # cluster shard: decisions si, si + sn, ...
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
     certs = [None] + ([wm.WorldModel.load(ROOT / f"results/program_b/ens_v1/model_ENS{k}.pt") for k in range(4)] if CFG["CERT"] == "OIL+ENS" else [])
     out, t0 = [], time.time()
-    for i in range(n):
+    for i in range(si, n, sn):
         t1 = time.time()
         sim.restore((C["state"][i], C["ctrl"][i], C["target"][i], float(C["gripper"][i])))
         z0 = torch.as_tensor(C["z0"][i].astype(np.float32), device="cuda")
@@ -184,7 +224,8 @@ def run(solver, name, tag):
                     "chunk": plan[1:9].astype(np.float32).tolist()})
         if i % 10 == 0:
             print(f"G-{solver} {i + 1}/{n} {time.time() - t0:.0f}s {info['kind']} theta {info['theta']} {out[-1]['seconds']} s", flush=True)
-    (b2.OUT / f"opt3_{name}_{tag}.json").write_text(json.dumps({"cfg": CFG, "solver": solver, "rows": out}))
+    (b2.OUT / (f"opt3_{name}_{tag}.json" if sn == 1 else f"opt3_{name}_{tag}.part{si}.json")).write_text(
+        json.dumps({"cfg": CFG, "solver": solver, "rows": out}))
     print("done", len(out), f"{time.time() - t0:.0f}s", flush=True)
 
 

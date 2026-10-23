@@ -1,0 +1,10 @@
+{
+ "name": "GO-CEM offline gate: G-CEM certificate as constraint, imagined disturbance as objective (docs/FILTER_DEEP_DIVE.md 5f)",
+ "written": "2026-10-23 ~21:30, before any GO-CEM run; after the exploratory red-fall analyses (redfall_check, red_readout on benchmark v2 dev + holdout closed-gripper decisions, which motivated it)",
+ "method": "eval/opt3.py with OPT3_OBJ=o OPT3_MARGIN=3 OPT2_CERT=OIL+ENS: same CEM over (speed, pause, amplitude, back-off), same certificate (no fork up to 3x relative to hold, o <= O_MAX, all 5 models); certified candidates ranked by o + LAMBDA_O * change cost instead of change cost; hold (gripper held) competes as a candidate under the same certificate; LAMBDA_O = 0.003 (O-CEM's dev choice, fixed in advance).",
+ "set": "m3int (eval/go_bench.py prep): one seeded random intervention decision (before any topple) per episode of the margin test's adopted arm paired_cbfg3m_m3 (episodes 19500-19799), never used offline. Truth: benchmark v2 (exact simulator, 32 futures, neighbour topple + red block fallen), chunk + hold tail.",
+ "baseline": "the chunk G-CEM-3x executed in closed loop at that decision (g3_executed).",
+ "primary": "GO - g3_executed, paired per decision, bootstrap one-sided 95%: red-fall risk upper bound < 0 AND neighbour risk upper bound <= +0.25 pp. Pass -> closed-loop test GO-3x vs G-CEM-3x (pre-registered separately).",
+ "secondary": "the same split by gripper closed / open; GO kinds (certified / certified_hold / fallback); seconds per decision; offline G-CEM-3x re-run (OPT3_OBJ=cost) vs GO if run.",
+ "analysis": "python3 eval/go_bench.py report go -> results/jenga/go_offline_result.json"
+}
