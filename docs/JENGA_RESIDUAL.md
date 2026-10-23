@@ -35,3 +35,16 @@ policy's chunk)?
   episodes. If H1 fails: the relative rule stays, and the gap is reported as a limitation (the fix has no safer move
   from those states).
 - Descriptive: certification rate, kinds, progress kept, red-fall risk, hold vs policy.
+
+**Result (2026-10-22 ~21:00; results/program_b/bench2/report_relpass_abs.json): H1 FAIL, H2 FAIL.** 403 decisions.
+- Real neighbour risk: policy 5.06%, hold 6.82%, G-abs 7.72%.
+  - G-abs minus policy: +2.65 pp (p one-sided 0.9995; better 75 / worse 73).
+  - G-abs minus hold: +0.90 pp (upper +2.42 > +0.5).
+- G-abs kinds: certified 220, fallback_best 168, fallback_hold 15. Median progress kept 0.93.
+- By kind (exploratory):
+  - certified and unchanged (< 1 mm, 84): 0.1% vs 0.1%;
+  - certified and changed (136, median 5.5 mm): G 5.7% vs policy 4.3%;
+  - fallback_best (168): G 13.8% vs policy 8.5%.
+- Reading: the relative rule stays. These states are genuinely risky (5.1% vs 0.3% for absolute passes), but the
+  certificate cannot find safer chunks: chunks it certifies after modification are riskier than the policy's own.
+  The bottleneck is the certificate's ranking of nearby chunks, not the rule. Follow-up: docs/FILTER_DEEP_DIVE.md.
