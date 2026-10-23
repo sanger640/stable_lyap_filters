@@ -1,6 +1,7 @@
 """Formulation G (docs/OPT_FILTER_REDESIGN.md, pre-registered 2026-10-17): optimise 4 coarse, universal transformations
 of the ONE given chunk instead of free mm offsets. theta = (v speed in [0,1], k pause steps in [0,8], s amplitude in [0,1],
-b back-off mm in [0,30] along the reverse of the chunk's own net direction). Gripper untouched. Certificate, cost and
+b back-off mm in [0,30] along the reverse of the chunk's own net direction). Gripper untouched (OPT3_GRIP=shift adds a 5th knob,
+d in [-4, 8]: the policy's gripper sequence shifted by round(d) steps, cost GRIP_COST d^2; docs/LITERATURE_PLAN.md step 6). Certificate, cost and
 fallback as formulation F (eval/opt2.py). Solvers: cem | grad (separate).
 
 usage: python3 eval/opt3.py run <cem|grad> <dev|holdout> <tag> ; truth <set> <tag> ; report <set> <tag>
@@ -21,9 +22,13 @@ import bench2 as b2  # noqa: E402
 
 CFG = {**opt2.CFG, "CEM_POP": 16, "CEM_ITERS": 3, "CEM_ELITES": 6, "CEM_FINAL": 4, "CEM_SD": [0.4, 3.0, 0.4, 12.0],
        "G_STARTS": 6, "G_STEPS": 15, "G_LR": [0.05, 0.4, 0.05, 1.5], "B_MIN_MOVE_MM": 2.0,
-       "GRIP": os.environ.get("OPT3_GRIP", "fixed")}                              # fixed = G, warp = G2
+       "GRIP": os.environ.get("OPT3_GRIP", "fixed"),                              # fixed = G, warp = G2, shift = G-grip
+       "GRIP_COST": 2.0, "GRIP_SD": 3.0}                                          # shift: cost per step^2 (= a 5 mm offset over 8 steps)
 LO, HI = np.array([0.0, 0.0, 0.0, 0.0]), np.array([1.0, 8.0, 1.0, 30.0])
 IDENTITY = np.array([1.0, 0.0, 1.0, 0.0])
+if CFG["GRIP"] == "shift":                                                        # 5th knob: gripper timing d in [-4, 8] steps
+    LO, HI, IDENTITY = np.r_[LO, -4.0], np.r_[HI, 8.0], np.r_[IDENTITY, 0.0]      # (> 0 delays the policy's open/close)
+    CFG["CEM_SD"] = CFG["CEM_SD"] + [CFG["GRIP_SD"]]
 
 
 def transform(p16, theta):
@@ -42,6 +47,9 @@ def transform(p16, theta):
         q = q - b[..., None] * ramp * (net / nrm)
     if CFG["GRIP"] == "warp":                                                     # G2: gripper follows the arm's plan time
         g = p16[:, 3][tau.detach().round().long()][..., None]
+    elif CFG["GRIP"] == "shift":                                                  # G-grip: the policy's gripper sequence shifted by d
+        d = theta[:, 4:5].detach().round()
+        g = p16[:, 3][(t - d).clamp(0, 15).long()][..., None]
     else:                                                                         # G: gripper on the policy's clock
         g = p16[None, :, 3:].expand(len(theta), -1, -1)
     return torch.cat([q, g], -1)
@@ -60,14 +68,15 @@ class Problem(opt2.Problem):
         return transform(self.p0t.double(), torch.as_tensor(np.asarray(th, np.float64))[None])[0].numpy().astype(np.float32)
 
     def cost(self, th):
-        return super().cost(self.plan(th)[1:9, :3] - self.p0[1:9, :3])
+        c = super().cost(self.plan(th)[1:9, :3] - self.p0[1:9, :3])
+        return c + (CFG["GRIP_COST"] * round(float(th[4])) ** 2 if CFG["GRIP"] == "shift" else 0.0)
 
 
 def solve_cem(P, seed):
     rng = np.random.default_rng(seed); sd0 = np.array(CFG["CEM_SD"])
     mu, sd = IDENTITY.copy(), sd0.copy(); pool = []
     for it in range(CFG["CEM_ITERS"]):
-        T = np.clip(mu + sd * rng.standard_normal((CFG["CEM_POP"], 4)), LO, HI)
+        T = np.clip(mu + sd * rng.standard_normal((CFG["CEM_POP"], len(LO))), LO, HI)
         state = P.mon.rng.bit_generator.state
         h, o = P.score([P.plan(th) for th in T], CFG["N_SEARCH"])
         P.mon.rng.bit_generator.state = state

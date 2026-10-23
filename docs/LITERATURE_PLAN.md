@@ -73,6 +73,19 @@ value learned from our own certificate) failed because cheap backups certify alm
   outcome bifurcations.
 - "Certified World Models" (arXiv 2606.13092): learned models can match one-step error yet get multi-step growth
   rates wrong, and local sensitivity spectra can be uninformative in near-neutral contact tasks.
+- **Bateman, ..., Fisac, Shah, "Training Controllable World Models via Action Influence Maximization" (AIM)** (CoRL 2026,
+  arXiv 2610.27387).
+  - Theorem 3.1: the action information a model can explain is upper-bounded by the dataset's I(A; S' | S). Expert-only data
+    caps controllability, whatever the model's capacity.
+  - Low-data models reproduce the data policy's modes regardless of the action.
+  - AIM collects data with a reward of inverse-dynamics MI plus state coverage.
+  - Push-T: 3K demos plus 500 AIM episodes beat 300K expert episodes on end-effector recall (joint recall 0.34 vs 0.22).
+  - Their learned reward is high far outside the workspace, so they need a KL / AWR trust region (cf. our 1g free-offset
+    exploitation).
+  - **Mapping:** the fork test is only as good as the WM's action influence at near-bifurcation states. This explains the
+    V-JEPA 2-AC result (trained on goal-directed data) and the TokWM result (more capacity, same data). If step 5 is
+    reached, the data lever is to collect counterfactual chunks where the monitor says outcomes are action-sensitive
+    (fork states), and to gate on explained action information there.
 - **Our evidence:**
   - V-JEPA 2-AC zero-shot erases branching;
   - DINO-WM full tokens fine-tuned on 1100 counterfactual states ranks chunks no better than model_OIL
@@ -119,6 +132,18 @@ needs a fresh pre-registered test.
 5. **World model:** only if a gate points to the model. Candidates:
    - stochastic latent model (latent diffusion over DINOv2, LaDi-WM style) to represent branching;
    - error-adaptive pessimism ("When World Models Lie").
+
+6. **Gripper in the formulation** (queued after steps 1-2; user request 2026-10-23).
+   - Motivation: the method should not be arm-only. On Jenga the risk comes from arm motion, so re-timing the gripper (G2)
+     gave nothing, but in placing, pouring and handover the open/close event is often the fragile one.
+   - Monitor: add gripper-timing jitter (open/close shifted by a few steps) to the imagined errors, so the fork test also
+     asks whether the outcome is sensitive to WHEN the grip changes. The WM already takes the gripper command as input.
+   - Fix: add a gripper-timing knob (delay / advance the policy's open/close by k steps) to G-CEM's theta. "Don't change
+     grip yet" is the cautious end of that knob, as hold is for the arm.
+   - Gate (Jenga, offline, benchmark v2 dev / holdout real risk): no harm vs G-CEM. Expected: no harm, little gain on Jenga.
+     Its value is that the general formulation covers the gripper.
+7. **Second task (later): pouring or handover**, where fragility sits at contact-mode changes. Due diligence first: fork
+   prevalence and offline detection before building anything.
 
 ## 4. Results log
 - **Step 3 (CVaR tail barrier), offline gate: no gain** (results/jenga/deep_dive/res_{dev,relpass}.json).

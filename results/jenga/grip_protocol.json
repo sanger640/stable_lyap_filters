@@ -1,0 +1,11 @@
+{
+ "name": "G-grip: gripper-timing knob in G-CEM (docs/LITERATURE_PLAN.md step 6a)",
+ "written": "2026-10-23, before any G-grip decision was scored",
+ "change": "OPT3_GRIP=shift: theta gets a 5th knob d in [-4, 8] steps; the policy's gripper sequence is shifted by round(d) (d > 0 delays the open/close, d < 0 advances it); cost += GRIP_COST * round(d)^2 with GRIP_COST = 2 (one step = a uniform 5 mm offset over 8 steps); CEM sd 3. Everything else as G-CEM (OIL+ENS certificate, hold fallback). Fixed a priori, no tuning.",
+ "baseline": "stored G-CEM runs opt3_{dev,holdout}_g_cem.json (re-run of the first 6 dev decisions is bit-identical, checked 2026-10-23)",
+ "sets": "benchmark v2 dev (150) and holdout (150); real risk = exact simulator, 32 paired futures per chunk",
+ "primary_holdout": "non-inferiority, paired per decision vs G-CEM: neighbour-risk difference one-sided 95% upper bound <= +0.25 pp AND red-block-fall difference upper bound <= +1.0 pp",
+ "dev": "same quantities reported; dev is a sanity check only (no parameter is chosen on it)",
+ "secondary": ["share of decisions with d != 0", "risk differences on decisions whose plan contains a gripper event", "relpass2 (exploratory)"],
+ "decision": "If the holdout primary passes, G-grip becomes the general formulation (the gripper is in the method). A closed-loop test follows only if G-grip also lowers neighbour or red-fall risk on BOTH dev and holdout."
+}
