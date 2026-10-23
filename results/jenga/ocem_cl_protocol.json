@@ -1,0 +1,16 @@
+{
+ "name": "O-CEM closed loop vs G-CEM on Jenga (docs/FILTER_DEEP_DIVE.md section 3, follow-up)",
+ "written": "2026-10-23 ~02:00, after O-CEM dev + holdout (H1 PASS) and BEFORE the relpass2 (H2) result is seen; runs only if H2 passes",
+ "episodes": "19000-19299 (300, never used)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg": "G-CEM (Stage 4 / head-to-head 2 arm, unchanged): relative fork trigger, G transformations, ensemble certificate, hold fallback",
+  "cbfoa": "O-CEM: ABSOLUTE trigger (act if h_nom < log2 3 or o_nom > O_MAX, i.e. also at relative passes); fix = CEM over G's box minimising imagined disturbance o + 0.003 * cost, final pick pessimistic over OIL + ENS0-3 (eval/opt4.py solve; LAMBDA 0.003 chosen on dev); no hold fallback",
+  "cbfo": "O-CEM fix with G-CEM's relative trigger (isolates the fix from the trigger extension; secondary)"
+ },
+ "settings": "as head-to-head 2: stress layouts (shrink 10 mm), settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max; model_OIL; Rorqual cluster/paired_array.sbatch, all arms of an episode in the same job.",
+ "outcome": "neighbour topples (primary), v4 and v4b success, by eval/outcome_audit.py",
+ "primary": "cbfoa vs cbfg, paired by episode: (1) fewer neighbour topples, exact McNemar one-sided, alpha 0.05; (2) success v4 non-inferior: one-sided 95% lower bound of (cbfoa - cbfg) > -5 pp (paired bootstrap). Adopt O-CEM only if both pass.",
+ "secondary": "cbfo vs cbfg and cbfoa vs cbfo (topples, McNemar one-sided; v4/v4b differences, bootstrap CIs); each filter vs the policy; v4b; interventions per episode; seconds per intervention; share of O-CEM picks left unchanged.",
+ "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms."
+}

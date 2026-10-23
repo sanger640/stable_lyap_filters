@@ -23,7 +23,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-CFG = {"H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "N_LOOK": 15,
+CFG = {"O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "N_LOOK": 15,
        # variants (2026-10-15 diagnosis): TRIGGER "both" = barrier or regime check can trigger (final-test filter),
        # "barrier" = only the barrier triggers (regime check still screens candidates); SELECT "closest" = closest feasible
        # candidate (final-test filter), "margin" = largest barrier among feasible candidates, then closest
@@ -195,6 +195,9 @@ class CBF:
         if CFG["TRIGGER"] == "random":       # matched-rate baseline: act at random decisions (same fix procedure)
             if not (self.trig_rng.random() < CFG["RAND_P"]):
                 return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
+        elif CFG["TRIGGER"] == "abs":        # absolute trigger (O-CEM closed loop): also act at relative passes
+            if self.ok(np.array([h_nom]), np.array([o_nom]), CFG["H_SAFE"])[0]:
+                return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         elif self.ok(np.array([h_nom]), np.array([o_trig]), h_now)[0]:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         if CFG["FIX"] == "hold":               # hold and re-plan: keep position for one chunk (gripper column untouched)
@@ -202,6 +205,22 @@ class CBF:
             if CFG.get("HOLD_GRIP"):           # hold-and-replan 2: gripper also held at the policy's step-0 command
                 out[:, 3] = np.asarray(plan, np.float32)[0, 3]
             return out, {**info, "intervened": True, "abstained": False, "kind": "hold", "seconds": round(time.time() - t0, 2)}
+        if CFG["FIX"] == "o4":                 # O-CEM (docs/FILTER_DEEP_DIVE.md section 3, eval/opt4.py): minimise imagined disturbance
+            import opt4
+            import opt3
+            import step3_world_model as wm
+            if getattr(self, "_certs", None) is None:
+                self._certs = [None] + [wm.WorldModel.load(Path(__file__).resolve().parent.parent / f"results/program_b/ens_v1/model_ENS{e}.pt")
+                                        for e in range(4)]
+            p16 = np.asarray(plan, np.float32).copy(); p16[0, :3] = sim.target
+            P = opt3.Problem(self.mon, self, sim, z0, p16, float(h_now), self._certs); P.cbf_O_MAX = CFG["O_MAX"]
+            finals, O, costs = opt4.solve(P, int(self.mon.rng.integers(2 ** 31)), CFG["O4_LAMBDA"])
+            j = int(np.argmin(O + CFG["O4_LAMBDA"] * costs)); best = P.plan(finals[j])
+            out = np.asarray(best, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
+            return out, {**info, "intervened": True, "abstained": False, "kind": "o4", "choice": j, "unchanged": j == 0,
+                         "theta": [round(float(x), 4) for x in finals[j]], "O": [round(float(x), 4) for x in O],
+                         "cost": round(float(costs[j]), 3), "progress": round(opt3.progress(p16, best), 3),
+                         "seconds": round(time.time() - t0, 2)}
         if CFG["FIX"] == "g3":                 # formulation G, G-CEM: coarse transformations of THIS chunk only (eval/opt3.py)
             import opt3
             import step3_world_model as wm

@@ -319,6 +319,15 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "hold"; cbff.CFG["HOLD_GRIP"] = False
         cbff.CFG["TRIGGER"] = "random"; cbff.CFG["RAND_P"] = 1463 / 14973
         return _paired(mode, "cbf", n, shrink)
+    if mode in ("cbfo", "cbfoa"):              # O-CEM closed loop (docs/FILTER_DEEP_DIVE.md): fix = opt4 (LAMBDA 0.003, chosen on dev);
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"      # cbfo: G-CEM's trigger; cbfoa: absolute trigger (also acts at relative passes)
+        import cbf_filter as cbff
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "o4"; cbff.CFG["O4_LAMBDA"] = 0.003
+        if mode == "cbfoa":
+            cbff.CFG["TRIGGER"] = "abs"
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfg", "cbfh", "cbfg2", "cbfh2"):   # Stage 4 / 4b: G-CEM | hold and re-plan (2 = gripper time-warped / held)
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "warp" if mode == "cbfg2" else "fixed"
