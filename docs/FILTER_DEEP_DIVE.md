@@ -261,3 +261,14 @@ bound -5) -> both primary criteria pass. Topples -67% at no success cost, as the
 was late warnings. Price: twice the interventions (16.8% vs 8.2% of decisions) and 72 vs 54 s per intervention. Same
 trade-off as the last margin step (1x -> 2x: topples 73 -> 30). The trend rule (test running on Fir + Nibi, with a 3x arm
 on fresh episodes as replication) is the candidate for the same lead at a lower alarm rate.
+
+### 5e. Red-block falls (exploratory; eval/redfall_check.py, results/jenga/deep_dive/redfall_check.json)
+With topples at 7 / 300, red falls (target knocked over or dropped) are the dominant failure: 3x filter 22 before + 46
+after extraction; no filter reduces them (policy 15 + 39). The fork test does see them, phase-matched: before a fall with
+the gripper closed the plan forks at <= 2x in 36% (before extraction) / 21% (after) of decisions vs 6% of safe closed
+decisions. The disturbance readouts do not (AUC 0.35-0.47 within phase). So the trigger fires; the fix does not help.
+Per decision on benchmark v2, hold has the lowest one-chunk red risk (4.8% / 4.1% dev / holdout) and G-CEM / O-CEM
+(7.0 / 6.9%, 6.2 / 5.7%) are near the policy (7.6 / 7.4%). The fix's certificate checks forks and the outside-hand barrier;
+the carried block is inside the hand mask and the 4 arm knobs keep the grasp as is. Candidate (in scope): the gripper in
+the formulation (G-grip, running) and a hand-region term in the certificate when the gripper is closed; both need an
+offline gate on the red-risk column first.
