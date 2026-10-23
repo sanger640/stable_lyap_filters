@@ -179,3 +179,9 @@ needs a fresh pre-registered test.
   - Rule "d <= 2x, OR (e above its safe median AND d <= 4x)": alarms 11.8%, lead >= 3 in 74%. The trend rule gives 12.7%
     / 87%; adding e to the trend rule gives 13-15% / 87-89% (no gain).
   - The trend in the fork distance already carries the early-warning information; the model-error channel adds none.
+- **HJ reachability, take 2** (user request 2026-10-23): literature review and diagnosis of the first attempt in
+  docs/HJ_V2.md. The first attempt was one-step (no Bellman recursion), used a saturated binary margin (the logged fork
+  distance is at its cap in 94% of decisions), and asked for optimal-control viability, which is almost always yes on
+  Jenga. Redesign: (A) a smooth continuous margin from the fork test's BIC gain / sensitivity; (B) the policy's safety
+  value (PNCBF + lambda-Reachability targets) learned offline from logged closed-loop trajectories; (C) a model-based
+  discrete-time CBF condition in G-CEM. Stage A running (results/jenga/hj2/stageA_protocol.json).
