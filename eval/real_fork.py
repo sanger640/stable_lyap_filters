@@ -52,6 +52,8 @@ def main(name, n_dec, n_fut=32):
     n_dec, n_fut = int(n_dec), int(n_fut)
     C, cand = rc.chunks_for(name); mon = cf.Monitor(); L = mon.latent
     dec = [i for i in sorted(cand) if len(cand[i]) >= 2]
+    if os.environ.get("REAL_INFORMATIVE") == "1":            # only decisions whose chunks differ in real risk (>= 2 futures)
+        dec = [i for i in dec if max(r for _, r in cand[i].values()) - min(r for _, r in cand[i].values()) >= 2 / 32 - 1e-9]
     dec = sorted(np.random.default_rng(20261041).choice(dec, min(n_dec, len(dec)), replace=False).tolist())
     f = OUT / f"real_{name}_rows.jsonl"; done = {json.loads(l)["i"] for l in f.read_text().splitlines()} if f.exists() else set()
     pool = mp.get_context("spawn").Pool(24)
