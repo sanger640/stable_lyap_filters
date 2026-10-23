@@ -169,3 +169,13 @@ needs a fresh pre-registered test.
   ceiling, so the lever is WHEN the filter acts (steps 1-2), not WHICH chunk it picks.
 - **Step 2 pre-registered:** results/jenga/trend_protocol.json (episodes 19800-20099). Arms: policy, G-CEM, 3x margin,
   trend. Launched on Rorqual 2026-10-23 ~11:15, before the margin result.
+- **Error-adaptive margin ("When World Models Lie" idea), offline: dominated by the trend rule; closed**
+  (results/jenga/deep_dive/wmerr_check.json; eval/wm_err_check.py; same 115 policy-alone episodes as the margin table).
+  - Signal: the WM's own one-chunk prediction error e (observed next latent vs the mean of 16 noise draws), label-free and
+    available online.
+  - e rises before topples, but mostly late. AUC vs safe-episode decisions: 0.73 one chunk before, 0.64 at 2-3 chunks,
+    0.62 at 4-6, 0.57 at 7-10. Error normalised by the model's own spread is inverted (AUC 0.29-0.38): near topples the
+    draws spread more than the error grows.
+  - Rule "d <= 2x, OR (e above its safe median AND d <= 4x)": alarms 11.8%, lead >= 3 in 74%. The trend rule gives 12.7%
+    / 87%; adding e to the trend rule gives 13-15% / 87-89% (no gain).
+  - The trend in the fork distance already carries the early-warning information; the model-error channel adds none.

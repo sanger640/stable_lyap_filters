@@ -13,5 +13,6 @@
  "primary": "cbfgtr vs cbfg, paired by episode: (1) fewer neighbour topples, exact McNemar one-sided, alpha 0.05; (2) success v4 non-inferior: one-sided 95% lower bound of (cbfgtr - cbfg) > -5 pp (paired bootstrap). Adopt only if both pass.",
  "secondary": "cbfgtr vs cbfg3m and cbfg3m vs cbfg (topples McNemar one-sided; v4 / v4b bootstrap); each vs the policy; interventions per episode; share of trend-triggered interventions.",
  "analysis": "eval/ocl_analysis.py with CL_TAG=tr CL_ARMS='record cbfg cbfg3m cbfgtr' CL_PRIMARY=cbfgtr,cbfg",
- "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms."
+ "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms.",
+ "amendment_1": "2026-10-23 ~17:10, before any trend-test episode ran: the Rorqual trial (job 25023243, never started) was cancelled; episodes are split by shard across Fir (MIG 1g.10gb array, tasks 75-149) and Nibi (MIG slices draining: packed full-H100 jobs, cluster/paired_group.sbatch, 8 shard-workers per GPU, tasks 0-74). All four arms of an episode still run in the same job, so pairs differ only by the filter. Same code (md5-checked) and model files on all clusters."
 }
