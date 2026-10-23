@@ -159,3 +159,15 @@ Motivation: section 1g (the min-o selection result came from relpass, which is t
 - If H1 and H2 pass: pre-register a closed-loop test, O-CEM vs G-CEM, with the trigger extended to relative passes.
   Otherwise report and revise.
 - **Descriptive:** risk at every LAMBDA, unchanged share, hold.
+
+### 3a. O-CEM results (benchmark v2 real one-chunk neighbour risk; results/program_b/bench2/report_opt4_*_o1.json)
+| set | policy | hold | G-CEM | O-CEM (LAMBDA 0.003) | test |
+|---|---|---|---|---|---|
+| dev (150) | 2.83% | 0.48% | 0.67% | 0.88% | LAMBDA choice (0 / 0.001 / 0.003 / 0.01: 0.90 / 0.90 / 0.88 / 0.94%) |
+| holdout (150) | 5.75% | 1.77% | 2.25% | 1.50% | H1 PASS: O-CEM - G-CEM -0.75 pp, upper -0.10 pp (bound +0.25) |
+| relpass2 (167, fresh) | 5.07% | 6.61% | (did nothing = policy) | 3.71% | H2 PASS: -1.37 pp vs policy, p = 0.001, 30 better / 11 worse |
+
+- Reading: minimising the continuous disturbance (a barrier VALUE, not a pass/fail certificate) is the better fix. It
+  matches or beats G-CEM where G works and, unlike G-CEM or hold, also lowers risk at states where every option forks.
+- Next (pre-registered, results/jenga/ocem_cl_protocol.json): closed loop, 300 fresh episodes (19000-19299).
+  Arms: policy, G-CEM, O-CEM with the absolute trigger (cbfoa), and O-CEM with G's trigger (cbfo).
