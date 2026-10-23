@@ -119,3 +119,16 @@ needs a fresh pre-registered test.
 5. **World model:** only if a gate points to the model. Candidates:
    - stochastic latent model (latent diffusion over DINOv2, LaDi-WM style) to represent branching;
    - error-adaptive pessimism ("When World Models Lie").
+
+## 4. Results log
+- **Step 3 (CVaR tail barrier), offline gate: no gain** (results/jenga/deep_dive/res_{dev,relpass}.json).
+  Within-state concordance at 64 / 256 futures:
+
+  | readout | dev | relpass |
+  |---|---|---|
+  | max | 0.787 / 0.809 | 0.684 / 0.737 |
+  | CVaR 2% | 0.787 / 0.804 | 0.684 / 0.707 |
+  | CVaR 5% | 0.794 / 0.802 | 0.684 / 0.678 |
+  | CVaR 10% | 0.791 / 0.787 | 0.671 / 0.671 |
+
+  The single most extreme imagined future is the most informative; the max stays. Closed.
