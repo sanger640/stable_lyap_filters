@@ -104,7 +104,7 @@ value learned from our own certificate) failed because cheap backups certify alm
 | alarm rule (fork scale d = smallest splitting scale; relative = plan forks earlier than hold) | alarm rate, safe episodes | topples warned >= 3 chunks ahead | median lead |
 |---|---|---|---|
 | G trigger (relative, d <= 2x) | 6.6% | 48% | 2 |
-| relative, d <= 3x (under test: margin3_protocol) | 12.0% | 72% | 4 |
+| relative, d <= 3x (closed loop PASS: 21 -> 7 topples) | 12.0% | 72% | 4 |
 | relative, d <= 4x | 15.7% | 89% | 6 |
 | **relative: d <= 2x, OR d fell since the previous decision and d <= 4x (CBF decrease / early-warning trend)** | **12.7%** | **87%** | **6** |
 
@@ -112,7 +112,8 @@ The trend rule gets the lead of the 4x margin at the alarm rate of the 3x margin
 needs a fresh pre-registered test.
 
 ## 3. Plan (each step gated; closed-loop tests pre-registered on fresh episodes)
-1. **3x margin closed loop** (running; results/jenga/margin3_protocol.json).
+1. **3x margin closed loop: PASS** (results/jenga/m3_result.json): topples 21 -> 7 vs G-CEM (p = 0.0033), v4 +1.3 pp; twice the
+   interventions. Adopted.
 2. **Fork-distance CBF with a decrease condition (early-warning trend).**
    - Barrier: h_k = fork scale of the policy's plan at decision k (on scales 0.5 / 1 / 2 / 3 / 4).
    - Trigger: h_k < log2 3 (current), OR h_k < h_{k-1} with h_k <= log2 4, i.e. the discrete-time CBF condition

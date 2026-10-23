@@ -245,3 +245,19 @@ decision, the policy's plan was tested for forks at 0.5 / 1 / 2 / 3 / 4x the err
 A larger margin buys lead time at the cost of more alarms, the classic CBF margin trade-off. Last time the margin was
 raised (no fork at 1x -> at 2x), topples fell 73 -> 30 and successes rose. The pre-registered 3x test is
 results/jenga/margin3_protocol.json (300 fresh episodes 19500-19799).
+
+### 5d. 3x margin closed loop (pre-registered; results/jenga/m3_result.json): PRIMARY PASS, adopted
+300 fresh episodes (19500-19799), Rorqual, all arms of an episode in the same job.
+
+| arm | neighbour topples | v4 | v4b | interventions / episode |
+|---|---|---|---|---|
+| policy alone | 60 | 213 | 174 | - |
+| G-CEM, no fork up to 2x | 21 | 235 | 195 | 3.9 |
+| **G-CEM, no fork up to 3x** | **7** | **239** | **193** | 8.8 |
+| O-CEM, 3x trigger | 15 | 231 | 200 | 8.3 |
+
+cbfg3m vs cbfg: 5 vs 19 discordant topple episodes, McNemar one-sided p = 0.0033; v4 +1.33 pp (one-sided lower -3.33 pp,
+bound -5) -> both primary criteria pass. Topples -67% at no success cost, as the margin table (5c) predicted: the residual
+was late warnings. Price: twice the interventions (16.8% vs 8.2% of decisions) and 72 vs 54 s per intervention. Same
+trade-off as the last margin step (1x -> 2x: topples 73 -> 30). The trend rule (test running on Fir + Nibi, with a 3x arm
+on fresh episodes as replication) is the candidate for the same lead at a lower alarm rate.
