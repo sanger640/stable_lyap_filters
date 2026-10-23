@@ -205,3 +205,29 @@ bottleneck on Jenga.
 - **Bottleneck:** the residual is the criterion's resolution at states where every option forks: within-state
   ranking about 0.7-0.8 even on exact futures. It is not the world model's capacity or representation (the full-token
   DINO-WM and real tokens rank no better).
+
+### 5a. Resolution check (exploratory; eval/res_check.py, results/jenga/deep_dive/res_{dev,relpass}.json)
+Same chunks as section 1g, model_OIL. Each decision is scored once with 256 futures; readouts on nested subsets.
+Within-state concordance:
+
+| readout | dev, 32 / 64 / 128 / 256 futures | relpass, 32 / 64 / 128 / 256 futures |
+|---|---|---|
+| o max over futures (current barrier) | 0.785 / 0.787 / 0.797 / 0.809 | 0.671 / 0.684 / 0.711 / 0.737 |
+| o mean | 0.74 / 0.74 / 0.74 / 0.75 | 0.60 / 0.59 / 0.58 / 0.58 |
+| o 90th percentile | 0.76 / 0.76 / 0.76 / 0.77 | 0.61 / 0.61 / 0.61 / 0.60 |
+| h (fork scale) | 0.61 / 0.68 / 0.69 / 0.63 | 0.72 / 0.76 / 0.75 / 0.75 |
+
+- The exceedance share P(o > O_MAX) is tied on almost all pairs, so it is uninformative at this threshold.
+- Reading: the ranking information sits in the extreme TAIL of the imagined disturbance (max > q90 > mean), and only
+  the tail readout gains from more futures (+5 pp on relpass from 64 to 256).
+- O-CEM's final pick (max over 5 models x 64 futures) already approximates a 320-future tail.
+
+### 5b. Where the residual topples sit (closed-loop test, exploratory)
+The trigger fired within the 5 chunks before the topple in:
+- G-CEM: 19 of 22 topples;
+- O-CEM + absolute trigger: 16 of 16;
+- O-CEM + G's trigger: 15 of 17.
+
+Many alarms come only 0-1 chunks before the topple starts. The residual is mostly warning LEAD TIME, not detection and
+not fix quality. Next check: a larger barrier margin (fork at 3x / 4x the errors) on the policy-alone episodes
+(eval/margin_check.py).
