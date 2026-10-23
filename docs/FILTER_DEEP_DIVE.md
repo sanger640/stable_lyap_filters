@@ -139,3 +139,23 @@ executes.
    - Robust to model error: pessimistic over an ensemble, and a trust region around the policy's actions.
    - No hold, primitive or backup heuristics.
    - Gates: benchmark v2 dev, then holdout, then closed loop vs G-CEM.
+
+## 3. O-CEM: optimise the continuous disturbance, not "cheapest fork-free" (spec fixed 2026-10-23 ~00:30, before any O-CEM run; eval/opt4.py)
+Motivation: section 1g (the min-o selection result came from relpass, which is therefore not used to test O-CEM).
+- **Trigger:** unchanged (fork test; benchmark sets contain only triggered decisions).
+- **Fix:** CEM over formulation G's box (edits of the policy's own chunk; stopping is inside the family, no hold fallback).
+  - Objective: imagined outside-hand disturbance o of the chunk + hold tail (model_OIL search, 32 futures, common
+    draws) + LAMBDA * cost (opt2 cost).
+  - Final choice among the 4 finals + the unmodified chunk: pessimistic o, the max over OIL + ENS0-3 on 64 fresh futures,
+    + LAMBDA * cost.
+- **LAMBDA:** chosen on dev only, from {0, 0.001, 0.003, 0.01}, by the lowest dev neighbour risk (applied at the final
+  choice; the search uses 0.003).
+- **Test sets:**
+  - holdout (150; G-CEM 2.25%, hold 1.77%, policy 5.75%);
+  - relpass2: a FRESH hard set, every relative-pass decision of head-to-head 2's G-CEM arm (episodes 17000-17299,
+    167 decisions, never used offline). G-CEM did nothing there, so its reference is the policy's chunk.
+- **H1:** holdout: O-CEM non-inferior to G-CEM, one-sided 95% upper bound of (O-CEM - G-CEM) neighbour risk <= +0.25 pp.
+- **H2:** relpass2: O-CEM lower risk than the policy chunk, paired bootstrap one-sided p < 0.05.
+- If H1 and H2 pass: pre-register a closed-loop test, O-CEM vs G-CEM, with the trigger extended to relative passes.
+  Otherwise report and revise.
+- **Descriptive:** risk at every LAMBDA, unchanged share, hold.

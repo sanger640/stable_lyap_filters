@@ -20,11 +20,14 @@ import bench2 as b2  # noqa: E402
 
 PR = ROOT / "results/program_b/policy_rollouts"
 HS = float(np.log2(3.0))
+# RELPASS_SET=relpass2: the same selection from head-to-head 2's G-CEM arm (episodes 17000-17299), a fresh hard set
+SET = os.environ.get("RELPASS_SET", "relpass")
+STAGES = ("h2h2",) if SET == "relpass2" else ("s4", "s4b")
 
 
 def select():
     rows = []
-    for st in ("s4", "s4b"):
+    for st in STAGES:
         for f in sorted((PR / f"paired_cbfg_{st}").glob("ep*.json")):
             d = json.loads(f.read_text()); L = d["log"]
             kt = next((c["chunk"] for c in L if c.get("topple_started")), None)
@@ -53,8 +56,8 @@ def prep():
         rec["tilt"].append(S["start_tilt"][d]); rec["site"].append(sim.data.site_xpos[sim.site].copy())
         mon.rng = np.random.default_rng([20261030, x["ep"], x["k"]])
         rec["z0"].append(mon.latent(mon.frame(sim)[None])[0].astype(np.float16))
-    np.savez_compressed(b2.OUT / "relpass.npz", **{k: np.stack(v) for k, v in rec.items()})
-    (b2.OUT / "relpass.json").write_text(json.dumps(R)); print("relpass", len(R), "decisions", flush=True)
+    np.savez_compressed(b2.OUT / f"{SET}.npz", **{k: np.stack(v) for k, v in rec.items()})
+    (b2.OUT / f"{SET}.json").write_text(json.dumps(R)); print(SET, len(R), "decisions", flush=True)
 
 
 def report(tag="abs"):
