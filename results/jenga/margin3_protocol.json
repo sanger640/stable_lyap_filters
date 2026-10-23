@@ -1,0 +1,17 @@
+{
+ "name": "Larger barrier margin in closed loop: no fork up to 3x the errors (docs/FILTER_DEEP_DIVE.md 5c)",
+ "written": "2026-10-23 ~10:00, after the exploratory margin check on the policy-alone episodes of ocem_cl (warnings >= 3 chunks ahead 54% -> 72%, alarm rate 8% -> 17%) and before any episode of this test",
+ "episodes": "19500-19799 (300, never used)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg": "G-CEM, unchanged (margin: no fork up to 2x; scales 0.5 / 1 / 2, h_safe = log2 3)",
+  "cbfg3m": "G-CEM with margin 3x: scales 0.5 / 1 / 2 / 3 (/ 4 = none), h_safe = log2 4, in the trigger AND the certificate (relative rule unchanged)",
+  "cbfo3m": "O-CEM fix (LAMBDA 0.003, no hold fallback) with the same 3x-margin trigger (secondary)"
+ },
+ "settings": "as head-to-head 2 / ocem_cl: stress layouts (shrink 10 mm), settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max; model_OIL; Rorqual cluster/paired_array.sbatch, all arms of an episode in the same job.",
+ "outcome": "neighbour topples (primary), v4 and v4b success, by eval/outcome_audit.py",
+ "primary": "cbfg3m vs cbfg, paired by episode: (1) fewer neighbour topples, exact McNemar one-sided, alpha 0.05; (2) success v4 non-inferior: one-sided 95% lower bound of (cbfg3m - cbfg) > -5 pp (paired bootstrap). Adopt the 3x margin only if both pass.",
+ "secondary": "cbfo3m vs cbfg and vs cbfg3m (topples McNemar one-sided; v4 / v4b bootstrap); each filter vs the policy; interventions per episode; seconds per intervention.",
+ "analysis": "eval/ocl_analysis.py with CL_TAG=m3 CL_ARMS='record cbfg cbfg3m cbfo3m' CL_PRIMARY=cbfg3m,cbfg",
+ "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms."
+}
