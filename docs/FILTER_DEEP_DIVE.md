@@ -171,3 +171,37 @@ Motivation: section 1g (the min-o selection result came from relpass, which is t
   matches or beats G-CEM where G works and, unlike G-CEM or hold, also lowers risk at states where every option forks.
 - Next (pre-registered, results/jenga/ocem_cl_protocol.json): closed loop, 300 fresh episodes (19000-19299).
   Arms: policy, G-CEM, O-CEM with the absolute trigger (cbfoa), and O-CEM with G's trigger (cbfo).
+
+### 3b. O-CEM closed loop (pre-registered; results/jenga/ocl_result.json): PRIMARY FAIL
+300 fresh episodes, topples / v4 success:
+- policy 55 / 214;
+- G-CEM 22 / 245;
+- O-CEM with the absolute trigger 16 / 240 (vs G-CEM: 10 vs 16 discordant, p = 0.16; v4 -1.7 pp, lower -6.0);
+- O-CEM with G's trigger 17 / 238.
+
+Reading: the offline per-decision gains (holdout -0.75 pp, hard states -1.4 pp) translate into a handful of topples per 300
+episodes, below what this test resolves, at a small success cost (the disturbance objective prefers slower / backed-off
+edits). The trigger extension to relative passes contributed nothing measurable.
+
+### 4. Full-token DINO-WM gate (step 2): FAIL
+The DINO-WM ViT predictor (bundled checkpoint, widened action encoder) was fine-tuned 30k steps on 1000 + 100 states of
+full-token counterfactual data (results/program_b/tok_v1, generated on Rorqual). Val one-step MSE 0.197 vs copy-last 0.339.
+Within-state ranking on the same chunks as section 1g (token WM vs model_OIL):
+- dev: h 0.55 vs 0.72, o 0.78 vs 0.80;
+- relpass: h 0.57 vs 0.80, o 0.63 vs 0.70;
+- the action-sensitivity gain g: 0.67 (dev), 0.75 (relpass).
+
+Its imagined futures fork more often (24% vs 14% of chunks on dev), consistent with the full-token split test being
+noisier. Together with 1g (full real tokens don't rank better than PCA8), the representation and model size are not the
+bottleneck on Jenga.
+
+## 5. Where the deep dive converged (2026-10-23)
+- **Monitor:** the fork test (sensitivity of imagined outcomes to action perturbations) is validated as a TRIGGER:
+  - fork-timed holds 8 topples vs random holds at the same rate 34 (p = 2e-5);
+  - it beats LSF-as-published (19 vs 55).
+- **Fix:** CBF-style optimisation of the policy's own chunk over a small, data-supported family. G-CEM (certificate) and
+  O-CEM (continuous disturbance barrier) are equivalent in closed loop: 22 vs 16 topples, n.s. O-CEM is better offline
+  at hard states.
+- **Bottleneck:** the residual is the criterion's resolution at states where every option forks: within-state
+  ranking about 0.7-0.8 even on exact futures. It is not the world model's capacity or representation (the full-token
+  DINO-WM and real tokens rank no better).
