@@ -82,8 +82,12 @@ class TokWM:
         """vis0 (B, P, D) start tokens, prop0 (B, 4), acts (B, S, 8) -> {step: vis (B, P, D)} after step t (0-based) in keep.
         History before the start is padded with the start frame (as in training)."""
         torch = _torch()
+        maxb = int(os.environ.get("TOKWM_MAXB", 96))
+        if not grad and len(vis0) > maxb:                     # slice big batches (memory), same result
+            parts = [self.rollout(vis0[a:a + maxb], prop0[a:a + maxb], acts[a:a + maxb], keep) for a in range(0, len(vis0), maxb)]
+            return {t: torch.cat([p_[t] for p_ in parts]) for t in keep}
         ctx = torch.enable_grad() if grad else torch.no_grad()
-        with ctx:
+        with ctx, torch.autocast("cuda", dtype=torch.bfloat16):
             pe0 = self.enc_prop(prop0[:, None])[:, 0]; ae = self.enc_act(acts)
             vis = [vis0] * H; pes = [pe0] * H; aes = [ae[:, 0]] * H; out = {}
             for t in range(acts.shape[1]):
@@ -92,7 +96,7 @@ class TokWM:
                 v, p_ = self.predict(z)
                 vis.append(v); pes.append(p_)
                 if t in keep:
-                    out[t] = v
+                    out[t] = v.float()
             return out
 
     def save(self, path):

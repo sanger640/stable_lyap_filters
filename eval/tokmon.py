@@ -42,24 +42,25 @@ class TokMon:
         m14 = m28.reshape(14, 2, 14, 2).any((1, 3))
         return ~m14.reshape(-1)
 
-    def actions(self, plans, n, s):
-        """plans torch (C, 16, 4) -> (C * n, 19, 8) with noise draw j at scale s on the 15 look-ahead actions."""
+    def actions(self, plans, n, s, offset=0):
+        """plans torch (C, 16, 4) -> (C * n, 19, 8) with noise draw offset + j at scale s on the 15 look-ahead actions."""
         torch = self.torch
         a = plans[:, 1:16]; a = torch.cat([a, a[:, -1:].expand(-1, 23, -1)], 1)                 # (C, 38, 4)
-        nz = np.stack([np.concatenate([self.snippets[j % 64], self.snippets[(j + 1) % 64]])[:15] for j in range(n)]) * s
+        nz = np.stack([np.concatenate([self.snippets[(offset + j) % 64], self.snippets[(offset + j + 1) % 64]])[:15]
+                       for j in range(n)]) * s
         nz = torch.as_tensor(nz, device="cuda", dtype=a.dtype)                                    # (n, 15, 3)
         A = a[:, None].expand(-1, n, -1, -1).clone()
         A[:, :, :15, :3] = A[:, :, :15, :3] - nz[None]
         return A.reshape(len(plans) * n, 19, 8), float(nz.pow(2).mean().sqrt())
 
-    def score(self, vis0, prop0, plans, keep, n=32, grad=False, scales=SCALES):
+    def score(self, vis0, prop0, plans, keep, n=32, grad=False, scales=SCALES, offset=0):
         """-> dict h (C,), g (C,), o (C,) (g, o tensors if grad)."""
         import cem_filter as cf
         torch = self.torch; plans = torch.as_tensor(plans, device="cuda", dtype=torch.float32) if not torch.is_tensor(plans) else plans
         C = len(plans); split = np.zeros((C, len(scales)), bool); g = o = None
         kp = torch.as_tensor(keep, device="cuda")
         for si, s in enumerate(scales):
-            A, nrms = self.actions(plans, n, s)
+            A, nrms = self.actions(plans, n, s, offset)
             B = len(A)
             ends = self.m.rollout(vis0[None].expand(B, -1, -1), prop0[None].expand(B, -1), A, keep=(8, 18), grad=grad and s == 1.0)
             e8, e18 = ends[8].reshape(C, n, -1), ends[18].reshape(C, n, 196, 384)
