@@ -231,3 +231,17 @@ The trigger fired within the 5 chunks before the topple in:
 Many alarms come only 0-1 chunks before the topple starts. The residual is mostly warning LEAD TIME, not detection and
 not fix quality. Next check: a larger barrier margin (fork at 3x / 4x the errors) on the policy-alone episodes
 (eval/margin_check.py).
+
+### 5c. Barrier margin (exploratory; eval/margin_check.py, results/jenga/deep_dive/margin_check.json)
+Policy-alone episodes of the O-CEM test: 55 topple episodes (last 10 chunks) and every 4th safe episode (61). At every
+decision, the policy's plan was tested for forks at 0.5 / 1 / 2 / 3 / 4x the errors; the alarm is fork at <= m, or o > O_MAX.
+
+| alarm | topples warned >= 3 chunks ahead | median lead | alarm rate, safe episodes |
+|---|---|---|---|
+| fork at <= 2x (current, absolute) | 54% | 3 | 8.3% |
+| fork at <= 3x | 72% | 4 | 16.5% |
+| fork at <= 4x | 89% | 6 | 22.7% |
+
+A larger margin buys lead time at the cost of more alarms, the classic CBF margin trade-off. Last time the margin was
+raised (no fork at 1x -> at 2x), topples fell 73 -> 30 and successes rose. The pre-registered 3x test is
+results/jenga/margin3_protocol.json (300 fresh episodes 19500-19799).
