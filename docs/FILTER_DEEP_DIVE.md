@@ -330,3 +330,15 @@ imagined calmer; ~1 px deciding offset). For neighbour topples the settling read
 fork trigger already covers those. Reading: red falls (now the dominant residual failure) are below what model_OIL's
 latent resolves; neither the fork spread nor imagined motion sees them. This is a scope boundary of the monitor with this
 world model, not a filter-design gap; not pursued further within the current scope (WM fixed).
+
+### 5g. The 3x filter's success cost is time-outs, not harm (exploratory; margin-test audit + logs)
+Clean non-extraction (no topple, no red fall, block never extracted in 60 chunks): policy 12, G-CEM 24, G-CEM-3x 32,
+O-CEM-3x 32 of 300. Of the 3x arm's 32, the paired policy episode succeeded in 18, toppled in 10, stalled in 4: about 18
+successes become time-outs while 53 topples are prevented. Stalled episodes get 13 interventions vs 8 in successful ones;
+the block barely moves (max lift 3.7 mm, pull 4.7 mm vs 44 / 60 mm). Not a gripper desync (the gripper stays on the
+policy's clock while the arm is slowed): grasps reopened within 2 chunks are as common when the closing chunk was a fix
+as when it was not (52% vs 52%; policy alone 48%). Per-fix progress is the same in stalled and successful episodes
+(median 0.55 vs 0.56). Reading: G's four knobs (slow, pause, scale down, back off) can only remove motion along the plan,
+so every certified fix trades progress for safety by construction; time-outs grow with the intervention load. Levers:
+fewer unneeded interventions (trend rule, running) and a cheaper filter (torch.compile, results/jenga/compile_result.json:
+decisions 100% identical on benchmark v2 dev, 2x faster per scoring call locally, 3.7x on the cluster's MIG slices).
