@@ -418,3 +418,18 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - Grasp-approach alarms (exploratory; eval/approach_alarm.py, policy-alone episodes without a topple, the 4 decisions before the policy first closes the gripper): the deployed spread rule fires there as often as the fork 3x trigger (held-out 42.5 vs 44.6%, dev 42.3 vs 47.6%; earlier decisions 15.9 vs 9.2%, 13.8 vs 10.4%). The approach is where both monitors see the most sensitivity, so the spread trigger alone is not expected to cut the 3x filter's time-outs (5j). Liveness has to come from the fix, not the trigger.
 - G-steer (exploratory, offline; eval/opt3.py OPT3_STEER=1): G's four knobs plus a 3-D offset of the chunk (|d| <= 6 mm per axis, ramped in like the back-off; cost = the plan change itself). The aim is a fix that can reshape the approach instead of only removing motion (5j). Offline on m3int with the OIL certificate vs g3oil: real risk, progress along the plan's own direction, time-out-episode subset (results/jenga/deep_dive/cert_ablation.json).
   - Result (cert_ablation.json): neighbour risk 0.36 vs 0.40% (-0.03 pp, 90% CI -0.19 to +0.08), red +0.09 pp (CI -0.06 to +0.27); projected progress median 0.50 vs 0.38, time-out-episode decisions +0.30 mean (0.51 vs 0.28 median); holds 1.5 vs 3.7%. The theta offsets are used (|d| often 1-6 mm, mixed directions). Closed loop pre-registered: results/jenga/stl_protocol.json.
+
+### 5n. Spread barrier in closed loop (pre-registered; results/jenga/scl_protocol.json): PRIMARY FAIL
+
+600 fresh episodes 20400-20999 on Fir, all arms of an episode in one job.
+
+| arm | topples | red falls before / after | failures | time-outs | v4 | v4b | interventions / ep | s / intervention |
+|---|---|---|---|---|---|---|---|---|
+| policy | 106 | 49 / 71 | 208 | 23 | 435 | 369 | - | - |
+| G-CEM-3x (cbfg3m, adopted) | 22 | 39 / 68 | 122 | 73 | 470 | 405 | 8.61 | 33 |
+| G-CEM spread barrier (cbfgs) | 31 | 50 / 74 | 142 | 112 | 418 | 346 | 12.22 | 26 |
+
+- PRIMARY: topples 28 vs 19 discordant (p = 0.93); v4 -8.7 pp, lower bound -12.3. Both fail.
+- Why: the relative spread is a better ALARM (5m) but a worse BARRIER. It fires on 23% of decisions (vs 17%), and as a certificate it holds more and approves riskier moves (offline: 30 vs 8% holds, neighbour risk 0.76 vs 0.40%). More interventions mean more time-outs (5g) and no topple gain.
+- The adopted 3x filter, fourth closed-loop test and the largest: topples 106 -> 22 (p = 2e-16), success v4 +5.8 pp (95% CI +1.0 to +10.5), the first significant success gain at 600 episodes. Time-outs 23 -> 73 remain its cost (5j); G-steer (stl) targets them.
+
