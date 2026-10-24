@@ -33,5 +33,12 @@
   "written": "2026-10-24 ~19:50 EDT, after the 1-case smokes (outcomes of case 0 only seen)",
   "finding": "case 0 (ep 21003, d 15): the gcem branch extracted at chunk 11 on node fc11015 (sel job; = the fixcf row) but not within 30 chunks on fc11017 (proj job): continuations are node-dependent (as the cross-cluster checks before). Within a job all branches share one GPU.",
   "change": "the steer job also runs the gcem branch; steer vs gcem is paired within the job (no cross-job comparison). The steer smoke row (no gcem branch) is deleted and re-run. Every comparison in the analysis is within one job; reproduces_fixcf is reported as a node-consistency check, not a gate."
+ },
+ "amendment_3": {
+  "written": "2026-10-24 ~20:25 EDT, before any guide branch ran",
+  "arm": "job ARMS=guide: nominal, gcem, guide = guided denoising: 4 policy samples from fresh noise (seed 20261025+11+1000e+d) with the same observations; in the last 4 of the 8 DDIM steps the x0 estimate moves by a normalised gradient step of size 0.05 (normalised action units) down the log total variance of the plan's imagined HOLD30 latents (model_OIL, 16 futures at 4x the errors, fixed perceived starts and execution noise per case, seed 20261025+13+1000e+d); certified as sel (OIL+ENS, 64 fresh futures); the certified one with the lowest change cost; none -> the deployed fix",
+  "step_choice": "0.05 from the surrogate only (4 cases, no outcome run): log tvar drop vs the unguided twin 0.13-0.65 with a median plan shift of 0.8-2.4 mm; 0.02 too weak (0.04-0.43); 0.10 overshoots (spread rose in 2 of 4)",
+  "test": "same primary form: mean delay(guide) - delay(gcem), paired within the job, one-sided 95% upper bound < 0 AND topple upper95 <= +3 pp -> PASS; secondary: median log tvar drop",
+  "run": "Fir, ARMS=guide NSH=15"
  }
 }

@@ -12,6 +12,10 @@ First chunk per branch:
   ARMS=proj  nominal, gcem, proj (amendment 1: the deployed fix PROJECTED onto the policy's distribution, SDEdit-style:
              noise the fix's 16-step plan to 1/4 of the policy's DDIM schedule (strength 0.25) and denoise it with the policy
              conditioned on the same observations, 8 samples; certified as sel; none certified -> the deployed fix)
+  ARMS=guide nominal, gcem, guide (amendment 3: GUIDED DENOISING - the policy samples 4 plans from fresh noise with the
+             same observations; in the last GUIDE_STEPS of its DDIM steps, its x0 estimate is moved by a fixed-size
+             normalised gradient step down the log total variance of the plan's imagined HOLD30 outcomes (world model,
+             16 futures at 4x the errors, common random numbers); certified as sel; none -> the deployed fix)
 usage: ARMS=sel|steer SHARD=i/n python3 eval/fix_bench.py run   -> results/jenga/deep_dive/fixbench/<arms>_<i>.jsonl
        python3 eval/fix_bench.py analyse                          -> results/jenga/fixbench_result.json
 """
@@ -41,7 +45,7 @@ def setup():
     import cbf_barrier
     import cbf_filter as cbff
     import opt3
-    assert opt3.CFG["STEER"] == (ARMS == "steer") and ARMS in ("sel", "steer", "proj")
+    assert opt3.CFG["STEER"] == (ARMS == "steer") and ARMS in ("sel", "steer", "proj", "guide")
     cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0)
     cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
     cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
@@ -103,6 +107,21 @@ def first_chunks(sim, S, d, hist, pol, mon, cbf, certs, e):
         info.update({"proj_kind": kind, "proj_n_certified": int(ok.sum()), "proj_choice": j,
                      "proj_dist_to_fix_mm": round(float(np.abs(out["proj"][:, :3] - D[:, :3] - p16[PS:PS + 8, :3]).max() * 1000), 1),
                      "proj_change_mm": round(float(np.abs(out["proj"][:, :3] - p16[PS:PS + 8, :3]).max() * 1000), 1)})
+    elif ARMS == "guide":
+        out["gcem"] = S["executed"][d]
+        torch.manual_seed(int(fc.SEED + 11 + 1000 * e + d))
+        cand, gi = guided(pol, hist, mon, z0, seed=int(fc.SEED + 13 + 1000 * e + d))
+        ok, hc, oc = P.certify(list(cand))
+        costs = np.array([opt2.Problem.cost(P, c[1:9, :3] - p16[1:9, :3]) for c in cand])
+        if ok.any():
+            j = int(np.flatnonzero(ok)[np.argmin(costs[ok])]); out["guide"] = cand[j][PS:PS + 8].copy(); kind = "certified"
+        else:
+            j, out["guide"], kind = -1, S["executed"][d], "fallback_fix"
+        gd = np.abs(cand[:, 1:9, :3] - gi["unguided"][:, 1:9, :3]).max((1, 2)) * 1000
+        info.update({"guide_kind": kind, "guide_n_certified": int(ok.sum()), "guide_choice": j,
+                     "guide_log_tvar": gi["log_tvar_guided"], "unguided_log_tvar": gi["log_tvar_unguided"],
+                     "guide_shift_mm_median": round(float(np.median(gd)), 1),
+                     "guide_change_mm": round(float(np.abs(out["guide"][:, :3] - p16[PS:PS + 8, :3]).max() * 1000), 1)})
     else:
         out["gcem"] = S["executed"][d]                                   # amendment 2: within-job reference (nodes differ)
         best, oi = opt3.solve_cem(P, int(mon.rng.integers(2 ** 31)))
@@ -133,6 +152,72 @@ def project(pol, hist, plan16, n=PROJ_N, strength=PROJ_STRENGTH):
         for tt in ts[i0:]:
             x = sch.step(pol.model(x, tt, local_cond=None, global_cond=gc), tt, x).prev_sample
         return pol.normalizer["action"].unnormalize(x).cpu().numpy().astype(np.float32)
+
+
+GUIDE_N, GUIDE_STEPS, GUIDE_DELTA, GUIDE_FUT = 4, 4, 0.05, 16
+
+
+def log_tvar(mon, starts, noise, plans):
+    """Differentiable log total variance of the imagined HOLD30 latents. plans (C, 16, 4) torch (grad), starts (F, ...)
+    perceived starts, noise (F, 15, 3) execution noise -> (C,). Deterministic model step with checkpointing."""
+    import torch
+    import step3_world_model as wm
+    from torch.utils.checkpoint import checkpoint
+    m = mon.model; assert m.kind == "deterministic"
+    C, F = len(plans), len(starts)
+    a = plans[:, 1:16]                                                         # PLAN_START = 1, N_LOOK = 15
+    a = torch.cat([a, a[:, -1:].expand(-1, 38 - 15, -1)], 1)                  # (C, 38, 4) as cbf_filter.horizon
+    a = a[:, None].repeat(1, F, 1, 1)
+    a = a.clone(); a[:, :, :15, :3] = a[:, :, :15, :3] - noise[None]
+    pairs = a.reshape(C * F, wm.STEPS, -1)
+    z = starts.float().repeat(C, 1, 1, 1)
+
+    def f(z, act):
+        b = len(z); return z + m.net(z, torch.zeros_like(z), m._act(act), torch.zeros(b, device=z.device)) * m.stats.res_std
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        for t in range(wm.HOLD30 + 1):
+            z = checkpoint(f, z, pairs[:, t], use_reentrant=False).float()
+    x = z.reshape(C, F, -1); X = x - x.mean(1, keepdim=True)
+    return torch.log((X ** 2).sum((1, 2)) / F / x.shape[2] + 1e-12)
+
+
+def guided(pol, hist, mon, z0, n=GUIDE_N, steps=GUIDE_STEPS, delta=GUIDE_DELTA, F=GUIDE_FUT, scale=4.0, seed=0):
+    """Guided DDIM sampling of the policy. -> plans (n, 16, 4), info (log tvar of the final plans, unguided twins)."""
+    import torch
+    w = np.stack([h[0] for h in hist[-2:]]); f = np.stack([h[1] for h in hist[-2:]]); s = np.stack([h[2] for h in hist[-2:]])
+    t_ = lambda x: torch.from_numpy(x).permute(0, 3, 1, 2)[None].float().cuda().expand(n, -1, -1, -1, -1) / 255.0
+    obs = {"camera_1": t_(w), "camera_2": t_(f), "agent_pos": torch.from_numpy(s)[None].cuda().expand(n, -1, -1)}
+    rng = np.random.default_rng(seed)
+    d_ = np.stack([np.concatenate([(p * [1, 1, 0] * scale).reshape(9), (r * [0, 0, 1] * scale).reshape(9)])
+                   for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(F))])
+    with torch.no_grad():
+        starts = mon.g(z0[None].expand(F, -1, -1, -1), torch.as_tensor(d_, dtype=torch.float32)).float()
+        idx = rng.integers(64, size=F)
+        noise = torch.as_tensor(np.stack([np.concatenate([mon.snippets[i], mon.snippets[(i + 1) % 64]])[:15] for i in idx]) * scale,
+                                dtype=torch.float32, device="cuda")
+        nobs = pol.normalizer.normalize(obs)
+        gc = pol.obs_encoder({k: v[:, :pol.n_obs_steps].reshape(-1, *v.shape[2:]) for k, v in nobs.items()}).reshape(n, -1)
+    N = pol.normalizer["action"]; sch = pol.noise_scheduler; sch.set_timesteps(pol.num_inference_steps); ts = sch.timesteps
+    x = torch.randn(n, pol.horizon, pol.action_dim, device="cuda"); xu = x.clone()             # guided and unguided twin
+    for i, t in enumerate(ts):
+        ab = sch.alphas_cumprod[t].to("cuda")
+        with torch.no_grad():
+            eps = pol.model(x, t, local_cond=None, global_cond=gc)
+            x0 = ((x - (1 - ab).sqrt() * eps) / ab.sqrt()).clamp(-1, 1)
+            epsu = pol.model(xu, t, local_cond=None, global_cond=gc)
+        if i >= len(ts) - steps:
+            x0g = x0.detach().requires_grad_(True)
+            c = log_tvar(mon, starts, noise, N.unnormalize(x0g))
+            g, = torch.autograd.grad(c.sum(), x0g)
+            x0 = (x0 - delta * g / g.flatten(1).norm(dim=1).clamp_min(1e-12)[:, None, None]).clamp(-1, 1).detach()
+            eps = (x - ab.sqrt() * x0) / (1 - ab).sqrt()
+        with torch.no_grad():
+            x = sch.step(eps, t, x).prev_sample; xu = sch.step(epsu, t, xu).prev_sample
+    with torch.no_grad():
+        pg, pu = N.unnormalize(x), N.unnormalize(xu)
+        cg, cu = log_tvar(mon, starts, noise, pg), log_tvar(mon, starts, noise, pu)
+    return pg.cpu().numpy().astype(np.float32), {"log_tvar_guided": [round(float(v), 3) for v in cg], "log_tvar_unguided": [round(float(v), 3) for v in cu],
+                                                  "unguided": pu.cpu().numpy().astype(np.float32)}
 
 
 def branch(sim, cams, pol, S, d, e, hist0, first, noises, xy0):
@@ -232,17 +317,21 @@ def analyse():
     out["reproduces_fixcf"] = {b: sum(F[k][a] == R["sel"][k][b] for k in R["sel"] if k in F) for a, b in (("nominal", "nominal"), ("fix", "gcem"))}
     out["sel_kinds"] = {k: sum(r["sel_kind"] == k for r in S) for k in ("certified", "fallback_hold", "fallback_best")}
     out["PRIMARY_pass"] = bool(out["PRIMARY_sel_minus_gcem_delay"]["mean_lower_upper90"][2] < 0 and out["topple_diff_pp_upper95"] <= P["topple_margin_pp"])
-    Rp = {(r["ep"], r["d"]): r for f in sorted(OUT.glob("proj_*.jsonl")) for r in map(json.loads, f.read_text().splitlines())}
-    if Rp:
-        T = list(Rp.values()); dp_, dg2 = delay(T, "proj"), delay(T, "gcem")
+    for arm in ("proj", "guide"):
+        Rp = {(r["ep"], r["d"]): r for f in sorted(OUT.glob(f"{arm}_*.jsonl")) for r in map(json.loads, f.read_text().splitlines())}
+        if not Rp:
+            continue
+        T = list(Rp.values()); dp_, dg2 = delay(T, arm), delay(T, "gcem")
         K3 = sorted(set(dp_) & set(dg2)); z = np.array([dp_[k] - dg2[k] for k in K3], float)
-        tp = np.array([r["proj"]["topple"] is not None for r in T]); tg2 = np.array([r["gcem"]["topple"] is not None for r in T])
-        out["proj"] = {"cases": len(T), "topples": int(tp.sum()), "topples_gcem_same_job": int(tg2.sum()),
-                       "kinds": {k: sum(r["proj_kind"] == k for r in T) for k in ("certified", "fallback_fix")},
-                       "mean_delay": boot(np.array(list(dp_.values()), float)),
-                       "proj_minus_gcem_delay": {"n": len(K3), "mean_lower_upper90": boot(z)},
-                       "topple_diff_pp_upper95": round(100 * boot(tp.astype(float) - tg2.astype(float))[2], 1)}
-        out["proj"]["pass"] = bool(out["proj"]["proj_minus_gcem_delay"]["mean_lower_upper90"][2] < 0 and out["proj"]["topple_diff_pp_upper95"] <= P["topple_margin_pp"])
+        tp = np.array([r[arm]["topple"] is not None for r in T]); tg2 = np.array([r["gcem"]["topple"] is not None for r in T])
+        out[arm] = {"cases": len(T), "topples": int(tp.sum()), "topples_gcem_same_job": int(tg2.sum()),
+                    "kinds": {k: sum(r[f"{arm}_kind"] == k for r in T) for k in ("certified", "fallback_fix")},
+                    "mean_delay": boot(np.array(list(dp_.values()), float)),
+                    f"{arm}_minus_gcem_delay": {"n": len(K3), "mean_lower_upper90": boot(z)},
+                    "topple_diff_pp_upper95": round(100 * boot(tp.astype(float) - tg2.astype(float))[2], 1)}
+        out[arm]["pass"] = bool(out[arm][f"{arm}_minus_gcem_delay"]["mean_lower_upper90"][2] < 0 and out[arm]["topple_diff_pp_upper95"] <= P["topple_margin_pp"])
+        if arm == "guide":
+            out[arm]["log_tvar_drop_median"] = round(float(np.median([np.mean(r["unguided_log_tvar"]) - np.mean(r["guide_log_tvar"]) for r in T])), 3)
     if R["steer"]:
         T = list(R["steer"].values()); dt = delay(T, "steer")
         out["steer"] = {"cases": len(T), "topples": sum(r["steer"]["topple"] is not None for r in T),
