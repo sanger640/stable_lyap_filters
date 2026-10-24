@@ -297,3 +297,9 @@ filter in the margin test) GO's red-fall risk is 3.59% vs 3.67% for the executed
 gives 9.0% vs the policy's 11.0%: the closed-gripper gap of benchmark v2 dev/holdout (built from the selection filter's
 interventions) is not where the adopted filter acts. So red falls are not mainly a fix problem at intervened decisions;
 next question is whether they happen at decisions the trigger lets through.
+**Where red falls happen under the adopted filter** (exploratory; replay of the 68 red-fall episodes of the 3x arm in the
+margin test, results/jenga/deep_dive/fall_timing_m3.json). Before extraction (22): the filter intervened within the 3
+chunks before the fall in 82%. After extraction (46): only 35%, gripper closed at the fall chunk in 70% and opening in the
+next chunk in 61%, i.e. mostly at the release/placement, with no intervention. The trigger lets these through; they look
+like the pillar task's release failures (decided at a ~1 px offset, no fork spread). A fix-side change (GO) cannot reach
+them; a release-aware trigger would need a measurable signal there, which the phase-matched check (5e) finds weak.
