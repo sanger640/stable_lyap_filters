@@ -291,3 +291,9 @@ trades change for a calmer imagined outcome.
 GO-CEM = G-CEM's certificate as the constraint, min (o + LAMBDA_O * change) as the objective, hold (gripper held) a
 candidate under the same certificate (eval/opt3.py OPT3_OBJ=o). One rule in every phase, no phase switch. Gate on a
 fresh set (m3int: the 3x filter's own interventions in the margin test, 298 decisions) vs the chunk it executed.
+**GO-CEM offline gate: FAIL** (results/jenga/go_offline_result.json). On the fresh set (298 interventions of the 3x
+filter in the margin test) GO's red-fall risk is 3.59% vs 3.67% for the executed G-CEM-3x chunk (upper bound +0.07 pp, needed
+< 0); neighbour risk equal (0.37 vs 0.40%). Only 36 of the 298 interventions have the gripper closed, and there even hold
+gives 9.0% vs the policy's 11.0%: the closed-gripper gap of benchmark v2 dev/holdout (built from the selection filter's
+interventions) is not where the adopted filter acts. So red falls are not mainly a fix problem at intervened decisions;
+next question is whether they happen at decisions the trigger lets through.
