@@ -328,6 +328,17 @@ def paired(mode, n=100, shrink=None):
         cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
         cbff.CFG["H_SAFE"] = float(np.log2(3.0)); cbff.CFG["FIX"] = "g3"; cbff.CFG["TRIGGER"] = "trend"; cbff.CFG["TREND_MAX"] = 2.0
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfgo3m":                      # GO-CEM (docs/FILTER_DEEP_DIVE.md 5f): cbfg3m with the disturbance objective
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"; os.environ["OPT3_OBJ"] = "o"; os.environ["OPT3_LAMBDA_O"] = "0.003"
+        import cbf_barrier
+        import cbf_filter as cbff
+        import opt3
+        opt3.CFG["OBJ"], opt3.CFG["LAMBDA_O"] = "o", 0.003
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfg3m", "cbfo3m"):           # larger barrier margin (docs/FILTER_DEEP_DIVE.md 5c): no fork up to 3x the errors,
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # scales (0.5, 1, 2, 3, 4), h_safe = log2 4, in trigger AND certificate
