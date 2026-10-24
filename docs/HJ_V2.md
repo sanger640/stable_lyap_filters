@@ -71,3 +71,20 @@ its cap, so nothing can be "smoother" by that statistic. On information, two con
 distance: the max BIC gain over scales (negG_max, AUC 0.775 / 0.657) and the outcome sensitivity at 4x (neg_log_sens_4,
 0.787 / 0.653, also the smoothest). Stage B continues as an exploratory step, flagged, with negG_max (pre-declared
 tie-break: highest AUC 4-6) and neg_log_sens_4 as secondary; stage B's held-out gate decides.
+
+## 5. Stage B result (results/jenga/hj2/gateB2_{negG_max,neg_log_sens_4}.json): PRIMARY FAIL
+Value V trained on 1200 logged episodes (policy and G-CEM arms of the s4 and h2h2 tests), PNCBF policy value with
+lambda-reachability targets (lambda 0.9, delta 0.97). Held out: the margin test's policy-alone episodes (paired_record_m3,
+never used for design), margin_check decision set (3327 decisions, 60 topple episodes).
+
+| alarm (matched to the trend rule's 12.97% on held-out safe decisions) | topples warned >= 3 chunks ahead | AUC topple in 1-3 / 4-6 chunks |
+|---|---|---|
+| trend rule (fork distance + decrease condition) | **83.3%** | - |
+| V, margin negG_max | 58.3% | 0.831 / 0.767 |
+| V, margin neg_log_sens_4 | 66.7% | 0.843 / 0.778 |
+| (stage A margins alone, for reference) | - | 0.775 / 0.657 and 0.787 / 0.653 |
+
+Reading: the reachability value does what HJ promises in ranking (it propagates future margin violations back: +0.11 /
++0.12 AUC at 4-6 chunks over the instantaneous margin), but as an alarm at a matched rate it warns later than the
+fork-distance trend rule, which already encodes "getting closer to the boundary" through its decrease condition. Stage C
+(V in the certificate) is not run. The CBF-with-decrease-condition form stays the HJ-inspired element of the filter.
