@@ -385,3 +385,14 @@ decisions 100% identical on benchmark v2 dev, 2x faster per scoring call locally
 - Benchmark v2 (300 enriched decisions, 4 seeds x 64 futures + 1 x 256): trigger retest kappa 0.54 (the 3x trigger fires on 84% of these states). Averaging h over 4 seeds ranks real one-chunk risk better than one seed (AUC 0.764 vs 0.719) and better than one test with 256 futures (0.728).
 - Policy-alone episodes of the O-CEM test (3366 decisions, 55 topples, seeds 0-3): trigger retest agreement 94.7%, kappa 0.80 on ordinary states. At a matched alarm rate on safe episodes, topples warned >= 3 chunks ahead: single seed 73.6% at 12.0%; pooled mean h 67.3% at 11.8%; 2-of-4 vote 80.0% at 12.75%; 1-of-4 85.5% at 16.5%. The trend rule (5h) had 87% at 12.7% on this set and still did not beat G-CEM in closed loop.
 - Read: more futures or seeds do not buy earlier warnings at the same alarm rate. Trigger precision near the grasp pose (5j) is not a sampling-noise problem. The held-out seed runs on Fir were cancelled; there is nothing to confirm.
+
+### 5l. Baseline monitor: ensemble disagreement (pre-registered; results/jenga/disagree_protocol.json): fork test wins, PASS
+
+Epistemic uncertainty = across-model variance of the imagined HOLD30 latent (model_OIL + 4 ens_v1 models, 16 perturbed futures at scale 1), thresholded at the fork test's alarm rate on safe episodes.
+
+| set | fork 3x: warned >= 3 ahead | disagreement (best variant) | alarm rate |
+|---|---|---|---|
+| dev (paired_record_ocl, 55 topples) | 70.9% | 38-44% | 12.0% |
+| held-out (paired_record_m3, 60 topples) | 76.7% | 38.3% (primary d_all_plan; others 38-43%) | 12.1% |
+
+Held-out primary: +38.3 pp, lower bound +28.3 pp, 23 vs 0 discordant. Disagreement does fire before topples (57-59 of 60 within 8 chunks), but late, once the scene is already off the training distribution. The fork test sees the branching earlier. This is the epistemic-vs-branching comparison asked for in docs/LITERATURE_REVIEW.md 10.2 item 4.
