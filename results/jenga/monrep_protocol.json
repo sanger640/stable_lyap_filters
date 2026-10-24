@@ -1,0 +1,15 @@
+{
+ "name": "Monitor replication on fresh policy-alone episodes: relative total variance and relative spread of the imagined futures vs the fork test",
+ "written": "2026-10-24 ~11:30, after the held-out spread gate (results/jenga/spread_protocol.json) and BEFORE any monitor value on this set is computed",
+ "set": "policy-alone arm of the scl closed-loop test (paired_record_scl, episodes 20400-20999, never used for monitor work): every decision in the 10 chunks before each topple, and every decision of every 4th episode without a topple (eval/margin_check.py selection); outcome labels from results/jenga/outcome_audit_scl.json",
+ "rules": {
+  "tvar_rel": "tvar30_rel_s4.0: log(total variance of the 64 imagined HOLD30 latents per dim, plan) - log(same, hold), errors x4 (best held-out variant in spread_protocol's secondary, therefore tested here as primary)",
+  "spread_rel": "spread30_rel_s3.0 (the held-out primary rule): principal-axis variance, errors x3",
+  "fork": "fork_2x / 3x / 4x relative rules with the o barrier, as the filter"
+ },
+ "thresholds": "each continuous rule fires if score > tau, tau = the safe-episode quantile matching the fork rule's safe alarm rate on this set (label-free given the fork rule)",
+ "primary": "share of topple episodes warned >= 3 chunks ahead (first alarm within the 8 chunks before the topple start): tvar_rel minus fork_3x at fork_3x's alarm rate, one-sided 95% lower bound (paired bootstrap over topple episodes, 10000 draws, seed 20261124) > 0",
+ "secondary": "spread_rel minus fork_3x (replication of the held-out PASS); both at fork_2x's and fork_4x's rates; warned within 8",
+ "analysis": "MC_RUN=paired_record_scl MC_TAG=_scl: eval/margin_check.py run; eval/spread_check.py run; eval/spread_gate.py -> results/jenga/deep_dive/spread_gate_scl.json (fork_3x_rate.tvar30_rel_s4.0 = primary)",
+ "stopping": "all selected decisions"
+}
