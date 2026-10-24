@@ -435,8 +435,22 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - Residual failures of the adopted filter in this test (exploratory; eval/residual_check.py -> deep_dive/residual_scl_cbfg3m.json):
   - Topples (22): in 16 the paired policy-alone episode did not topple (the trajectories diverge after the filter acts; the filter prevents 100, these 16 are its residual on episodes the policy got through). The filter acted within the 8 chunks before 19 of the 22, mostly early (lead >= 3 chunks in 17), so these are not missed warnings: the fixes did not hold. 7 toppling chunks were themselves filtered. At 8 of the 15 unfiltered toppling chunks the logged h was 2 (no split up to 3x; the cap cannot tell a 4x split from none; checked below).
   - Wider-margin check (eval/residual_split.py -> deep_dive/residual_split_scl_cbfg3m.json; 7 scales up to 8x): the 38 unfiltered h = 2 decisions in the 3 chunks before a residual topple vs 2424 unfiltered h = 2 decisions in safe episodes (every 10th). The plan forks where holding does not (the trigger a wider margin would add) at 4x in 23.7% vs 9.3%, at 6x 31.6% vs 15.7%, at 8x 21.1% vs 17.6%. So a 4x margin would reach about a quarter of the residual pre-topple moves, at roughly 2.5x the safe rate, but it would also fire on about 9% more safe decisions. The 6x and 8x margins add mostly noise. Reading: 4x is the only wider margin worth testing, and only if steer makes interventions cheap enough (stl).
-  - Time-outs (73): 43 of them succeed with the policy alone; median 12 interventions, 0 holds, fix progress 0.52 per intervention. The stall is many slowed fixes, not holds (as 5j). G-steer (stl, running) targets exactly this. If it frees enough progress, a 4x margin may become affordable.
+  - Time-outs (73): 43 of them succeed with the policy alone; median 12 interventions, 0 holds, fix progress 0.52 per intervention. The stall is many slowed fixes, not holds (as 5j). G-steer (stl, 5o) targeted this; it raised per-fix progress but did not reduce time-outs.
 
+
+### 5o. G-steer in closed loop (pre-registered; results/jenga/stl_protocol.json): PRIMARY FAIL (neutral)
+
+| Arm (600 eps 21000-21599) | topples | time-outs | failures | v4 | v4b | interventions / ep |
+|---|---|---|---|---|---|---|
+| policy | 126 | 19 | 211 | 424 | 370 | - |
+| 3x filter (cbfg3m) | 20 | 77 | 119 | 475 | 404 | 8.31 |
+| 3x filter + steer (cbfgst3m) | 17 | 73 | 116 | 479 | 411 | 8.36 |
+
+- PRIMARY_1 (fewer time-outs): 46 vs 42 discordant, p = 0.38 -> FAIL. PRIMARY_2 (topples non-inferior): -0.5 pp, upper bound +1.0 -> pass.
+- The knob does its job (exploratory, run logs): progress per intervention median 0.70 vs 0.55; holds 101 vs 218 and best-effort fallbacks 60 vs 123.
+- Why time-outs did not fall: in a time-out the filter acts on only 16-18% of the last 15 chunks (both arms), and in 67 of 73 the red block is never lifted (> 5 mm). The first intervention comes at median chunk 12, and median 11 interventions follow. After that the policy runs mostly unfiltered and still does not finish. So the stall is the policy failing to recover from states the fixes put it in, not slow fixes. That revises 5j / 5n ("many slowed fixes"). Making each fix faster cannot help. Fewer or smaller departures from the policy's own path might, or a policy that recovers better (out of scope for the filter).
+- Fifth look at the adopted 3x filter: topples 126 -> 20 (p = 7e-23), v4 +8.5 pp.
+- Consequence for the 4x margin (5n): it adds interventions, and interventions are what cause time-outs, so it is not pursued.
 
 ## 6. Pipeline (queued, not started)
 
