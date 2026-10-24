@@ -3,6 +3,7 @@
 # (same GPU, same software), so each pair differs only by the filter.
 #   sbatch --array=0-$((NT-1)) --export=ALL,NT=<tasks>,N=<episodes>,OFF=<first episode>,TAG=<tag>,ARMS="record cbf" cluster/paired_array.sbatch
 # Results: results/program_b/policy_rollouts/paired_<arm><TAG>/ep<i>.{json,npz}; merge with cluster/merge_paired.py
+#SBATCH --exclude=fc10713   # Fir node with cudaErrorDevicesUnavailable (2026-10-23)
 #SBATCH --account=def-soojeon
 #SBATCH --gpus=nvidia_h100_80gb_hbm3_1g.10gb:1
 #SBATCH --cpus-per-task=2
