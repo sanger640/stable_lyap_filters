@@ -27,6 +27,7 @@ if os.environ.get("MC_OUT"):
     DT = ROOT / "results/jenga/deep_dive" / os.environ["MC_OUT"]
 AUDIT = (ROOT / f"results/jenga/outcome_audit_{TAG.strip('_') or 'ocl'}.json", RUN.name)
 D = ROOT / "results/jenga/deep_dive"
+MASK = os.environ.get("MC_MASK") == "1"                              # also the hand-masked fork flags (plan_m / hold_m)
 
 
 def split_flags(cbf, sim, z0, plans, n_fut=64):
@@ -35,6 +36,13 @@ def split_flags(cbf, sim, z0, plans, n_fut=64):
     import step3_world_model as wm
     mon, cb, torch = cbf.mon, cbf.cb, cbf.mon.torch
     C = len(plans); seed = int(mon.rng.integers(2 ** 31)); split = np.zeros((C, len(SC)), bool); o = np.zeros(C)
+    split_m = np.zeros((C, len(SC)), bool)
+    if MASK:                         # hand-masked fork test (hmf): the split test on the latent patches outside each plan's
+        hm = []                      # hand path only (the o barrier's mask), so forks of what the hand itself touches are ignored
+        for p in plans:
+            pts = np.vstack([sim.data.site_xpos[sim.site][None], np.asarray(p)[cbff.CFG["PLAN_START"]:cbff.CFG["PLAN_START"] + cbff.CFG["N_LOOK"], :3]])
+            hm.append(torch.as_tensor(~cb.hand_mask(pts), device="cuda", dtype=torch.float32)[..., None].expand(28, 28, 8).reshape(-1))
+        hm = torch.stack(hm)[:, None]                                          # (C, 1, 6272)
     for si, s in enumerate(SC):
         d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])
                        for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(n_fut))])
@@ -55,6 +63,9 @@ def split_flags(cbf, sim, z0, plans, n_fut=64):
                     ends[t] = z.reshape(C, n_fut, -1)
         ok10, _, _ = cf.split_test_gpu(ends[wm.HOLD10]); ok30, _, _ = cf.split_test_gpu(ends[wm.HOLD30])
         split[:, si] = (ok10 & ok30).cpu().numpy()
+        if MASK:
+            m10, _, _ = cf.split_test_gpu(ends[wm.HOLD10] * hm); m30, _, _ = cf.split_test_gpu(ends[wm.HOLD30] * hm)
+            split_m[:, si] = (m10 & m30).cpu().numpy()
         if s == 1.0:
             for c in range(C):
                 pts = np.vstack([sim.data.site_xpos[sim.site][None],
@@ -62,7 +73,7 @@ def split_flags(cbf, sim, z0, plans, n_fut=64):
                 m = torch.as_tensor(~cb.hand_mask(pts), device="cuda")
                 diff = (ends[wm.HOLD30][c].reshape(n_fut, 28, 28, 8) - z0[None]).pow(2).mean(-1)
                 o[c] = float(((diff * m).sum((1, 2)) / m.sum().clamp_min(1)).max())
-    return split, o
+    return (split, o, split_m) if MASK else (split, o)
 
 
 def run(shard=0, nshard=1):
@@ -95,8 +106,11 @@ def run(shard=0, nshard=1):
                 z0 = torch.as_tensor(mon.latent(mon.frame(sim)[None])[0], device="cuda").float()
                 plan = S["plan16"][d].copy(); plan[0, :3] = S["target"][d]
                 hold = np.repeat(np.r_[S["target"][d], 0.0][None].astype(np.float32), 16, 0)
-                split, o = split_flags(cbf, sim, z0, np.stack([plan, hold]))
-                fh.write(json.dumps({"ep": ep, "k": k, "plan": split[0].tolist(), "hold": split[1].tolist(), "o": float(o[0])}) + "\n")
+                res = split_flags(cbf, sim, z0, np.stack([plan, hold])); split, o = res[0], res[1]
+                row = {"ep": ep, "k": k, "plan": split[0].tolist(), "hold": split[1].tolist(), "o": float(o[0])}
+                if MASK:
+                    row.update({"plan_m": res[2][0].tolist(), "hold_m": res[2][1].tolist(), "grip": float(S["gripper"][d])})
+                fh.write(json.dumps(row) + "\n")
                 fh.flush()
             print("margin", ep, flush=True)
 

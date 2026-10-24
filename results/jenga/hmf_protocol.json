@@ -1,0 +1,11 @@
+{
+ "name": "hmf: hand-masked fork test (offline gate)",
+ "registered": "2026-10-24 ~19:50 EDT, before any masked flag was computed",
+ "motivation": "Time-outs where the policy grasps then lets go (30 of 62 in gtv's 3x arm) had more fixes in the 3 decisions before the first grasp (1.20 vs 0.91 in successes), and both alarms fire on nearly half the decisions at the grasp. At the grasp the imagined futures split because the block is either held or not: a fork of what the hand itself touches, not a hazard to the scene. The o barrier already ignores the hand path; the fork test does not.",
+ "rule": "hmf: the same 64 imagined futures and split test (HOLD10 and HOLD30), applied to the latent with the patches of the plan's hand path zeroed (cbf_barrier.hand_mask of the hand position + the plan's next 15 targets, the o barrier's mask; hold uses its own path). Trigger fork_3x as deployed: h_plan < min(h_hold, 2) or o > O_MAX (OIL calibration), h = log2 of the first splitting scale of (0.5, 1, 2, 3, 4) as eval/seed_pool_check.h_of; hmf_3x replaces both h by the masked ones, o unchanged. Task-agnostic: proprioception + camera geometry only.",
+ "data": "eval/margin_check.py run with MC_MASK=1 (same futures give both flag sets). Dev: paired_record_ocl (descriptive only). Held-out gate: paired_record_scl (600 policy-alone episodes 20400-20999; topple episodes' decisions in the 10 chunks before the topple + every decision of every 4th episode without a topple, as monrep), MC_SEED 20261100.",
+ "metrics": "safe alarm rate (episodes without a topple); near-grasp safe alarm rate = decisions in the 3 chunks before the first gripper close (< 55) of safe episodes; topple episodes warned >= 3 chunks ahead within the 8 before the topple (as monrep/s2s_gate).",
+ "primary": "on scl: near-grasp safe alarm rate of hmf_3x <= 0.7 x that of fork_3x (>= 30% relative reduction) AND lead>=3 share hmf - fork, paired over topple episodes, bootstrap (10000, seed 20261028) one-sided 95% lower bound > -5 pp -> PASS -> pre-register a closed-loop test with hmf in trigger and certificate. Otherwise FAIL.",
+ "secondary": ["overall safe alarm rate of both", "alarm rate away from the grasp", "lead>=3 shares at matched overall alarm rate are NOT compared (the rule is fixed, not tuned)"],
+ "analysis": "eval/hmf_gate.py -> results/jenga/hmf_result.json"
+}
