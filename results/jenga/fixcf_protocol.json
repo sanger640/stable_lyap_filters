@@ -1,0 +1,17 @@
+{
+ "name": "fixcf: counterfactual time cost of one filter fix on the approach",
+ "registered": "2026-10-24, before any counterfactual branch was run",
+ "question": "In stl, successes grasp ~6-7 chunks later than their policy-alone pair, with a slope of 1.7 chunks per fix, while each fix removes only 0.3-0.45 chunk of motion (confounded, observational). Does ONE fix causally delay the policy's grasp by more than the motion it removes?",
+ "cases": "150 decisions, one per episode, seeded (20261025): paired_cbfg3m_stl episodes with no neighbour topple; a random decision at which the filter intervened, before the episode's first grasp (gripper < 55). eval/fix_counterfactual.py cases",
+ "branches": "From the exact saved state and 2-frame history: execute the filter's fix | the policy's nominal chunk | a hold (the filter's own hold chunk), then the policy alone for up to 30 chunks. Same execution noise (the run's, scale 2) and the same denoising seed in all branches. The 2-frame history is rebuilt by replaying chunk d-1 from saved state d-1 (sub-mm hand error vs the Fir run: 0.2-0.9 mm in the smoke); every branch then starts from the exact saved state d.",
+ "measures": "grasp = chunks until the gripper first closes (< 55), counted from the branch chunk (0); extract (lift >= 2 cm or pulled >= 2 cm toward the arm); neighbour topple (>= 45 deg). Not grasped within 30 = 31 (censored; counts reported).",
+ "primary": "delay_fix = grasp(fix) - grasp(nominal) on cases where neither branch toppled; excess = delay_fix - (1 - progress) where progress is the logged fix progress (clipped to [0,1]). Bootstrap (10000, seed 20261026) one-sided 95% lower bound of mean excess > 0 -> 'a fix costs more time than the motion it removes' (amplification). Upper bound < 0.5 -> 'no amplification: the observed 1.7 slope is confounding'. Otherwise inconclusive.",
+ "secondary": [
+  "delay_hold = grasp(hold) - grasp(nominal): calibration, expected ~1 if the policy is time-invariant",
+  "median and distribution of delay_fix",
+  "cases where the nominal branch topples a neighbour and the fix does not (fixes that were needed)",
+  "extraction within 30 chunks by branch"
+ ],
+ "run": "Fir, 10 array tasks x 15 cases (cluster/fixcf.sbatch), same container as the closed-loop runs; local smoke of 1 case first (history hand error must be < 2 mm)",
+ "analysis": "eval/fix_counterfactual.py analyse -> results/jenga/fixcf_result.json"
+}
