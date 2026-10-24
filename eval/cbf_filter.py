@@ -44,7 +44,11 @@ CFG = {"TREND_MAX": 2.0, "O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX
        "RAND_P": float(os.environ.get("CBF_RAND_P", 0.071)),
        # START "G" = object-centric start sampler (per-block pose noise, 3 blocks; all tests so far); "gte" = object-free
        # Gauss-TE field fitted on closed-loop latents (eval/gte_check.py; Phase 2 P2-0b estimator)
-       "START": os.environ.get("CBF_START", "G")}
+       "START": os.environ.get("CBF_START", "G"),
+       # BARRIER "fork" = h = log2 of the first splitting scale (all tests so far); "spread" (results/jenga/spread_protocol.json):
+       # continuous h = -log(principal-axis variance of the imagined HOLD30 latents at SPREAD_SCALE x the errors), accepted
+       # iff h >= h_hold - TAU_S (the plan may raise outcome sensitivity over stopping by at most e^TAU_S); o barrier unchanged
+       "BARRIER": os.environ.get("CBF_BARRIER", "fork"), "SPREAD_SCALE": 3.0, "TAU_S": None}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
@@ -71,10 +75,13 @@ class CBF:
         mon, cb, torch = self.mon, self.cb, self.mon.torch
         z0 = frame_z0
         C = len(plans)
-        split = np.zeros((C, len(cb.SCALES)), bool); o = np.zeros(C)
+        split = np.zeros((C, len(cb.SCALES)), bool); o = np.zeros(C); hs = np.zeros(C)
         seed = int(mon.rng.integers(2 ** 31))
         # the largest scale never changes h (split only there and no split both give log2(SCALES[-1])): skip it (exact)
-        for si, s in enumerate(cb.SCALES[:-1] if CFG["SKIP_TOP"] else cb.SCALES):
+        scales = cb.SCALES[:-1] if CFG["SKIP_TOP"] else cb.SCALES
+        if CFG["BARRIER"] == "spread":
+            scales = (1.0, CFG["SPREAD_SCALE"])
+        for si, s in enumerate(scales):
             d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])
                            for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(n_fut))])
             if CFG["START"] == "gte":            # object-free starts: stationary Gaussian field in the latent (no objects)
@@ -96,14 +103,22 @@ class CBF:
                     z = mon.model.step(z, pairs[:, t]).float()
                     if t in (wm.HOLD10, wm.HOLD30):
                         ends[t] = z.reshape(C, n_fut, -1)
-            ok10, _, _ = cf.split_test_gpu(ends[wm.HOLD10]); ok30, _, _ = cf.split_test_gpu(ends[wm.HOLD30])
-            split[:, si] = (ok10 & ok30).cpu().numpy()
+            if CFG["BARRIER"] == "spread":
+                if s == CFG["SPREAD_SCALE"]:                                  # as eval/spread_check.py (spread30)
+                    x = ends[wm.HOLD30].double(); X = x - x.mean(1, keepdim=True)
+                    w = torch.linalg.eigvalsh(X @ X.transpose(1, 2))
+                    hs = -np.log((w[:, -1] / n_fut / x.shape[2]).float().cpu().numpy() + 1e-12)
+            else:
+                ok10, _, _ = cf.split_test_gpu(ends[wm.HOLD10]); ok30, _, _ = cf.split_test_gpu(ends[wm.HOLD30])
+                split[:, si] = (ok10 & ok30).cpu().numpy()
             if s == 1.0:
                 for c in range(C):
                     pts = np.vstack([sim.data.site_xpos[sim.site][None], np.asarray(plans[c])[CFG["PLAN_START"]:CFG["PLAN_START"] + CFG["N_LOOK"], :3]])
                     m = torch.as_tensor(~cb.hand_mask(pts), device="cuda")
                     diff = (ends[wm.HOLD30][c].reshape(n_fut, 28, 28, 8) - z0[None]).pow(2).mean(-1)
                     o[c] = float(((diff * m).sum((1, 2)) / m.sum().clamp_min(1)).max())
+        if CFG["BARRIER"] == "spread":
+            return hs.astype(float), o
         h = np.full(C, np.log2(cb.SCALES[-1]))
         for c in range(C):
             hit = np.flatnonzero(split[c])
@@ -136,6 +151,8 @@ class CBF:
         return np.array(out)
 
     def ok(self, h, o, h_now):
+        if CFG["BARRIER"] == "spread":
+            return (h >= h_now - CFG["TAU_S"]) & (o <= (CFG["O_MAX"] if CFG["O_MAX"] is not None else np.inf))
         return (h >= min(h_now, CFG["H_SAFE"]) - CFG["GAMMA"]) & (o <= (CFG["O_MAX"] if CFG["O_MAX"] is not None else np.inf))
 
     def primitives(self, sim, plan):

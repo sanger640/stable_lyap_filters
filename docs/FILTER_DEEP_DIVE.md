@@ -396,3 +396,20 @@ Epistemic uncertainty = across-model variance of the imagined HOLD30 latent (mod
 | held-out (paired_record_m3, 60 topples) | 76.7% | 38.3% (primary d_all_plan; others 38-43%) | 12.1% |
 
 Held-out primary: +38.3 pp, lower bound +28.3 pp, 23 vs 0 discordant. Disagreement does fire before topples (57-59 of 60 within 8 chunks), but late, once the scene is already off the training distribution. The fork test sees the branching earlier. This is the epistemic-vs-branching comparison asked for in docs/LITERATURE_REVIEW.md 10.2 item 4.
+
+### 5m. Is the fork needed? Relative SPREAD of the same futures warns earlier (pre-registered held-out PASS; results/jenga/spread_protocol.json)
+
+Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same 64 imagined futures as the fork test: spread = variance along the principal axis (or total variance) of the HOLD10 / HOLD30 latents, for the plan and for hold, at scales 0.5-4. Relative rule: log spread_plan - log spread_hold > tau.
+
+| set, alarm rate | fork test | relative spread (x3, HOLD30; primary) | total variance (x4, HOLD30) |
+|---|---|---|---|
+| dev, 6.6% (fork 2x) | 47.3% | 65.5% | 69.1% |
+| dev, 12.0% (fork 3x) | 70.9% | 89.1% | 89.1% |
+| held-out, 7.2% | 45.0% | 63.3% (+18.3, lower +5.0) | 78.3% |
+| held-out, 12.1% | 76.7% | **85.0% (+8.3, lower +1.7; 6 vs 1)** | 91.7% |
+| held-out, 16.6% | 83.3% | 86.7% | 95.0% |
+
+(Share of topples warned >= 3 chunks ahead.) The bimodality machinery is not what makes the monitor work. What carries the early warning is how much more the plan spreads the imagined outcomes than stopping does, a continuous sensitivity. The absolute spread (no hold reference) is not better than the fork. Consequences:
+- A continuous barrier for the CBF: h = -log spread, condition h(plan) >= h(hold) - TAU_S. In words: a plan may raise the spread of imagined outcomes at most e^TAU_S-fold over stopping. TAU_S = 1.0 (label-free, matched to the fork trigger's rate).
+- Cheaper: 2 scales instead of 4.
+- Closed-loop test pre-registered: results/jenga/scl_protocol.json (600 fresh episodes, cbfgs vs cbfg3m).

@@ -1,0 +1,15 @@
+{
+ "name": "Spread-barrier CBF filter in closed loop: the adopted G-CEM filter with the continuous relative-spread barrier instead of the fork barrier",
+ "written": "2026-10-24 ~06:50, after the held-out monitor gate PASS (results/jenga/spread_protocol.json) and before any episode of this test",
+ "episodes": "20400-20999 (600, never used)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg3m": "adopted filter: G-CEM, fork barrier (no fork up to 3x), OIL+ENS certificate, hold fallback",
+  "cbfgs": "the same G-CEM / certificate / fallback with the spread barrier: h = -log(principal-axis variance of the 64 imagined HOLD30 latents at 3x the errors); act and certify iff h >= h_hold - TAU_S, plus the unchanged o barrier; TAU_S = 1.0 set label-free (results/jenga/spread_calibration.json: same trigger rate as fork_3x on 3402 dev decisions); search with 64 futures (2 scales x 64, the fork search's cost)"
+ },
+ "settings": "as the margin / G-grip tests (stress layouts, settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max, model_OIL); Fir cluster/paired_array.sbatch, all arms of an episode in the same job; WM_COMPILE=1 for all arms (results/jenga/compile_result.json; whole new test)",
+ "primary": "cbfgs vs cbfg3m, paired by episode: (1) neighbour topples fewer, exact McNemar one-sided alpha 0.05; (2) v4 success non-inferior: one-sided 95% lower bound of (cbfgs - cbfg3m) > -5 pp (paired bootstrap). Adopt the spread barrier only if both pass.",
+ "secondary": "all failures (topple or red fall) McNemar; red falls; time-outs (clean non-extraction); v4b; each filter vs the policy; interventions per episode; seconds per intervention",
+ "analysis": "eval/ocl_analysis.py with CL_TAG=scl CL_ARMS='record cbfg3m cbfgs' CL_PRIMARY=cbfgs,cbfg3m on outcome_audit_scl.json",
+ "stopping": "none; all 600 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms"
+}

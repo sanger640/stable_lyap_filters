@@ -350,6 +350,16 @@ def paired(mode, n=100, shrink=None):
         cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
         cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfgs":                        # spread barrier (results/jenga/spread_protocol.json): cbfg3m with the continuous
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"      # h = -log spread (HOLD30, x3), accept iff h >= h_hold - TAU_S, in trigger AND
+        os.environ["OPT2_N_SEARCH"] = "64"     # spread depends on the number of futures: search at the hold reference's 64
+                                               # (2 scales x 64 = the fork search's 4 x 32 in cost)
+        import cbf_filter as cbff              # certificate; TAU_S label-free (results/jenga/spread_calibration.json)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["BARRIER"] = "spread"; cbff.CFG["FIX"] = "g3"
+        cbff.CFG["TAU_S"] = json.loads((ROOT / "results/jenga/spread_calibration.json").read_text())["TAU_S"]
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfg3m", "cbfo3m"):           # larger barrier margin (docs/FILTER_DEEP_DIVE.md 5c): no fork up to 3x the errors,
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # scales (0.5, 1, 2, 3, 4), h_safe = log2 4, in trigger AND certificate

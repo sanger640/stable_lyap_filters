@@ -7,5 +7,6 @@
  "secondary": "the same at fork_2x's and fork_4x's alarm rates; the other dev rules (tvar30_rel_s4.0, spread10_plan_s0.5); warned within 8",
  "consequence": "if PASS, a closed-loop test of a filter whose barrier is the continuous relative spread (trigger and certificate) is pre-registered separately",
  "analysis": "MC_RUN=paired_record_m3 MC_TAG=_m3 python3 eval/spread_check.py analyse + the primary computation in eval/spread_gate.py -> results/jenga/deep_dive/spread_gate_m3.json",
- "stopping": "all decisions"
+ "stopping": "all decisions",
+ "result": "2026-10-24 ~06:40, held-out paired_record_m3 (3327 decisions, 60 topple episodes; results/jenga/deep_dive/spread_gate_m3.json): at fork_3x's safe alarm rate (12.1%) topples warned >= 3 chunks ahead: relative spread 85.0% vs fork 76.7% -> +8.3 pp, one-sided lower bound +1.7 pp (6 spread-only vs 1 fork-only) -> PRIMARY PASS. Secondary: at fork_2x's rate (7.2%) 63.3 vs 45.0% (+18.3, lower +5.0); at fork_4x's (16.6%) 86.7 vs 83.3% (+3.3, lower -1.7). tvar30_rel_s4.0: 78.3 / 91.7 / 95.0% at the three rates (lower bounds +20.0 / +8.3 / +5.0). spread10_plan_s0.5 (absolute): not better than the fork. The relative comparison with hold carries the gain."
 }
