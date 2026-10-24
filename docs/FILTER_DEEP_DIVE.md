@@ -342,3 +342,19 @@ as when it was not (52% vs 52%; policy alone 48%). Per-fix progress is the same 
 so every certified fix trades progress for safety by construction; time-outs grow with the intervention load. Levers:
 fewer unneeded interventions (trend rule, running) and a cheaper filter (torch.compile, results/jenga/compile_result.json:
 decisions 100% identical on benchmark v2 dev, 2x faster per scoring call locally, 3.7x on the cluster's MIG slices).
+
+### 5h. Trend (decrease-condition) CBF in closed loop (pre-registered; results/jenga/trend_protocol.json): PRIMARY FAIL; 3x margin replicates in direction
+
+300 fresh episodes 19800-20099, all four arms per episode in one job (Fir + Nibi; amendments 1-3 are infrastructure only).
+
+| arm | topples | red falls before / after extraction | all failures | time-outs (clean non-extraction) | v4 | v4b | interventions / ep | s / intervention |
+|---|---|---|---|---|---|---|---|---|
+| policy | 57 | 15 / 33 | 105 | 9 | 219 | 186 | - | - |
+| G-CEM (cbfg) | 23 | 22 / 35 | 80 | 19 | 236 | 201 | 3.95 | 54 |
+| G-CEM-3x (cbfg3m, adopted) | 15 | 16 / 32 | 63 | 35 | 234 | 202 | 8.59 | 72 |
+| G-CEM-trend (cbfgtr) | 16 | 23 / 27 | 66 | 31 | 230 | 203 | 8.26 | 89 |
+
+- PRIMARY (cbfgtr vs cbfg): topples 13 vs 20 discordant, p = 0.148; v4 -2.0 pp, lower bound -6.67 pp. Both fail; not adopted.
+- The trend rule gives no saving over the 3x margin: same intervention load (8.3 vs 8.6 per episode), slower per intervention, and the same topples (13 vs 14 discordant). Its intended benefit (same lead time with fewer interventions, so fewer time-outs) does not appear in closed loop.
+- 3x replication (secondary): topples 15 vs 23 (11 vs 19 discordant, p = 0.10). Same direction as the margin test (5 vs 19), smaller. Pooled over the two tests (post hoc) 16 vs 38, p = 0.002. All failures 63 vs 80 (38 vs 55, p = 0.048, exploratory endpoint). Time-outs again rise with the intervention load (19 -> 35), as in 5g.
+- Read: the 3x margin stays the default. The next lever is the time-out cost, not more warning.
