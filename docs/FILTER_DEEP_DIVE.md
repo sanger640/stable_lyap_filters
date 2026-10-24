@@ -448,9 +448,19 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 
 - PRIMARY_1 (fewer time-outs): 46 vs 42 discordant, p = 0.38 -> FAIL. PRIMARY_2 (topples non-inferior): -0.5 pp, upper bound +1.0 -> pass.
 - The knob does its job (exploratory, run logs): progress per intervention median 0.70 vs 0.55; holds 101 vs 218 and best-effort fallbacks 60 vs 123.
-- Why time-outs did not fall: in a time-out the filter acts on only 16-18% of the last 15 chunks (both arms), and in 67 of 73 the red block is never lifted (> 5 mm). The first intervention comes at median chunk 12, and median 11 interventions follow. After that the policy runs mostly unfiltered and still does not finish. So the stall is the policy failing to recover from states the fixes put it in, not slow fixes. That revises 5j / 5n ("many slowed fixes"). Making each fix faster cannot help. Fewer or smaller departures from the policy's own path might, or a policy that recovers better (out of scope for the filter).
+- Why time-outs did not fall (exploratory; per-decision gripper and hand target from the episode .npz files):
+
+  | Time-outs | never grasp | first grasp at chunk >= 45 | grasp, then release |
+  |---|---|---|---|
+  | policy (19) | 2 | 0 | 17 |
+  | 3x filter (77) | 17 | 17 | 43 |
+  | + steer (73) | 22 | 17 | 34 |
+
+  - Successful episodes first close the gripper at median chunk 28 with either filter, vs 19 for the policy (p90 43 vs 31). The filter costs about 9 chunks of approach, and steer does not shorten it, even though each fix keeps more motion. The extra progress per fix does not add up to an earlier grasp.
+  - The grasp poses (hand target at first close) match between successes and time-outs, to within 1-2 mm. The released grasps are the policy's own regrasp behaviour (it shows the same pattern alone, 17), and with the filter they happen more often and later. After a release the filter is mostly idle (16-18% of the last 15 chunks).
+  - So time-outs = slower approach (34 of 77) + more failed grasps (43). This revises 5j / 5n ("many slowed fixes") into two parts. Next levers to look at offline: why approach chunks are slowed in the first place (the trigger rate before the grasp is ~45%, see the approach alarms), and whether fixes in the last chunks before closing make the grasp slip.
 - Fifth look at the adopted 3x filter: topples 126 -> 20 (p = 7e-23), v4 +8.5 pp.
-- Consequence for the 4x margin (5n): it adds interventions, and interventions are what cause time-outs, so it is not pursued.
+- Consequence for the 4x margin (5n): it adds approach interventions, which delay the grasp, so it is not pursued for now.
 
 ## 6. Pipeline (queued, not started)
 
