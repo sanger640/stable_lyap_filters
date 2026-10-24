@@ -272,3 +272,22 @@ Per decision on benchmark v2, hold has the lowest one-chunk red risk (4.8% / 4.1
 the carried block is inside the hand mask and the 4 arm knobs keep the grasp as is. Candidate (in scope): the gripper in
 the formulation (G-grip, running) and a hand-region term in the certificate when the gripper is closed; both need an
 offline gate on the red-risk column first.
+
+### 5f. Why the fix misses red falls, and GO-CEM (exploratory analysis; gate pre-registered in results/jenga/go_protocol.json)
+Benchmark v2 dev + holdout, one-chunk red-fall risk by gripper phase (truth cache):
+
+| decisions | policy | G-CEM | hold (gripper held) |
+|---|---|---|---|
+| gripper closed, policy opens it in the chunk (dev 8 / holdout 10) | 46% / 28% | 48% / 22% | 25% / 8% |
+| gripper closed, no gripper event (carrying; 27 / 35) | 6.7% / 6.2% | 4.7% / 5.2% | 0.5% / 0.8% |
+| gripper open (115 / 105) | 5.2% / 5.8% | 4.6% / 5.0% | 4.3% / 4.8% |
+
+eval/red_readout.py (80 closed-gripper decisions, candidates policy / hold / G's chunk / O-CEM's 5 finals): the imagined
+disturbance ranks red risk within a decision (concordance o 0.74, o_hand 0.74, fork distance 0.75, hand spread 0.65), and
+the argmin-o candidate has red risk 6.2% vs G-CEM 11.5% (hold 4.1%, oracle 3.6%) with lower neighbour risk; adding the
+change cost at LAMBDA 0.003 keeps most of it (8.3% / 5.9% vs 14.6% / 9.0%) and holds in 17% / 16%. So the barrier
+already carries the information; what misses it is the OBJECTIVE: G-CEM takes the cheapest certified chunk and never
+trades change for a calmer imagined outcome.
+GO-CEM = G-CEM's certificate as the constraint, min (o + LAMBDA_O * change) as the objective, hold (gripper held) a
+candidate under the same certificate (eval/opt3.py OPT3_OBJ=o). One rule in every phase, no phase switch. Gate on a
+fresh set (m3int: the 3x filter's own interventions in the margin test, 298 decisions) vs the chunk it executed.

@@ -206,7 +206,7 @@ def run(solver, name, tag):
         cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0); opt2.HS = float(np.log2(4.0))
     cbff.CFG["H_SAFE"] = opt2.HS
     C, R = b2.load(name); n = int(os.environ.get("OPT2_LIMIT", len(R)))
-    si, sn = (int(x) for x in os.environ.get("OPT3_SHARD", "0/1").split("/"))     # cluster shard: decisions si, si + sn, ...
+    si, sn = (int(x) for x in os.environ.get("OPT3_SHARD", os.environ.get("TASK", "0/1")).split("/"))   # cluster shard (py_array TASK)
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
     certs = [None] + ([wm.WorldModel.load(ROOT / f"results/program_b/ens_v1/model_ENS{k}.pt") for k in range(4)] if CFG["CERT"] == "OIL+ENS" else [])
     out, t0 = [], time.time()
