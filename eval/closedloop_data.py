@@ -26,10 +26,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 import lookahead_check as la  # noqa: E402
 
-TAG = "paired_record_dev2x"
+TAG = os.environ.get("CL_TAG", "paired_record_dev2x")
 RUN = ROOT / "results/program_b/policy_rollouts" / TAG
-OUT = ROOT / "results/program_b/closedloop_v1"
-SEED, N_TRAIN, N_VAL = 20261600, 2200, 300
+OUT = ROOT / os.environ.get("CL_OUT", "results/program_b/closedloop_v1")
+SEED, N_TRAIN, N_VAL = 20261600, int(os.environ.get("CL_N_TRAIN", 2200)), int(os.environ.get("CL_N_VAL", 300))
+S2S = os.environ.get("CL_S2S")         # sim-to-sim test (results/jenga/s2s_protocol.json): "<first eval episode>"; label-free
+                                       # selection (random decisions only, 8 futures), train = earlier episodes, val = eval ones
 
 
 def selection():
@@ -47,6 +49,13 @@ def selection():
     allk = [k for k in allk if k in have]
     rng = np.random.default_rng(SEED)
     sel = {}
+    if S2S:
+        e0 = int(S2S)
+        for split, cond, n in (("train", lambda e: e < e0, N_TRAIN), ("val", lambda e: e >= e0, N_VAL)):
+            ks = [k for k in allk if cond(k[0])]
+            for i in rng.permutation(len(ks))[:n]:
+                sel[ks[i]] = (split, 8)
+        return sel
     for split, cond, n in (("train", lambda e: e % 5 != 0, N_TRAIN), ("val", lambda e: e % 5 == 0, N_VAL)):
         nk = [k for k in allk if cond(k[0]) and k in near]
         rest = [k for k in allk if cond(k[0]) and k not in near]
@@ -83,6 +92,10 @@ def _job(args):
     g = globals()
     if "_W" not in g:
         sim = DirectJengaSim(str(extract_sim(um.SIM_ARCHIVE, tempfile.mkdtemp(prefix="cl_"))))
+        if os.environ.get("MASS_ONLY"):                # shifted physics, as eval/policy_rollout.py MASS_ONLY
+            for name in ("block_left", "block_right"):
+                b = sim.model.body(name).id; sim.model.body_mass[b] *= float(os.environ["MASS_ONLY"])
+                sim.model.body_inertia[b] *= float(os.environ["MASS_ONLY"])
         g["_W"] = (sim, mujoco.Renderer(sim.model, height=384, width=384), close_camera(mujoco), sd.Latent())
     sim, r, cam, latent = g["_W"]
     errors, snippets = p3.ErrorModel(), np.load(um.BENCH)["snippets"]
