@@ -15,5 +15,11 @@
  "information": "AUC(-l): decisions 1-3 chunks before the topple start vs safe-episode decisions",
  "pass": "AUC_1-3 >= 0.70 AND smoother than h_bin (or h_bin's IQR is 0); among passing margins the highest AUC_4-6 goes to stage B",
  "note": "dev only (these episodes already informed the trigger rules); stage B is judged on held-out episodes",
- "amendment_1": "2026-10-23, after inspecting the raw D values of 4 decisions of one safe episode, before any AUC/smoothness was computed: Ashman D is degenerate as a continuous margin (>= 2 for unimodal 64-sample clouds, ~3), so negD_2 / negD_4 are replaced by the joint BIC gain (min over hold-10/30 endings): negG_2, negG_4, negG_max; h_cont now interpolates the scale where the joint BIC gain crosses 0. neg_gain_4 is the same as negG_4 and is dropped."
+ "amendment_1": "2026-10-23, after inspecting the raw D values of 4 decisions of one safe episode, before any AUC/smoothness was computed: Ashman D is degenerate as a continuous margin (>= 2 for unimodal 64-sample clouds, ~3), so negD_2 / negD_4 are replaced by the joint BIC gain (min over hold-10/30 endings): negG_2, negG_4, negG_max; h_cont now interpolates the scale where the joint BIC gain crosses 0. neg_gain_4 is the same as negG_4 and is dropped.",
+ "result": {
+  "gate_as_written": "FAIL",
+  "why": "the smoothness reference is degenerate: h_bin's median consecutive step is 0 (it sits at its cap), so no margin can be 'smoother' by that statistic (h_cont ties at 0). Information criterion AUC_1-3 >= 0.70: h_bin 0.726, h_cont 0.725, negG_max 0.775, neg_log_sens_4 0.787 (others < 0.70).",
+  "continuation": "exploratory, flagged: stage B proceeds with the margin the pre-declared tie-break picks among AUC-passing continuous margins (highest AUC_4-6): negG_max (0.657; neg_log_sens_4 0.653 as declared secondary). Stage B's own gate on held-out episodes is the decisive test.",
+  "written": "2026-10-23 ~22:50, after margin_A.json"
+ }
 }

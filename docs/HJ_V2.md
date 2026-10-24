@@ -53,3 +53,21 @@ warn >= 3 chunks ahead in more topple episodes than the trend rule (87%), or rea
 **Stage C: V in the filter.** Model-based discrete-time CBF condition on the imagined next state: candidate chunk a is
 admissible if V(f(z, a)) >= min(V(f(z, hold)), (1 - alpha) V(z)) (Latent-CBF form, our hold backup), added to the G-CEM
 certificate; trigger = nominal fails it. Offline on benchmark v2, then closed loop vs the trend winner.
+
+## 4. Stage A result (results/jenga/hj2/margin_A.json; 3366 decisions, 55 topple episodes, 2761 safe decisions)
+
+| margin | distinct values (safe) | median step / IQR | AUC 1-3 before | AUC 4-6 | AUC 7-10 |
+|---|---|---|---|---|---|
+| h_bin | 7 | 0.0 | 0.726 | 0.588 | 0.522 |
+| h_cont | 744 | 0.0 | 0.725 | 0.589 | 0.520 |
+| negG_2 | 2744 | 0.64 | 0.542 | 0.446 | 0.477 |
+| negG_4 | 2753 | 0.71 | 0.687 | 0.559 | 0.544 |
+| negG_max | 2751 | 0.57 | 0.775 | 0.657 | 0.578 |
+| neg_log_sens_2 | 2410 | 0.5 | 0.648 | 0.611 | 0.594 |
+| neg_log_sens_4 | 2492 | 0.26 | 0.787 | 0.653 | 0.565 |
+
+Gate as written: **FAIL**. The smoothness reference is degenerate: h_bin's median consecutive step is 0 because it sits at
+its cap, so nothing can be "smoother" by that statistic. On information, two continuous margins beat the binary fork
+distance: the max BIC gain over scales (negG_max, AUC 0.775 / 0.657) and the outcome sensitivity at 4x (neg_log_sens_4,
+0.787 / 0.653, also the smoothest). Stage B continues as an exploratory step, flagged, with negG_max (pre-declared
+tie-break: highest AUC 4-6) and neg_log_sens_4 as secondary; stage B's held-out gate decides.
