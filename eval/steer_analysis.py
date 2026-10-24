@@ -1,7 +1,9 @@
 """G-steer closed-loop analysis as pre-registered (results/jenga/stl_protocol.json), written before any episode was seen.
 Primary: cbfgst3m vs cbfg3m paired by episode: (1) fewer time-outs (clean non-extraction), exact McNemar one-sided,
 alpha 0.05; (2) neighbour topples non-inferior: one-sided 95% upper bound of the paired topple-rate difference <= +2 pp.
-usage: [CL_TAG=stl] python3 eval/steer_analysis.py  (after outcome_audit.py on paired_{record,cbfg3m,cbfgst3m}_stl)"""
+usage: [CL_TAG=stl] python3 eval/steer_analysis.py  (after outcome_audit.py on paired_{record,cbfg3m,cbfgst3m}_stl)
+Also the gated-trigger test (results/jenga/gtv_protocol.json): CL_TAG=gtv CL_ARMS="cbfg3m cbfgtv3m" (no policy arm;
+the new arm is the last one, the reference is cbfg3m; same primary rule)."""
 import json
 from math import comb
 import os
@@ -11,7 +13,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 TAG = os.environ.get("CL_TAG", "stl")
-ARMS = ("record", "cbfg3m", "cbfgst3m")
+ARMS = tuple(os.environ.get("CL_ARMS", "record cbfg3m cbfgst3m").split()); NEW = ARMS[-1]
 A = json.loads((ROOT / f"results/jenga/outcome_audit_{TAG}.json").read_text())
 V = {a: {r["ep"]: r for r in A[f"paired_{a}_{TAG}"]["rows"]} for a in ARMS}
 EPS = sorted(set.intersection(*(set(v) for v in V.values())))
@@ -52,12 +54,13 @@ def ivstats(a):
 
 KEYS = ("topple", "timeout", "failure", "red_fell_before_extraction", "red_fell_after_extraction", "v4_success", "v4b_success")
 out = {"episodes": len(EPS), "counts": {a: {k: int(vec(a, k).sum()) for k in KEYS} for a in ARMS}}
-p1 = out["PRIMARY_1_fewer_timeouts"] = mcnemar_less("cbfgst3m", "cbfg3m", "timeout")
-p2 = out["PRIMARY_2_topples_noninferior"] = boot("cbfgst3m", "cbfg3m", "topple")
+p1 = out["PRIMARY_1_fewer_timeouts"] = mcnemar_less(NEW, "cbfg3m", "timeout")
+p2 = out["PRIMARY_2_topples_noninferior"] = boot(NEW, "cbfg3m", "topple")
 out["PRIMARY_pass"] = bool(p1["p_one_sided"] < 0.05 and p2["upper95_one_sided_pp"] <= 2.0)
 out["secondary"] = {
-    "v4_steer_minus_g3m": boot("cbfgst3m", "cbfg3m", "v4_success"), "v4b_steer_minus_g3m": boot("cbfgst3m", "cbfg3m", "v4b_success"),
-    "failures_steer_fewer": mcnemar_less("cbfgst3m", "cbfg3m", "failure"),
-    **{f"{a}_fewer_topples_than_policy": mcnemar_less(a, "record", "topple") for a in ARMS[1:]},
-    **{f"{a}_interventions": ivstats(a) for a in ARMS[1:]}}
+    ("v4_steer_minus_g3m" if NEW == "cbfgst3m" else "v4_new_minus_g3m"): boot(NEW, "cbfg3m", "v4_success"),
+    ("v4b_steer_minus_g3m" if NEW == "cbfgst3m" else "v4b_new_minus_g3m"): boot(NEW, "cbfg3m", "v4b_success"),
+    ("failures_steer_fewer" if NEW == "cbfgst3m" else "failures_new_fewer"): mcnemar_less(NEW, "cbfg3m", "failure"),
+    **{f"{a}_fewer_topples_than_policy": mcnemar_less(a, "record", "topple") for a in ARMS[1:] if "record" in ARMS},
+    **{f"{a}_interventions": ivstats(a) for a in ARMS if a != "record"}}
 (ROOT / f"results/jenga/{TAG}_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))

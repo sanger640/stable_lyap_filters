@@ -49,7 +49,11 @@ CFG = {"TREND_MAX": 2.0, "O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX
        # continuous h = -log(principal-axis variance of the imagined HOLD30 latents at SPREAD_SCALE x the errors), accepted
        # iff h >= h_hold - TAU_S (the plan may raise outcome sensitivity over stopping by at most e^TAU_S); o barrier unchanged
        "BARRIER": os.environ.get("CBF_BARRIER", "fork"), "SPREAD_SCALE": 3.0,
-       "TAU_S": float(os.environ["CBF_TAU_S"]) if os.environ.get("CBF_TAU_S") else None}
+       "TAU_S": float(os.environ["CBF_TAU_S"]) if os.environ.get("CBF_TAU_S") else None,
+       # GATE_TV (results/jenga/gtv_protocol.json): act only if the trigger fires AND the relative total variance of the
+       # plan's imagined HOLD30 futures at 4x the errors (log tvar plan - log tvar hold, as eval/spread_check.py tvar30)
+       # exceeds GATE_TV; same futures as the trigger's fork test (the 4x scale is added; h unchanged, exact)
+       "GATE_TV": float(os.environ["CBF_GATE_TV"]) if os.environ.get("CBF_GATE_TV") else None}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 
@@ -80,6 +84,10 @@ class CBF:
         seed = int(mon.rng.integers(2 ** 31))
         # the largest scale never changes h (split only there and no split both give log2(SCALES[-1])): skip it (exact)
         scales = cb.SCALES[:-1] if CFG["SKIP_TOP"] else cb.SCALES
+        want_tv = getattr(self, "_want_tv", False)
+        if want_tv:                                  # the trigger's gate needs tvar at 4x: keep the top scale (h unchanged)
+            assert cb.SCALES[-1] == 4.0
+            scales = cb.SCALES; self._tv = None
         if CFG["BARRIER"] == "spread":
             scales = (1.0, CFG["SPREAD_SCALE"])
         for si, s in enumerate(scales):
@@ -104,6 +112,9 @@ class CBF:
                     z = mon.model.step(z, pairs[:, t]).float()
                     if t in (wm.HOLD10, wm.HOLD30):
                         ends[t] = z.reshape(C, n_fut, -1)
+            if want_tv and s == 4.0:                                          # as eval/spread_check.py (tvar30)
+                x = ends[wm.HOLD30].double(); X = x - x.mean(1, keepdim=True)
+                self._tv = ((X ** 2).sum((1, 2)) / n_fut / x.shape[2]).float().cpu().numpy()
             if CFG["BARRIER"] == "spread":
                 if s == CFG["SPREAD_SCALE"]:                                  # as eval/spread_check.py (spread30)
                     x = ends[wm.HOLD30].double(); X = x - x.mean(1, keepdim=True)
@@ -206,9 +217,17 @@ class CBF:
         if CFG["FIX"] == "lsf":                # latent safety filter baseline (docs/LATENT_SAFETY_FILTER.md); no fork score
             return self.lsf(sim, z0, plan, t0)
         hold = np.repeat(np.r_[sim.target, 0.0][None].astype(np.float32), 16, 0)
-        h, o = self.score(sim, z0, np.stack([plan, hold]), 64)
+        self._want_tv = CFG["GATE_TV"] is not None
+        try:
+            h, o = self.score(sim, z0, np.stack([plan, hold]), 64)
+        finally:
+            self._want_tv = False
         h_nom, o_nom, h_now = h[0], o[0], h[1]
         info = {"h_nom": float(h_nom), "o_nom": float(o_nom), "h_now": float(h_now)}
+        gated = False
+        if CFG["GATE_TV"] is not None:
+            tv_rel = float(np.log(self._tv[0] + 1e-12) - np.log(self._tv[1] + 1e-12)); info["tv_rel"] = round(tv_rel, 4)
+            gated = tv_rel <= CFG["GATE_TV"]
         o_trig = o_nom if CFG["TRIGGER"] == "both" else -np.inf
         if CFG["TRIGGER"] == "random":       # matched-rate baseline: act at random decisions (same fix procedure)
             if not (self.trig_rng.random() < CFG["RAND_P"]):
@@ -229,6 +248,8 @@ class CBF:
                 return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
         elif self.ok(np.array([h_nom]), np.array([o_trig]), h_now)[0]:
             return chunk, {**info, "intervened": False, "seconds": round(time.time() - t0, 2)}
+        elif gated:                          # the fork trigger fired but the plan does not spread the futures more than holding
+            return chunk, {**info, "intervened": False, "gated": True, "seconds": round(time.time() - t0, 2)}
         if CFG["FIX"] == "hold":               # hold and re-plan: keep position for one chunk (gripper column untouched)
             out = np.asarray(plan, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy(); out[:, :3] = sim.target
             if CFG.get("HOLD_GRIP"):           # hold-and-replan 2: gripper also held at the policy's step-0 command
