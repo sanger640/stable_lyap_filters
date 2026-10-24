@@ -171,5 +171,68 @@ def gate_b():
     (OUT / f"gateB_{key}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
+def trend_alarms(rows_dir):
+    """The trend rule (docs/LITERATURE_PLAN.md: relative d <= 2x or o > O_MAX, OR d fell since the previous decision and
+    relative d <= 4x) on margin_check rows -> {(ep, k): alarm}."""
+    O_MAX = json.loads((ROOT / "results/jenga/cbf_calibration_OIL.json").read_text())["O_MAX"]
+    M = {(m["ep"], m["k"]): m for f in sorted(rows_dir.glob("margin_rows_*.jsonl")) for m in map(json.loads, f.read_text().splitlines())}
+    first = lambda fl: next((i for i, v in enumerate(fl) if v), 5)
+    rel = lambda m, mi: first(m["plan"]) <= mi and first(m["plan"]) < first(m["hold"])
+    by, al = {}, {}
+    for e, k in M:
+        by.setdefault(e, []).append(k)
+    for e, ks in by.items():
+        p_ = None
+        for k in sorted(ks):
+            m = M[(e, k)]
+            al[(e, k)] = bool(rel(m, 2) or m["o"] > O_MAX or (p_ is not None and first(m["plan"]) < first(p_["plan"]) and rel(m, 4)))
+            p_ = m
+    return al
+
+
+def gate_b2():
+    """Gate B on HELD-OUT episodes (results/jenga/hj2/stageB_protocol.json): policy-alone arm of the margin test
+    (paired_record_m3; never used for any design), the margin_check decision set (topple windows kt-10..kt + every 4th
+    episode without a topple). Trend rule computed on the same decisions (eval/margin_check.py MC_RUN=paired_record_m3).
+    Primary: at V's threshold giving the trend rule's alarm rate on these safe decisions, share of topple episodes warned
+    >= 3 chunks ahead (within kt-8..kt) by V > the trend rule's."""
+    import torch
+    key = os.environ["HJ_MARGIN"]; net, ck = load_value(key)
+    al = trend_alarms(ROOT / "results/jenga/deep_dive/m3")
+    A = json.loads((ROOT / "results/jenga/outcome_audit_m3.json").read_text())["paired_record_m3"]["rows"]
+    top = {r["ep"] for r in A if r["logged_neighbour_toppled"]}; safe = set(sorted({r["ep"] for r in A} - top)[::4])
+    V = {}
+    for e in sorted(top | safe):
+        with np.load(DATA / "paired_record_m3" / f"ep{e}.npz") as d:
+            with torch.no_grad():
+                v = net.v(torch.as_tensor(d["z"].astype(np.float32), device="cuda"), torch.as_tensor(d["proprio"], device="cuda")).cpu().numpy()
+            for k, x in zip(d["chunk_index"].astype(int), v):
+                if (e, int(k)) in al:
+                    V[(e, int(k))] = float(x)
+    kt = {e: next((c["chunk"] for c in json.loads((ROOT / f"results/program_b/policy_rollouts/paired_record_m3/ep{e}.json").read_text())["log"]
+                   if c.get("topple_started")), None) for e in top}
+    keys = sorted(V)
+    sv = np.array([V[q] for q in keys if q[0] in safe]); s_al = np.array([al[q] for q in keys if q[0] in safe])
+    rate = float(s_al.mean()); tau = float(np.quantile(sv, rate))
+    def lead_share(alarm):
+        n, ge3 = 0, 0
+        for e in top:
+            if kt[e] is None:
+                continue
+            n += 1; hits = [k for (ee, k) in keys if ee == e and kt[e] - 8 <= k <= kt[e] and alarm((ee, k))]
+            ge3 += bool(hits) and kt[e] - min(hits) >= 3
+        return ge3 / max(n, 1), n
+    tr_share, n_t = lead_share(lambda q: al[q]); v_share, _ = lead_share(lambda q: V[q] < tau)
+    pos = np.array([V[q] for q in keys if q[0] in top and kt[q[0]] is not None and 1 <= kt[q[0]] - q[1] <= 3])
+    pos46 = np.array([V[q] for q in keys if q[0] in top and kt[q[0]] is not None and 4 <= kt[q[0]] - q[1] <= 6])
+    out = {"margin": key, "decisions": len(keys), "topple_episodes": n_t, "trend_alarm_rate_safe": round(rate, 4), "tau": tau,
+           "V_alarm_rate_safe": round(float((sv < tau).mean()), 4), "trend_lead_ge3_share": round(tr_share, 3),
+           "V_lead_ge3_share": round(v_share, 3), "auc_V_1-3": float((pos[:, None] < sv[None]).mean()),
+           "auc_V_4-6": float((pos46[:, None] < sv[None]).mean()), "PRIMARY_pass": bool(v_share > tr_share)}
+    (OUT / f"gateB2_{key}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+
+
 if __name__ == "__main__" and sys.argv[1] == "gate":
     gate_b()
+if __name__ == "__main__" and sys.argv[1] == "gate2":
+    gate_b2()

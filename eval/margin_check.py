@@ -19,7 +19,10 @@ os.environ.setdefault("CBF_WM", str(ROOT / "results/program_b/oil_v1/model/model
 os.environ.setdefault("CBF_CALIB", "results/jenga/cbf_calibration_OIL.json")
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src"), str(ROOT / "libero")]
 SC = (0.5, 1.0, 2.0, 3.0, 4.0)
-RUN = ROOT / "results/program_b/policy_rollouts/paired_record_ocl"
+RUN = ROOT / "results/program_b/policy_rollouts" / os.environ.get("MC_RUN", "paired_record_ocl")   # MC_RUN / MC_TAG: other
+TAG = os.environ.get("MC_TAG", "")                                   # policy-alone runs (held-out gate sets)
+DT = ROOT / "results/jenga/deep_dive" / (TAG.strip("_") if TAG else "")   # tagged runs write to their own folder
+AUDIT = (ROOT / f"results/jenga/outcome_audit_{TAG.strip('_') or 'ocl'}.json", RUN.name)
 D = ROOT / "results/jenga/deep_dive"
 
 
@@ -65,10 +68,12 @@ def run(shard=0, nshard=1):
     import cbf_filter as cbff
     import inspector_data as insp
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
-    out = D / f"margin_rows_{shard}.jsonl"; done = set()
+    if os.environ.get("TASK"):                                         # cluster array (py_array.sbatch)
+        shard, nshard = (int(x) for x in os.environ["TASK"].split("/"))
+    out = DT / f"margin_rows_{shard}.jsonl"; done = set(); DT.mkdir(parents=True, exist_ok=True)
     if out.exists():
         done = {(r["ep"], r["k"]) for r in map(json.loads, out.read_text().splitlines())}
-    A = json.loads((ROOT / "results/jenga/outcome_audit_ocl.json").read_text())["paired_record_ocl"]["rows"]
+    A = json.loads(AUDIT[0].read_text())[AUDIT[1]]["rows"]
     top = {r["ep"] for r in A if r["logged_neighbour_toppled"]}
     safe = sorted({r["ep"] for r in A} - top)[::4]                      # alarm rate: every 4th episode without a topple
     files = [RUN / f"ep{e}.npz" for e in sorted(top | set(safe))][shard::nshard]

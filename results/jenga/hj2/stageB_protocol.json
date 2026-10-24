@@ -1,0 +1,11 @@
+{
+ "name": "HJ v2 stage B gate: learned policy safety value V (PNCBF + lambda-Reachability) vs the trend rule, held-out",
+ "written": "2026-10-23 ~23:20, before any value net was trained and before the held-out data exist",
+ "training": "eval/hj_value2.py train on paired_record_s4 paired_cbfg_s4 paired_record_h2h2 paired_cbfg_h2h2 (eval/hj_data2.py data; no labels used); CFG LAMBDA 0.9, DELTA 0.97, 40 epochs, 10% episodes for early stopping. Margin: negG_max (stage A tie-break; exploratory continuation, see stageA_protocol result); neg_log_sens_4 trained the same way as declared secondary.",
+ "held_out": "paired_record_m3 (policy-alone arm of the margin test, episodes 19500-19799; never used for any design): margin_check decision set (topple windows kt-10..kt + every 4th episode without a topple).",
+ "reference": "trend rule (relative d<=2x or o>O_MAX, OR d fell since the previous decision and relative d<=4x) on the same decisions, from eval/margin_check.py MC_RUN=paired_record_m3 MC_TAG=_m3.",
+ "primary": "tau = the quantile of V on the held-out safe decisions equal to the trend rule's alarm rate there; PASS if the share of topple episodes warned >= 3 chunks ahead (first alarm within kt-8..kt) by V < tau exceeds the trend rule's share.",
+ "secondary": "AUC of -V at 1-3 and 4-6 chunks before vs safe decisions; the neg_log_sens_4 value.",
+ "next_if_pass": "stage C (V in the G-CEM certificate), pre-registered separately.",
+ "analysis": "HJ_MARGIN=negG_max python3 eval/hj_value2.py gate2 -> results/jenga/hj2/gateB2_negG_max.json"
+}

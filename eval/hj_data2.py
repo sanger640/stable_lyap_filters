@@ -31,7 +31,7 @@ def main():
     if os.environ.get("HJ_SCALES"):
         hm.SC = tuple(float(x) for x in os.environ["HJ_SCALES"].split(","))
     i, n = (int(x) for x in os.environ.get("TASK", "0/1").split("/"))
-    files = sorted(f for run in os.environ["HJ_RUNS"].split() for f in (PR / run).glob("ep*.npz"))[i::n]
+    files = sorted(f for run in os.environ["HJ_RUNS"].replace("+", " ").split() for f in (PR / run).glob("ep*.npz"))[i::n]
     mon = cf.Monitor(); sim = insp._sim()
     for f in files:
         out = OUT / f.parent.name / f.name
