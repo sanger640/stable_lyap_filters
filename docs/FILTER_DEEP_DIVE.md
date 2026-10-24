@@ -313,3 +313,20 @@ the trigger rate is 45% either way (7 decisions flip each way). So no: the hold 
 own fork test does not see these releases (a release that drops the block in every future is not a fork, and the outside-
 hand barrier masks the carried block). Not pursued further. Where the trigger does fire with the gripper closed, the
 policy's red risk is 20% vs 7.8% where it does not, so it still ranks risk there.
+**Settling readout** (exploratory; eval/settle_check.py, results/jenga/deep_dive/settle_check.json). Idea: a failure that
+happens in every imagined future has no fork spread, but an unstable scene keeps moving after the robot stops. Readout:
+latent change over the imagined hold tail (HOLD10 -> HOLD30, robot still), max / mean over 64 futures, whole frame, hand
+region, outside. Benchmark v2 dev + holdout, 300 decisions x up to 8 candidates with cached truth.
+
+| phase (decisions) | red fall AUC, settle / mean / hand | policy chunk, any red fall | neighbour AUC, settle_mean |
+|---|---|---|---|
+| all (300) | 0.25 / 0.33 / 0.27 | 0.33 / 0.34 / 0.36 | 0.75 |
+| gripper closed (80) | 0.55 / 0.57 / 0.59 | 0.68 / 0.60 / 0.70 | 0.97 |
+| release in the chunk (18) | 0.29 / 0.33 / 0.37 | 0.20 / 0.25 / 0.40 | 0.88 |
+| gripper open (220) | 0.13 / 0.20 / 0.14 | 0.29 / 0.29 / 0.34 | 0.67 |
+
+The world model imagines red-fall chunks as CALMER after the stop (AUC < 0.5), as on the pillar task (doomed releases
+imagined calmer; ~1 px deciding offset). For neighbour topples the settling readout is informative (0.75 / 0.97), but the
+fork trigger already covers those. Reading: red falls (now the dominant residual failure) are below what model_OIL's
+latent resolves; neither the fork spread nor imagined motion sees them. This is a scope boundary of the monitor with this
+world model, not a filter-design gap; not pursued further within the current scope (WM fixed).
