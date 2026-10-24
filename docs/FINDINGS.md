@@ -1,7 +1,22 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-16.
+Last updated 2026-10-24.
+
+## Weekend 2026-10-24/25 summary (read first; details in the rows at the end and docs/FILTER_DEEP_DIVE.md 5h-5m)
+
+- **Adopted filter: G-CEM with the 3x fork margin (cbfg3m).** Three pre-registered closed-loop tests vs the policy (300 fresh episodes each): topples 60 -> 7, 57 -> 15, 63 -> 10. Its cost is time-outs (34-35 of 300 vs 6-12 for the policy). These are a CBF liveness stall near the grasp pose (5j). Success v4 is equal to the 2x filter's (234 vs 236).
+- **Failed in closed loop (pre-registered):**
+  - Trend / decrease-condition trigger (5h): 16 vs 23 topples, p = 0.15.
+  - Gripper-timing knob, G-grip (5i): failures 52 vs 61, p = 0.15; v4 lower bound -5.7 pp.
+- **Monitor, new (pre-registered, held-out policy-alone episodes, topples warned >= 3 chunks ahead at a matched alarm rate):**
+  - Fork test vs world-model ensemble disagreement: 76.7 vs 38.3% (+38 pp, lower bound +28) -> PASS (5l).
+  - Relative SPREAD of the same imagined futures (how much more the plan spreads outcomes than stopping) vs the fork test: 85.0 vs 76.7% (+8.3 pp, lower bound +1.7) -> PASS (5m). The continuous sensitivity, not the bimodality test, carries the warning.
+- **Closed loop of the spread-barrier filter (cbfgs, results/jenga/scl_protocol.json):** 600 fresh episodes vs cbfg3m, running on Fir. The barrier is h = -log spread; a plan may raise outcome spread at most e-fold over stopping (label-free threshold). It is about 4x faster per intervention.
+- **Exploratory, no:**
+  - Pooling more futures or seeds: the trigger is not noise-limited (kappa 0.80), 5k.
+  - Spread does not see red-block falls (AUC 0.58 / 0.47); they remain a world-model resolution limit.
+  - OIL-only certificate: fewer fallbacks, faster, same progress; risk check pending.
 
 ## Headline (closed loop, the user's diffusion policy, three-block pick)
 
