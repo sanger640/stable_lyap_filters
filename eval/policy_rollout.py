@@ -169,7 +169,12 @@ def episode(pol, i, video=False, chunk_hook=None, exec_noise=False, max_chunks=N
         sim.reset(RESET_BASE + i)
         if hard is not None:
             harden(sim, i, hard)
-        if seed is not None:                         # paired runs: the policy's denoising noise is seeded per episode
+        elif os.environ.get("MASS_ONLY"):            # sim-to-sim shift (results/jenga/s2s_protocol.json): neighbours' mass x
+            ms = float(os.environ["MASS_ONLY"]); m = sim.model    # MASS_ONLY, layout and everything else unchanged
+            for name in ("block_left", "block_right"):
+                b = m.body(name).id; m.body_mass[b] *= ms; m.body_inertia[b] *= ms
+            sim.mj.mj_forward(m, sim.data)
+        if seed is not None:                        # paired runs: the policy's denoising noise is seeded per episode
             import torch
             torch.manual_seed(seed)
         if settle:                                   # let the blocks land (they spawn in the air) before the policy starts
