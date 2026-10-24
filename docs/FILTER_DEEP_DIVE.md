@@ -303,3 +303,13 @@ chunks before the fall in 82%. After extraction (46): only 35%, gripper closed a
 next chunk in 61%, i.e. mostly at the release/placement, with no intervention. The trigger lets these through; they look
 like the pillar task's release failures (decided at a ~1 px offset, no fork spread). A fix-side change (GO) cannot reach
 them; a release-aware trigger would need a measurable signal there, which the phase-matched check (5e) finds weak.
+**Is the trigger blind at release because of the hold reference?** (exploratory; eval/hold_grip_check.py,
+results/jenga/deep_dive/hold_grip.log) The trigger's "do nothing" plan sends gripper command 0.0, which the world model's
+base data (0/1 gripper column) reads as "open", so with the gripper closed h_hold could imagine a drop and mask a risky
+release. Closed-loop logs (3x arm, margin test): in the 3 chunks before after-extraction falls with the gripper closed the
+plan forks below 4x in only 9% of decisions (safe closed decisions 11%), and the relative rule suppressed just 2%. Offline
+(80 closed-gripper benchmark v2 decisions): hold with 0.0 vs the gripper's own command forks below 4x in 27.5% vs 23.7%;
+the trigger rate is 45% either way (7 decisions flip each way). So no: the hold encoding is not the cause; the plan's
+own fork test does not see these releases (a release that drops the block in every future is not a fork, and the outside-
+hand barrier masks the carried block). Not pursued further. Where the trigger does fire with the gripper closed, the
+policy's red risk is 20% vs 7.8% where it does not, so it still ranks risk there.
