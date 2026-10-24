@@ -1,0 +1,15 @@
+{
+ "name": "G-grip closed loop: the gripper-timing knob in the adopted filter (G-CEM, 3x margin)",
+ "written": "2026-10-24 ~00:10, after the G-grip offline holdout PASS (results/jenga/grip_holdout_result.json; red-fall risk lower on dev and holdout -> closed loop due by results/jenga/grip_protocol.json) and before any episode of this test",
+ "episodes": "20100-20399 (300, never used)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg3m": "adopted filter: G-CEM, no fork up to 3x, gripper on the policy's clock",
+  "cbfgg3m": "the same + the gripper-timing knob d in [-4, 8] (OPT3_GRIP=shift, GRIP_COST 2)"
+ },
+ "settings": "as the margin test (stress layouts, settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max, model_OIL, OIL+ENS certificate); Fir cluster/paired_array.sbatch, all arms of an episode in the same job.",
+ "primary": "cbfgg3m vs cbfg3m, paired by episode: (1) failures (neighbour topple OR red block fallen) fewer, exact McNemar one-sided alpha 0.05; (2) v4 success non-inferior: one-sided 95% lower bound of (cbfgg3m - cbfg3m) > -5 pp. Gripper stays in the closed-loop method if (2) passes; a gain is claimed only if (1) also passes.",
+ "secondary": "neighbour topples and red falls separately (McNemar); v4b; each filter vs the policy; interventions per episode, seconds per intervention, share of interventions with d != 0.",
+ "analysis": "eval/ocl_analysis.py with CL_TAG=gg CL_ARMS='record cbfg3m cbfgg3m' CL_PRIMARY=cbfgg3m,cbfg3m for topples/v4; failures (topple or red fall) McNemar from outcome_audit_gg.json",
+ "stopping": "none; all 300 episodes per arm; infrastructure failures re-run with the same settings."
+}

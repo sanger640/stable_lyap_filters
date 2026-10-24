@@ -339,6 +339,17 @@ def paired(mode, n=100, shrink=None):
         cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
         cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfgg3m":                      # G-grip (results/jenga/grip_protocol.json): cbfg3m + the gripper-timing knob
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "shift"      # must be set before opt3 is imported (its search box depends on it)
+        import cbf_barrier
+        import cbf_filter as cbff
+        import opt3
+        assert opt3.CFG["GRIP"] == "shift" and len(opt3.LO) == 5
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfg3m", "cbfo3m"):           # larger barrier margin (docs/FILTER_DEEP_DIVE.md 5c): no fork up to 3x the errors,
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # scales (0.5, 1, 2, 3, 4), h_safe = log2 4, in trigger AND certificate
