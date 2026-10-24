@@ -358,3 +358,17 @@ decisions 100% identical on benchmark v2 dev, 2x faster per scoring call locally
 - The trend rule gives no saving over the 3x margin: same intervention load (8.3 vs 8.6 per episode), slower per intervention, and the same topples (13 vs 14 discordant). Its intended benefit (same lead time with fewer interventions, so fewer time-outs) does not appear in closed loop.
 - 3x replication (secondary): topples 15 vs 23 (11 vs 19 discordant, p = 0.10). Same direction as the margin test (5 vs 19), smaller. Pooled over the two tests (post hoc) 16 vs 38, p = 0.002. All failures 63 vs 80 (38 vs 55, p = 0.048, exploratory endpoint). Time-outs again rise with the intervention load (19 -> 35), as in 5g.
 - Read: the 3x margin stays the default. The next lever is the time-out cost, not more warning.
+
+### 5i. G-grip (gripper-timing knob) in closed loop (pre-registered; results/jenga/gg_protocol.json): PRIMARY FAIL
+
+300 fresh episodes 20100-20399 on Fir, all arms of an episode in one job.
+
+| arm | topples | red falls before / after extraction | all failures | time-outs | v4 | v4b | interventions / ep |
+|---|---|---|---|---|---|---|---|
+| policy | 63 | 17 / 30 | 110 | 6 | 214 | 184 | - |
+| G-CEM-3x (cbfg3m) | 10 | 17 / 34 | 61 | 34 | 239 | 205 | 8.31 |
+| G-CEM-3x + gripper knob (cbfgg3m) | 8 | 18 / 26 | 52 | 39 | 235 | 209 | 7.91 |
+
+- PRIMARY: failures 26 vs 35 discordant, p = 0.153; v4 -1.33 pp, lower bound -5.67 pp. Both fail, so the knob is not kept in the closed-loop method.
+- The direction matches the offline result: fewer after-extraction red falls (26 vs 34) and fewer failures overall, but the effect is too small to detect at n = 300. The knob shifts the gripper in 28% of the interventions it optimises.
+- Third look at the adopted 3x filter vs the policy: topples 63 -> 10, all failures 110 -> 61 (28 vs 77 discordant). The time-out cost recurs (6 -> 34).
