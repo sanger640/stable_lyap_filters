@@ -419,6 +419,8 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - G-steer (exploratory, offline; eval/opt3.py OPT3_STEER=1): G's four knobs plus a 3-D offset of the chunk (|d| <= 6 mm per axis, ramped in like the back-off; cost = the plan change itself). The aim is a fix that can reshape the approach instead of only removing motion (5j). Offline on m3int with the OIL certificate vs g3oil: real risk, progress along the plan's own direction, time-out-episode subset (results/jenga/deep_dive/cert_ablation.json).
   - Result (cert_ablation.json): neighbour risk 0.36 vs 0.40% (-0.03 pp, 90% CI -0.19 to +0.08), red +0.09 pp (CI -0.06 to +0.27); projected progress median 0.50 vs 0.38, time-out-episode decisions +0.30 mean (0.51 vs 0.28 median); holds 1.5 vs 3.7%. The theta offsets are used (|d| often 1-6 mm, mixed directions). Closed loop pre-registered: results/jenga/stl_protocol.json.
 
+- Replication on fresh episodes (results/jenga/monrep_protocol.json, written before any value was computed; policy-alone arm of scl, 106 topple episodes): PASS. Warned >= 3 chunks ahead at the fork_3x alarm rate: relative total variance (x4) 89.6% vs fork 79.2% (+10.4 pp, lower bound +4.7); relative spread (x3) 84.9% (+5.7, lower +0.9). The gap is largest at low alarm rates (6.2%: 76 vs 54%). The ABSOLUTE spread of the plan's futures is worse than the fork at every rate, so the gain comes from comparing against holding still. Results: results/jenga/monrep_result.json.
+
 ### 5n. Spread barrier in closed loop (pre-registered; results/jenga/scl_protocol.json): PRIMARY FAIL
 
 600 fresh episodes 20400-20999 on Fir, all arms of an episode in one job.
