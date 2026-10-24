@@ -20,5 +20,18 @@
  "next_if_pass": "policy-guided sampling (barrier-gradient guidance inside the diffusion denoising) as the next fix arm on this bench, then a closed-loop test",
  "topple_margin_pp": 3.0,
  "bootstrap_seed": 20261027,
- "analysis": "eval/fix_bench.py analyse -> results/jenga/fixbench_result.json"
+ "analysis": "eval/fix_bench.py analyse -> results/jenga/fixbench_result.json",
+ "amendment_1": {
+  "written": "2026-10-24 ~19:20 EDT, before any bench branch ran (smokes still queued)",
+  "arm": "job ARMS=proj: nominal, gcem, proj = the deployed fix projected onto the policy's distribution (SDEdit): the fix's 16-step plan (opt2 convention) noised to strength 0.25 of the policy's 8-step DDIM schedule and denoised by the policy with the same 2-frame observations, 8 samples (seed 20261025+9+1000e+d), certified as sel; the certified one with the lowest change cost vs the policy's plan; none certified -> the deployed fix",
+  "strength_choice": "0.25, from distances on 4 cases (no outcomes run): at 0.5 the projection drifted back toward the policy's own plan (proj-fix 5.6-7.2 mm vs fix size 3-8 mm); 0.25 stays nearer the fix (4.4-5.6 mm)",
+  "test": "same primary form as sel: mean delay(proj) - delay(gcem), paired, one-sided 95% upper bound < 0 AND topple upper95 <= +3 pp -> PASS",
+  "observation": "fresh policy samples differ from the policy's own plan by 3.9-11.5 mm (median of 8), as much as or more than the fixes (3-8 mm): the fix is not large relative to the policy's own sampling spread",
+  "run": "Fir, ARMS=proj NSH=15"
+ },
+ "amendment_2": {
+  "written": "2026-10-24 ~19:50 EDT, after the 1-case smokes (outcomes of case 0 only seen)",
+  "finding": "case 0 (ep 21003, d 15): the gcem branch extracted at chunk 11 on node fc11015 (sel job; = the fixcf row) but not within 30 chunks on fc11017 (proj job): continuations are node-dependent (as the cross-cluster checks before). Within a job all branches share one GPU.",
+  "change": "the steer job also runs the gcem branch; steer vs gcem is paired within the job (no cross-job comparison). The steer smoke row (no gcem branch) is deleted and re-run. Every comparison in the analysis is within one job; reproduces_fixcf is reported as a node-consistency check, not a gate."
+ }
 }

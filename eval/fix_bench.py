@@ -8,7 +8,10 @@ First chunk per branch:
                        certified with the 3x filter's certificate (OIL+ENS, 64 fresh futures per model); the certified
                        sample closest to the policy's plan (opt2 cost); none -> hold if certified, else best (h, -o)
              resample  control: the first of those 16 samples, uncertified (how much does ANY other policy sample cost?)
-  ARMS=steer nominal, steer (G-steer recomputed at d: cbfgst3m's search and certificate, run regardless of the trigger)
+  ARMS=steer nominal, gcem, steer (G-steer recomputed at d: cbfgst3m's search and certificate, run regardless of the trigger)
+  ARMS=proj  nominal, gcem, proj (amendment 1: the deployed fix PROJECTED onto the policy's distribution, SDEdit-style:
+             noise the fix's 16-step plan to 1/4 of the policy's DDIM schedule (strength 0.25) and denoise it with the policy
+             conditioned on the same observations, 8 samples; certified as sel; none certified -> the deployed fix)
 usage: ARMS=sel|steer SHARD=i/n python3 eval/fix_bench.py run   -> results/jenga/deep_dive/fixbench/<arms>_<i>.jsonl
        python3 eval/fix_bench.py analyse                          -> results/jenga/fixbench_result.json
 """
@@ -38,7 +41,7 @@ def setup():
     import cbf_barrier
     import cbf_filter as cbff
     import opt3
-    assert opt3.CFG["STEER"] == (ARMS == "steer")
+    assert opt3.CFG["STEER"] == (ARMS == "steer") and ARMS in ("sel", "steer", "proj")
     cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0)
     cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
     cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
@@ -85,12 +88,51 @@ def first_chunks(sim, S, d, hist, pol, mon, cbf, certs, e):
                      "sel_change_mm": round(float(np.abs(best[1:9, :3] - p16[1:9, :3]).max() * 1000), 1),
                      "sel_progress": round(opt3.progress(p16, best), 3),
                      "resample_change_mm": round(float(np.abs(samples[0][1:9, :3] - p16[1:9, :3]).max() * 1000), 1)})
+    elif ARMS == "proj":
+        out["gcem"] = S["executed"][d]
+        fix16 = p16.copy(); D = np.asarray(S["executed"][d], np.float32)[:, :3] - p16[PS:PS + 8, :3]
+        fix16[PS:PS + 8] = S["executed"][d]; fix16[PS + 8:, :3] += D[-1]          # the fix's 16-step plan (opt2 convention)
+        torch.manual_seed(int(fc.SEED + 9 + 1000 * e + d))
+        cand = project(pol, hist, fix16)
+        ok, hc, oc = P.certify(list(cand))
+        costs = np.array([opt2.Problem.cost(P, c[1:9, :3] - p16[1:9, :3]) for c in cand])
+        if ok.any():
+            j = int(np.flatnonzero(ok)[np.argmin(costs[ok])]); out["proj"] = cand[j][PS:PS + 8].copy(); kind = "certified"
+        else:
+            j, out["proj"], kind = -1, S["executed"][d], "fallback_fix"
+        info.update({"proj_kind": kind, "proj_n_certified": int(ok.sum()), "proj_choice": j,
+                     "proj_dist_to_fix_mm": round(float(np.abs(out["proj"][:, :3] - D[:, :3] - p16[PS:PS + 8, :3]).max() * 1000), 1),
+                     "proj_change_mm": round(float(np.abs(out["proj"][:, :3] - p16[PS:PS + 8, :3]).max() * 1000), 1)})
     else:
+        out["gcem"] = S["executed"][d]                                   # amendment 2: within-job reference (nodes differ)
         best, oi = opt3.solve_cem(P, int(mon.rng.integers(2 ** 31)))
         out["steer"] = np.asarray(best, np.float32)[PS:PS + 8].copy()
         info.update({"steer_kind": oi["kind"], "steer_theta": oi.get("theta"), "steer_change_mm": oi.get("change_mm"),
                      "steer_progress": round(opt3.progress(p16, best), 3)})
     return out, info
+
+
+PROJ_N, PROJ_STRENGTH = 8, 0.25
+
+
+def project(pol, hist, plan16, n=PROJ_N, strength=PROJ_STRENGTH):
+    """SDEdit projection of a 16-step plan onto the policy's distribution: x_t = noised plan at the schedule step
+    round(len * (1 - strength)), then the policy's own remaining DDIM steps (same observation conditioning). -> (n, 16, 4)"""
+    import torch
+    w = np.stack([h[0] for h in hist[-2:]]); f = np.stack([h[1] for h in hist[-2:]]); s = np.stack([h[2] for h in hist[-2:]])
+    t = lambda x: torch.from_numpy(x).permute(0, 3, 1, 2)[None].float().cuda().expand(n, -1, -1, -1, -1) / 255.0
+    obs = {"camera_1": t(w), "camera_2": t(f), "agent_pos": torch.from_numpy(s)[None].cuda().expand(n, -1, -1)}
+    with torch.no_grad():
+        nobs = pol.normalizer.normalize(obs)
+        this = {k: v[:, :pol.n_obs_steps].reshape(-1, *v.shape[2:]) for k, v in nobs.items()}
+        gc = pol.obs_encoder(this).reshape(n, -1)
+        x0 = pol.normalizer["action"].normalize(torch.as_tensor(plan16, dtype=torch.float32, device="cuda"))[None].expand(n, -1, -1)
+        sch = pol.noise_scheduler; sch.set_timesteps(pol.num_inference_steps); ts = sch.timesteps
+        i0 = int(round(len(ts) * (1 - strength)))
+        x = sch.add_noise(x0, torch.randn_like(x0), ts[i0:i0 + 1].expand(n))
+        for tt in ts[i0:]:
+            x = sch.step(pol.model(x, tt, local_cond=None, global_cond=gc), tt, x).prev_sample
+        return pol.normalizer["action"].unnormalize(x).cpu().numpy().astype(np.float32)
 
 
 def branch(sim, cams, pol, S, d, e, hist0, first, noises, xy0):
@@ -190,12 +232,27 @@ def analyse():
     out["reproduces_fixcf"] = {b: sum(F[k][a] == R["sel"][k][b] for k in R["sel"] if k in F) for a, b in (("nominal", "nominal"), ("fix", "gcem"))}
     out["sel_kinds"] = {k: sum(r["sel_kind"] == k for r in S) for k in ("certified", "fallback_hold", "fallback_best")}
     out["PRIMARY_pass"] = bool(out["PRIMARY_sel_minus_gcem_delay"]["mean_lower_upper90"][2] < 0 and out["topple_diff_pp_upper95"] <= P["topple_margin_pp"])
+    Rp = {(r["ep"], r["d"]): r for f in sorted(OUT.glob("proj_*.jsonl")) for r in map(json.loads, f.read_text().splitlines())}
+    if Rp:
+        T = list(Rp.values()); dp_, dg2 = delay(T, "proj"), delay(T, "gcem")
+        K3 = sorted(set(dp_) & set(dg2)); z = np.array([dp_[k] - dg2[k] for k in K3], float)
+        tp = np.array([r["proj"]["topple"] is not None for r in T]); tg2 = np.array([r["gcem"]["topple"] is not None for r in T])
+        out["proj"] = {"cases": len(T), "topples": int(tp.sum()), "topples_gcem_same_job": int(tg2.sum()),
+                       "kinds": {k: sum(r["proj_kind"] == k for r in T) for k in ("certified", "fallback_fix")},
+                       "mean_delay": boot(np.array(list(dp_.values()), float)),
+                       "proj_minus_gcem_delay": {"n": len(K3), "mean_lower_upper90": boot(z)},
+                       "topple_diff_pp_upper95": round(100 * boot(tp.astype(float) - tg2.astype(float))[2], 1)}
+        out["proj"]["pass"] = bool(out["proj"]["proj_minus_gcem_delay"]["mean_lower_upper90"][2] < 0 and out["proj"]["topple_diff_pp_upper95"] <= P["topple_margin_pp"])
     if R["steer"]:
         T = list(R["steer"].values()); dt = delay(T, "steer")
         out["steer"] = {"cases": len(T), "topples": sum(r["steer"]["topple"] is not None for r in T),
                         "topples_nominal_same_job": sum(r["nominal"]["topple"] is not None for r in T),
                         "mean_delay": boot(np.array(list(dt.values()), float))}
-        K2 = sorted(set(dt) & set(dg)); y = np.array([dt[k] - dg[k] for k in K2], float)
+        dg3 = delay(T, "gcem")                                            # same job's gcem branch (amendment 2)
+        K2 = sorted(set(dt) & set(dg3)); y = np.array([dt[k] - dg3[k] for k in K2], float)
+        ts_, tg3 = (np.array([r[b]["topple"] is not None for r in T]) for b in ("steer", "gcem"))
+        out["steer"]["topples_gcem_same_job"] = int(tg3.sum())
+        out["steer"]["topple_diff_pp_upper95"] = round(100 * boot(ts_.astype(float) - tg3.astype(float))[2], 1)
         out["steer_minus_gcem_delay"] = {"n": len(K2), "mean_lower_upper90": boot(y)}
         out["nominal_reproduced_across_jobs"] = sum(R["steer"][k]["nominal"] == R["sel"][k]["nominal"] for k in set(R["steer"]) & set(R["sel"]))
     (ROOT / "results/jenga/fixbench_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))

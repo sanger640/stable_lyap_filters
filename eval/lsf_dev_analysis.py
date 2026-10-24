@@ -24,4 +24,4 @@ sel = min(ok, key=lambda a: (cnt[a]["topples"], -int(a[4:]))) if ok else None
 out = {"episodes": len(EPS), "counts": cnt, "eligible_v4_within_5pp": ok, "selected": sel,
        "selected_eps": int(sel[4:]) / 100 if sel else None,
        "replay_flag_matches": {a: SRC[a]["replay_topple_flag_matches"] for a in ARMS}}
-(ROOT / f"results/jenga/{'lsf_dev_result' if FAM == 'lsfe' else 'lsfh_dev_result'}{'' if TAG == 'lsfdev' else '_' + TAG}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+(ROOT / f"results/jenga/{'lsf_dev_result' if FAM == 'lsfe' else FAM + '_dev_result'}{'' if TAG == 'lsfdev' else '_' + TAG}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
