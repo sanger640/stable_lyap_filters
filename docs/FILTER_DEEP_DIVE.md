@@ -474,6 +474,22 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - Consequence: the time-out cost scales with the NUMBER of interventions (explains the 1.7 chunks per fix slope in 5o and why steer did not help). Lever: trigger less often at the same protection, e.g. gate the fix with the better monitor (5m replication).
 - The fixes were needed: within 30 chunks the policy's own chunk toppled a neighbour in 32 cases vs 23 after the fix (18 where only the nominal toppled).
 
+### 5q. Gated trigger in closed loop (pre-registered; results/jenga/gtv_protocol.json): PRIMARY FAIL (neutral)
+600 fresh episodes 23000-23599 (Fir), cbfg3m vs cbfgtv3m (act only if fork_3x fires AND tv_rel > 0.1065).
+
+| | 3x filter | gated |
+|---|---|---|
+| fixes per episode | 8.45 | 7.0 |
+| time-outs | 62 | 62 (15 / 15 discordant, p = 0.57) |
+| topples | 29 | 28 (upper +1.0 pp) |
+| v4 / v4b | 473 / 412 | 478 / 410 |
+| first grasp, successes (median chunk) | 28.0 | 27.5 |
+| time-outs: never grasp / grasp >= 45 / grasp then release | 20 / 12 / 30 | 20 / 13 / 29 |
+
+- 17% fewer fixes moved the first grasp by half a chunk. fixcf says the average fix costs 1.36 chunks, but 70% cost nothing: the gate removed those (plans whose futures do not spread more than holding are low-stakes, and so are their fixes).
+- Three levers have now failed to move time-outs: smaller fixes (steer), fewer fixes (gate), and the earlier gripper knob. Half the time-outs are failed grasps after the approach, which none of them target.
+- Detour shape (exploratory, fixcf rows): back-off distance predicts a >= 3-chunk detour only weakly (AUC 0.64), change size 0.61. The detours look like the policy's own chaotic response, which the fixbench resample control tests directly.
+
 ## 6. Pipeline (queued, not started)
 
 ### 6a. Label-free value function learned in simulation (from SimDist, docs/LITERATURE_REVIEW.md; queued 2026-10-24 at the user's request)
