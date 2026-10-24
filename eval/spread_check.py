@@ -19,7 +19,8 @@ os.environ.setdefault("CBF_CALIB", "results/jenga/cbf_calibration_OIL.json")
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src"), str(ROOT / "libero")]
 import margin_check as mc  # noqa: E402
 
-OUT = ROOT / "results/jenga/deep_dive" / f"spread_rows{mc.TAG}.jsonl"
+OUT = ROOT / "results/jenga/deep_dive" / os.environ.get("SP_OUT", f"spread_rows{mc.TAG}.jsonl")
+KEYS = os.environ.get("SP_KEYS")                                  # other decision sets (e.g. deep_dive/redfall_rows.jsonl)
 
 
 def stats(cbf, z0, plans, n_fut=64):
@@ -61,7 +62,8 @@ def run():
     import cbf_filter as cbff
     import inspector_data as insp
     mon = cf.Monitor(); cbf = cbff.CBF(mon); sim = insp._sim()
-    keys = {(r["ep"], r["k"]) for f in sorted(mc.DT.glob("margin_rows_*.jsonl")) for r in map(json.loads, f.read_text().splitlines())}
+    files = [ROOT / KEYS] if KEYS else sorted(mc.DT.glob("margin_rows_*.jsonl"))
+    keys = {(r["ep"], r["k"]) for f in files for r in map(json.loads, f.read_text().splitlines())}
     done = {(r["ep"], r["k"]) for r in map(json.loads, OUT.read_text().splitlines())} if OUT.exists() else set()
     with OUT.open("a") as fh:
         for ep in sorted({e for e, _ in keys}):

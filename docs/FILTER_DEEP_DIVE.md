@@ -413,3 +413,4 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - A continuous barrier for the CBF: h = -log spread, condition h(plan) >= h(hold) - TAU_S. In words: a plan may raise the spread of imagined outcomes at most e^TAU_S-fold over stopping. TAU_S = 1.0 (label-free, matched to the fork trigger's rate).
 - Cheaper: 2 scales instead of 4.
 - Closed-loop test pre-registered: results/jenga/scl_protocol.json (600 fresh episodes, cbfgs vs cbfg3m).
+- Red falls (exploratory, eval/spread_check.py on deep_dive/redfall_rows decisions): relative spread does not see them either. AUC 1-4 decisions before the fall vs reference decisions: 0.58 before extraction, 0.47 after (tvar 0.56 / 0.38). The world-model resolution limit of 5e/5f stands.
