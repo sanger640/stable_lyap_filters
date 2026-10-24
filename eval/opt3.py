@@ -32,6 +32,11 @@ IDENTITY = np.array([1.0, 0.0, 1.0, 0.0])
 if CFG["GRIP"] == "shift":                                                        # 5th knob: gripper timing d in [-4, 8] steps
     LO, HI, IDENTITY = np.r_[LO, -4.0], np.r_[HI, 8.0], np.r_[IDENTITY, 0.0]      # (> 0 delays the policy's open/close)
     CFG["CEM_SD"] = CFG["CEM_SD"] + [CFG["GRIP_SD"]]
+CFG["STEER"] = os.environ.get("OPT3_STEER") == "1"                               # G-steer (5j liveness): + a 3-D offset d (mm) of the
+if CFG["STEER"]:                                                                  # chunk, ramped in like b, so a fix can reshape the
+    NG = len(LO)                                                                  # approach instead of only removing motion; its cost
+    LO, HI, IDENTITY = np.r_[LO, [-6.0] * 3], np.r_[HI, [6.0] * 3], np.r_[IDENTITY, [0.0] * 3]   # is the plan change itself (L2)
+    CFG["CEM_SD"] = CFG["CEM_SD"] + [3.0] * 3
 
 
 def transform(p16, theta):
@@ -48,6 +53,8 @@ def transform(p16, theta):
     if float(nrm) * 1000 >= CFG["B_MIN_MOVE_MM"]:
         ramp = (t.clamp(max=8) / 8)[..., None]                                    # (1, 16, 1)
         q = q - b[..., None] * ramp * (net / nrm)
+    if CFG["STEER"]:
+        q = q + (t.clamp(max=8) / 8)[..., None] * theta[:, None, NG:NG + 3] / 1000
     if CFG["GRIP"] == "warp":                                                     # G2: gripper follows the arm's plan time
         g = p16[:, 3][tau.detach().round().long()][..., None]
     elif CFG["GRIP"] == "shift":                                                  # G-grip: the policy's gripper sequence shifted by d
@@ -136,7 +143,7 @@ def solve_grad(P, seed):
     req = [s for s in (0.5, 1.0, 2.0) if np.log2(s) < min(P.h_hold, opt2.HS) - 1e-9]
     bars = {s: q.Barrier(mon, z0, seed + int(s * 10), CFG["G_N"], s) for s in set(req) | {1.0}}
     rng = np.random.default_rng(seed)
-    starts = np.vstack([IDENTITY] + [LO + (HI - LO) * rng.random(4) for _ in range(CFG["G_STARTS"] - 1)])
+    starts = np.vstack([IDENTITY] + [LO + (HI - LO) * rng.random(len(LO)) for _ in range(CFG["G_STARTS"] - 1)])
     lo, hi = torch.as_tensor(LO, device="cuda").float(), torch.as_tensor(HI, device="cuda").float()
     th = torch.as_tensor(starts, device="cuda", dtype=torch.float32).requires_grad_(True)
     p0 = torch.as_tensor(P.p0, device="cuda")
@@ -195,6 +202,11 @@ def progress(p0, out):
     return float(b / a) if a > 1e-4 else 1.0
 
 
+def progress_proj(p0, out):                                                     # along the plan's own direction (steer-safe)
+    a = p0[8, :3] - p0[0, :3]; n2 = float(a @ a)
+    return float((out[8, :3] - p0[0, :3]) @ a / n2) if n2 > 1e-8 else 1.0
+
+
 def run(solver, name, tag):
     import torch
     import cbf_filter as cbff
@@ -220,7 +232,7 @@ def run(solver, name, tag):
         h_req = opt2.HS if os.environ.get("OPT3_ABS") == "1" else float(hh[0])       # ABS: require h >= h_safe, not >= h_hold
         P = Problem(mon, cbf, sim, z0, p16, h_req, certs); P.cbf_O_MAX = cbff.CFG["O_MAX"]
         plan, info = (solve_cem if solver == "cem" else solve_grad)(P, 7000 + i)
-        out.append({"i": i, **info, "progress": round(progress(P.p0, plan), 3), "seconds": round(time.time() - t1, 1),
+        out.append({"i": i, **info, "progress": round(progress(P.p0, plan), 3), "progress_proj": round(progress_proj(P.p0, plan), 3), "seconds": round(time.time() - t1, 1),
                     "chunk": plan[1:9].astype(np.float32).tolist()})
         if i % 10 == 0:
             print(f"G-{solver} {i + 1}/{n} {time.time() - t0:.0f}s {info['kind']} theta {info['theta']} {out[-1]['seconds']} s", flush=True)
