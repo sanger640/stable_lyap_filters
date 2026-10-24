@@ -466,6 +466,14 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - Fifth look at the adopted 3x filter: topples 126 -> 20 (p = 7e-23), v4 +8.5 pp.
 - Consequence for the 4x margin (5n): it adds approach interventions, which delay the grasp, so it is not pursued for now.
 
+### 5p. What one fix costs, counterfactually (pre-registered; results/jenga/fixcf_protocol.json): amplification
+
+- Design: 150 approach decisions where the 3x filter intervened (stl, no-topple episodes, one per episode). From the exact saved state, run one chunk three ways (fix / the policy's own chunk / hold), then the policy alone, with the same noise and seed. eval/fix_counterfactual.py.
+- Result (109 cases with no topple in either branch): the first grasp comes 1.36 chunks later after a fix (median 0), while the fix removed 0.41 chunk of motion. Excess +0.95, one-sided lower bound +0.47 -> amplification. A hold costs 2.0 chunks.
+- Shape: 76 fixes cost nothing, 19 cost >= 3 chunks (up to 19). The tail is spread over the approach, not just before the grasp, and it occurs after holds too. The diffusion policy sometimes switches to a long re-approach after any deviation from its own path.
+- Consequence: the time-out cost scales with the NUMBER of interventions (explains the 1.7 chunks per fix slope in 5o and why steer did not help). Lever: trigger less often at the same protection, e.g. gate the fix with the better monitor (5m replication).
+- The fixes were needed: within 30 chunks the policy's own chunk toppled a neighbour in 32 cases vs 23 after the fix (18 where only the nominal toppled).
+
 ## 6. Pipeline (queued, not started)
 
 ### 6a. Label-free value function learned in simulation (from SimDist, docs/LITERATURE_REVIEW.md; queued 2026-10-24 at the user's request)
