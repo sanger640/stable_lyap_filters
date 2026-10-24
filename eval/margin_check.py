@@ -22,6 +22,9 @@ SC = (0.5, 1.0, 2.0, 3.0, 4.0)
 RUN = ROOT / "results/program_b/policy_rollouts" / os.environ.get("MC_RUN", "paired_record_ocl")   # MC_RUN / MC_TAG: other
 TAG = os.environ.get("MC_TAG", "")                                   # policy-alone runs (held-out gate sets)
 DT = ROOT / "results/jenga/deep_dive" / (TAG.strip("_") if TAG else "")   # tagged runs write to their own folder
+SEED = int(os.environ.get("MC_SEED", 20261100))                     # other seeds (retest): MC_SEED + MC_OUT folder
+if os.environ.get("MC_OUT"):
+    DT = ROOT / "results/jenga/deep_dive" / os.environ["MC_OUT"]
 AUDIT = (ROOT / f"results/jenga/outcome_audit_{TAG.strip('_') or 'ocl'}.json", RUN.name)
 D = ROOT / "results/jenga/deep_dive"
 
@@ -88,7 +91,7 @@ def run(shard=0, nshard=1):
                 if (ep, k) in done or (ep in top and (kt is None or not kt - 10 <= k <= kt)):
                     continue
                 sim.restore((S["state"][d], S["ctrl"][d], S["target"][d], float(S["gripper"][d])))
-                mon.rng = np.random.default_rng([20261100, ep, k])
+                mon.rng = np.random.default_rng([SEED, ep, k])
                 z0 = torch.as_tensor(mon.latent(mon.frame(sim)[None])[0], device="cuda").float()
                 plan = S["plan16"][d].copy(); plan[0, :3] = S["target"][d]
                 hold = np.repeat(np.r_[S["target"][d], 0.0][None].astype(np.float32), 16, 0)
