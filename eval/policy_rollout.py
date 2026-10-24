@@ -206,8 +206,13 @@ def episode(pol, i, video=False, chunk_hook=None, exec_noise=False, max_chunks=N
                               "plan16": np.asarray(plan, np.float32)})
             noise = snippets[nrng.integers(len(snippets))] * float(os.environ.get("EXEC_NOISE_SCALE", 1.0)) if exec_noise else np.zeros((8, 3))
             peak_before = peak_neigh
-            for j, a in enumerate(chunk):
-                a = np.asarray(a, np.float32).copy(); a[:3] -= noise[j]
+            step_hook = getattr(chunk_hook, "step_hook", None) if z0 is not None else None   # LSF-step: per model step
+            if step_hook is not None:
+                chunk = chunks[-1] = np.array(chunk, np.float32)
+            for j in range(len(chunk)):
+                if step_hook is not None and j % 2 == 0:                    # may replace commands j, j+1 (in place)
+                    chunk[j:j + 2] = step_hook(sim, chunk[j:j + 2], k, j, info)
+                a = np.asarray(chunk[j], np.float32).copy(); a[:3] -= noise[j]
                 sim.execute(a)
                 o = cams.obs(); hist.append(o)
                 if video:
@@ -220,6 +225,8 @@ def episode(pol, i, video=False, chunk_hook=None, exec_noise=False, max_chunks=N
                 tilt = sim.block_diagnostics()["tilt"]
                 peak_neigh = max(peak_neigh, float(np.max(tilt[1:])))
                 max_lift = max(max_lift, float(sim.data.xpos[sim.tracked_block_ids[0]][2] - z0))
+            if step_hook is not None and snaps is not None:
+                snaps[-1]["executed"] = chunk.copy()                       # what the per-step filter actually executed
             if z0 is None:
                 z0 = float(sim.data.xpos[sim.tracked_block_ids[0]][2])
             log.append({**{k_: v for k_, v in info.items() if k_ != "starts"}, "chunk": k,
@@ -420,6 +427,12 @@ def paired(mode, n=100, shrink=None):
         import cbf_filter as cbff
         cbff.CFG["FIX"] = "lsf"
         return _paired(mode, "cbf", n, shrink)
+    if mode.startswith("lsfs"):                # LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3): lsfs065 = eps 0.65, switch per model step
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
+        os.environ["LSF_EPS"] = str(int(mode[4:]) / 100); os.environ["LSF_VALUE_NAME"] = "value_unisafe.pt"
+        import cbf_filter as cbff
+        cbff.CFG["FIX"] = "lsf_step"
+        return _paired(mode, "cbf", n, shrink)
     if mode in ("cbfmoil", "cbfmsoil"):        # dev10: world model model_OIL (optimiser-in-the-loop round 1) + its calibration
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt")
         import cbf_filter as cbff
@@ -513,6 +526,8 @@ def _paired(name, mode, n=100, shrink=None):
                 cbf.trig_rng = np.random.default_rng([20261900, i])     # random-trigger baseline (unused otherwise)
         snaps = []
         hook.wants_context = mode in ("cbf", "slow")
+        if mode == "cbf" and cbff.CFG["FIX"] == "lsf_step":          # LSF-step: the switch runs at every model step
+            hook.step_hook = cbf.lsf_step
         res, _, _ = episode(pol, i, chunk_hook=None if mode == "record" else hook, exec_noise=True, max_chunks=60, settle=True,
                             seed=4000 + i, hard=None if os.environ.get("HARD_OFF") else shrink,
                             snaps=snaps)

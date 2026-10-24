@@ -208,10 +208,34 @@ class CBF:
         return out, {"intervened": True, "abstained": False, "kind": "lsf", "lsf_vmin": v_min,
                      "change_mm": float(np.abs(out[:, :3] - seg[:, :3]).max() * 1000), "seconds": round(time.time() - t0, 2)}
 
+    def lsf_step(self, sim, cmds, k, j, info):
+        """LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3, stage 1): the least-restrictive switch at every model step (2 control
+        steps): encode the real frame now, imagine the policy's next 2 commands one model step ahead, keep them if
+        V(z', g') > eps, else the safety actor's 2-step action. Updates the chunk's log entry (info) in place."""
+        import lsf as L
+        torch = self.mon.torch; t0 = time.time()
+        if getattr(self, "_lsf", None) is None:
+            self._lsf = (L.ValueFn(os.environ.get("LSF_VALUE_NAME", "value.pt")), float(os.environ.get("LSF_EPS", "0.3")))
+        vf, eps = self._lsf
+        cmds = np.asarray(cmds, np.float32)
+        z = torch.as_tensor(self.mon.latent(self.mon.frame(sim)[None])[0], device="cuda").float()[None]
+        g = torch.as_tensor(np.r_[sim.target, cmds[0][3]][None], dtype=torch.float32, device="cuda")
+        with torch.no_grad():
+            a = torch.as_tensor(cmds.reshape(1, 8), device="cuda")
+            v = float(vf.V(self.mon.model.step(z, a).float(), torch.cat([a[:, 4:7], a[:, 7:8]], 1)))
+            out = cmds if v > eps else vf.act(z, g).view(2, 4).cpu().numpy().astype(np.float32)
+        info["lsf_vmin"] = min(v, info.get("lsf_vmin", np.inf)); info["lsf_steps"] = info.get("lsf_steps", 0) + 1
+        if v <= eps:
+            info["intervened"] = True; info["lsf_overrides"] = info.get("lsf_overrides", 0) + 1
+        info["seconds"] = round(info.get("seconds", 0.0) + time.time() - t0, 2)
+        return out
+
     def filter(self, sim, chunk, k, plan=None, hist=None, pol=None):
         import policy_rollout as pr
         torch = self.mon.torch
         t0 = time.time()
+        if CFG["FIX"] == "lsf_step":           # all switching happens per model step in lsf_step (hooked by policy_rollout)
+            return chunk, {"intervened": False, "abstained": False, "kind": "lsf_step", "seconds": 0.0}
         frame = self.mon.frame(sim)
         z0 = torch.as_tensor(self.mon.latent(frame[None])[0], device="cuda").float()
         if CFG["FIX"] == "lsf":                # latent safety filter baseline (docs/LATENT_SAFETY_FILTER.md); no fork score

@@ -1,0 +1,24 @@
+{
+ "name": "fixbench: which kind of fix delays the policy least, at equal safety (offline, counterfactual)",
+ "registered": "2026-10-24 ~19:00 EDT, before any bench branch was run",
+ "question": "fixcf showed a G-CEM fix delays the grasp 1.36 chunks vs 0.41 chunk of motion removed (amplification): the policy detours after a deviation. Is the detour caused by the fix leaving the policy's own distribution? Then SELECTION among the policy's own samples (in-distribution, same certificate) should delay less. G-steer is measured on the same yardstick.",
+ "cases": "the 150 fixcf decisions (eval/fix_counterfactual.py cases; seed 20261025): approach decisions where the 3x filter intervened, paired_cbfg3m_stl, no neighbour topple in the logged episode",
+ "harness": "exactly fixcf: exact saved state d, 2-frame history rebuilt by replaying chunk d-1, the run's execution noise (scale 2), one first chunk per branch, then the policy alone for up to 30 chunks with the same denoising seed in every branch",
+ "branches": {
+  "job ARMS=sel": "nominal (policy's own chunk), gcem (the logged deployed fix), sel (16 fresh policy samples from the same history, seed 20261025+7+1000e+d; certified with the 3x filter's certificate: OIL+ENS, 64 fresh futures per model, h >= min(h_hold, 2), o <= O_MAX; the certified sample with the lowest opt2 change cost vs the policy's plan; none -> hold if certified, else best (h, -o), as opt2.finish), resample (control: sample 0, uncertified)",
+  "job ARMS=steer": "nominal, steer (G-steer recomputed at d with cbfgst3m's search and certificate, regardless of the trigger)"
+ },
+ "measures": "as fixcf: grasp (gripper < 55), extract, neighbour topple (>= 45 deg); not grasped within 30 = 31",
+ "primary": "delay(arm) = grasp(arm) - grasp(nominal, same job) on cases where neither branch toppled. PRIMARY: mean of delay(sel) - delay(gcem), paired over cases where neither of the four branches' relevant pairs toppled (sel/nominal and gcem/nominal); bootstrap (10000, seed 20261027) one-sided 95% upper bound < 0 AND topple non-inferiority: one-sided 95% upper bound of (topple(sel) - topple(gcem)) over all cases <= +3 pp -> PASS ('in-distribution fixes cost less time'). Otherwise FAIL.",
+ "secondary": [
+  "mean delay of gcem, sel, resample (each with a 90% bootstrap interval); resample answers: does ANY different policy sample cost time? (if resample ~ gcem, the detour is about deviating at all, not about leaving the distribution)",
+  "sel kinds (certified / fallback hold / fallback best) and number certified of 16",
+  "steer: mean delay and steer - gcem (paired across jobs, each relative to its own nominal); topples",
+  "reproduction: nominal and gcem branches identical to fixcf rows (same harness, same cluster)"
+ ],
+ "run": "Fir, cluster/fixbench.sbatch: ARMS=sel 15 tasks x 10 cases, ARMS=steer 10 tasks x 15 cases; smoke 1 case each first (not analysed separately; it is case 0 of shard 0 and is kept)",
+ "next_if_pass": "policy-guided sampling (barrier-gradient guidance inside the diffusion denoising) as the next fix arm on this bench, then a closed-loop test",
+ "topple_margin_pp": 3.0,
+ "bootstrap_seed": 20261027,
+ "analysis": "eval/fix_bench.py analyse -> results/jenga/fixbench_result.json"
+}

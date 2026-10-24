@@ -227,3 +227,45 @@ first.
   sessions expired (need the user's Duo login), so its result is unread. Decision for the user: run head-to-head 2 on
   Rorqual (all arms per episode on the same cluster, so pairing stays valid, but the rule as written is not met), or
   wait for Fir/Nibi.
+
+## Audit 3 (2026-10-24 evening, user: "we did not properly implement the latent safety filter")
+Diagnostic, exploratory (eval/lsf_trigger_check.py -> results/jenga/deep_dive/lsf_trigger_check.json; logs of the LSF
+arms, which at eps <= 0.1 act on only 1.7-2.0 chunks per episode, so these are nearly the policy's own episodes):
+- **As an alarm the learned value is weak.** At the fork monitor's matched safe alarm rate (11.3%), V_min of the policy's
+  segment warns >= 3 chunks ahead of 43.6% of topples (h2h2, 55 topples; 25-26% on the 100 unidev episodes), vs 77-79%
+  for the fork test on other held-out policy episodes (monrep, 5l). At 20%: 76% (h2h2), 54-57% (unidev).
+- **The dev-selected eps 0.10 never sees a topple coming.** Safe decisions: V_min 5/50/95% = 0.60 / 0.82 / 0.94;
+  the 3 decisions before a topple: 0.40 / 0.68 / 0.74; only 1.2% of those are below 0.10.
+- **It acts, but too late.** h2h2 LSF arm, 55 topple episodes: 24 had no intervention in the 8 chunks before the topple,
+  29 had one only in the last 2 chunks (after contact had started: V crashes at contact), 2 had one >= 3 ahead.
+- No new code bug found (encoding, action format, gripper column, V(f(z, a)) check, actor output all re-read). The gaps are
+  fidelity choices, listed against the published method:
+  1. **Switching rate.** The paper re-checks every control step at 15 Hz, so a value that only drops at contact can
+     still save the scene; ours re-checks every 0.8 s and then runs the actor open-loop for 8 control steps. The
+     "too late" pattern above is exactly what a per-step filter would catch.
+  2. **Stochastic imagination.** The original LSF samples its stochastic world model N times per step and keeps the
+     most pessimistic transition; our model is deterministic and the only pessimism is over 5 ensemble members
+     (epistemic). Jenga topples are noise-driven forks (aleatoric), which a deterministic imagination averages away.
+     G-CEM gets the robot's measured perception and execution noise; the LSF did not. A faithful, fair version gives it
+     the same noise model.
+  3. **eps grid.** The useful range of this value is ~0.55-0.75 (alarm rates 5-25%); the unidev grid jumped 0.50 -> 0.70.
+
+### LSF-step (stage 1, spec fixed 2026-10-24 ~19:30, before any LSF-step code ran)
+- Same value value_unisafe.pt (SAC actor + twin critics), same world model model_OIL, same encoder.
+- Least-restrictive switch at EVERY model step (2 control steps = 0.2 s, the finest our world model allows): encode the
+  real frame now; imagine the policy's next 2 commands one model step ahead; if V(z', g') > eps execute them, else
+  execute the safety actor's 2-step action (mean, as deployed). Control returns to the policy at the next model step
+  whenever its commands pass. The policy still plans every 8 control steps (its own chunking, unchanged).
+- Modes lsfs<eps>, dev episodes 15000-15099, Stage 4 paired setup, record arm reused from unidev (policy-only episodes),
+  Fir paired_array. eps grid {0.10, 0.30, 0.50, 0.60, 0.65, 0.70} (0.10 = the chunk-level choice, isolating the
+  switching rate; 0.30 = published; the rest span the value's useful range). Selection rule unchanged (fewest
+  replay-audited topples among eps with v4 no more than 5 pp below the policy; ties -> larger eps). Smoke 15900-15901 first.
+- If an eps is selected: a head-to-head vs G-CEM on fresh episodes, pre-registered separately.
+
+### LSF-stochastic (stage 2, fixed now, runs after stage 1)
+Retrain the UNISafe value with the original LSF's pessimistic sampling translated to our noise model: each imagined
+step draws N = 8 transitions of model_OIL under the robot's measured execution noise (the episodes' snippets, scale 2,
+the same snippets the monitor uses) and keeps the one with the lowest classifier margin; resets get the monitor's
+perception-noise start sampler (G at scale 1). Runtime check: V after each of 8 noisy one-step imaginations, the minimum
+must exceed eps. Same offline gate as the re-audit (actor not saturated, V after its own plan >= hold, AUROC >= 0.7),
+plus the early-warning number above reported (not gated). Then the stage 1 sweep protocol with the better switching rate.
