@@ -32,7 +32,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 import fix_counterfactual as fc  # noqa: E402
 
-OUT = ROOT / "results/jenga/deep_dive/fixbench"
+BRANCH_NOISE = float(os.environ.get("BRANCH_NOISE_SCALE", fc.NOISE))   # 1x bench (amendment 4): branches at 1x, history at the run's 2x
+OUT = ROOT / "results/jenga/deep_dive" / ("fixbench" if BRANCH_NOISE == fc.NOISE else f"fixbench_n{BRANCH_NOISE:g}")
 ARMS = os.environ.get("ARMS", "sel")
 N_SEL = 16
 
@@ -266,7 +267,8 @@ def run():
         with np.load(fc.D / f"ep{e}.npz") as f:
             S = {k: f[k] for k in f.files}
         k0 = int(S["chunk_index"][d])
-        noises = pl.episode_noises(e, k0 + fc.M + 2, scale=fc.NOISE)
+        noises = pl.episode_noises(e, k0 + fc.M + 2, scale=fc.NOISE)                # history replay: the run's own noise
+        noises_b = noises if BRANCH_NOISE == fc.NOISE else pl.episode_noises(e, k0 + fc.M + 2, scale=BRANCH_NOISE)
         sim.restore((S["state"][0], S["ctrl"][0], S["target"][0], float(S["gripper"][0])))
         xy0 = sim.data.xpos[sim.tracked_block_ids[0]][:2].copy()
         sim.restore((S["state"][d - 1], S["ctrl"][d - 1], S["target"][d - 1], float(S["gripper"][d - 1])))
@@ -279,7 +281,7 @@ def run():
         firsts, info = first_chunks(sim, S, d, hist, pol, mon, cbf, certs, e)
         row = {"ep": e, "d": d, "chunk": k0, **info}
         for name, first in firsts.items():
-            row[name] = branch(sim, cams, pol, S, d, e, hist, first, noises, xy0)
+            row[name] = branch(sim, cams, pol, S, d, e, hist, first, noises_b, xy0)
         with open(fout, "a") as f:
             f.write(json.dumps(row) + "\n")
         print(ci, row, flush=True)
@@ -344,7 +346,7 @@ def analyse():
         out["steer"]["topple_diff_pp_upper95"] = round(100 * boot(ts_.astype(float) - tg3.astype(float))[2], 1)
         out["steer_minus_gcem_delay"] = {"n": len(K2), "mean_lower_upper90": boot(y)}
         out["nominal_reproduced_across_jobs"] = sum(R["steer"][k]["nominal"] == R["sel"][k]["nominal"] for k in set(R["steer"]) & set(R["sel"]))
-    (ROOT / "results/jenga/fixbench_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+    (ROOT / f"results/jenga/{OUT.name}_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
 if __name__ == "__main__":

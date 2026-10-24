@@ -40,5 +40,12 @@
   "step_choice": "0.05 from the surrogate only (4 cases, no outcome run): log tvar drop vs the unguided twin 0.13-0.65 with a median plan shift of 0.8-2.4 mm; 0.02 too weak (0.04-0.43); 0.10 overshoots (spread rose in 2 of 4)",
   "test": "same primary form: mean delay(guide) - delay(gcem), paired within the job, one-sided 95% upper bound < 0 AND topple upper95 <= +3 pp -> PASS; secondary: median log tvar drop",
   "run": "Fir, ARMS=guide NSH=15"
+ },
+ "amendment_4": {
+  "written": "2026-10-24 ~20:40 EDT, before any 1x branch ran and before any 2x bench result was seen (2x jobs still running)",
+  "question": "(user) does running at 2x execution noise swamp the fine-grained fixes (steer, guided, projection, selection), so that only crude ones can help?",
+  "design": "the same bench (all four jobs: sel, steer, proj, guide; same cases, seeds, certificates, arms) with the BRANCHES executed at 1x the measured execution noise (the same per-episode noise pattern at half the amplitude, eval/plausibility.episode_noises scale 1); the 2-frame history is still rebuilt with the run's own 2x noise so it stays exact. Output deep_dive/fixbench_n1, result results/jenga/fixbench_n1_result.json.",
+  "tests": "per arm the same primary form as at 2x (delay(arm) - delay(gcem) one-sided 95% upper bound < 0 AND topple upper95 <= +3 pp). Interpretation fixed now: 'noise masks fine fixes' is supported if at least one of steer / guide / proj / sel passes at 1x while failing at 2x; if the arm-minus-gcem delays are about the same at 1x and 2x, noise is not what limits them. Also reported: nominal-branch topples and gcem's delay at 1x vs 2x (how much the filter's time cost depends on the noise).",
+  "run": "Fir, BRANCH_NOISE_SCALE=1, same task counts"
  }
 }

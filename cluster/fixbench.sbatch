@@ -11,5 +11,5 @@ set -euo pipefail
 cd "${SLF_ROOT:-/scratch/ali313/slf/repo}"
 module load apptainer
 ENV="MUJOCO_GL=osmesa,PYOPENGL_PLATFORM=osmesa,TORCH_HOME=$PWD/../torch_home,DIFFUSION_POLICY_DIR=$PWD/../diffusion_policy"
-ENV="$ENV,LD_LIBRARY_PATH=$PWD/../glx/osmesa:/.singularity.d/libs,EXEC_NOISE_SCALE=2,SHARD=$SLURM_ARRAY_TASK_ID/${NSH:-10},ARMS=${ARMS:-sel},LIMIT=${LIMIT:-1000000000},PYTHONUNBUFFERED=1"
+ENV="$ENV,LD_LIBRARY_PATH=$PWD/../glx/osmesa:/.singularity.d/libs,EXEC_NOISE_SCALE=2,SHARD=$SLURM_ARRAY_TASK_ID/${NSH:-10},ARMS=${ARMS:-sel},BRANCH_NOISE_SCALE=${BRANCH_NOISE_SCALE:-2},LIMIT=${LIMIT:-1000000000},PYTHONUNBUFFERED=1"
 apptainer exec --nv --cleanenv --env $ENV -B /project -B /scratch -B $HOME ../torch290.sif ../pyenv/bin/python eval/fix_bench.py run
