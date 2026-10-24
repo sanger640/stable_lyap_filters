@@ -48,7 +48,8 @@ CFG = {"TREND_MAX": 2.0, "O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX
        # BARRIER "fork" = h = log2 of the first splitting scale (all tests so far); "spread" (results/jenga/spread_protocol.json):
        # continuous h = -log(principal-axis variance of the imagined HOLD30 latents at SPREAD_SCALE x the errors), accepted
        # iff h >= h_hold - TAU_S (the plan may raise outcome sensitivity over stopping by at most e^TAU_S); o barrier unchanged
-       "BARRIER": os.environ.get("CBF_BARRIER", "fork"), "SPREAD_SCALE": 3.0, "TAU_S": None}
+       "BARRIER": os.environ.get("CBF_BARRIER", "fork"), "SPREAD_SCALE": 3.0,
+       "TAU_S": float(os.environ["CBF_TAU_S"]) if os.environ.get("CBF_TAU_S") else None}
 CALIB = ROOT / os.environ.get("CBF_CALIB", "results/jenga/cbf_calibration.json")
 
 

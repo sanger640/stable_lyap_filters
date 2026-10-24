@@ -11,5 +11,6 @@
  "primary": "cbfgs vs cbfg3m, paired by episode: (1) neighbour topples fewer, exact McNemar one-sided alpha 0.05; (2) v4 success non-inferior: one-sided 95% lower bound of (cbfgs - cbfg3m) > -5 pp (paired bootstrap). Adopt the spread barrier only if both pass.",
  "secondary": "all failures (topple or red fall) McNemar; red falls; time-outs (clean non-extraction); v4b; each filter vs the policy; interventions per episode; seconds per intervention",
  "analysis": "eval/ocl_analysis.py with CL_TAG=scl CL_ARMS='record cbfg3m cbfgs' CL_PRIMARY=cbfgs,cbfg3m on outcome_audit_scl.json",
- "stopping": "none; all 600 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms"
+ "stopping": "none; all 600 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms",
+ "amendment_1": "2026-10-24 ~07:30, before any test episode ran: a local smoke episode (20400, tag _smoke, discarded) showed that the ensemble certificate compared each certifier model's spread with model_OIL's hold spread; spread level is model-specific (unlike the scale-free fork), so certification failed where the search certified. Fix (eval/opt2.py certify, spread barrier only): each certifier model's plan spread is compared with that model's own hold spread, scored in the same call (hold as at the trigger, gripper column 0). The fork-barrier arms are unchanged (bit-identical code path)."
 }

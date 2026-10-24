@@ -67,14 +67,21 @@ class Problem:
 
     def certify(self, plans):
         """Fresh draws, every certifier model must pass. -> ok (C,), h, o (with the first model)."""
+        import cbf_filter as cbff
         ok, H, O = None, None, None
+        spread = cbff.CFG["BARRIER"] == "spread"            # spread level is model-specific: each certifier model is
+        if spread:                                          # compared with ITS OWN hold (as the trigger's hold: gripper 0)
+            plans = list(plans) + [np.repeat(np.r_[self.sim.target, 0.0][None], 16, 0).astype(np.float32)]
         for k, m in enumerate(self.cert_models):
             if m is not None:
                 saved, self.mon.model = self.mon.model, m
             h, o = self.score(plans, CFG["N_CERT"])
             if m is not None:
                 self.mon.model = saved
-            okk = self.cbf.ok(h, o, self.h_hold)
+            if spread:
+                okk = self.cbf.ok(h[:-1], o[:-1], float(h[-1])); h, o = h[:-1], o[:-1]
+            else:
+                okk = self.cbf.ok(h, o, self.h_hold)
             ok = okk if ok is None else ok & okk
             if k == 0:
                 H, O = h, o
