@@ -312,6 +312,54 @@ def pessimistic_step(models, clf, z, a, g2):
     return p[w, idx], lm.min(0).values, p.std(0).mean((1, 2, 3))
 
 
+ALEA = int(os.environ.get("LSF_ALEA", 0))           # audit 3 stage 2: N noisy transitions per imagined step, keep the worst
+ALEA_SCALE = float(os.environ.get("LSF_ALEA_SCALE", 2.0))   # execution noise scale (the episodes' EXEC_NOISE_SCALE)
+
+
+class Noise:
+    """The monitor's noise model for the LSF's imagination (docs/LATENT_SAFETY_FILTER.md audit 3, stage 2): perception
+    noise on a start latent (start operator G with a perturbation drawn from the measured error model, scale 1) and
+    execution noise on a model step's 2 commands (rows of the measured snippets, x ALEA_SCALE)."""
+    def __init__(self, seed=SEED, bank=4096):
+        import torch
+        import cem_filter as cf
+        import step3b_models as sm
+        import uncertainty_monitor_dev as um
+        import visual_pipeline_panel3 as p3
+        self.torch, self.G = torch, sm.G.load(cf.V3 / "G.pt")
+        E = p3.ErrorModel()
+        self.d = torch.as_tensor(np.stack([np.concatenate([(p * [1, 1, 0]).reshape(9), (r * [0, 0, 1]).reshape(9)])
+                                           for p, r in (E.sample(seed, 7, j) for j in range(bank))]), dtype=torch.float32)
+        self.snip = torch.as_tensor(np.load(um.BENCH)["snippets"], dtype=torch.float32, device=DEV) * ALEA_SCALE   # (64, 8, 3)
+        self.rng = np.random.default_rng([seed, 11])
+
+    def starts(self, z):
+        """z (B, ...) -> perceived starts (B, ...), one perturbation each."""
+        d = self.d[self.rng.integers(len(self.d), size=len(z))]
+        return self.G(z, d).float()
+
+    def actions(self, a, n):
+        """a (B, 8) -> (n, B, 8): each model step's 2 commands minus 2 consecutive rows of a random snippet."""
+        torch = self.torch; B = len(a)
+        i = torch.as_tensor(self.rng.integers(64, size=(n, B)), device=a.device)
+        r = torch.as_tensor(self.rng.integers(0, 7, size=(n, B)), device=a.device)
+        e0, e1 = self.snip[i, r], self.snip[i, r + 1]                                    # (n, B, 3)
+        A = a[None].repeat(n, 1, 1).clone(); A[..., 0:3] -= e0; A[..., 4:7] -= e1
+        return A
+
+
+def alea_step(model, clf, noise, z, a, g2, n=None):
+    """Original LSF's pessimistic sampling with our noise model: n noisy transitions of (z, a), keep the one with the
+    lowest classifier margin. -> next latent (B, ...), its margin."""
+    import torch
+    n = n or ALEA
+    A = noise.actions(a, n); B = len(z)
+    p = model.step(z.repeat(n, 1, 1, 1), A.reshape(n * B, 8)).float().view(n, B, *z.shape[1:])
+    lm = clf(p.flatten(0, 1), g2.repeat(n, 1)).view(n, B)
+    w = lm.argmin(0); idx = torch.arange(B, device=z.device)
+    return p[w, idx], lm.min(0).values
+
+
 def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horizon=15, batch=512, cap=400_000):
     """UNISafe recipe in our world model's imagination. Margin l = min(failure margin of the classifier, uncertainty
     margin); uncertainty margin = clip(2 (thr - u) / thr, -1, 1), u = ensemble disagreement of the transition,
@@ -332,6 +380,7 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
     log_alpha = torch.zeros(1, device=DEV, requires_grad=True); oal = torch.optim.Adam([log_alpha], lr=1e-4)
     R_z = np.load(OUT / "train_reset_z.npy"); R_g = np.load(OUT / "train_reset_prop.npy")
     rng = np.random.default_rng(SEED); use_uq = os.environ.get("LSF_UQ", "1") == "1"; pess = os.environ.get("LSF_PESS") == "1"
+    noise = Noise() if ALEA else None
     # OOD threshold from the policy's own actions (hold-out of nothing: training resets + the recorded policy targets)
     pol = np.load(OUT / "train_reset_plan.npy") if (OUT / "train_reset_plan.npy").exists() else None
     with torch.no_grad():
@@ -346,10 +395,15 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
     n, ptr, upd, log = 0, 0, 0, []
     while upd < updates:
         i = rng.choice(len(R_z), envs); z = torch.as_tensor(R_z[i], device=DEV).float(); g = torch.as_tensor(R_g[i], device=DEV).float()
+        if ALEA:
+            with torch.no_grad():
+                z = noise.starts(z)                                          # perceived start (perception noise)
         for t in range(horizon):
             with torch.no_grad():
                 d, _ = A.sample(z, g); a = plan_from_d(g, d); g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
-                if pess:
+                if ALEA:                                                     # worst of ALEA noisy transitions; margin of z
+                    z2, _ = alea_step(models[0], clf, noise, z, a, g2); u = disagreement(models, z, a)[1]; lf = clf(z, g)
+                elif pess:
                     z2, lf, u = pessimistic_step(models, clf, z, a, g2)
                 else:
                     (z2, u), lf = disagreement(models, z, a), clf(z, g)
@@ -383,7 +437,8 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
                     log.append({"update": upd, "gamma": gam, "alpha": alpha, "critic_loss": float(lq), "actor_loss": float(la),
                                 "l_mean": float(lb.mean()), "unc_fail_share": float((l < 0).float().mean()), "actor_saturated": sat})
                     print(log[-1], flush=True)
-    torch.save({"algo": "sac", "q1": q1.state_dict(), "q2": q2.state_dict(), "actor": A.state_dict(), "ood_threshold": thr, "uq": use_uq, "pess": pess},
+    torch.save({"algo": "sac", "q1": q1.state_dict(), "q2": q2.state_dict(), "actor": A.state_dict(), "ood_threshold": thr, "uq": use_uq, "pess": pess,
+                "alea": ALEA, "alea_scale": ALEA_SCALE},
                OUT / os.environ.get("LSF_VALUE_NAME", "value_sac.pt"))
     json.dump(log, open(OUT / f"{os.environ.get('LSF_VALUE_NAME', 'value_sac.pt')[:-3]}_log.json", "w"))
 

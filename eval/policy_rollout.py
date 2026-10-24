@@ -427,9 +427,12 @@ def paired(mode, n=100, shrink=None):
         import cbf_filter as cbff
         cbff.CFG["FIX"] = "lsf"
         return _paired(mode, "cbf", n, shrink)
-    if mode.startswith("lsfs"):                # LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3): lsfs065 = eps 0.65, switch per model step
+    if mode.startswith("lsfs") or mode.startswith("lsfa"):   # LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3): lsfs065 = eps 0.65,
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
-        os.environ["LSF_EPS"] = str(int(mode[4:]) / 100); os.environ["LSF_VALUE_NAME"] = "value_unisafe.pt"
+        os.environ["LSF_EPS"] = str(int(mode[4:]) / 100)  # switch per model step; lsfa = stage 2 (noisy value + noisy check)
+        os.environ["LSF_VALUE_NAME"] = "value_unisafe.pt" if mode.startswith("lsfs") else "value_unisafe_alea.pt"
+        if mode.startswith("lsfa"):
+            os.environ["LSF_ALEA"] = "8"
         import cbf_filter as cbff
         cbff.CFG["FIX"] = "lsf_step"
         return _paired(mode, "cbf", n, shrink)

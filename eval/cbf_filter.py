@@ -221,8 +221,15 @@ class CBF:
         z = torch.as_tensor(self.mon.latent(self.mon.frame(sim)[None])[0], device="cuda").float()[None]
         g = torch.as_tensor(np.r_[sim.target, cmds[0][3]][None], dtype=torch.float32, device="cuda")
         with torch.no_grad():
-            a = torch.as_tensor(cmds.reshape(1, 8), device="cuda")
-            v = float(vf.V(self.mon.model.step(z, a).float(), torch.cat([a[:, 4:7], a[:, 7:8]], 1)))
+            a = torch.as_tensor(cmds.reshape(1, 8), device="cuda"); g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1)
+            if L.ALEA:                         # stage 2: V after each of ALEA noisy one-step imaginations (perceived start and
+                if getattr(self, "_noise", None) is None:      # execution noise, the monitor's noise model); the minimum
+                    self._noise = L.Noise()
+                self._noise.rng = self.mon.rng                 # per-episode seeded (policy_rollout resets mon.rng per episode)
+                zs = self._noise.starts(z.expand(L.ALEA, -1, -1, -1).contiguous())
+                v = float(vf.V(self.mon.model.step(zs, self._noise.actions(a, L.ALEA)[:, 0]).float(), g2.expand(L.ALEA, -1)).min())
+            else:
+                v = float(vf.V(self.mon.model.step(z, a).float(), g2))
             out = cmds if v > eps else vf.act(z, g).view(2, 4).cpu().numpy().astype(np.float32)
         info["lsf_vmin"] = min(v, info.get("lsf_vmin", np.inf)); info["lsf_steps"] = info.get("lsf_steps", 0) + 1
         if v <= eps:
