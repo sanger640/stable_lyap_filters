@@ -350,6 +350,17 @@ def paired(mode, n=100, shrink=None):
         cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
         cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfgst3m":                     # G-steer (docs/FILTER_DEEP_DIVE.md 5j liveness): cbfg3m + a 3-D offset knob, so a
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"; os.environ["OPT3_STEER"] = "1"   # fix can reshape the approach (set before opt3 import)
+        import cbf_barrier
+        import cbf_filter as cbff
+        import opt3
+        assert opt3.CFG["STEER"] and len(opt3.LO) == 7
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "g3"
+        return _paired(mode, "cbf", n, shrink)
     if mode == "cbfgs":                        # spread barrier (results/jenga/spread_protocol.json): cbfg3m with the continuous
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # h = -log spread (HOLD30, x3), accept iff h >= h_hold - TAU_S, in trigger AND

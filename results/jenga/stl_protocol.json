@@ -1,0 +1,16 @@
+{
+ "name": "G-steer in closed loop: the adopted G-CEM 3x filter plus a 3-D offset knob, so a fix can reshape the approach instead of only removing motion (CBF liveness, docs/FILTER_DEEP_DIVE.md 5j)",
+ "written": "2026-10-24 ~10:10, after the exploratory offline check on m3int (results/jenga/deep_dive/cert_ablation.json: vs the same filter without the knob, neighbour risk 0.36 vs 0.40%, projected progress median 0.50 vs 0.38, +0.30 on time-out-episode decisions) and before any episode of this test",
+ "episodes": "21000-21599 (600, never used)",
+ "arms": {
+  "record": "policy alone",
+  "cbfg3m": "adopted filter: G-CEM, fork barrier (no fork up to 3x), OIL+ENS certificate, hold fallback",
+  "cbfgst3m": "the same trigger, certificate, cost and fallback; G's search box extended by a 3-D offset d of the chunk (|d_i| <= 6 mm, ramped in over the first 8 steps like the back-off; CEM sd 3 mm; identity d = 0), eval/opt3.py OPT3_STEER=1; cost = the L2 plan change as before"
+ },
+ "settings": "as the scl test (stress layouts, settled start, execution noise x2, HARD_OFF=1, per-episode seeds, 60 chunks max, model_OIL, WM_COMPILE=1, all arms of an episode in the same job), cluster/paired_array.sbatch",
+ "definitions": "time-out = clean non-extraction from outcome_audit (no neighbour topple, red block not extracted, no red fall before extraction); topple = logged_neighbour_toppled",
+ "primary": "cbfgst3m vs cbfg3m, paired by episode: (1) fewer time-outs, exact McNemar one-sided alpha 0.05; (2) neighbour topples non-inferior: one-sided 95% upper bound of the paired difference in topple rate (cbfgst3m - cbfg3m, paired bootstrap, 10000 resamples, seed 20261024) <= +2 pp. Adopt the steer knob only if both pass.",
+ "secondary": "v4 / v4b success (McNemar, two-sided), all failures, red falls before / after extraction, each filter vs the policy, interventions per episode, seconds per intervention",
+ "analysis": "eval/steer_analysis.py on outcome_audit_stl.json (written before any episode; tag _stl)",
+ "stopping": "none; all 600 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms"
+}
