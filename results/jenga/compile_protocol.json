@@ -1,0 +1,10 @@
+{
+ "name": "torch.compile world model: speed equivalence gate",
+ "written": "2026-10-24 ~01:15, after the micro-benchmark (random latents: compiled bf16 581 vs eager 1340 ms per 19 steps at batch 512; compiled-vs-eager bf16 relative difference 3.7%, eager bf16-vs-fp32 3.6%), before any decision-level comparison",
+ "change": "WM_COMPILE=1 wraps the world-model network in torch.compile (default mode, no other change; bf16 autocast as now). Default off.",
+ "set": "benchmark v2 dev, all 150 decisions; plans policy / hold (gripper held) / G-CEM's chunk; model_OIL; 64 futures; SCALES 0.5-4; same numpy and torch seeds in every variant",
+ "variants": {"ref": "eager bf16 (current)", "fp32": "eager, autocast disabled (noise-floor reference)", "compiled": "torch.compile bf16"},
+ "metrics": "agreement with ref of: the 3x trigger (h_plan < min(h_hold, 2)), the G-CEM chunk's 3x certificate (h >= min(h_hold, 2) and o <= O_MAX), h exactly; o Spearman",
+ "primary": "compiled trigger agreement AND certificate agreement each >= min(0.95, the fp32 variant's agreement); i.e. compile perturbs decisions no more than the precision choice already does. PASS -> adopt WM_COMPILE=1 for runs started after this (never mid-test); FAIL -> keep eager",
+ "secondary": "seconds per scoring call, compile warm-up time"
+}

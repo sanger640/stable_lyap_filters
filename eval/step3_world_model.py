@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import sys
 
@@ -149,6 +150,8 @@ class WorldModel:
         finally:
             WIDTH = default
         m.net.load_state_dict(saved["state_dict"]); m.net.eval()
+        if os.environ.get("WM_COMPILE") == "1":          # speed (results/jenga/compile_protocol.json); default off
+            m.net = torch.compile(m.net)
         return m
 
 
