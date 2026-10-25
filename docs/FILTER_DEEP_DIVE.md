@@ -496,6 +496,24 @@ Hypothesis: the alarms just before the grasp are forks of what the hand touches 
 - holding still also forks at <= 2x on 36% of those decisions: the scene itself is sensitive there, outside the hand.
 Reading: in the stress layouts at 2x execution noise, the last approach is genuinely fragile; the near-grasp fixes are not false alarms from the hand. This points at the noise level (the user's question) rather than at the trigger: the 1x bench (fixbench amendment 4) measures how much of the fix cost is noise.
 
+### 5s. Fix bench: the kind of edit sets the time cost (pre-registered; results/jenga/fixbench_protocol.json): PRIMARY PASS
+Same 150 approach decisions as fixcf, exact state and history, first move varied, then the policy alone; every comparison within one Fir job (continuations are node-dependent: the same case extracted on one node and not on another).
+
+| first move | delay 2x | delay 1x | topples /150 (2x) |
+|---|---|---|---|
+| policy's own chunk | 0 | 0 | 32 |
+| G-CEM fix (deployed) | 1.36 | 1.65 | 23 |
+| **selection: closest certified of 16 policy samples** | **0.65** | **0.41** | **20** |
+| an unchecked policy sample | 0.60 | 0.19 | 29 |
+| fix projected through the denoiser (SDEdit 0.25) | 0.70 | 0.94 | 22 (vs 22) |
+| guided denoising (x0 steps down imagined log tvar) | 0.63 | 0.65 | 25 (vs 23) |
+| G-steer | 1.76 | 1.40 | 17 |
+
+- PRIMARY (2x): selection - G-CEM = -0.79 chunk (90% upper -0.21), topple upper +2.7 pp -> PASS. Projection and guided are as fast but miss the topple bound (3.3 / 5.3 pp); at 1x projection passes, selection and guided miss it on 2-6 topples.
+- The cost is the edit's kind, not its size: G-CEM's fixes are 3-8 mm, smaller than the spread of the policy's own samples (4-11 mm), yet slowing / pausing / backing off a chunk is something the policy never does itself, and it detours. A different sample of its own costs ~0.2-0.6.
+- Noise (user's question): at 1x the policy's own chunk topples in 3 of these 150 cases (32 at 2x), so the noise makes most of the hazard; but the policy-space fixes gain the same 0.6-1.3 chunks at both levels, and G-CEM's cost does not shrink at 1x. Noise is not what limits the fixes.
+- Selection found a certified sample in 137 of 150 decisions (hold 10, best 3). Next: closed loop (results/jenga/psel_protocol.json, 600 fresh episodes).
+
 ## 6. Pipeline (queued, not started)
 
 ### 6a. Label-free value function learned in simulation (from SimDist, docs/LITERATURE_REVIEW.md; queued 2026-10-24 at the user's request)
