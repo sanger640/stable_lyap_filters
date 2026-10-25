@@ -445,6 +445,18 @@ def paired(mode, n=100, shrink=None):
         import cbf_filter as cbff
         cbff.CFG["FIX"] = "lsf"
         return _paired(mode, "cbf", n, shrink)
+    if mode[:3] in ("lfa", "lfr", "lfm", "lfg", "lfc"):   # label-free LSF (results/jenga/lflsf_protocol.json): LSF stage 2's switch with the
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
+        os.environ["LSF_EPS"] = str(int(mode[3:]) / 100)   # value / actor learned against the label-free margin net; lfr =
+        os.environ.setdefault("LSF_VALUE_NAME", "value_lf_alea.pt"); os.environ["LSF_ALEA"] = "8"   # relative switch (actor safer)
+        os.environ["LSF_REL"] = "1" if mode.startswith("lfr") else "0"
+        if mode[:3] in ("lfm", "lfg", "lfc"):   # LF4 (results/jenga/lflsf_LF4_protocol.json): least-restrictive edit, not a switch;
+            os.environ["LSF_EDIT"] = "line" if mode.startswith("lfm") else "grad"   # lfc = grad edit under the CBF condition
+            if mode.startswith("lfc"):
+                os.environ["LSF_CBF_GAMMA"] = "0.5"
+        import cbf_filter as cbff
+        cbff.CFG["FIX"] = "lsf_step"
+        return _paired(mode, "cbf", n, shrink)
     if mode.startswith("lsfs") or mode.startswith("lsfa"):   # LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3): lsfs065 = eps 0.65,
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
         os.environ["LSF_EPS"] = str(int(mode[4:]) / 100)  # switch per model step; lsfa = stage 2 (noisy value + noisy check)

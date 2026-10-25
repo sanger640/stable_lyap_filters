@@ -72,17 +72,26 @@ class Problem:
         spread = cbff.CFG["BARRIER"] == "spread"            # spread level is model-specific: each certifier model is
         if spread:                                          # compared with ITS OWN hold (as the trigger's hold: gripper 0)
             plans = list(plans) + [np.repeat(np.r_[self.sim.target, 0.0][None], 16, 0).astype(np.float32)]
+        prune = cbff.CFG["PRUNE"] and not spread
         for k, m in enumerate(self.cert_models):
+            # CERT_PRUNE: models after the first only decide the AND, so they score only plans still certified (the first
+            # model's h, o feed the fallbacks and are complete); one seed draw per model either way (same rng stream)
+            idx = np.flatnonzero(ok) if prune and ok is not None else np.arange(len(plans))
+            if len(idx) == 0:
+                self.mon.rng.integers(2 ** 31); continue
             if m is not None:
                 saved, self.mon.model = self.mon.model, m
-            h, o = self.score(plans, CFG["N_CERT"])
+            h, o = self.score([plans[i] for i in idx], CFG["N_CERT"])
             if m is not None:
                 self.mon.model = saved
             if spread:
                 okk = self.cbf.ok(h[:-1], o[:-1], float(h[-1])); h, o = h[:-1], o[:-1]
             else:
                 okk = self.cbf.ok(h, o, self.h_hold)
-            ok = okk if ok is None else ok & okk
+            if ok is None:
+                ok = okk
+            else:
+                ok = ok.copy(); ok[idx] &= okk
             if k == 0:
                 H, O = h, o
         return ok, H, O

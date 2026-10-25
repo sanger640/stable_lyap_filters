@@ -1,0 +1,20 @@
+{
+ "name": "lflsf LF4: least-restrictive EDITS of the policy's action with the learned label-free value (reachability edit and latent CBF), instead of LSF's all-or-nothing switch to the actor",
+ "registered": "2026-10-25 17:15 EDT (file time), before value_lf_alea.pt finished training (17:25) and before any LF3 or LF4 episode ran",
+ "motivation": "User 2026-10-25: psel (pick the closest certified policy sample) is 'too simple ... no intelligent picking, just random sampling'; the latent safety filter methodology 'or other reachability / lyapunov / cbf method' is the direction. LSF's switch discards the policy's command entirely whenever V <= eps. A CBF-style filter instead edits the command as little as needed to satisfy a constraint on the learned value. Three edits, all with the label-free value / actor of LF2 (value_lf_alea.pt) and model_OIL, label-free and task-agnostic.",
+ "arms": {
+  "lfm<eps>": "LSF_EDIT=line: at every model step, if min V over 8 noisy one-step imaginations of the policy's 2 commands <= eps: the smallest blend weight lam in (0.25, 0.5, 0.75, 1) toward the actor's commands (xyz blended, gripper = the policy's for lam < 1, lam = 1 is the actor) with min V > eps; else the candidate with the largest min V; keep the policy if no candidate beats it. All candidates see the same noise (8 perceived starts, execution offsets, flow noise).",
+  "lfg<eps>": "LSF_EDIT=grad: same trigger; gradient ascent on the soft-min (temperature 0.05) over the same 8 draws of V(model_step(z_k, a + off_k), g') w.r.t. the policy's xyz (Adam lr 1 mm, <= 10 iterations, |edit| <= 1 cm per coordinate, gripper = the policy's); the first iterate with min V > eps; else the best of the iterates and the actor; keep the policy if nothing beats it.",
+  "lfc<eps>": "as lfg with the discrete-time CBF condition on h = V - eps in place of the level test: keep / accept iff min V' > eps + (1 - gamma) (V(z_now, g) - eps), gamma = 0.5 (fixed, not tuned)."
+ },
+ "eps": "the eps of the arm LF3 selects (results/jenga/lflsf_LF3_dev.json 'selected'); if LF3 selects none, 0.00 (amended 2026-10-25 17:31, before any LF3 / LF4 dev episode: was 0.30; the smoke test showed the label-free value runs low on real states).",
+ "episodes": "the LF3 dev protocol: episodes 15000-15099, paired with LF3's record arm (paired_record_lflsfdev), 2x execution noise, HARD_OFF, local RTX 3090, tag _lflsfdev.",
+ "selection": "over all LF3 + LF4 arms: the LSF dev rule (fewest replay-audited neighbour topples among arms with v4 >= policy - 5 pp); ties -> fewer overrides per episode. v4 and v4b both reported. Dev selection only (exploratory); the selected arm then goes to a separately pre-registered head-to-head on fresh episodes vs LSF stage 2 (labelled, lsfa030) and psel (cbfps3m).",
+ "secondary": [
+  "overrides per episode; edit size (mm per override)",
+  "share of overrides where the edit reached min V > eps (line: blend weight histogram; grad: iterations)",
+  "seconds per model step",
+  "red falls before / after extraction, time-outs"
+ ],
+ "scope": "label-free (topple labels for grading only), task-agnostic (state-only margin, proprio zeroed), off-the-shelf DINOv2 latent model_OIL; the edit acts on the policy's own commands (xyz), the gripper stays the policy's."
+}

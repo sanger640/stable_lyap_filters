@@ -6,6 +6,7 @@ decisions' own distribution. Same architecture as the LSF classifier, proprio ze
 usage: python3 eval/lflsf.py margin   -> results/program_b/lsf_v1/margin_lf.pt, results/jenga/lflsf_LF1.json
        python3 eval/lflsf.py gate2    -> results/jenga/lflsf_LF2.json (after lsf_audit / lsf_diag on value_lf_alea.pt)
        python3 eval/lflsf.py dev      -> results/jenga/lflsf_LF3_dev.json (after outcome_audit of the local dev sweep)
+       python3 eval/lflsf.py dev4     -> results/jenga/lflsf_LF4_dev.json (LF3 + LF4 arms, results/jenga/lflsf_LF4_protocol.json)
 """
 import json
 from pathlib import Path
@@ -89,7 +90,7 @@ def gate2():
     (ROOT / "results/jenga/lflsf_LF2.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
-DEV_ARMS = ("lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")
+DEV_ARMS = ("lfa000", "lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")   # lfa000: amendment_1
 
 
 def dev():
@@ -115,5 +116,31 @@ def dev():
     (ROOT / "results/jenga/lflsf_LF3_dev.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
+def dev4():
+    """LF4 (results/jenga/lflsf_LF4_protocol.json): the LSF dev rule over all LF3 + LF4 arms; ties -> fewer overrides."""
+    A = json.loads((ROOT / "results/jenga/outcome_audit_lflsfdev.json").read_text())
+    A.update(json.loads((ROOT / "results/jenga/outcome_audit_lflsfdev4.json").read_text()))
+    arms = [k[len("paired_"):-len("_lflsfdev")] for k in A if k != "paired_record_lflsfdev" and k.endswith("_lflsfdev")]
+    R = {a: {r["ep"]: r for r in A[f"paired_{a}_lflsfdev"]["rows"]} for a in ["record"] + arms}
+    EPS = sorted(set.intersection(*(set(v) for v in R.values())))
+    keys = ("logged_neighbour_toppled", "v4_success", "v4b_success", "red_fell_before_extraction", "red_fell_after_extraction")
+    cnt = {a: {k: sum(bool(R[a][e][k]) for e in EPS) for k in keys} for a in R}
+    iv = {}
+    for a in R:
+        cnt[a]["timeout"] = sum(not R[a][e]["extracted"] and not R[a][e]["logged_neighbour_toppled"] and not R[a][e]["red_fell_before_extraction"] for e in EPS)
+        if a == "record":
+            continue
+        L = [json.loads((ROOT / f"results/program_b/policy_rollouts/paired_{a}_lflsfdev/ep{e}.json").read_text())["log"] for e in EPS]
+        ov = sum(c.get("lsf_overrides", 0) for l in L for c in l)
+        iv[a] = {"overrides_per_episode": round(ov / len(EPS), 2),
+                 "edit_mm_per_override": round(sum(c.get("lsf_edit_mm", 0.0) for l in L for c in l) / max(ov, 1), 2),
+                 "sec_per_model_step": round(sum(c.get("seconds", 0.0) for l in L for c in l) / max(1, sum(c.get("lsf_steps", 0) for l in L for c in l)), 3)}
+    pv4 = cnt["record"]["v4_success"] / len(EPS)
+    ok = [a for a in arms if cnt[a]["v4_success"] / len(EPS) >= pv4 - 0.05]
+    sel = min(ok, key=lambda a: (cnt[a]["logged_neighbour_toppled"], iv[a]["overrides_per_episode"])) if ok else None
+    out = {"episodes": len(EPS), "counts": cnt, "interventions": iv, "eligible_v4_within_5pp": ok, "selected": sel}
+    (ROOT / "results/jenga/lflsf_LF4_dev.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+
+
 if __name__ == "__main__":
-    {"margin": margin, "gate2": gate2, "dev": dev}[sys.argv[1]]()
+    {"margin": margin, "gate2": gate2, "dev": dev, "dev4": dev4}[sys.argv[1]]()

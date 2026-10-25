@@ -23,7 +23,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-CFG = {"TREND_MAX": 2.0, "O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "N_LOOK": 15,
+CFG = {"TREND_MAX": 2.0, "O4_LAMBDA": 0.003, "H_SAFE": 1.0, "GAMMA": 0.0, "O_MAX": None, "N_SAMPLES": 15, "FUT_CAND": 32, "PLAN_START": 1, "SKIP_TOP": os.environ.get("CBF_SKIP_TOP", "1") == "1", "PRUNE": os.environ.get("CERT_PRUNE", "0") == "1", "N_LOOK": 15,
        # variants (2026-10-15 diagnosis): TRIGGER "both" = barrier or regime check can trigger (final-test filter),
        # "barrier" = only the barrier triggers (regime check still screens candidates); SELECT "closest" = closest feasible
        # candidate (final-test filter), "margin" = largest barrier among feasible candidates, then closest
@@ -90,7 +90,13 @@ class CBF:
             scales = cb.SCALES; self._tv = None
         if CFG["BARRIER"] == "spread":
             scales = (1.0, CFG["SPREAD_SCALE"])
+        prune = CFG["PRUNE"] and not want_tv and CFG["BARRIER"] != "spread"
         for si, s in enumerate(scales):
+            # CERT_PRUNE: h is the first splitting scale, so above scale 1 (where o is read for every plan) only plans with
+            # no split yet are rolled out; the same futures per plan (seed, j), so h, o are unchanged up to batch numerics
+            idx = np.flatnonzero(~split[:, :si].any(1)) if prune and s > 1.0 else np.arange(C)
+            if len(idx) == 0:
+                continue
             d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])
                            for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(n_fut))])
             if CFG["START"] == "gte":            # object-free starts: stationary Gaussian field in the latent (no objects)
@@ -98,20 +104,21 @@ class CBF:
             else:
                 st = mon.g(z0[None].expand(n_fut, -1, -1, -1), torch.as_tensor(d_, dtype=torch.float32))
             acts = []
-            for p in plans:
+            for p in (plans[i] for i in idx):
                 base = horizon(p, CFG["N_LOOK"])
                 for j in range(n_fut):
                     a = base.copy()
                     noise = np.concatenate([mon.snippets[j % 64], mon.snippets[(j + 1) % 64]])[:CFG["N_LOOK"]] * s
                     a[:CFG["N_LOOK"], :3] -= noise
                     acts.append(a)
-            pairs = torch.as_tensor(np.stack(acts), device="cuda").reshape(C * n_fut, wm.STEPS, -1)
-            z = st.float().repeat(C, 1, 1, 1); ends = {}
+            Ci = len(idx)
+            pairs = torch.as_tensor(np.stack(acts), device="cuda").reshape(Ci * n_fut, wm.STEPS, -1)
+            z = st.float().repeat(Ci, 1, 1, 1); ends = {}
             with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
                 for t in range(wm.STEPS):
                     z = mon.model.step(z, pairs[:, t]).float()
                     if t in (wm.HOLD10, wm.HOLD30):
-                        ends[t] = z.reshape(C, n_fut, -1)
+                        ends[t] = z.reshape(Ci, n_fut, -1)
             if want_tv and s == 4.0:                                          # as eval/spread_check.py (tvar30)
                 x = ends[wm.HOLD30].double(); X = x - x.mean(1, keepdim=True)
                 self._tv = ((X ** 2).sum((1, 2)) / n_fut / x.shape[2]).float().cpu().numpy()
@@ -122,7 +129,7 @@ class CBF:
                     hs = -np.log((w[:, -1] / n_fut / x.shape[2]).float().cpu().numpy() + 1e-12)
             else:
                 ok10, _, _ = cf.split_test_gpu(ends[wm.HOLD10]); ok30, _, _ = cf.split_test_gpu(ends[wm.HOLD30])
-                split[:, si] = (ok10 & ok30).cpu().numpy()
+                split[idx, si] = (ok10 & ok30).cpu().numpy()
             if s == 1.0:
                 for c in range(C):
                     pts = np.vstack([sim.data.site_xpos[sim.site][None], np.asarray(plans[c])[CFG["PLAN_START"]:CFG["PLAN_START"] + CFG["N_LOOK"], :3]])
@@ -212,6 +219,8 @@ class CBF:
         """LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3, stage 1): the least-restrictive switch at every model step (2 control
         steps): encode the real frame now, imagine the policy's next 2 commands one model step ahead, keep them if
         V(z', g') > eps, else the safety actor's 2-step action. Updates the chunk's log entry (info) in place."""
+        if os.environ.get("LSF_EDIT"):
+            return self.lsf_edit(sim, cmds, k, j, info)
         import lsf as L
         torch = self.mon.torch; t0 = time.time()
         if getattr(self, "_lsf", None) is None:
@@ -226,14 +235,110 @@ class CBF:
                 if getattr(self, "_noise", None) is None:      # execution noise, the monitor's noise model); the minimum
                     self._noise = L.Noise()
                 self._noise.rng = self.mon.rng                 # per-episode seeded (policy_rollout resets mon.rng per episode)
+                st = self.mon.rng.bit_generator.state
                 zs = self._noise.starts(z.expand(L.ALEA, -1, -1, -1).contiguous())
                 v = float(vf.V(self.mon.model.step(zs, self._noise.actions(a, L.ALEA)[:, 0]).float(), g2.expand(L.ALEA, -1)).min())
+                if os.environ.get("LSF_REL") == "1" and v <= eps:   # lflsf relative switch (results/jenga/lflsf_protocol.json):
+                    aa = vf.act(z, g); ga = torch.cat([aa[:, 4:7], aa[:, 7:8]], 1)   # V after the actor's commands, the SAME
+                    end = self.mon.rng.bit_generator.state; self.mon.rng.bit_generator.state = st   # noise draws; switch
+                    zs = self._noise.starts(z.expand(L.ALEA, -1, -1, -1).contiguous())   # only if the actor is safer
+                    va = float(vf.V(self.mon.model.step(zs, self._noise.actions(aa, L.ALEA)[:, 0]).float(), ga.expand(L.ALEA, -1)).min())
+                    self.mon.rng.bit_generator.state = end
+                    info["lsf_rel_kept"] = info.get("lsf_rel_kept", 0) + int(not v < va)
+                    if not v < va:
+                        v = eps + 1e-6                         # the policy is kept: the actor cannot do better here
             else:
                 v = float(vf.V(self.mon.model.step(z, a).float(), g2))
             out = cmds if v > eps else vf.act(z, g).view(2, 4).cpu().numpy().astype(np.float32)
         info["lsf_vmin"] = min(v, info.get("lsf_vmin", np.inf)); info["lsf_steps"] = info.get("lsf_steps", 0) + 1
         if v <= eps:
             info["intervened"] = True; info["lsf_overrides"] = info.get("lsf_overrides", 0) + 1
+        info["seconds"] = round(info.get("seconds", 0.0) + time.time() - t0, 2)
+        return out
+
+    def lsf_edit(self, sim, cmds, k, j, info):
+        """lflsf LF4 (results/jenga/lflsf_LF4_protocol.json): at every model step, a least-restrictive EDIT of the policy's 2
+        commands with the learned value instead of a switch to the actor. Every candidate sees the same noise (8 perceived
+        starts, execution offsets, flow noise). LSF_EDIT=line: the smallest blend weight lam in (0, .25, .5, .75, 1) toward
+        the actor's commands (xyz; the policy's gripper for lam < 1) whose min V > eps, else the best candidate. grad:
+        gradient ascent on the soft-min over noise of V from the policy's xyz (Adam, 1 mm, 10 iterations, |edit| <= 1 cm per
+        coordinate), the first iterate with min V > eps, else the best of the iterates and the actor. LSF_CBF_GAMMA=gamma
+        (lfc): the discrete-time CBF condition on h = V - eps instead of the level test, h(z') >= (1 - gamma) h(z) with
+        h(z) = V(z, g) on the real latent now, i.e. threshold thr = eps + (1 - gamma) (V(z, g) - eps)."""
+        import lsf as L
+        import step3_world_model as wm
+        torch = self.mon.torch; t0 = time.time()
+        if getattr(self, "_lsf", None) is None:
+            self._lsf = (L.ValueFn(os.environ.get("LSF_VALUE_NAME", "value.pt")), float(os.environ.get("LSF_EPS", "0.3")))
+        if getattr(self, "_noise", None) is None:
+            self._noise = L.Noise()
+        vf, eps = self._lsf; mdl, n, XYZ = self.mon.model, L.ALEA or 8, [0, 1, 2, 4, 5, 6]
+        self._noise.rng = self.mon.rng
+        cmds = np.asarray(cmds, np.float32)
+        z = torch.as_tensor(self.mon.latent(self.mon.frame(sim)[None])[0], device="cuda").float()[None]
+        g = torch.as_tensor(np.r_[sim.target, cmds[0][3]][None], dtype=torch.float32, device="cuda")
+        a_pol = torch.as_tensor(cmds.reshape(1, 8), device="cuda")
+        with torch.no_grad():
+            zs = self._noise.starts(z.expand(n, *z.shape[1:]).contiguous())
+            off = self._noise.actions(a_pol, n)[:, 0] - a_pol                          # (n, 8) execution offsets
+            a_act = vf.act(z, g)
+        gen = torch.Generator(device="cuda").manual_seed(int(self.mon.rng.integers(2**31)))
+        x0 = torch.randn(zs.shape, device="cuda", generator=gen)                       # flow noise, common to all candidates
+
+        def vals(A):               # A (c, 8) -> V after one noisy model step, (c, n)
+            c = len(A); Z = zs.repeat(c, *[1] * (zs.dim() - 1)); act = mdl._act((A[:, None] + off[None]).reshape(c * n, 8))
+            if mdl.kind == "deterministic":
+                r = mdl.net(Z, torch.zeros_like(Z), act, torch.zeros(len(Z), device="cuda"))
+            else:
+                r = x0.repeat(c, *[1] * (zs.dim() - 1))
+                for kk in range(wm.EULER):
+                    r = r + mdl.net(Z, r, act, torch.full((len(Z),), kk / wm.EULER, device="cuda")) / wm.EULER
+            G2 = torch.cat([A[:, 4:7], A[:, 7:8]], 1).repeat_interleave(n, 0)
+            return vf.V((Z + r * mdl.stats.res_std).float(), G2).view(c, n)
+        mode = os.environ["LSF_EDIT"]
+        gam = os.environ.get("LSF_CBF_GAMMA")
+        with torch.no_grad():
+            v0 = float(vals(a_pol).min())
+            if gam is not None:
+                vnow = float(vf.V(z, g)); eps = eps + (1 - float(gam)) * (vnow - eps); info["lsf_vnow_min"] = min(vnow, info.get("lsf_vnow_min", np.inf))
+        out, v, edit = cmds, v0, 0.0
+        if v0 <= eps and mode == "line":
+            C = []
+            for lam in (0.25, 0.5, 0.75):
+                a = a_pol.clone(); a[:, XYZ] = (1 - lam) * a_pol[:, XYZ] + lam * a_act[:, XYZ]; C.append(a)
+            C = torch.cat(C + [a_act])
+            with torch.no_grad():
+                vm = vals(C).min(1).values.cpu().numpy()
+            i = int(np.flatnonzero(vm > eps)[0]) if (vm > eps).any() else int(np.argmax(vm))
+            if vm[i] > v0:
+                out, v = C[i].view(2, 4).cpu().numpy().astype(np.float32), float(vm[i]); info["lsf_edit_lam"] = info.get("lsf_edit_lam", []) + [(0.25, 0.5, 0.75, 1.0)[i]]
+        elif v0 <= eps and mode == "grad":
+            x = a_pol[:, XYZ].clone().requires_grad_(True); opt = torch.optim.Adam([x], lr=1e-3); best = (v0, a_pol)
+            with torch.enable_grad():
+                for it in range(10):
+                    a = torch.cat([x[:, 0:3], a_pol[:, 3:4], x[:, 3:6], a_pol[:, 7:8]], 1)
+                    V = vals(a)[0]; vm = float(V.detach().min())
+                    if vm > best[0]:
+                        best = (vm, a.detach().clone())
+                    if vm > eps:
+                        break
+                    loss = 0.05 * torch.logsumexp(-V / 0.05, 0); opt.zero_grad(); loss.backward(); opt.step()   # -softmin
+                    with torch.no_grad():
+                        x.copy_(torch.minimum(torch.maximum(x, a_pol[:, XYZ] - 0.01), a_pol[:, XYZ] + 0.01))
+            info["lsf_edit_iters"] = info.get("lsf_edit_iters", 0) + it + 1
+            if best[0] <= eps:
+                with torch.no_grad():
+                    va = float(vals(a_act).min())
+                if va > best[0]:
+                    best = (va, a_act)
+            if best[0] > v0:
+                out, v = best[1].view(2, 4).cpu().numpy().astype(np.float32), best[0]
+        if v0 <= eps:
+            edit = float(np.abs(out[:, :3] - cmds[:, :3]).max() * 1000)
+            info["intervened"] = True; info["lsf_overrides"] = info.get("lsf_overrides", 0) + 1
+            info["lsf_edit_mm"] = round(info.get("lsf_edit_mm", 0.0) + edit, 2)
+        info["lsf_vmin"] = min(v0, info.get("lsf_vmin", np.inf)); info["lsf_steps"] = info.get("lsf_steps", 0) + 1
+        info["lsf_vafter_min"] = min(v, info.get("lsf_vafter_min", np.inf))
         info["seconds"] = round(info.get("seconds", 0.0) + time.time() - t0, 2)
         return out
 

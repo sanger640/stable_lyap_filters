@@ -305,3 +305,28 @@ eps 0.10: 16 / 69 / 58; **0.30: 9 / 76 / 59 (selected: fewest topples with v4 wi
   and fixing both makes it a strong baseline. Head-to-head 3 vs psel pre-registered (results/jenga/lsf_h2h3_protocol.json,
   600 fresh episodes 25600-26199).
 
+
+## lflsf: a LABEL-FREE latent safety filter (pre-registered 2026-10-25 12:02, results/jenga/lflsf_protocol.json)
+User 2026-10-25: retry the learned value and the learned actor. LSF stage 2 works in closed loop, and its only scope
+violation is its margin (a classifier trained on topple labels). lflsf swaps only that: a margin net l_hat(z) regressed on
+our label-free hold-plan fork statistic (neg_log_sens_4, HJ v2 stage A), proprio zeroed, mapped by t = tanh((m - q10) / s)
+with q10 / s from the training decisions' own distribution (the most sensitive tenth of visited states = the failure set).
+Then the stage 2 recipe unchanged (UNISafe SAC in model_OIL's imagination, ALEA 8, 60k updates) -> value_lf_alea.pt.
+
+### LF1 RESULT (2026-10-25 12:04, commit 939a024; results/jenga/lflsf_LF1.json): PASS
+Held out (paired_record_m3, 13798 decisions; trained on 69247): Spearman(l_hat, t) 0.635 (gate >= 0.6); AUC of -l_hat for
+decisions 1-3 chunks before a topple vs safe-episode decisions 0.875, ABOVE its own target's 0.804 (gate >= 0.754).
+Share of states with l_hat < 0: 7.6% (target 9.5%). Labels used for grading only.
+
+### LF2 training (2026-10-25 13:33-17:25, local RTX 3090)
+Healthy and close to the labelled stage 2 run: actor saturated on 0.13% of actions at 60k updates, uncertainty-fail share
+0, mean margin over imagined states 0.92 (labelled run's classifier ~0.76 at the same point): the label-free margin calls
+fewer imagined states unsafe, so the value may be less conservative. Offline gate (eval/lsf_audit.py, lsf_diag.py) next.
+
+### LF4: least-restrictive EDITS instead of a switch (pre-registered 2026-10-25 17:15, results/jenga/lflsf_LF4_protocol.json)
+User 2026-10-25 ~17:05: psel's "pick the closest certified policy sample" is too simple and does not generalise; the
+direction is LSF's methodology or other reachability / Lyapunov / CBF methods. LSF's switch discards the policy's command
+whenever V <= eps; a CBF-style filter edits it as little as needed. With the LF2 value / actor, at the LF3-selected eps,
+same dev episodes: lfm (smallest blend toward the actor with min V > eps), lfg (gradient ascent of the soft-min V through
+model_OIL on the policy's own xyz, <= 1 cm, gripper the policy's), lfc (lfg under the discrete-time CBF condition
+h(z') >= 0.5 h(z), h = V - eps). All candidates see common noise. Code: eval/cbf_filter.py lsf_edit.
