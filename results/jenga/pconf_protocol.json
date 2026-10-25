@@ -1,0 +1,12 @@
+{
+ "name": "pconf: confirmation of the adopted psel filter (cbfps3m) vs the policy alone, plus the 4x margin on top of psel (cbfps4m)",
+ "registered": "2026-10-25 ~06:15 EDT, before any pconf episode ran (no earlier run used episodes 25000-25599)",
+ "motivation": "psel (results/jenga/psel_protocol.json) PASSED vs cbfg3m: time-outs 85 -> 34 at equal topples (16 / 16). Its protocol requires a fresh confirmation before any paper claim; the paper claim is the filter vs the policy alone. Separately, with fixes now cheap in time, the 4x margin (exploratory, scl residuals: reaches ~1/4 of the moves that precede the 3x filter's residual topples) may remove more topples at an acceptable cost.",
+ "arms": "record (the policy alone), cbfps3m (adopted: fork_3x trigger, psel fix, OIL+ENS certificate, h_safe log2 4), cbfps4m (identical except the fork margin: SCALES (0.5, 1, 2, 3, 4, 8) with the top scale skipped, so up to 4x; h_safe log2 8 in trigger and certificate)",
+ "episodes": "600 fresh episodes 25000-25599, the stl/gtv/psel paired setup (settle, 2x execution noise, HARD_OFF=1, per-episode seeds, 60 chunks), all three arms per job (Fir, paired_array, model_OIL, CBF_CALIB OIL)",
+ "primary_C1_confirmation": "cbfps3m vs record: (a) fewer neighbour topples, exact McNemar one-sided p < 0.05, AND (b) higher v4 success, paired one-sided 95% lower bound > 0. Both -> CONFIRMED.",
+ "primary_C2_margin": "cbfps4m vs cbfps3m (separate decision, evaluated regardless of C1): (a) fewer neighbour topples, exact McNemar one-sided p < 0.05, AND (b) v4 non-inferior: paired one-sided 95% lower bound >= -3 pp. Both -> cbfps4m becomes the adopted filter (its own confirmation then follows before a paper claim).",
+ "secondary": ["v4b for every pair (reported with v4)", "time-outs and time-out anatomy (never grasp / first grasp >= 45 / grasp then no extraction)", "red falls before / after extraction, drop rate per extraction", "interventions per episode, fix kinds, seconds per intervention", "first grasp chunk in v4b successes"],
+ "trial": "task 0 first, then tasks 1-199 (cbfps4m has not run before: its task-0 episodes are checked for errors before the array starts)",
+ "analysis": "outcome_audit runs -> eval/pconf_analysis.py -> results/jenga/pconf_result.json; McNemar exact, paired bootstrap seed 20261025 (10000 resamples) for v4 bounds, as eval/steer_analysis.py"
+}
