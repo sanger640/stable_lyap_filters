@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parent.parent
 D = ROOT / "results/jenga/deep_dive"; RUN = ROOT / "results/program_b/policy_rollouts/paired_record_scl"
 
 
-def main():
-    V = {(r["ep"], r["k"]): r for f in sorted((D / "vo_scl").glob("rows_*.jsonl")) for r in map(json.loads, f.read_text().splitlines())}
+def main(sub="vo_scl"):
+    V = {(r["ep"], r["k"]): r for f in sorted((D / sub).glob("rows_*.jsonl")) for r in map(json.loads, f.read_text().splitlines())}
     W = {(r["ep"], r["k"]): r for r in map(json.loads, (D / "spread_rows_scl.jsonl").read_text().splitlines())}
     keys = sorted(set(V) & set(W))
     A = json.loads((ROOT / "results/jenga/outcome_audit_scl.json").read_text())["paired_record_scl"]["rows"]
@@ -42,8 +42,9 @@ def main():
                                "oracle_lead_ge3": round(float(np.mean([po[e] for e in E])), 3), "wm_tvrel_lead_ge3": round(float(np.mean([pw[e] for e in E])), 3),
                                "oracle_minus_wm_pp": round(100 * float(x.mean()), 1), "lower95_pp": round(100 * float(np.percentile(bs, 5)), 1)}
     out["PRIMARY_pass"] = bool(out["fork_3x_rate"]["lower95_pp"] > 0)
-    (ROOT / "results/jenga/vo_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+    (ROOT / f"results/jenga/{'vo' if sub == 'vo_scl' else sub}_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(*sys.argv[1:2])

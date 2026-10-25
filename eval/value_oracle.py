@@ -20,7 +20,8 @@ N_FUT, SEED, EPS = int(os.environ.get("VO_N", 16)), 20261029, 1e-4
 SET = os.environ.get("VO_SET", "scl")
 RUN = ROOT / "results/program_b/policy_rollouts" / f"paired_record_{SET}"
 ROWS = ROOT / "results/jenga/deep_dive" / os.environ.get("VO_ROWS", f"hmf_{SET}")
-OUT = ROOT / "results/jenga/deep_dive" / f"vo_{SET}"
+LOOK, VSCALE = int(os.environ.get("VO_LOOK", 8)), float(os.environ.get("VO_SCALE", 0))   # matched variant: 15 steps, 4x
+OUT = ROOT / "results/jenga/deep_dive" / (f"vo_{SET}" if LOOK == 8 and not VSCALE else f"vo_{SET}_l{LOOK}_s{VSCALE:g}")
 
 
 def feats(state):
@@ -53,11 +54,16 @@ def run():
                 cache = {ep: {q: z[q] for q in z.files}}
         S = cache[ep]; d = int(np.flatnonzero(S["chunk_index"] == k)[0])
         snap = (S["state"][d], S["ctrl"][d], S["target"][d], float(S["gripper"][d]))
-        plan = np.asarray(S["plan16"][d][1:9], np.float32).copy()                 # the policy's executed segment
-        hold = np.repeat(np.r_[S["target"][d], 0.0][None], 8, 0).astype(np.float32)
+        plan = np.asarray(S["plan16"][d][1:1 + LOOK], np.float32).copy()          # the policy's next LOOK commands
+        hold = np.repeat(np.r_[S["target"][d], 0.0][None], LOOK, 0).astype(np.float32)
+        sc_e = VSCALE or insp.EXEC_SCALE; sc_p = VSCALE or 1.0                       # matched: both errors x VSCALE (as the WM rule)
         out = {}
         for name, ch in (("plan", plan), ("hold", hold)):
-            F = [feats(um.rollout(sim, snap, ch, snippets[j % 64] * insp.EXEC_SCALE, [errors.sample(SEED, ep, k, j)])[-1]) for j in range(N_FUT)]
+            F = []
+            for j in range(N_FUT):
+                nz = np.concatenate([snippets[j % 64], snippets[(j + 1) % 64]])[:LOOK] * sc_e
+                pos, rot = errors.sample(SEED, ep, k, j)
+                F.append(feats(um.rollout(sim, snap, ch, nz, [(pos * sc_p, rot * sc_p)])[-1]))
             out[name] = tvar(F)
         row = {"ep": ep, "k": k, "tvar_plan": out["plan"], "tvar_hold": out["hold"],
                "y": float(np.log(out["plan"] + EPS) - np.log(out["hold"] + EPS))}
