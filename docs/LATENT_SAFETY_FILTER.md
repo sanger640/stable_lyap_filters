@@ -269,3 +269,17 @@ the same snippets the monitor uses) and keeps the one with the lowest classifier
 perception-noise start sampler (G at scale 1). Runtime check: V after each of 8 noisy one-step imaginations, the minimum
 must exceed eps. Same offline gate as the re-audit (actor not saturated, V after its own plan >= hold, AUROC >= 0.7),
 plus the early-warning number above reported (not gated). Then the stage 1 sweep protocol with the better switching rate.
+
+### LSF-step dev RESULT (2026-10-24 20:22; results/jenga/lsfs_dev_result_lsfsdev.json, outcome_audit_lsfsdev.json)
+Fir, 100 dev episodes x 6 eps, 99 common with the reused record arm (replay flags 99-100/100). Topples / v4 / v4b:
+policy 27 / 66 / 58; eps 0.10: 26 / 66 / 58; 0.30: 29 / 61 / 53; 0.50: 32 / 56 / 49; 0.60: 32 / 55 / 40; 0.65: 28 / 53 / 34;
+**0.70: 13 / 63 / 26 (selected by the rule: fewest topples with v4 within 5 pp)**.
+- Switching at every model step makes the learned value useful: topples 27 -> 13 (-52%) with v4 kept, where the
+  chunk-level switch never removed more than 4 of 27 topples without losing the task.
+- The cost moves elsewhere: at eps 0.70 the safety actor drives 31.9 of ~229 model steps per episode, about half of
+  them after the first grasp (1681 before / 1507 after); red block knocked over after extraction 39 vs 9 episodes
+  (v4b 26 vs 58), time-outs 20 vs 1, episodes 57 vs 42 chunks. The actor does not know it is holding the block.
+- Mid-range eps (0.30-0.65) are worse than the policy on topples (28-32): the actor takes over in brief bursts that
+  disturb the scene without saving it.
+- Next per the plan: stage 2 (noisy value + noisy check), then one head-to-head vs G-CEM with the better of the two on
+  fresh episodes (pre-registered separately; v4 and v4b both reported).
