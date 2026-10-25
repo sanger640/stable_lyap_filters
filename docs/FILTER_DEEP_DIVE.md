@@ -490,6 +490,12 @@ Scalar baseline from docs/LITERATURE_REVIEW.md 10.2 item 2, computed on the same
 - Three levers have now failed to move time-outs: smaller fixes (steer), fewer fixes (gate), and the earlier gripper knob. Half the time-outs are failed grasps after the approach, which none of them target.
 - Detour shape (exploratory, fixcf rows): back-off distance predicts a >= 3-chunk detour only weakly (AUC 0.64), change size 0.61. The detours look like the policy's own chaotic response, which the fixbench resample control tests directly.
 
+### 5r. Hand-masked fork test (pre-registered offline gate; results/jenga/hmf_protocol.json): FAIL
+Hypothesis: the alarms just before the grasp are forks of what the hand touches (block held or not), not hazards, so masking the hand path out of the split test (as the o barrier does) would remove them. Held-out scl, same futures: near-grasp safe alarm rate 48.7% -> 52.7% (needed a 30% drop). The hypothesis is wrong:
+- near the grasp the alarm is the fork test (46% of safe decisions), not o (3%); it peaks 2 chunks before the first close (61%) and falls after it (14-19%);
+- holding still also forks at <= 2x on 36% of those decisions: the scene itself is sensitive there, outside the hand.
+Reading: in the stress layouts at 2x execution noise, the last approach is genuinely fragile; the near-grasp fixes are not false alarms from the hand. This points at the noise level (the user's question) rather than at the trigger: the 1x bench (fixbench amendment 4) measures how much of the fix cost is noise.
+
 ## 6. Pipeline (queued, not started)
 
 ### 6a. Label-free value function learned in simulation (from SimDist, docs/LITERATURE_REVIEW.md; queued 2026-10-24 at the user's request)
