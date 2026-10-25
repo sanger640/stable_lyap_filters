@@ -1,0 +1,11 @@
+{
+ "name": "vo: 6a stage A0 - is the exact simulator's own label-free outcome sensitivity a better alarm than the world model's?",
+ "registered": "2026-10-24 ~21:45 EDT, before any oracle row of the evaluation set was computed (3 timing rows of episode 20400, chunks 0-2, seen: y = 0 when the hand touches nothing)",
+ "why": "6a (user request, SimDist-style): learn in sim a label-free value = the simulator's outcome sensitivity, then use it in the filter/monitor. A learned value can at best match its target, so first test the target itself: if the exact-sim oracle is not a better early-warning alarm than the world model's relative total variance (tvar30_rel_s4.0, monrep PASS 89.6%), learning it cannot beat the world model as an alarm.",
+ "oracle": "eval/value_oracle.py: per decision, 16 paired noisy futures in the exact simulator (perception error model on block poses, measured execution-noise snippets x2) of the policy's 8-step chunk + 30 holds and of holding still (gripper 0); total variance of the final block poses (positions cm, rotation entries x10); y = log tvar(plan) - log tvar(hold) (+1e-4). No failure labels.",
+ "data": "the held-out scl decisions (6743, same keys as monrep/hmf: topple episodes' 10 chunks before the topple + every decision of every 4th safe episode)",
+ "primary": "alarm = y > its safe-decision quantile at the fork_3x safe alarm rate (11.3%), vs tvar30_rel_s4.0 at the same rate (deep_dive/spread_rows_scl.jsonl); share of topple episodes warned >= 3 chunks ahead (8-chunk window), oracle minus world model, paired, bootstrap (10000, seed 20261030) one-sided 95% lower bound > 0 -> PASS -> pre-register 6a stage B (learn the oracle from broad sim data, gate vs tvar_rel on held-out). Otherwise FAIL: a sim-learned sensitivity value cannot beat the world model as an alarm; 6a as an alarm stops (its use as a barrier is not tested here).",
+ "secondary": ["the same at the fork_2x (6.2%) and fork_4x (15%) rates", "achieved oracle alarm rate (ties at y = 0)", "Spearman correlation of y with the world model's tvar_rel over all decisions"],
+ "run": "Fir CPU array (no GPU), 40 tasks",
+ "analysis": "eval/vo_gate.py -> results/jenga/vo_result.json"
+}
