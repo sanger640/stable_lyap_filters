@@ -90,7 +90,7 @@ def gate2():
     (ROOT / "results/jenga/lflsf_LF2.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
-DEV_ARMS = ("lfa000", "lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")   # lfa000: amendment_1
+DEV_ARMS = ("lfa-25", "lfa-15", "lfa000", "lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")   # amendments 1, 2
 
 
 def dev():
