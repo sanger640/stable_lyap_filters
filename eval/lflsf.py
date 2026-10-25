@@ -145,5 +145,53 @@ def dev4():
     (ROOT / "results/jenga/lflsf_LF4_dev.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
+def eps5():
+    """LF5 eps by the label-free matched-rate rule (amendment 2): quantiles of the x8 value over all held-out m3 decision
+    states at the rates the labelled stage 2 value flags at eps 0.10 / 0.30. No topple labels."""
+    import torch
+    import lsf as L
+    vx, vu = L.ValueFn("value_lf8_alea.pt"), L.ValueFn("value_unisafe_alea.pt"); A, B = [], []
+    for f in sorted((DATA / HELD[0]).glob("ep*.npz")):
+        with np.load(f) as d:
+            z = torch.as_tensor(d["z"], device="cuda").float(); g = torch.as_tensor(d["proprio"], device="cuda").float()
+        with torch.no_grad():
+            A.append(vx.V(z, g).cpu().numpy().ravel()); B.append(vu.V(z, g).cpu().numpy().ravel())
+    A, B = np.concatenate(A), np.concatenate(B)
+    out = {"states": int(len(A))}
+    for e in (0.10, 0.30):
+        r = float(np.mean(B < e)); out[f"labelled_eps_{e:.2f}"] = {"rate": round(r, 4), "x8_eps": round(float(np.quantile(A, r)), 2)}
+    (ROOT / "results/jenga/lflsf_LF5_eps.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out))
+
+
+def dev_all():
+    """overall lflsf selection (LF5 protocol): LF3 + LF4 (tag _lflsfdev) and LF5 (tag _lf8dev) arms, the LSF dev rule;
+    ties -> fewer overrides per episode."""
+    srcs = [("outcome_audit_lflsfdev.json", "_lflsfdev"), ("outcome_audit_lflsfdev4.json", "_lflsfdev"), ("outcome_audit_lf8dev.json", "_lf8dev")]
+    R = {}
+    for fn, tag in srcs:
+        if not (ROOT / "results/jenga" / fn).exists():
+            continue
+        for k, v in json.loads((ROOT / "results/jenga" / fn).read_text()).items():
+            if k.endswith(tag):
+                R[k] = {r["ep"]: r for r in v["rows"]}
+    EPS = sorted(set.intersection(*(set(v) for v in R.values())))
+    keys = ("logged_neighbour_toppled", "v4_success", "v4b_success", "red_fell_before_extraction", "red_fell_after_extraction")
+    cnt, iv = {}, {}
+    for k in R:
+        cnt[k] = {q: sum(bool(R[k][e][q]) for e in EPS) for q in keys}
+        cnt[k]["timeout"] = sum(not R[k][e]["extracted"] and not R[k][e]["logged_neighbour_toppled"] and not R[k][e]["red_fell_before_extraction"] for e in EPS)
+        if k.startswith("paired_record"):
+            continue
+        L_ = [json.loads((ROOT / f"results/program_b/policy_rollouts/{k}/ep{e}.json").read_text())["log"] for e in EPS]
+        ov = sum(c.get("lsf_overrides", 0) for l in L_ for c in l)
+        iv[k] = {"overrides_per_episode": round(ov / len(EPS), 2),
+                 "edit_mm_per_override": round(sum(c.get("lsf_edit_mm", 0.0) for l in L_ for c in l) / max(ov, 1), 2)}
+    pv4 = cnt["paired_record_lflsfdev"]["v4_success"] / len(EPS)
+    ok = [k for k in iv if cnt[k]["v4_success"] / len(EPS) >= pv4 - 0.05]
+    sel = min(ok, key=lambda k: (cnt[k]["logged_neighbour_toppled"], iv[k]["overrides_per_episode"])) if ok else None
+    out = {"episodes": len(EPS), "counts": cnt, "interventions": iv, "eligible_v4_within_5pp": ok, "selected": sel}
+    (ROOT / "results/jenga/lflsf_dev_all.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+
+
 if __name__ == "__main__":
-    {"margin": margin, "gate2": gate2, "dev": dev, "dev4": dev4}[sys.argv[1]]()
+    {"margin": margin, "gate2": gate2, "dev": dev, "dev4": dev4, "eps5": eps5, "dev_all": dev_all}[sys.argv[1]]()
