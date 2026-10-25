@@ -338,3 +338,12 @@ whenever V <= eps; a CBF-style filter edits it as little as needed. With the LF2
 same dev episodes: lfm (smallest blend toward the actor with min V > eps), lfg (gradient ascent of the soft-min V through
 model_OIL on the policy's own xyz, <= 1 cm, gripper the policy's), lfc (lfg under the discrete-time CBF condition
 h(z') >= 0.5 h(z), h = V - eps). All candidates see common noise. Code: eval/cbf_filter.py lsf_edit.
+
+### Amendment 2 (2026-10-25 17:49, after only LF3 record episodes): rate-matched label-free eps
+Held-out paired_record_m3 decision states (exploratory, scratchpad an/vreal.py), state value V(z, g):
+- The label-free value is the BETTER state alarm (grading only): at matched safe-state alarm rates it flags 31 / 51 / 76%
+  of states 1-3 chunks before a topple at 5 / 10 / 20% safe alarms; the labelled stage 2 value 23 / 44 / 68%. AUC 0.868 vs 0.845.
+- But its scale differs: it is low (< 0.3) on 30% of safe states with the gripper closed (labelled: 3%) and on 26% of
+  chunks 10-29 (the approach / grasp), so eps 0.30 means a different rule for each value.
+- Label-free calibration (no labels: match the share of ALL visited states the labelled value flags, 5.4% at eps 0.10,
+  6.9% at 0.30) -> label-free eps -0.25 / -0.15. Both added to LF3 (lfa-25, lfa-15). Selection rule unchanged.
