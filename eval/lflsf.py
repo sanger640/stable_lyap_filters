@@ -4,6 +4,8 @@ our label-free hold-plan fork statistics instead (results/jenga/hj2/data): m = n
 spread per unit perturbation at 4x after the 30-step hold), t = tanh((m - q10) / s) with q10 / s from the training
 decisions' own distribution. Same architecture as the LSF classifier, proprio zeroed (state-only). Labels: grading only.
 usage: python3 eval/lflsf.py margin   -> results/program_b/lsf_v1/margin_lf.pt, results/jenga/lflsf_LF1.json
+       python3 eval/lflsf.py gate2    -> results/jenga/lflsf_LF2.json (after lsf_audit / lsf_diag on value_lf_alea.pt)
+       python3 eval/lflsf.py dev      -> results/jenga/lflsf_LF3_dev.json (after outcome_audit of the local dev sweep)
 """
 import json
 from pathlib import Path
@@ -75,5 +77,43 @@ def margin():
     (ROOT / "results/jenga/lflsf_LF1.json").write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
 
 
+def gate2():
+    a = json.loads((ROOT / "results/jenga/lsf_audit_value_lf_alea.json").read_text())
+    d = json.loads((ROOT / "results/jenga/lsf_value_diag_value_lf_alea.json").read_text())
+    out = {"actor_saturated_share": a["actor"]["actor_saturated_share"], "V_after_actor": a["actor"]["V_after_plan_median"],
+           "V_after_policy": a["policy"]["V_after_plan_median"], "V_after_hold": a["hold"]["V_after_plan_median"],
+           "AUROC_minusV_vs_any_topple": d["AUROC_minusV_vs_any_topple"], "AUROC_minus_l_now": d["AUROC_minus_l_now_vs_any_topple"],
+           "V_quantiles": d["V_quantiles"], "share_V_below_0.3": d["share_V_below_0.3"]}
+    out["GATE_LF2_pass"] = bool(out["actor_saturated_share"] < 0.05 and out["V_after_actor"] >= out["V_after_hold"]
+                                and out["AUROC_minusV_vs_any_topple"] >= 0.70)
+    (ROOT / "results/jenga/lflsf_LF2.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+
+
+DEV_ARMS = ("lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")
+
+
+def dev():
+    """LF3 selection (the LSF dev rule): fewest replay-audited topples among arms with v4 >= policy - 5 pp; ties -> larger eps."""
+    A = json.loads((ROOT / "results/jenga/outcome_audit_lflsfdev.json").read_text())
+    R = {a: {r["ep"]: r for r in A[f"paired_{a}_lflsfdev"]["rows"]} for a in ("record",) + DEV_ARMS}
+    EPS = sorted(set.intersection(*(set(v) for v in R.values())))
+    keys = ("logged_neighbour_toppled", "v4_success", "v4b_success", "red_fell_before_extraction", "red_fell_after_extraction")
+    cnt = {a: {k: sum(bool(R[a][e][k]) for e in EPS) for k in keys} for a in R}
+    for a in R:
+        cnt[a]["timeout"] = sum(not R[a][e]["extracted"] and not R[a][e]["logged_neighbour_toppled"] and not R[a][e]["red_fell_before_extraction"] for e in EPS)
+    pv4 = cnt["record"]["v4_success"] / len(EPS)
+    ok = [a for a in DEV_ARMS if cnt[a]["v4_success"] / len(EPS) >= pv4 - 0.05]
+    sel = min(ok, key=lambda a: (cnt[a]["logged_neighbour_toppled"], -int(a[3:]))) if ok else None
+    iv = {}
+    for a in DEV_ARMS:
+        L = [json.loads((ROOT / f"results/program_b/policy_rollouts/paired_{a}_lflsfdev/ep{e}.json").read_text())["log"] for e in EPS]
+        iv[a] = {"overrides_per_episode": round(float(np.mean([sum(c.get("lsf_overrides", 0) for c in l) for l in L])), 2),
+                 "model_steps_per_episode": round(float(np.mean([sum(c.get("lsf_steps", 0) for c in l) for l in L])), 1),
+                 "rel_kept_per_episode": round(float(np.mean([sum(c.get("lsf_rel_kept", 0) for c in l) for l in L])), 2)}
+    out = {"episodes": len(EPS), "counts": cnt, "eligible_v4_within_5pp": ok, "selected": sel, "interventions": iv,
+           "replay_flag_matches": {a: A[f"paired_{a}_lflsfdev"].get("replay_topple_flag_matches") for a in R}}
+    (ROOT / "results/jenga/lflsf_LF3_dev.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+
+
 if __name__ == "__main__":
-    {"margin": margin}[sys.argv[1]]()
+    {"margin": margin, "gate2": gate2, "dev": dev}[sys.argv[1]]()

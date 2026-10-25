@@ -1,6 +1,6 @@
 {
  "name": "stepbench: does LSF's switching RATE help our label-free filter? (offline, exact saved states, psel run)",
- "registered": "2026-10-25 ~12:20 EDT, before any stepbench replay ran",
+ "registered": "2026-10-25 11:53 EDT (commit 83f4fdb; an earlier draft of this line said ~12:20 in error), before any stepbench replay ran",
  "motivation": "The latent safety filter's biggest single lever was checking at every model step (0.2 s) instead of every chunk (0.8 s): stage 1 halved dev topples (docs/LATENT_SAFETY_FILTER.md). Our filter checks once per chunk. Of psel's 16 residual topples (paired_cbfps3m_psel), 11 started inside a chunk the filter had just fixed and 5 inside an unfixed chunk. LSF's structure (least-restrictive switch at model-step rate, a cheap fallback) transfers without labels: our fork trigger is the switch, holding the target is the fallback.",
  "cases": "T: the topple-start chunk and the chunk before it, all 16 topple episodes of paired_cbfps3m_psel (32 chunk cases). C: 160 control chunks (chunk >= 1) drawn from v4b-success episodes of the same run, seed 20261025.",
  "replay": "from the saved chunk-start state, the run's executed commands with the run's execution noise (plausibility.episode_noises); replay fidelity reported (T cases whose topple onset reproduces).",
