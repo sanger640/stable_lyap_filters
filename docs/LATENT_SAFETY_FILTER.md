@@ -321,7 +321,15 @@ Share of states with l_hat < 0: 7.6% (target 9.5%). Labels used for grading only
 ### LF2 training (2026-10-25 13:33-17:25, local RTX 3090)
 Healthy and close to the labelled stage 2 run: actor saturated on 0.13% of actions at 60k updates, uncertainty-fail share
 0, mean margin over imagined states 0.92 (labelled run's classifier ~0.76 at the same point): the label-free margin calls
-fewer imagined states unsafe, so the value may be less conservative. Offline gate (eval/lsf_audit.py, lsf_diag.py) next.
+fewer imagined states unsafe, so the value may be less conservative.
+
+### LF2 offline gate RESULT (2026-10-25 17:45; results/jenga/lflsf_LF2.json): PASS
+Actor saturated 0.22% (< 5%); imagined V after the actor's plan 0.968 >= after hold 0.870 (policy 0.864); AUROC of -V vs
+any toppling future 0.885 (>= 0.70; labelled stage 2: 0.829; the label-free margin itself 0.883). V quantiles over
+held-out decisions (5/25/50/75/95%): -0.43 / 0.33 / 0.85 / 0.995 / 0.999; 24% below 0.30. So on REAL states it is
+lower than the labelled value: the LF4 smoke test (2 episodes 99000-99001 per edit arm at eps 0.30) overrode on 17-29% of
+model steps (labelled stage 2 at eps 0.30: ~4%), 5 of 6 time-outs. Amendment_1 (17:31, before any LF3 episode): eps 0.00
+added to LF3 (lfa000); LF4's fallback eps 0.30 -> 0.00.
 
 ### LF4: least-restrictive EDITS instead of a switch (pre-registered 2026-10-25 17:15, results/jenga/lflsf_LF4_protocol.json)
 User 2026-10-25 ~17:05: psel's "pick the closest certified policy sample" is too simple and does not generalise; the
