@@ -1,7 +1,7 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-25 17:50 EDT (direction change; lflsf LF1 + LF2 PASS; cert_recheck).
+Last updated 2026-10-25 17:47 EDT (direction change; lflsf LF1 + LF2 PASS; cert_recheck).
 
 ## 2026-10-25 evening: direction change + label-free latent safety filter (lflsf)
 
