@@ -12,7 +12,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 RUN = ROOT / "results/program_b/policy_rollouts"
 SETS = {"h2h2": ("paired_lsfe010_h2h2", "outcome_audit_h2h2.json"), "unidev_e000": ("paired_lsfe000_unidev", "outcome_audit_unidev.json"),
-        "unidev_e010": ("paired_lsfe010_unidev", "outcome_audit_unidev.json")}
+        "unidev_e010": ("paired_lsfe010_unidev", "outcome_audit_unidev.json"),
+        "lsfadev_e010": ("paired_lsfa010_lsfadev", "outcome_audit_lsfadev.json")}  # stage 2 value (noisy, pessimistic)
 RATES = (0.062, 0.113, 0.15, 0.20)
 
 
