@@ -20,6 +20,8 @@ DATA = ROOT / "results/jenga/hj2/data"
 TRAIN = ("paired_record_s4", "paired_record_h2h2", "paired_record_ocl", "paired_cbfg_s4", "paired_cbfg_h2h2")
 HELD = ("paired_record_m3",)
 SEED = 20261025
+SCALE = float(__import__("os").environ.get("LF_SCALE", "4.0"))         # LF5: 8.0 (results/jenga/lflsf_LF5_protocol.json)
+SFX = "" if SCALE == 4.0 else f"{SCALE:g}"
 
 
 def load(runs):
@@ -27,7 +29,7 @@ def load(runs):
     for run in runs:
         for f in sorted((DATA / run).glob("ep*.npz")):
             with np.load(f) as d:
-                j = list(np.round(d["scales"], 3)).index(4.0)
+                j = list(np.round(d["scales"], 3)).index(SCALE)
                 sp = d["stats"][:, j, 7]                                        # spread30 at 4x
                 kt, k = int(d["topple_chunk"]), d["chunk_index"]
                 Z.append(d["z"]); M.append(-np.log(np.maximum(sp, 1e-12) / 16.0))
@@ -64,9 +66,9 @@ def margin():
             loss = ((net(z, g0.expand(len(z), -1)) - y) ** 2).mean(); opt.zero_grad(); loss.backward(); opt.step()
         net.eval(); vl = float(np.mean((pred(Zt[va]) - tt[va]) ** 2)); log.append({"epoch": ep, "val_mse": vl}); print(log[-1], flush=True)
         if vl < best:
-            best = vl; torch.save({"state": net.state_dict(), "no_g": True, "q10": q10, "s": s, "target": "neg_log_sens_4"},
-                                  L.OUT / "margin_lf.pt")
-    net.load_state_dict(torch.load(L.OUT / "margin_lf.pt")["state"]); net.eval()
+            best = vl; torch.save({"state": net.state_dict(), "no_g": True, "q10": q10, "s": s, "target": f"neg_log_sens_{SCALE:g}"},
+                                  L.OUT / f"margin_lf{SFX}.pt")
+    net.load_state_dict(torch.load(L.OUT / f"margin_lf{SFX}.pt")["state"]); net.eval()
     ph = pred(Zh); sel = Yh >= 0
     auc_hat = float(roc_auc_score(Yh[sel] == 1, -ph[sel])); auc_t = float(roc_auc_score(Yh[sel] == 1, -th[sel]))
     rho = float(spearmanr(ph, th).correlation)
@@ -75,19 +77,20 @@ def margin():
            "held_share_hat_below0": round(float((ph < 0).mean()), 3), "held_share_target_below0": round(float((th < 0).mean()), 3),
            "best_val_mse": best, "log": log}
     out["GATE_LF1_pass"] = bool(rho >= 0.6 and auc_hat >= auc_t - 0.05)
-    (ROOT / "results/jenga/lflsf_LF1.json").write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
+    (ROOT / f"results/jenga/lflsf_LF1{'_x' + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
 
 
 def gate2():
-    a = json.loads((ROOT / "results/jenga/lsf_audit_value_lf_alea.json").read_text())
-    d = json.loads((ROOT / "results/jenga/lsf_value_diag_value_lf_alea.json").read_text())
+    stem = __import__("os").environ.get("LSF_VALUE_NAME", "value_lf_alea.pt")[:-3]
+    a = json.loads((ROOT / f"results/jenga/lsf_audit_{stem}.json").read_text())
+    d = json.loads((ROOT / f"results/jenga/lsf_value_diag_{stem}.json").read_text())
     out = {"actor_saturated_share": a["actor"]["actor_saturated_share"], "V_after_actor": a["actor"]["V_after_plan_median"],
            "V_after_policy": a["policy"]["V_after_plan_median"], "V_after_hold": a["hold"]["V_after_plan_median"],
            "AUROC_minusV_vs_any_topple": d["AUROC_minusV_vs_any_topple"], "AUROC_minus_l_now": d["AUROC_minus_l_now_vs_any_topple"],
            "V_quantiles": d["V_quantiles"], "share_V_below_0.3": d["share_V_below_0.3"]}
     out["GATE_LF2_pass"] = bool(out["actor_saturated_share"] < 0.05 and out["V_after_actor"] >= out["V_after_hold"]
                                 and out["AUROC_minusV_vs_any_topple"] >= 0.70)
-    (ROOT / "results/jenga/lflsf_LF2.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+    (ROOT / f"results/jenga/lflsf_LF2{'_x' + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
 DEV_ARMS = ("lfa-25", "lfa-15", "lfa000", "lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")   # amendments 1, 2
