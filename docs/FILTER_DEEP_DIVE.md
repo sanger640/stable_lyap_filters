@@ -532,6 +532,19 @@ Same 150 approach decisions as fixcf, exact state and history, first move varied
 - Left: the failed-grasp half of the time-outs (31: grasp, release, never extract) and red-block drops, both of which the world model does not see well (spread AUC 0.58 for red falls).
 - Next: a fresh confirmation test vs the policy alone (pre-registered before running), and the 4x margin on top of psel (cbfps4m), now that fixes are cheap in time.
 
+### 5u. gripbench: should the psel fix keep the policy's gripper? (pre-registered offline; results/jenga/gripbench_protocol.json): FAIL
+129 decisions of the psel run where the red block was held and the executed fix opened the gripper against the policy's plan. Four branches from the exact saved state, then the policy alone to chunk 59 (2x noise, one continuation seed per case).
+
+| branch | success | topple | red fall |
+|---|---|---|---|
+| nominal (policy's chunk) | 57.4% | 7.0% | 34.1% |
+| logged fix | 62.8% | 10.1% | 20.2% |
+| psel (recomputed, free gripper) | **71.3%** | 9.3% | **14.0%** |
+| pselg (same samples, plan's gripper) | 68.2% | 7.0% | 22.5% |
+
+- PRIMARY: success pselg - psel -3.1 pp, one-sided lower -8.5 pp: FAIL. Topples favour pselg (upper -0.8 pp) but the bench gates on success.
+- Reading: where psel opens the gripper on a held block, the opening is mostly protective. Keeping the grip raises red falls from 14% to 22.5%, while the policy's own chunk drops a third of these blocks. The grasp-release time-outs are not the fix's gripper choice; psel keeps its gripper freedom and no closed-loop cbfpsg3m test is run.
+
 ## 6. Pipeline (queued, not started)
 
 ### 6a. Label-free value function learned in simulation (from SimDist, docs/LITERATURE_REVIEW.md; queued 2026-10-24 at the user's request)
