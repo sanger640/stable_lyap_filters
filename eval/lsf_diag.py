@@ -30,7 +30,7 @@ def main():
     import lsf as L
     from fresh_fragility_panel import neighbour_tilts, TOPPLE_DEG
     vf = L.ValueFn(os.environ.get("LSF_VALUE_NAME", "value.pt"))
-    Clf, _, _ = L.nets(); clf = Clf().cuda().eval(); clf.load_state_dict(torch.load(L.OUT / "classifier.pt", map_location="cuda"))
+    clf = L.load_clf("cuda")                                      # LSF_CLF (default the labelled classifier)
     files = [f for src in ("cf_v1", "cf_v2", "closedloop_v1", "oil_v1")
              for f in sorted(glob.glob(str(ROOT / f"results/program_b/{src}/val/ep*.npz"))) if not f.endswith(".tmp.npz")]
     share, anyf, rz, rp = [], [], [], []

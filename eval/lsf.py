@@ -301,6 +301,24 @@ def disagreement(models, z, a):
     p = torch.stack([m.step(z, a).float() for m in models]); return p[0], p.std(0).mean((1, 2, 3))
 
 
+def load_clf(dev=None):
+    """The margin l(z, g): LSF_CLF (default classifier.pt, the labelled failure classifier). A checkpoint saved with
+    no_g (eval/lflsf.py margin net, label-free, results/jenga/lflsf_protocol.json) is state-only: its proprio input is zeroed."""
+    import torch
+    dev = dev or DEV
+    Classifier, _, _ = nets(); w = torch.load(OUT / os.environ.get("LSF_CLF", "classifier.pt"), map_location=dev)
+    net = Classifier().to(dev).eval()
+    if isinstance(w, dict) and w.get("no_g"):
+        net.load_state_dict(w["state"])
+        class NoG(torch.nn.Module):
+            def __init__(s):
+                super().__init__(); s.net = net
+            def forward(s, z, g):
+                return s.net(z, torch.zeros_like(g))
+        return NoG().eval()
+    net.load_state_dict(w); return net
+
+
 def pessimistic_step(models, clf, z, a, g2):
     """Original LSF (CMU-IntentLab/latent-safety, PyHJ/reach_rl_gym_envs/franka-wm.py): sample the world model N times and
     keep the MOST PESSIMISTIC transition (lowest safety margin). Our world model is deterministic, so the N samples are the
@@ -372,8 +390,8 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
     import step3_world_model as wm
     wm.DEVICE = DEV
     torch.manual_seed(SEED)
-    Classifier, _, _ = nets(); QNet, SACActor = sac_nets()
-    clf = Classifier().to(DEV); clf.load_state_dict(torch.load(OUT / "classifier.pt", map_location=DEV)); clf.eval()
+    QNet, SACActor = sac_nets()
+    clf = load_clf()
     models = ensemble()
     q1, q2, A = QNet().to(DEV), QNet().to(DEV), SACActor().to(DEV); q1t, q2t = copy.deepcopy(q1), copy.deepcopy(q2)
     oq = torch.optim.Adam(list(q1.parameters()) + list(q2.parameters()), lr=1e-4); oa = torch.optim.Adam(A.parameters(), lr=1e-4)
