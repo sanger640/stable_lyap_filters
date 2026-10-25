@@ -1,0 +1,11 @@
+{
+ "name": "gripbench: should the psel fix keep the policy's gripper command? (offline, exact saved states)",
+ "registered": "2026-10-25 ~06:50 EDT, before any gripbench branch ran",
+ "motivation": "Exploratory (results/jenga/deep_dive/psel_grip_check.log): in paired_cbfps3m_psel, 21% of fixes made while the red block is held select a policy sample that OPENS the gripper where the policy's plan keeps it closed (43% in time-out episodes, 37% in topple episodes; small counts). G-CEM keeps the plan's gripper (OPT3_GRIP=fixed); psel does not. The certificate scores neighbour safety only, so a release can look safe to it.",
+ "cases": "all 129 decisions of paired_cbfps3m_psel with an intervention, the gripper closed at the decision, and the executed fix opening at a step where the policy's chunk is closed (eval/grip_bench.py cases(); d >= 1)",
+ "branches": "nominal (the policy's chunk), logged (the executed fix), psel (recomputed: 16 fresh policy samples, OIL+ENS certificate with 64 futures, closest certified; the deployed rule), pselg (the SAME 16 samples with the plan's gripper column, same certificate futures and rule); then the policy alone to chunk 59 with the run's 2x noise and one continuation seed for all branches",
+ "outcome": "per branch, to chunk 59: success = red block extracted (>= 2 cm lifted or pulled from its rest pose, detected at any step) and no red fall (tilt >= 45) and no neighbour topple",
+ "primary": "pselg - psel success: one-sided 95% bootstrap lower bound > 0 (paired over cases, seed 20261026, 10000 resamples) AND topples pselg - psel: one-sided 95% upper bound <= +3 pp. PASS -> a closed-loop test of psel with the plan's gripper (cbfpsg3m vs cbfps3m) is pre-registered after pconf; FAIL -> psel keeps its gripper freedom.",
+ "secondary": ["rates per branch (success, topple, red fall)", "how often the recomputed psel / pselg choices open the gripper", "identical choices", "cases by the logged episode's outcome"],
+ "run": "Fir, cluster/gripbench.sbatch, 10 shards; smoke LIMIT=1 first (shard 0, not analysed separately: its row is kept, the bench is deterministic per case)"
+}
