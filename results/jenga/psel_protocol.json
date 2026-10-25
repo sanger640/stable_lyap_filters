@@ -1,0 +1,11 @@
+{
+ "name": "psel: the adopted 3x filter with a POLICY-SAMPLE SELECTION fix instead of G-CEM, closed loop",
+ "registered": "2026-10-24 ~21:00 EDT, before any closed-loop psel episode (a 1-episode smoke, 24900, not analysed)",
+ "motivation": "fixbench (pre-registered, PRIMARY PASS): at the same 150 approach decisions, choosing the closest certified of 16 of the policy's own samples delays the grasp 0.65 chunks vs G-CEM's 1.36 (-0.79, upper -0.21) with topples 20 vs 23; at 1x noise 0.41 vs 1.65. Time-outs are the adopted filter's main cost (62-77 of 600 vs ~20 for the policy) and three levers (steer, gate, gripper knob) did not move them.",
+ "arms": "cbfg3m (adopted: fork_3x trigger, G-CEM fix, OIL+ENS certificate, hold fallback) vs cbfps3m (same trigger and certificate; fix = 16 policy samples from the same observations, certified with OIL+ENS / 64 fresh futures, the certified one with the lowest opt2 change cost vs the policy's plan; none -> hold if certified, else best (h, -o); the policy's RNG is restored after sampling)",
+ "episodes": "600 fresh episodes 24000-24599 (no earlier run used them), the stl/gtv paired setup (settle, 2x execution noise, HARD_OFF=1, per-episode seeds, 60 chunks), both arms per job (Fir, paired_array, model_OIL, CBF_CALIB OIL)",
+ "primary": "as stl/gtv: (1) fewer time-outs (no neighbour topple, not extracted, no red fall before extraction), exact McNemar one-sided p < 0.05, AND (2) neighbour topples non-inferior: one-sided 95% upper bound of the paired difference <= +2 pp. Both -> PASS -> cbfps3m becomes the adopted filter (a fresh confirmation test is pre-registered before any paper claim).",
+ "secondary": ["v4 and v4b success (paired)", "first grasp chunk in successes", "interventions per episode, fix kinds (certified / hold / best), seconds per intervention", "time-out anatomy (never grasp / grasp >= 45 / grasp then release)"],
+ "trial": "task 0 first (as gtv), then tasks 1-199",
+ "analysis": "outcome_audit runs -> CL_TAG=psel CL_ARMS='cbfg3m cbfps3m' eval/steer_analysis.py -> results/jenga/psel_result.json"
+}

@@ -320,6 +320,33 @@ class CBF:
             out = np.asarray(best, np.float32)[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
             return out, {**info, "intervened": True, "abstained": False, **oi, "fix_kind": oi["kind"], "kind": "g3",
                          "progress": round(opt3.progress(p16, best), 3), "seconds": round(time.time() - t0, 2)}
+        if CFG["FIX"] == "psel":               # policy-sample selection (results/jenga/psel_protocol.json; fixbench "sel"):
+            import opt2                         # 16 of the policy's own plans, G-CEM's certificate (OIL+ENS), the certified
+            import opt3                         # one closest to the policy's plan; none -> hold if certified, else best (h, -o)
+            import step3_world_model as wm
+            if getattr(self, "_certs", None) is None:
+                self._certs = [None] + [wm.WorldModel.load(Path(__file__).resolve().parent.parent / f"results/program_b/ens_v1/model_ENS{e}.pt")
+                                        for e in range(4)]
+            p16 = np.asarray(plan, np.float32).copy(); p16[0, :3] = sim.target
+            P = opt3.Problem(self.mon, self, sim, z0, p16, float(h_now), self._certs); P.cbf_O_MAX = CFG["O_MAX"]
+            rs = (torch.get_rng_state(), torch.cuda.get_rng_state())      # sampling candidates must not shift the policy's RNG
+            try:
+                samples = np.asarray(pr.policy_chunk(pol, hist, n=16), np.float32)
+            finally:
+                torch.set_rng_state(rs[0]); torch.cuda.set_rng_state(rs[1])
+            hold16 = np.repeat(np.r_[sim.target, p16[0, 3]][None], 16, 0).astype(np.float32)
+            ok, hc, oc = P.certify(list(samples) + [hold16])
+            costs = np.array([opt2.Problem.cost(P, c[1:9, :3] - p16[1:9, :3]) for c in samples]); okc = ok[:-1]
+            if okc.any():
+                j = int(np.flatnonzero(okc)[np.argmin(costs[okc])]); best, kind = samples[j], "certified"
+            elif ok[-1]:
+                j, best, kind = -1, hold16, "fallback_hold"
+            else:
+                j = int(np.lexsort((oc[:-1], -hc[:-1]))[0]); best, kind = samples[j], "fallback_best"
+            out = best[CFG["PLAN_START"]:CFG["PLAN_START"] + 8].copy()
+            return out, {**info, "intervened": True, "abstained": False, "kind": "psel", "fix_kind": kind, "choice": j,
+                         "n_certified": int(okc.sum()), "change_mm": round(float(np.abs(best[1:9, :3] - p16[1:9, :3]).max() * 1000), 1),
+                         "progress": round(opt3.progress(p16, best), 3), "seconds": round(time.time() - t0, 2)}
         rs = (torch.get_rng_state(), torch.cuda.get_rng_state())          # sampling candidates must not shift the policy's RNG
         try:
             samples = pr.policy_chunk(pol, hist, n=CFG["OPT_STARTS"] - 1 if CFG["FIX"] == "opt" else CFG["N_SAMPLES"])

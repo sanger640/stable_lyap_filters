@@ -383,6 +383,15 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["BARRIER"] = "spread"; cbff.CFG["FIX"] = "g3"
         cbff.CFG["TAU_S"] = json.loads((ROOT / "results/jenga/spread_calibration.json").read_text())["TAU_S"]
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfps3m":                      # policy-sample selection fix (results/jenga/psel_protocol.json): cbfg3m's trigger
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"      # and certificate; the fix = the closest certified of 16 policy samples
+        import cbf_barrier
+        import cbf_filter as cbff
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "psel"
+        return _paired(mode, "cbf", n, shrink)
     if mode == "cbfgtv3m":                     # gated trigger (results/jenga/gtv_protocol.json): cbfg3m, but act only if the
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # plan's relative total variance (x4) also exceeds the dev 0.7-quantile
