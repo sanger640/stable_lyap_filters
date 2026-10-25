@@ -28,7 +28,7 @@ def stats(cbf, z0, plans, n_fut=64):
     import step3_world_model as wm
     mon, torch = cbf.mon, cbf.mon.torch
     C = len(plans); seed = int(mon.rng.integers(2 ** 31)); res = {}                 # one seed, as margin_check.split_flags
-    for s in mc.SC:
+    for s in (tuple(float(x) for x in os.environ["SP_SC"].replace("_", " ").split()) if os.environ.get("SP_SC") else mc.SC):   # SP_SC: other scales
         d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])
                        for p, r in (mon.errors.sample(seed, 0, 0, j) for j in range(n_fut))])
         st = mon.g(z0[None].expand(n_fut, -1, -1, -1), torch.as_tensor(d_, dtype=torch.float32))

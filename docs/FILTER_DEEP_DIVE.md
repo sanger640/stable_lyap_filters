@@ -514,6 +514,24 @@ Same 150 approach decisions as fixcf, exact state and history, first move varied
 - Noise (user's question): at 1x the policy's own chunk topples in 3 of these 150 cases (32 at 2x), so the noise makes most of the hazard; but the policy-space fixes gain the same 0.6-1.3 chunks at both levels, and G-CEM's cost does not shrink at 1x. Noise is not what limits the fixes.
 - Selection found a certified sample in 137 of 150 decisions (hold 10, best 3). Next: closed loop (results/jenga/psel_protocol.json, 600 fresh episodes).
 
+### 5t. psel in closed loop: the policy's own samples as the fix (pre-registered; results/jenga/psel_protocol.json): PRIMARY PASS, adopted
+600 fresh episodes 24000-24599 (Fir), cbfg3m vs cbfps3m: same fork_3x trigger and OIL+ENS certificate; the fix is the certified one of 16 policy samples closest to the policy's plan (hold, then best, as fallbacks).
+
+| | G-CEM fix (cbfg3m) | policy-sample fix (cbfps3m) |
+|---|---|---|
+| neighbour topples | 16 | 16 |
+| time-outs | 85 | **34** |
+| never grasp / first grasp >= 45 / grasp then no extraction | 27 / 12 / 46 | 1 / 2 / 31 |
+| first grasp, successes (median chunk) | 29 | 22 |
+| v4 / v4b | 462 / 405 | 512 / 427 |
+| red falls before / after extraction | 40 / 59 | 39 / 89 |
+| fixes per episode, median s per fix | 8.5, 33 s | 6.5, 56 s |
+
+- PRIMARY: time-outs 23 vs 74 discordant (p = 1e-7), topples non-inferior (upper +1.3 pp). The fixbench prediction held in closed loop: the time-out cost came from the kind of edit, and an edit from the policy's own distribution removes the slow approach almost entirely (never-grasp time-outs 27 -> 1).
+- The extra red falls after extraction are the policy's own (exploratory, eval/psel_drop_check.py): 75% of them have no fix between extraction and fall, the lift at the fall is below rest (the block tips on the table, -13 mm median), and the drop rate per extraction (16.6%) lies in the range of every earlier arm (12.3-17.2%, policy alone 12.7-15.2%). psel extracts 50 more blocks; about one in six of those drops, as with the policy.
+- Left: the failed-grasp half of the time-outs (31: grasp, release, never extract) and red-block drops, both of which the world model does not see well (spread AUC 0.58 for red falls).
+- Next: a fresh confirmation test vs the policy alone (pre-registered before running), and the 4x margin on top of psel (cbfps4m), now that fixes are cheap in time.
+
 ## 6. Pipeline (queued, not started)
 
 ### 6a. Label-free value function learned in simulation (from SimDist, docs/LITERATURE_REVIEW.md; queued 2026-10-24 at the user's request)

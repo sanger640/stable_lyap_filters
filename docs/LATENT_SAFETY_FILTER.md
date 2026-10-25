@@ -283,3 +283,12 @@ policy 27 / 66 / 58; eps 0.10: 26 / 66 / 58; 0.30: 29 / 61 / 53; 0.50: 32 / 56 /
   disturb the scene without saving it.
 - Next per the plan: stage 2 (noisy value + noisy check), then one head-to-head vs G-CEM with the better of the two on
   fresh episodes (pre-registered separately; v4 and v4b both reported).
+
+### LSF stage 2 offline gate RESULT (2026-10-25 05:40; value_unisafe_alea.pt, 60k updates, trained locally)
+- Actor saturated on 0.006% of actions (gate: not saturated) -> pass.
+- Imagined V after 4 model steps, median over the 729 held-out decision points: actor 0.839, policy 0.734, hold 0.734 (gate: actor >= hold) -> pass.
+- AUROC of -V vs any toppling future 0.829 (gate >= 0.7; stage 1 value 0.810) -> pass. Spearman vs topple share 0.37 (0.34).
+- Sources: results/jenga/lsf_audit_value_unisafe_alea.json, lsf_value_diag_value_unisafe_alea.json.
+- Early-warning number: taken from the dev sweep's own logs (the runtime logs the noisy V_min at every decision, as stage 1).
+- Dev sweep running (Fir 337330): modes lsfa010-lsfa070, episodes 15000-15099, the stage 1 protocol unchanged. Smoke 15900-15901 ran (both time-outs at eps 0.70, ~29 actor overrides per episode).
+

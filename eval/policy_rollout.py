@@ -392,6 +392,15 @@ def paired(mode, n=100, shrink=None):
         cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
         cbff.CFG["H_SAFE"] = float(np.log2(4.0)); cbff.CFG["FIX"] = "psel"
         return _paired(mode, "cbf", n, shrink)
+    if mode == "cbfps4m":                      # psel with the 4x margin (contingent on psel; docs/FILTER_DEEP_DIVE.md 5n): fork
+        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
+        os.environ["OPT3_GRIP"] = "fixed"      # test up to 4x (top scale 8 skipped, exact), h_safe = log2 8 in trigger and certificate
+        import cbf_barrier
+        import cbf_filter as cbff
+        cbf_barrier.SCALES = (0.5, 1.0, 2.0, 3.0, 4.0, 8.0)
+        cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+        cbff.CFG["H_SAFE"] = float(np.log2(8.0)); cbff.CFG["FIX"] = "psel"
+        return _paired(mode, "cbf", n, shrink)
     if mode == "cbfgtv3m":                     # gated trigger (results/jenga/gtv_protocol.json): cbfg3m, but act only if the
         os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["OPT2_CERT"] = "OIL+ENS"
         os.environ["OPT3_GRIP"] = "fixed"      # plan's relative total variance (x4) also exceeds the dev 0.7-quantile
