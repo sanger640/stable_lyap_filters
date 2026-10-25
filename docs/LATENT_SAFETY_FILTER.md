@@ -347,3 +347,11 @@ Held-out paired_record_m3 decision states (exploratory, scratchpad an/vreal.py),
   chunks 10-29 (the approach / grasp), so eps 0.30 means a different rule for each value.
 - Label-free calibration (no labels: match the share of ALL visited states the labelled value flags, 5.4% at eps 0.10,
   6.9% at 0.30) -> label-free eps -0.25 / -0.15. Both added to LF3 (lfa-25, lfa-15). Selection rule unchanged.
+
+### LF5: the 8x margin (pre-registered 2026-10-25 18:07, results/jenga/lflsf_LF5_protocol.json)
+First LF3 arm (lfa-15, logged outcomes, unaudited): topples 27 -> 14 but logged successes 40 -> 13, lifts 50 -> 16 of 99:
+the switch blocks the grasp. Training runs (m3 untouched, an/margins.py): the 4x margin flags 18% of safe gripper-closed
+states vs 45% of states 1 chunk before a topple; the 8x margin 9% vs 33%. Toppled scenes are calm at every scale (0-9%
+flagged), so no hold-plan spread marks the failed state itself; the min-over-time backup has to carry it.
+- **LF5a RESULT (18:09; results/jenga/lflsf_LF1_x8.json): PASS.** Held-out Spearman 0.836, AUC 0.854 (target 0.837). The
+  net is smoother than its target: 3.3% of held-out states below 0 (target 8.8%). SAC value value_lf8_alea.pt training.
