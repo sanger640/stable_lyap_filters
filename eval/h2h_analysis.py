@@ -13,6 +13,7 @@ import os
 STAGE = os.environ.get("H2H_STAGE", "h2h")                                  # h2h2 = head-to-head 2 (lsf_h2h2_protocol.json)
 A = json.loads((ROOT / f"results/jenga/outcome_audit_{STAGE}.json").read_text())
 ARMS = ({"policy": "record", "G_CEM": "cbfg", "LSF": "lsfe010"} if STAGE == "h2h2"
+        else {"policy": "record", "G_CEM": "cbfps3m", "LSF": "lsfa030"} if STAGE == "h2h3"   # h2h3: psel vs LSF stage 2
         else {"policy": "record", "G_CEM": "cbfg", "hold_replan": "cbfh", "LSF_hold": "lsfh000"})
 V = {a: {r["ep"]: r for r in A[f"paired_{run}_{STAGE}"]["rows"]} for a, run in ARMS.items()}
 EPS = sorted(set.intersection(*(set(v) for v in V.values())))
@@ -41,10 +42,10 @@ def noninf(a, b):
     return r
 
 
-out = {"stage": STAGE, "exploratory": STAGE != "h2h2", "episodes": len(EPS),
+out = {"stage": STAGE, "exploratory": STAGE not in ("h2h2", "h2h3"), "episodes": len(EPS),
        "counts": {a: {"topples": int(vec(a, "topple").sum()), "v4": int(vec(a, "v4_success").sum()),
                       "v4b": int(vec(a, "v4b_success").sum())} for a in ARMS}}
-if STAGE == "h2h2":
+if STAGE in ("h2h2", "h2h3"):                                       # h2h3: G_CEM = the adopted psel filter
     out["PRIMARY_G_vs_LSF"] = noninf("G_CEM", "LSF")
 else:
     out["PRIMARY_G_vs_LSF_hold"] = noninf("G_CEM", "LSF_hold")          # (1) non-inferiority; (2) topple McNemar inside

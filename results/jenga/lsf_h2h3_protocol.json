@@ -1,0 +1,16 @@
+{
+ "name": "Head-to-head 3: the adopted psel filter vs the latent safety filter made faithful (stage 2: per-model-step switch + pessimistic noisy imagination), on Jenga",
+ "written": "2026-10-25 ~08:55 EDT, after the stage 2 dev sweep selected eps 0.30 (results/jenga/lsfa_dev_result_lsfadev.json) and before any head-to-head-3 episode",
+ "episodes": "25600-26199 (600, never used for anything; pconf uses 25000-25599)",
+ "arms": {
+  "record": "policy alone",
+  "cbfps3m": "the adopted filter psel (results/jenga/psel_protocol.json): fork_3x trigger, OIL+ENS certificate, fix = closest certified of 16 policy samples; no failure labels",
+  "lsfa030": "latent safety filter stage 2 (docs/LATENT_SAFETY_FILTER.md): UNISafe-recipe SAC value trained with pessimistic sampling over 8 noisy transitions (value_unisafe_alea.pt), least-restrictive switch at every model step (0.2 s) on the minimum V over 8 noisy one-step imaginations, eps 0.30 (dev-selected by the pre-registered rule; also the published value)"
+ },
+ "settings": "the stl/gtv/psel/pconf paired setup (settle, 2x execution noise, HARD_OFF=1, per-episode seeds, 60 chunks), model_OIL, CBF_CALIB OIL, Fir paired_array, all 3 arms per task; task 0 first",
+ "outcome": "neighbour topples (logged, checked by replay), v4 and v4b success, by eval/outcome_audit.py",
+ "primary": "psel vs LSF stage 2, paired by episode, as head-to-head 2 (eval/h2h_analysis.py H2H_STAGE=h2h3): (1) non-inferiority (v4 and v4b one-sided 95% lower bound > -5 pp AND topple one-sided 95% upper bound < +3 pp); (2) topples, exact McNemar two-sided, alpha 0.05. Both reported whatever the outcome; if LSF has significantly fewer topples, that is the headline.",
+ "secondary": "each filter vs the policy (same statistics); time-outs; red falls before / after extraction; interventions (psel) / overrides (LSF) per episode; seconds per episode",
+ "dev_context": "dev (99 episodes 15000-15099): policy 27 topples / v4 66 / v4b 58; LSF stage 2 eps 0.30: 9 / 76 / 59; eps 0.10: 16 / 69 / 58; eps 0.50: 9 / 50 / 28. psel has no dev run on these episodes (psel test, eps 24000-24599: topples 16 / v4 512 / v4b 427 of 600, no policy arm).",
+ "stopping": "none; all 600 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all arms."
+}
