@@ -292,3 +292,16 @@ policy 27 / 66 / 58; eps 0.10: 26 / 66 / 58; 0.30: 29 / 61 / 53; 0.50: 32 / 56 /
 - Early-warning number: taken from the dev sweep's own logs (the runtime logs the noisy V_min at every decision, as stage 1).
 - Dev sweep running (Fir 337330): modes lsfa010-lsfa070, episodes 15000-15099, the stage 1 protocol unchanged. Smoke 15900-15901 ran (both time-outs at eps 0.70, ~29 actor overrides per episode).
 
+### LSF stage 2 dev RESULT (2026-10-25 08:38; results/jenga/lsfa_dev_result_lsfadev.json, outcome_audit_lsfadev.json)
+Fir, 100 dev episodes x 6 eps, 99 common with the reused record arm. Topples / v4 / v4b: policy 27 / 66 / 58;
+eps 0.10: 16 / 69 / 58; **0.30: 9 / 76 / 59 (selected: fewest topples with v4 within 5 pp)**; 0.50: 9 / 50 / 28;
+0.60: 4 / 19 / 7; 0.65: 1 / 3 / 1; 0.70: 1 / 0 / 0.
+- The faithful version works: at the published eps 0.30 it cuts dev topples by two thirds AND raises v4 (+10 of 99),
+  v4b equal. Stage 1 (per-step, deterministic value) needed eps 0.70 for 13 topples and lost v4b (26).
+- Its actor now acts rarely: 7.9 overrides of ~203 model steps per episode at eps 0.30 (stage 1 at 0.70: 31.9); time-outs
+  5 (policy 1); red falls before / after extraction 10 / 17. Cheap: no sampling or certificate, one V per model step.
+- Above eps 0.5 the value is too pessimistic and the actor takes over (v4 collapses).
+- So the user's suspicion was right: LSF-as-run was unfaithful in two ways (switching rate, deterministic imagination),
+  and fixing both makes it a strong baseline. Head-to-head 3 vs psel pre-registered (results/jenga/lsf_h2h3_protocol.json,
+  600 fresh episodes 25600-26199).
+
