@@ -523,5 +523,6 @@ Same 150 approach decisions as fixcf, exact state and history, first move varied
 - Why it may succeed where HJ idea 3 and HJ v2 stage B failed: those were trained on ~1200 logged episodes with topple-derived targets; this uses far more, more diverse states and a dense, label-free oracle target.
 - Use: as a long-horizon barrier term in the CBF / HJ filter (the fixes that "do not hold", section 5n residuals) and as an alarm, gated offline on benchmark v2 real risk and on held-out early warning before any closed loop.
 - Prerequisite: 6b (sim-to-sim adaptation) result; cost estimate and a pre-registered gate before building.
+- **Stage A0 result (2026-10-24, results/jenga/vo_protocol.json): FAIL.** The target itself (exact-sim relative spread of final block poses) warns >= 3 ahead of 71.7% of held-out topples at 11.3% alarms vs 90.6% for the world model's tvar_rel; matched in look-ahead and error scale (exploratory) 80.2%. A value learned to imitate it cannot beat the monitor as an alarm. 6b (dynamics adaptation) also failed. 6a as an alarm stops; a value for CHOOSING fixes (reach-avoid: delay + risk per candidate, cf. fixbench) remains open.
 
 ### 6b. Dynamics-only adaptation (running): results/jenga/s2s_protocol.json
