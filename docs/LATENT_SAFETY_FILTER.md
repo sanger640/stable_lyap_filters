@@ -384,3 +384,8 @@ Topples / v4 / v4b of 100 (local record arm 27 / 64 / 58): lfa-25 11 / 53 / 43; 
 lfa010 4 / 19 / 14; lfa030 3 / 4 / 4; lfa050 0 / 2 / 2. None within 5 pp of the policy's v4. Overrides per episode 11.7-25.7
 (labelled stage 2 at eps 0.30 on the same episodes: 7.8, topples 9, v4 76). Note: the rollout's logged success flag is far
 stricter than v4 (record 40 vs 64), never compare on it.
+
+### LF3 RESULT (2026-10-25 21:24; results/jenga/lflsf_LF3_dev.json, outcome_audit_lflsfdev.json): no arm selected
+Relative switch (latent-CBF form) topples / v4 / v4b / time-outs: lfr010 5 / 27 / 19 / 64; lfr030 3 / 6 / 5 / 90; lfr050
+0 / 4 / 4 / 96 (record 27 / 64 / 58 / 2). Time-outs for the absolute arms: lfa-25 24, lfa-15 42, lfa000 62, lfa010 74,
+lfa030 93, lfa050 98. No arm within 5 pp of the policy's v4 -> LF4 runs at the fallback eps 0.00 (started 21:25).
