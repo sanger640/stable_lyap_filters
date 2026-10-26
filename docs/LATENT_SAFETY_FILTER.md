@@ -400,3 +400,19 @@ counterfactual change, label-free and labelled values) flags 5-10% of safe grasp
 the world model's foresight of contact outcomes as the shared limit rather than the readout. The labelled LSF works in
 closed loop at similar per-state discrimination because it acts rarely (1.4% of safe states trigger at eps 0.30) and its
 actor, trained against topples only, does not abandon the grasp.
+
+### CF2 RESULT (2026-10-25 23:16; results/jenga/cf2_result.json, protocol cf2_protocol.json): FAIL as registered
+Time-irreversibility read of the fork (plan, then the reversed plan, vs hold, over the same 64 futures, outside the hand
+path), same 2359 m3 decisions as CF1. AUC / safe flagged / safe gripper-closed flagged at 50% pre-topple recall:
+P_irr 2x 0.753 / 6.8% / 3.0%, P_irr 4x 0.723 / 7.1% / 2.7%; mean_r 2x 0.794 / 9.9% / 13.1%, 4x 0.866 / 7.9% / 7.7%;
+**max_r 2x 0.850 / 5.4% / 1.9%, max_r 4x 0.890 / 6.8% / 2.5%** (hold-spread reference 10.4%). The registered statistic
+P_irr meets the false-alarm half (<= 5.2%) but not AUC >= 0.85 -> FAIL. The secondary max over draws (worst case over
+the engine's noise, the robust-reachability reading) meets both on m3, and is the first imagined statistic to bring the
+grasp's false alarms well under the 5-10% floor of CF1. Selected after looking, so it needs a confirmatory test (CF3).
+Exploratory notes (scratchpad an/cf2_look*.py): 95% of pre-topple decisions have the gripper OPEN (the approach knocks a
+neighbour), so the pre-grasp reference contains dangerous states (its q98 gives 8% recall); r is bimodal (about 0.17 in
+free space, above 1 near contact), so an early-episode reference is too tight (flags 50% of safe). The m3 50%-recall cut
+for max_r 2x (1.336) coincides with LF6's label-free scale thr = 1.3356 (q98 of REAL latent change before the first
+grasp, training runs): "the imagined undo leaves more change than anything real changes before contact". At that fixed
+threshold on m3: 2x recall 50.0%, safe 5.4%, safe closed 1.9%; 4x recall 69.4%, safe 14.5%, safe closed 8.6%. Recall by
+lead (2x): 65 / 50 / 35% at 1 / 2 / 3 chunks. Background motion common to both branches cancels by construction.

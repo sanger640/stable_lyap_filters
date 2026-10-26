@@ -1,10 +1,11 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-25 20:27 EDT (lflsf: why the label-free margin over-triggers; LF6 side-effect margin LF6a PASS).
+Last updated 2026-10-25 23:20 EDT (CF2 time-irreversibility fork read: FAIL as registered, its worst-case secondary is the best per-state statistic so far).
 
 ## 2026-10-25 evening: direction change + label-free latent safety filter (lflsf)
 
+- **CF2 time-irreversibility read of the fork (pre-registered, offline): FAIL as registered; worst-case secondary promising.** Plan, then the reversed plan, vs hold over the same 64 futures: registered P_irr AUC 0.75 / 0.72 (gate 0.85) though it flags only 2.7-3.0% of safe grasping states. The max over draws (worst case over the engine's noise): AUC 0.850 / 0.890, safe grasping states flagged 1.9 / 2.5% at 50% pre-topple recall (hold spread 10.4%). Chosen after looking -> confirmatory CF3 on fresh episodes. Source: results/jenga/cf2_result.json.
 - **CF1 counterfactual fork statistic (pre-registered, offline): FAIL.** Plan vs hold over the same 64 futures, outside the hand path: best AUC 0.72-0.86, flags 7.2-10.3% of safe grasping states at 50% pre-topple recall vs 10.4% for the hold spread (gate: half). Every imagined per-state statistic so far sits at 5-10% there. Source: results/jenga/cf1_result.json.
 - **lflsf LF3 (pre-registered dev sweep, 100 episodes): FAIL, no arm selected.** The label-free switch trades the task for topples: best lfa-25 topples 27 -> 11, v4 64 -> 53, v4b 58 -> 43, time-outs 2 -> 24; lfa000 4 / 26 / 23; relative switch lfr010 5 / 27 / 19. Labelled LSF stage 2 on the same episodes: 9 / 76 / 59. Source: results/jenga/lflsf_LF3_dev.json.
 - **Why the label-free switch over-triggers (exploratory; docs/LATENT_SAFETY_FILTER.md):** not the 2x noise (trigger share on safe-episode states, hold command, noise 0 / 1 / 2x: label-free 10.2 / 11.2 / 12.9%, labelled 1.4 / 2.1 / 3.5%). The fragility margin is not a failure set: post-topple states score SAFE (AUC 0.226 at 8x; a fallen scene is calm) and >= 12% of safe states are flagged at 50% pre-topple recall, so the value learns to avoid the grasp, not topples.
