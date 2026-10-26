@@ -1,0 +1,15 @@
+{
+ "name": "N1F: the label-free filters at 1x execution noise (does the filter cost successes when the policy is already good?)",
+ "registered": "2026-10-26 19:37 EDT, before any filter episode at 1x has run (the 1x policy-alone reference paired_record_n1dev is known: 5 / 85 / 76 / 5 time-outs)",
+ "origin": "user 2026-10-26: run the 1x noise test with the filter too",
+ "arms": {
+  "lfck000": "selected: wider gate (irreversibility r_max > 1.3356 OR gripper open AND V < 0) + pure edit (eval/irr_rollout.py lfck000)",
+  "lfc000": "always-on edit: the 0.2 s value check on every model step, no gate (eval/policy_rollout.py paired lfc000)"
+ },
+ "filters_unchanged": "same code and settings as the 2x runs; the filters' internal noise models stay at 2x (gate S = 2.0, LSF_ALEA_SCALE 2.0); only the simulated world's execution noise is 1x (EXEC_NOISE_SCALE=1)",
+ "episodes": "dev 15000-15099, paired with paired_record_n1dev (policy alone at 1x), 60-chunk cap, HARD_OFF, PER_EPISODE_SEEDS, local RTX 3090, 6 shards, tag _n1dev; after the edit-limit check (one world-model pool at a time)",
+ "audit": "eval/outcome_audit.py with AUDIT_NOISE_SCALE=1",
+ "outcomes": "topples, v4, v4b, time-outs, red falls; edits per episode, gate-open share",
+ "criterion": "per arm vs the 1x policy alone: 'no cost' if v4 >= 80 (policy 85 - 5, the LSF dev rule's margin) and topples <= 5; descriptive only, 100 episodes, exploratory (not a confirmatory test)",
+ "status": "exploratory, pre-registered"
+}
