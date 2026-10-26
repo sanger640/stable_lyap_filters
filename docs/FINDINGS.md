@@ -1,10 +1,12 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-25 17:47 EDT (direction change; lflsf LF1 + LF2 PASS; cert_recheck).
+Last updated 2026-10-25 20:27 EDT (lflsf: why the label-free margin over-triggers; LF6 side-effect margin LF6a PASS).
 
 ## 2026-10-25 evening: direction change + label-free latent safety filter (lflsf)
 
+- **Why the label-free switch over-triggers (exploratory; docs/LATENT_SAFETY_FILTER.md):** not the 2x noise (trigger share on safe-episode states, hold command, noise 0 / 1 / 2x: label-free 10.2 / 11.2 / 12.9%, labelled 1.4 / 2.1 / 3.5%). The fragility margin is not a failure set: post-topple states score SAFE (AUC 0.226 at 8x; a fallen scene is calm) and >= 12% of safe states are flagged at 50% pre-topple recall, so the value learns to avoid the grasp, not topples.
+- **lflsf LF6a (pre-registered, results/jenga/lflsf_LF6_protocol.json): PASS.** A side-effect margin (98th-percentile patch change of the latent since the episode's first view; label-free threshold from pre-grasp states) learned from a single frame: held-out Spearman 0.967, post-topple vs safe AUC 0.988, below 0 on 0.36% of safe states and 78% of post-topple states. Value training (value_lfse_alea.pt) queued after LF5's. Source: results/jenga/lflsf_LF1_se.json.
 - **Direction (user, 2026-10-25 ~17:05):** psel's "closest certified policy sample" is too simple and does not generalise; the main line is a learned, label-free reachability value / safety actor / CBF-style edit (LSF methodology or other reachability / Lyapunov / CBF methods). psel stays as the baseline to beat. prune_check and stepbench (psel-only) cancelled before running.
 - **lflsf LF1 (pre-registered, results/jenga/lflsf_protocol.json): PASS.** A margin net learned from our label-free fork statistic (neg_log_sens_4, state-only) replaces LSF's topple classifier. Held out (paired_record_m3): Spearman 0.635 vs its target; AUC for topples 1-3 chunks ahead 0.875, above the target's own 0.804. Source: results/jenga/lflsf_LF1.json.
 - **lflsf LF2 offline gate: PASS.** value_lf_alea.pt (LSF stage 2 recipe, 60k SAC updates with the label-free margin): actor saturated 0.2%; imagined V after 4 model steps, median: actor 0.968 vs hold 0.870 vs policy 0.864; AUROC of -V vs any toppling future 0.885 (labelled stage 2 value: 0.829). But it runs low on real states: 24% of held-out decisions have V < 0.3 (LF4 smoke, eps 0.30: overrides on 17-29% of model steps) -> amendment_1 added eps 0.00 to the LF3 grid before any LF3 episode. Source: results/jenga/lflsf_LF2.json.

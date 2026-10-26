@@ -355,3 +355,26 @@ states vs 45% of states 1 chunk before a topple; the 8x margin 9% vs 33%. Topple
 flagged), so no hold-plan spread marks the failed state itself; the min-over-time backup has to carry it.
 - **LF5a RESULT (18:09; results/jenga/lflsf_LF1_x8.json): PASS.** Held-out Spearman 0.836, AUC 0.854 (target 0.837). The
   net is smoother than its target: 3.3% of held-out states below 0 (target 8.8%). SAC value value_lf8_alea.pt training.
+
+### Why the fragility margin over-triggers (exploratory, 2026-10-25 19:50-20:20; scratchpad an/noise_trig.py, an/margin_choice.py, an/sidefx*.py)
+- Not the 2x execution noise. Hold command on 4,707 held-out m3 states, min V over 8 noisy one-step imaginations, share of
+  states from SAFE episodes that would trigger, execution noise 0 / 1 / 2x: label-free value (eps 0) 10.2 / 11.2 / 12.9%,
+  labelled stage 2 value (eps 0.30) 1.4 / 2.1 / 3.5%. Noise adds a little to both; the label-free value is ~7x higher at any noise.
+- No hold-fork statistic is a failure set: at 50% recall of states 1-3 chunks before a topple every statistic and scale
+  flags >= 12% of safe-episode states (best: spread at 8x), and states AFTER a topple score as safe (AUC 0.226 for the 8x
+  spread, post-topple vs safe: a fallen scene is calm). The value therefore learns "avoid fragile states" (incl. the grasp),
+  not "avoid topples". Imagined drift under a hold is no better (AUC 0.78; the model drifts while the gripper is closed).
+- A side-effect statistic is: c(z_k) = 98th percentile over the 28x28 patches of mean_channels |z_k - z_0| (the scene has
+  changed somewhere, relative to the episode's first view). Post-topple vs safe AUC 0.992 (LF1 training runs) / 0.989 (m3);
+  0% above threshold in the 4 chunks before a topple starts, 12% at the topple chunk, 83% one chunk later (absorbing);
+  0 of 1,110 safe states with the red block lifted. Label-free threshold (98th percentile over decisions before the gripper
+  first closes): flags 75.6 / 72.7% of post-topple states, 0.9% of safe states, 1.7% of safe gripper-closed (train / m3).
+
+### LF6: side-effect failure set (pre-registered 2026-10-25 20:23, commit dd9352a; results/jenga/lflsf_LF6_protocol.json)
+Margin t = tanh((thr - c) / s), thr / s from the pre-grasp reference; margin net from a single frame (no z_0 input), then
+the stage 2 recipe (value_lfse_alea.pt), the LF2 gate, then dev arms lfa010 / lfa030 / lfa050 / lfc030 (tag _lfsedev,
+local 3090 only, amendment 1), selection over all lflsf arms. Relative-reachability / side-effect safety in latent space:
+"do not change what you are not acting on"; label-free and task-agnostic.
+- **LF6a RESULT (20:25; results/jenga/lflsf_LF1_se.json): PASS.** Held out (m3): Spearman 0.967 with its target; AUC
+  post-topple vs safe 0.988 (target 0.989); l_hat < 0 on 0.36% of safe-episode states and 78.4% of post-topple states.
+  A single frame suffices: the net recognises a changed (toppled) scene without the episode's first view.
