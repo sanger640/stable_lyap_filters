@@ -22,6 +22,29 @@ HELD = ("paired_record_m3",)
 SEED = 20261025
 SCALE = float(__import__("os").environ.get("LF_SCALE", "4.0"))         # LF5: 8.0 (results/jenga/lflsf_LF5_protocol.json)
 SFX = "" if SCALE == 4.0 else f"{SCALE:g}"
+TARGET = __import__("os").environ.get("LF_TARGET", "fork")      # LF6: "se" = side-effect margin (results/jenga/lflsf_LF6_protocol.json)
+if TARGET == "se":
+    SFX = "se"
+
+
+def side_effect(z):
+    """LF6: c_k = 98th percentile over the 28x28 patches of mean_channels |z_k - z_0| (z_0 = the episode's first decision)."""
+    z = z.astype(np.float32)
+    return np.quantile(np.abs(z - z[0]).mean(-1).reshape(len(z), -1), 0.98, axis=1)
+
+
+def load_se(runs):
+    """-> Z, m = -c (high = safe), pre-grasp reference mask (before the gripper first closes; proprio only),
+    grading Y: 0 safe episode, 1 post-topple (chunk >= topple start + 1), -1 other."""
+    Z, M, R, Y = [], [], [], []
+    for run in runs:
+        for f in sorted((DATA / run).glob("ep*.npz")):
+            with np.load(f) as d:
+                c = side_effect(d["z"]); kt, k = int(d["topple_chunk"]), d["chunk_index"]
+                cl = np.flatnonzero(d["proprio"][:, 3] > 0); fc = cl[0] if len(cl) else len(c)
+                Z.append(d["z"]); M.append(-c); R.append(np.arange(len(c)) < fc)
+                Y.append(np.where(kt < 0, 0, np.where(k >= kt + 1, 1, -1)))
+    return np.concatenate(Z), np.concatenate(M).astype(np.float32), np.concatenate(R), np.concatenate(Y)
 
 
 def load(runs):
@@ -43,8 +66,12 @@ def margin():
     from sklearn.metrics import roc_auc_score
     import lsf as L
     torch.manual_seed(SEED); rng = np.random.default_rng(SEED)
-    Zt, Mt, _ = load(TRAIN); Zh, Mh, Yh = load(HELD)
-    q10 = float(np.quantile(Mt, 0.10)); s = float(np.subtract(*np.quantile(Mt, [0.75, 0.25]))) / 2
+    if TARGET == "se":                                                          # LF6: thr = q98 of the pre-grasp reference
+        Zt, Mt, Rt, _ = load_se(TRAIN); Zh, Mh, _, Yh = load_se(HELD)
+        q10 = float(np.quantile(Mt[Rt], 0.02)); s = float(np.subtract(*np.quantile(Mt[Rt], [0.75, 0.25]))) / 2
+    else:
+        Zt, Mt, _ = load(TRAIN); Zh, Mh, Yh = load(HELD)
+        q10 = float(np.quantile(Mt, 0.10)); s = float(np.subtract(*np.quantile(Mt, [0.75, 0.25]))) / 2
     T = lambda m: np.tanh((m - q10) / s).astype(np.float32)
     tt, th = T(Mt), T(Mh)
     va = rng.random(len(tt)) < 0.05                                             # early-stopping split of the training runs
@@ -66,7 +93,7 @@ def margin():
             loss = ((net(z, g0.expand(len(z), -1)) - y) ** 2).mean(); opt.zero_grad(); loss.backward(); opt.step()
         net.eval(); vl = float(np.mean((pred(Zt[va]) - tt[va]) ** 2)); log.append({"epoch": ep, "val_mse": vl}); print(log[-1], flush=True)
         if vl < best:
-            best = vl; torch.save({"state": net.state_dict(), "no_g": True, "q10": q10, "s": s, "target": f"neg_log_sens_{SCALE:g}"},
+            best = vl; torch.save({"state": net.state_dict(), "no_g": True, "q10": q10, "s": s, "target": "side_effect_q98" if TARGET == "se" else f"neg_log_sens_{SCALE:g}"},
                                   L.OUT / f"margin_lf{SFX}.pt")
     net.load_state_dict(torch.load(L.OUT / f"margin_lf{SFX}.pt")["state"]); net.eval()
     ph = pred(Zh); sel = Yh >= 0
@@ -76,8 +103,14 @@ def margin():
            "held_spearman": round(rho, 3), "held_auc_hat": round(auc_hat, 3), "held_auc_target": round(auc_t, 3),
            "held_share_hat_below0": round(float((ph < 0).mean()), 3), "held_share_target_below0": round(float((th < 0).mean()), 3),
            "best_val_mse": best, "log": log}
-    out["GATE_LF1_pass"] = bool(rho >= 0.6 and auc_hat >= auc_t - 0.05)
-    (ROOT / f"results/jenga/lflsf_LF1{'_x' + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
+    if TARGET == "se":                                                          # gate_LF6a
+        out["held_share_hat_below0_safe"] = round(float((ph[Yh == 0] < 0).mean()), 4)
+        out["held_share_hat_below0_post"] = round(float((ph[Yh == 1] < 0).mean()), 4)
+        out["GATE_LF6a_pass"] = bool(rho >= 0.6 and auc_hat >= 0.90 and out["held_share_hat_below0_safe"] <= 0.03
+                                     and out["held_share_hat_below0_post"] >= 0.5)
+    else:
+        out["GATE_LF1_pass"] = bool(rho >= 0.6 and auc_hat >= auc_t - 0.05)
+    (ROOT / f"results/jenga/lflsf_LF1{('_' if TARGET == 'se' else '_x') + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
 
 
 def gate2():
@@ -90,7 +123,7 @@ def gate2():
            "V_quantiles": d["V_quantiles"], "share_V_below_0.3": d["share_V_below_0.3"]}
     out["GATE_LF2_pass"] = bool(out["actor_saturated_share"] < 0.05 and out["V_after_actor"] >= out["V_after_hold"]
                                 and out["AUROC_minusV_vs_any_topple"] >= 0.70)
-    (ROOT / f"results/jenga/lflsf_LF2{'_x' + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+    (ROOT / f"results/jenga/lflsf_LF2{('_' if TARGET == 'se' else '_x') + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
 
 
 DEV_ARMS = ("lfa-25", "lfa-15", "lfa000", "lfa010", "lfa030", "lfa050", "lfr010", "lfr030", "lfr050")   # amendments 1, 2
