@@ -462,3 +462,14 @@ net and value see the current state only). value_lfse_alea.pt passed gate 2 (AUR
 (fewest topples among v4 >= 59) keeps LF4's lfc000 (2 / 64 / 57 / 21). Red falls after extraction rise with the switch
 (15-23 vs 9). Selection over LF3-LF6 final: lfc000; the IRR dev arms (lfci000 = lfc000 gated by the fork
 irreversibility barrier, irg, irs) run next on the same episodes.
+
+### IRR RESULT (2026-10-26 08:00; results/jenga/irr_dev.json, outcome_audit_irrdev.json, protocol irr_protocol.json): lfci000 selected (dev)
+Same 100 dev episodes, replay-audited; topples / v4 / v4b / time-outs / red falls before, after extraction:
+record 27 / 64 / 58 / 2 / 12, 9; lfci000 9 / 79 / 70 / 6 / 6, 10 (barrier flags 7.9% of chunks; 11.8 value edits per
+episode of 4.8 mm; 3.2 s per chunk for the barrier); irg 16 / 73 / 63 / 6 / 8, 11 (4.2 fixes per episode, 2.5 mm, 35 s
+per fix, 16 of 415 fell back to hold); irs 15 / 68 / 59 / 3 / 17, 10. All three eligible (v4 >= 59); fewest topples ->
+lfci000. Reference on the same episodes: ungated lfc000 2 / 64 / 57 / 21; labelled LSF stage 2 9 / 76 / 59.
+Reading: the irreversibility barrier alone, fixed by G-CEM, removes about 40% of topples at no task cost; as a gate for the
+label-free value's edit it lets the value act where the engine predicts an irreversible change and nowhere else, which
+removes most of lfc000's stalls at the grasp (21 -> 6) and gives the most successes of any arm (v4 79, v4b 70), at 7
+more topples than the ungated edit. Both go to the fresh head-to-head (exploratory dev selection, 100 episodes).
