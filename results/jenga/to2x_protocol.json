@@ -1,0 +1,23 @@
+{
+ "name": "TO2x: does the head-to-head change if episodes get twice the time (120 chunks = 96 s instead of 60 = 48 s)?",
+ "registered": "2026-10-26 15:47 EDT, before any 120-chunk episode is run (user 2026-10-26: 'if we remove the timeout criterion or double it, does it still give similar results')",
+ "design": "every episode that TIMED OUT (not extracted, no neighbour topple, red block not knocked over before extraction) in head-to-head 4's arms (local: policy 14, lfci000 45, lfc000 151) and head-to-head 3's arms on the same episodes (Fir: psel 40, LSF stage 2 40) is re-run from the start with a 120-chunk cap (PAIRED_MAX_CHUNKS=120), same seeds and settings; every other episode's outcome is already decided by chunk 60 (lifted episodes stop at the lift; topples and early red falls are final). Local arms rerun locally, Fir arms on Fir (same machines as their original runs). Check: the first 60 chunks reproduce the original run (logged chunk outcomes and states).",
+ "analysis": "replay audit at 120 chunks; outcomes = originals with the time-out episodes replaced; the head-to-head 4 statistics recomputed (P1 lfci000 vs psel non-inferiority and topple McNemar; P2 lfci000 vs policy; secondary incl. lfc000) and reported next to the 60-chunk results; plus how the time-outs resolve per arm (v4 success / topple / red fall / still time-out at 120). Also reported (analysis only, already computed): outcome scores that ignore time-outs: 'no damage' (no neighbour topple and red block not knocked before extraction; time-outs count as fine) and v4 among non-time-out episodes.",
+ "interpretation": "sensitivity analysis of the time limit; the registered head-to-head 4 verdicts stand as registered.",
+ "no_timeout_scores_60": {
+  "no_damage": {
+   "policy": "471/600",
+   "lfci000": "521/600",
+   "lfc000": "541/600",
+   "psel": "529/600",
+   "LSF": "464/600"
+  },
+  "v4_among_non_timeouts": {
+   "policy": "457/586",
+   "lfci000": "476/555",
+   "lfc000": "390/449",
+   "psel": "489/560",
+   "LSF": "424/560"
+  }
+ }
+}
