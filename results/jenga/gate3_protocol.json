@@ -1,0 +1,10 @@
+{
+ "name": "GATE3: irreversibility gate OR (gripper open AND label-free value below its failure level), confirmatory, offline",
+ "registered": "2026-10-26 14:56 EDT, before this statistic is computed on the confirmation decisions",
+ "origin": "exploratory, chosen after GATE2 / MASK1 on the m3 dev decisions (so m3 is not evidence): GATE2's value-OR flagged the grasp because V is low on safe gripper-closed states; restricting the value term to gripper-open states (95% of pre-topple decisions are gripper-open; the missed h2h4 topples are mostly open-gripper approach knocks). m3: recall 67.2%, safe closed 1.9%, safe open 13.6% (base 50.0 / 1.9 / 8.3) at v = 0.",
+ "gate": "flag iff max_r_2 > 1.3356 OR (gripper open AND V(z, g) < 0); V = value_lf_alea.pt on the real latent, g = [target, the plan's first gripper command]; gripper open from proprio (the same 'closed' flag as CF1-CF3); v = 0 fixed (the value's own failure level), no other v tested here",
+ "data": "CF3's fresh decisions (paired_record_s4 + h2h2, 4679): r_2 from cf3_rows_*.npz, V from gate2_V_conf.npy (computed under GATE2 before GATE2 stopped; not yet graded)",
+ "pass": "recall_pre >= base recall (max_r_2 > 1.3356 alone, same decisions) + 10 pp AND safe_closed <= 5% AND safe_open <= 15%",
+ "next_if_pass": "closed-loop dev arm lfci000 with this gate, episodes 15000-15099 paired with paired_record_lflsfdev, 6 shards, compared with lfci000's dev run (9 / 79 / 70 / 6); separately registered",
+ "scope": "label-free, task-agnostic (latent + proprio gripper state), no hand mask needed for the value term"
+}
