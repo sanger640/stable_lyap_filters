@@ -445,3 +445,10 @@ record 27 / 64 / 58 / 2; lfa002 20 / 43 / 36 / 32, 15.6; lfa004 15 / 42 / 39 / 4
 48 / 29, 56.7 (4.3 mm). None is better than LF4's lfc000 (2 / 64 / 57 / 21). Eligible over LF3-LF5 (v4 >= 59): lfg000,
 lfc000 -> lfc000 (dev, exploratory). The 8x scale did not take the grasp out of the failure set once learned as a value:
 the value is low on more states, so both the switch and the edit fire more and topple more.
+
+### Head-to-head 3 RESULT (2026-10-26 03:42; results/jenga/lsf_h2h3_result.json, protocol lsf_h2h3_protocol.json)
+600 fresh episodes 25600-26199, replay-audited. Topples / v4 / v4b: policy 96 / 449 / 378; psel 24 / 489 / 411; LSF stage 2
+(lsfa030, labelled value, per-step switch, pessimistic imagination) 57 / 424 / 335. Primary psel vs LSF: non-inferiority
+holds and psel has fewer topples (-5.5 pp, 95% -7.8 to -3.2, McNemar p = 1.4e-4); v4 +10.8 pp, v4b +12.7 pp. LSF stage 2
+removes topples relative to the policy (-6.5 pp) at a task cost (v4 -4.2, v4b -7.2 pp; red falls 107 -> 162). These are the
+baselines the label-free filter (lfc000 / IRR selection) must meet on the same episodes.
