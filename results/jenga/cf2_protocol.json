@@ -1,0 +1,10 @@
+{
+ "name": "CF2: time-irreversibility read of the fork, offline (plan then reversed plan vs hold over the same 64 futures)",
+ "registered": "2026-10-25 21:25 EDT, before eval/cf_rev.py has run and before CF1's result is known",
+ "motivation": "User 2026-10-25: scope = the intuitive-physics-engine fork + optimisation methods incl. time irreversibility; task-agnostic; no reference to the first frame (background changes). A topple is bad because it cannot be undone. Reversibility-aware RL (Grinsztajn et al. 2021) and relative reachability (Krakovna et al. 2019) use the same idea. Here it is read off the fork's own imagined futures: do the plan, undo it, compare with having held still.",
+ "data_grading": "identical to CF1 (results/jenga/cf1_protocol.json): same 2359 held-out m3 decisions, same noise draws (seed per decision), same grading (AUC pre-topple vs safe; safe gripper-closed share flagged at 50% recall).",
+ "statistic": "per scale s in {2, 4}: r_j = q98 over outside-hand-path patches of mean_ch |f_rev_j - f_hold_j| at the 38-control-step end; reverse branch = the fork's 15 look-ahead targets of the policy's plan with the draw's execution noise, then the same targets and gripper commands in reverse order back to the current target (noise-free), then hold. P_irr = share of draws above tau (q98 over pre-grasp decisions, label-free), also mean and max.",
+ "gate_CF2": "PASS iff some P_irr (s = 2 or 4) has AUC >= 0.85 AND flags at most half as many safe gripper-closed decisions as CF1's better hold-spread reference at 50% recall. CF1 and CF2 are reported side by side; if both pass, the one with fewer safe gripper-closed flags at 50% recall goes forward (ties -> CF1, simpler).",
+ "next_if_pass": "pre-register the closed-loop use: the filter edits the policy's action to keep P (plan) <= P (hold) + delta (a discrete-time CBF on the engine's risk), or P as the failure margin of the learned value; dev episodes 15000-15099 as LF3.",
+ "scope": "task-agnostic, label-free statistic, off-the-shelf DINOv2 latent model_OIL; exploratory offline gate."
+}
