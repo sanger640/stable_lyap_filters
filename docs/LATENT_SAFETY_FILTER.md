@@ -389,3 +389,14 @@ stricter than v4 (record 40 vs 64), never compare on it.
 Relative switch (latent-CBF form) topples / v4 / v4b / time-outs: lfr010 5 / 27 / 19 / 64; lfr030 3 / 6 / 5 / 90; lfr050
 0 / 4 / 4 / 96 (record 27 / 64 / 58 / 2). Time-outs for the absolute arms: lfa-25 24, lfa-15 42, lfa000 62, lfa010 74,
 lfa030 93, lfa050 98. No arm within 5 pp of the policy's v4 -> LF4 runs at the fallback eps 0.00 (started 21:25).
+
+### CF1 RESULT (2026-10-25 22:01; results/jenga/cf1_result.json, protocol cf1_protocol.json): FAIL
+Counterfactual fork (plan vs hold over the same 64 futures, outside the hand path), 2359 held-out m3 decisions (180
+pre-topple, 979 safe gripper-closed). AUC / safe gripper-closed flagged at 50% pre-topple recall: P_d 2x 0.719 / 7.7%,
+P_d 4x 0.716 / 10.3%, max_d 4x 0.859 / 9.7%, max_d 2x 0.805 / 7.2%; plan vs now (o) P_o 2x 0.745 / 5.2%; hold-spread
+reference 4x 0.811 / 10.4%, 2x 0.694 / 23.8%. Gate (AUC >= 0.85 and <= 5.2%) not met. The plan-vs-hold reading removes a
+little of the grasp's false alarms, not half; every per-state imagined statistic tried so far (spread, split, drift,
+counterfactual change, label-free and labelled values) flags 5-10% of safe grasping states at 50% recall, which points to
+the world model's foresight of contact outcomes as the shared limit rather than the readout. The labelled LSF works in
+closed loop at similar per-state discrimination because it acts rarely (1.4% of safe states trigger at eps 0.30) and its
+actor, trained against topples only, does not abandon the grasp.
