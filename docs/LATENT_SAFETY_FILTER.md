@@ -452,3 +452,13 @@ the value is low on more states, so both the switch and the edit fire more and t
 holds and psel has fewer topples (-5.5 pp, 95% -7.8 to -3.2, McNemar p = 1.4e-4); v4 +10.8 pp, v4b +12.7 pp. LSF stage 2
 removes topples relative to the policy (-6.5 pp) at a task cost (v4 -4.2, v4b -7.2 pp; red falls 107 -> 162). These are the
 baselines the label-free filter (lfc000 / IRR selection) must meet on the same episodes.
+
+### LF6 RESULT (2026-10-26 03:59; results/jenga/lflsf_dev_all.json, outcome_audit_lfsedev.json): lfc000 stays selected
+Side-effect failure set (scene changed where the robot did not act; z_0 used only to make training targets, the margin
+net and value see the current state only). value_lfse_alea.pt passed gate 2 (AUROC -V vs any topple 0.797, V < 0.3 on
+15% of held-out decisions). Same 100 dev episodes, topples / v4 / v4b / time-outs; overrides per episode: lfa010 16 / 66 /
+52 / 11, 22.4; lfa030 11 / 60 / 38 / 19, 22.1; lfa050 7 / 41 / 27 / 42, 27.4; lfc030 (latent CBF edit) 9 / 75 / 59 / 11,
+31.5 (10.5 mm). lfc030 reproduces the LABELLED LSF stage 2 dev arm (9 / 76 / 59) without labels, but the selection rule
+(fewest topples among v4 >= 59) keeps LF4's lfc000 (2 / 64 / 57 / 21). Red falls after extraction rise with the switch
+(15-23 vs 9). Selection over LF3-LF6 final: lfc000; the IRR dev arms (lfci000 = lfc000 gated by the fork
+irreversibility barrier, irg, irs) run next on the same episodes.

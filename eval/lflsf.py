@@ -197,9 +197,10 @@ def eps5():
 
 
 def dev_all():
-    """overall lflsf selection (LF5 protocol): LF3 + LF4 (tag _lflsfdev) and LF5 (tag _lf8dev) arms, the LSF dev rule;
-    ties -> fewer overrides per episode."""
-    srcs = [("outcome_audit_lflsfdev.json", "_lflsfdev"), ("outcome_audit_lflsfdev4.json", "_lflsfdev"), ("outcome_audit_lf8dev.json", "_lf8dev")]
+    """overall lflsf selection (LF5 / LF6 protocols): LF3 + LF4 (tag _lflsfdev), LF5 (tag _lf8dev) and LF6 (tag _lfsedev)
+    arms, the LSF dev rule; ties -> fewer overrides per episode."""
+    srcs = [("outcome_audit_lflsfdev.json", "_lflsfdev"), ("outcome_audit_lflsfdev4.json", "_lflsfdev"), ("outcome_audit_lf8dev.json", "_lf8dev"),
+            ("outcome_audit_lfsedev.json", "_lfsedev")]
     R = {}
     for fn, tag in srcs:
         if not (ROOT / "results/jenga" / fn).exists():
