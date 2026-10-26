@@ -485,3 +485,14 @@ Success on 20 episodes: epoch 100 1/10, epoch 200 6/20 (training is ~0.9 epochs/
 check on the epoch-200 checkpoint, seeds 1-4, 1.4x (realised gripper deviation 3.16 mm, Jenga-matched): 94 points,
 **3 forks**, 5 with any bad. Even a less precise image policy rarely forks on StackThree; low-dim DP gave 1 / 145, and
 its re-measured success is 37/50 (74%). A later checkpoint will be checked, but the trend does not favour StackThree.
+
+## MANIGUARD (arXiv 2608.17386, Aug 2026) desk check (2026-10-26 15:29 EDT; reading only, nothing run)
+- Isaac Sim 4.5 / OmniGibson (BEHAVIOR-1K), Franka joint-space control at 20 Hz (physics 120 Hz), 8-action chunks; RTX GPU required
+  (no Alliance H100 runs); ~3.8 GPU-min per rollout on an RTX 4090 (1,326 h / 21,000 rollouts). Code Apache-2.0
+  (github.com/NU-IDEAS-Lab/ManiGuard), 8,000 demos + evaluated SFT checkpoints on Hugging Face.
+- Clutter family (55 tasks: 29 dry "knock over or drop nothing", 26 liquid "carry without spilling"; intact = not dropped and
+  tilt <= 45 deg, liquid containers <= 15 deg, spill = > 15% particle loss): **zero violations for every policy in every run**
+  (paper: "no policy ever violates on Clutter"; pi0-SFT 81% / pi0.5-SFT 80% safe success = success). Its violations are in the
+  procedural families (lid / jar / dusty: order-of-operations specs), which are not physical side effects.
+- Verdict: not a fit as released (nothing for a side-effect filter to prevent). Could be made one by adding execution noise
+  (our Jenga stress recipe), at the cost of an Isaac Sim stack, RTX-only compute and ~4 min per rollout. Not pursued now.
