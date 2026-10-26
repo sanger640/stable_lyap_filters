@@ -88,10 +88,12 @@ def setup(mode):
     cbff.CBF.__init__ = init_oil
 
 
-def setup_gated():
+def setup_gated(value_or=False):
     """lfci000 (irr_protocol amendment_1): LF4's lfc000 (label-free value value_lf_alea.pt, eps 0.00, gradient edit of the
     policy's xyz under the latent CBF condition, gamma 0.5, every model step) acting ONLY in chunks whose plan the
-    irreversibility barrier flags (r_max > THR, computed once per chunk before it runs); other chunks: the policy's commands."""
+    irreversibility barrier flags (r_max > THR, computed once per chunk before it runs); other chunks: the policy's commands.
+    value_or (lfcj000, results/jenga/gate3_protocol.json): the gate also opens when the gripper is open AND the label-free
+    value on the real latent is below its failure level, V(z, [target, plan's first gripper command]) < 0."""
     os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
     os.environ.update({"LSF_EPS": "0.0", "LSF_VALUE_NAME": "value_lf_alea.pt", "LSF_ALEA": "8", "LSF_REL": "0",
                        "LSF_EDIT": "grad", "LSF_CBF_GAMMA": "0.5"})          # = policy_rollout's lfc000 settings
@@ -106,8 +108,19 @@ def setup_gated():
         z0 = torch.as_tensor(self.mon.latent(self.mon.frame(sim)[None])[0], device="cuda").float()
         r = float(score_irr(self, sim, z0, np.asarray(plan, np.float32)[None], 64)[1][0])
         self._gate = r > THR
-        return chunk, {"intervened": False, "abstained": False, "kind": "lsf_step", "irr_r": round(r, 4),
-                       "irr_gate": bool(self._gate), "seconds": round(time.time() - t0, 2)}
+        info = {"intervened": False, "abstained": False, "kind": "lsf_step", "irr_r": round(r, 4)}
+        if value_or:
+            import lsf as L
+            if getattr(self, "_vgate", None) is None:
+                self._vgate = L.ValueFn("value_lf_alea.pt")
+            g = torch.as_tensor(np.r_[sim.target, plan[0][3]][None], dtype=torch.float32, device="cuda")
+            with torch.no_grad():
+                v = float(self._vgate.V(z0[None], g))
+            opened = float(sim.gripper) >= 50                         # actuator: 110 open, 0 closed (as hj_data2's proprio)
+            info.update({"gate_v": round(v, 4), "gate_open": opened, "irr_only": bool(self._gate)})
+            self._gate = self._gate or (opened and v < 0.0)
+        info.update({"irr_gate": bool(self._gate), "seconds": round(time.time() - t0, 2)})
+        return chunk, info
 
     def step_gate(self, sim, cmds, k, j, info):
         if not getattr(self, "_gate", False):
@@ -119,7 +132,7 @@ def setup_gated():
 
 if __name__ == "__main__":
     mode, n = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 100
-    assert mode in ("irg", "irs", "lfci000")
-    setup_gated() if mode == "lfci000" else setup(mode)
+    assert mode in ("irg", "irs", "lfci000", "lfcj000")
+    setup_gated(mode == "lfcj000") if mode.startswith("lfc") else setup(mode)
     import policy_rollout as pr
     pr._paired(mode, "cbf", n)
