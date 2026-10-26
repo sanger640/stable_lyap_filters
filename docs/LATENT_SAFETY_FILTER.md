@@ -436,3 +436,12 @@ flagged 2.2%, safe gripper-open 7.6% (gate 0.85 / 40% / 5% / 10%). m3 (where it 
 spread at the same 2x and end, 50%-recall cut: 26.1% of safe grasping decisions flagged (max_r 2.3%). First per-state
 imagined statistic that leaves the grasp alone at useful recall, and it needs no first-frame reference. -> IRR closed loop
 (results/jenga/irr_protocol.json) runs after the LF5 / LF6 dev arms.
+
+### LF5 RESULT (2026-10-26 02:15; results/jenga/lflsf_dev_all.json, outcome_audit_lf8dev.json): no gain, lfc000 stays selected
+The margin at the 8x perturbation scale (LF5a pass; value value_lf8_alea.pt passed gate 2: AUROC -V vs any topple 0.885,
+but V < 0.3 on 44% of held-out decisions vs 24% for the 4x value). Label-free matched-rate eps 0.02 / 0.04 (the labelled
+value's 5.4 / 6.9% rates). Same 100 dev episodes, replay-audited, topples / v4 / v4b / time-outs; overrides per episode:
+record 27 / 64 / 58 / 2; lfa002 20 / 43 / 36 / 32, 15.6; lfa004 15 / 42 / 39 / 40, 18.4; lfc004 (latent CBF edit) 12 / 57 /
+48 / 29, 56.7 (4.3 mm). None is better than LF4's lfc000 (2 / 64 / 57 / 21). Eligible over LF3-LF5 (v4 >= 59): lfg000,
+lfc000 -> lfc000 (dev, exploratory). The 8x scale did not take the grasp out of the failure set once learned as a value:
+the value is low on more states, so both the switch and the edit fire more and topple more.
