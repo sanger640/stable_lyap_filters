@@ -548,8 +548,9 @@ def _paired(name, mode, n=100, shrink=None):
         return cf.cem_filter(mon, sim, chunk, rng=rng)
     shard, nshard = (int(x) for x in os.environ.get("SHARD", "0/1").split("/"))   # parallel workers: episode i % nshard == shard
     off = int(os.environ.get("EP_OFFSET", 0))                     # test episodes use a fresh index range
+    only = set(json.loads(Path(os.environ["PAIRED_EPS"]).read_text())) if os.environ.get("PAIRED_EPS") else None   # TO2x: listed episodes
     for i in range(off, off + n):
-        if i in done or i % nshard != shard:
+        if i in done or i % nshard != shard or (only is not None and i not in only):
             continue
         if os.environ.get("PER_EPISODE_SEEDS", "1") == "1":   # results independent of how episodes are split over workers
             rng = np.random.default_rng([20261511, i])
@@ -561,7 +562,8 @@ def _paired(name, mode, n=100, shrink=None):
         hook.wants_context = mode in ("cbf", "slow")
         if mode == "cbf" and cbff.CFG["FIX"] == "lsf_step":          # LSF-step: the switch runs at every model step
             hook.step_hook = cbf.lsf_step
-        res, _, _ = episode(pol, i, chunk_hook=None if mode == "record" else hook, exec_noise=True, max_chunks=60, settle=True,
+        res, _, _ = episode(pol, i, chunk_hook=None if mode == "record" else hook, exec_noise=True,
+                            max_chunks=int(os.environ.get("PAIRED_MAX_CHUNKS", 60)), settle=True,   # TO2x: 120
                             seed=4000 + i, hard=None if os.environ.get("HARD_OFF") else shrink,
                             snaps=snaps)
         info = {c["chunk"]: c for c in res["log"]}
