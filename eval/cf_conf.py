@@ -19,7 +19,8 @@ import cf_rev as V
 
 OUT = ROOT / "results/jenga"
 RUNS = ("paired_record_s4", "paired_record_h2h2")
-S, THR = 2.0, 1.3356
+S, THR = float(os.environ.get("CF_S", 2.0)), 1.3356          # CF_S / CF_TAG: other noise scale, own output files (gate2)
+TAG = os.environ.get("CF_TAG", "cf3")
 
 
 def select():
@@ -86,7 +87,7 @@ def run():
         res["spread"].append(float(torch.linalg.eigvalsh(X @ X.T)[-1] / C.N_FUT / x.shape[1]))
         if n % 100 == 0:
             print("cf3", i_sh, n, len(sel), flush=True)
-    np.savez_compressed(OUT / f"cf3_rows_{i_sh}.npz", **{k: np.asarray(v) for k, v in res.items()})
+    np.savez_compressed(OUT / f"{TAG}_rows_{i_sh}.npz", **{k: np.asarray(v) for k, v in res.items()})
     print("saved", flush=True)
 
 

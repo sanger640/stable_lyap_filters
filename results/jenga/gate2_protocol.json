@@ -1,0 +1,15 @@
+{
+ "name": "GATE2: raise the recall of the fork irreversibility gate (lfci000) without flagging the grasp, offline first",
+ "registered": "2026-10-26 14:28 EDT, before any GATE2 statistic is computed (no V on CF decision states, no 4x residual on CF3 decisions yet)",
+ "motivation": "Head-to-head 4 (lsf_h2h4_result.json): lfci000 36 topples vs psel 24; exploratory diagnosis on its episodes: the gate fired in the 3 chunks before only 13 of the 36 topples, many missed ones had r_max just below 1.3356 (1.2-1.33); the always-on edit (lfc000) had 9 topples, so the edit works when it acts and the gate's recall limits the filter. User 2026-10-26: try both ideas offline first: (A) the residual at 4x noise (CF2: AUC 0.890, safe grasping flagged 2.5% at 50% recall), (B) gate = irreversibility OR a low learned value.",
+ "candidates": {
+  "base": "max_r_2 > 1.3356 (lfci000's gate)",
+  "A": "max_r_4 > 1.3356 (same statistic at 4x perception + execution errors, same label-free threshold: q98 of real latent change before the first grasp)",
+  "B(v)": "max_r_2 > 1.3356 OR V(z, g) < v, value_lf_alea.pt on the real latent, g = [target, the plan's first gripper command], v in {0.0, -0.1, -0.2} (0 = the value's own failure level)",
+  "AB(v)": "max_r_4 > 1.3356 OR V(z, g) < v, same v grid"
+ },
+ "stage_dev": "held-out m3 decisions (results/jenga/cf2_rows.npz, 2359: all pre-topple 1-3 chunks ahead, all safe gripper-closed, 1200 other safe). Grades: recall of pre-topple decisions, share of safe gripper-closed and safe gripper-open decisions flagged. Eligible: safe_closed <= 5% AND safe_open <= 15% (the gate only enables the edit; the stalls came from edits at the grasp). Selected: highest recall, ties -> lower safe_closed. GO iff the selected recall >= base recall + 10 pp; else stop and report. eval/gate2.py dev -> gate2_dev.json.",
+ "stage_conf": "CF3's fresh decisions (paired_record_s4 + h2h2, 4679; r_2 from cf3_rows_*, r_4 from CF_S=4 CF_TAG=cf3s4 eval/cf_conf.py run, same draws and seeds). PASS iff the selected gate's recall >= base recall + 10 pp AND safe_closed <= 5% AND safe_open <= 15%. eval/gate2.py conf -> gate2_conf.json.",
+ "next_if_pass": "closed-loop dev arm (lfci000 with the selected gate), episodes 15000-15099 paired with paired_record_lflsfdev, 6 shards, separately registered; then a fresh-episode head-to-head on NEW episodes (h2h4's episodes were used for the diagnosis).",
+ "scope": "label-free (labels grade only), task-agnostic, no first-frame reference, off-the-shelf DINOv2 latent model_OIL; the gate stays the intuitive physics engine's irreversibility read, optionally OR the learned value."
+}
