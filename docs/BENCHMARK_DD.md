@@ -502,3 +502,17 @@ its re-measured success is 37/50 (74%). A later checkpoint will be checked, but 
   safe success only 20 / 13% (pi0.5-SFT). 28 Stack tasks. Topples are common, as in Jenga; unknown: whether they are
   noise-sensitive (forks) and whether a latent world model sees them (our checks 1 and 2). Practical: RTX-only (local 3090,
   shared with the Jenga runs), Isaac Sim stack, ~4 min per rollout, physics determinism under state restore unknown.
+
+## OopsieVerse (RSS 2026, arXiv 2606.31993) desk check (2026-10-26 15:35 EDT; reading only)
+- 21 task designs; RoboCasa (MuJoCo) and OmniGibson; damage = health from contact forces (impulsive + sustained), thermal,
+  fluid. No policy checkpoints released; demos per task (paper: 360-450 episodes over 5 tasks, half with health feedback).
+- Benchmarked: GR00T off-the-shelf (e.g. RoboCasa Open Single Door 92% completion / 32% safe, Turn On Stove 88 / 8),
+  pi0 on 4 RoboCasa tasks 17.5 / 0%. Failures shown: a fragile bottle pushed over on the shelf (Shelve Cereal Box),
+  water spilled on a laptop (OmniGibson Pour Water), plates dropped.
+- Visible-outcome candidates in MuJoCo: Shelve Cereal Box / shelve_item (topples a fragile bottle; 90 demos), Dishes to
+  Sink (fragile objects), Prepare Breakfast (objects spill from a tray), Place Plate (drops). Most other damage modes are
+  force-only (crush, compression to the robot, constraint violations), like pick_egg whose visibility check 2a failed.
+- Our earlier OopsieBench work (2026-10-20): pick_egg check 1 PASS (forks 28-82% of damage moments), check 2a FAIL
+  (crush damage invisible in the image latent). The ~/wksp/oopsie workspace no longer exists; scripts kept in
+  eval/oopsie_fork_check.py, eval/oopsie_check2a.py.
+- Cost: MuJoCo (local CPU / Alliance), but we would have to train our own policy (DP) on ~90 teleop demos per task.
