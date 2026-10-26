@@ -1,0 +1,31 @@
+{
+ "name": "Head-to-head 4: the label-free filters (fork irreversibility-gated CBF edit lfci000; ungated lfc000) vs psel and labelled LSF stage 2, fresh episodes",
+ "registered": "2026-10-26 08:07 EDT, before any head-to-head-4 episode of lfci000 or lfc000 (user 2026-10-26: run it locally). Only prior local run on these episodes: 10 policy-alone episodes (tag _h2h4chk, 25620 + 60k) to check cross-machine pairing: outcomes agree with Fir's h2h3 record on 10 / 10, trajectories not bit-identical (max target difference 0.15 m).",
+ "motivation": "Dev (100 episodes 15000-15099; irr_dev.json, lflsf_dev_all.json), topples / v4 / v4b / time-outs: policy 27 / 64 / 58 / 2; lfci000 9 / 79 / 70 / 6 (IRR selection); lfc000 2 / 64 / 57 / 21 (lflsf selection over LF3-LF6); labelled LSF stage 2 9 / 76 / 59. Head-to-head 3 (600 fresh, Fir): psel 24 / 489 / 411 vs LSF stage 2 57 / 424 / 335 vs policy 96 / 449 / 378.",
+ "episodes": "25600-26199 (the 600 episodes of head-to-head 3), the paired setup (settle, 2x execution noise, HARD_OFF=1, PER_EPISODE_SEEDS, 60 chunks), model_OIL, CBF_CALIB OIL",
+ "arms_local": {
+  "record": "policy alone (local; the pair for the primary vs-policy test)",
+  "lfci000": "eval/irr_rollout.py lfci000: label-free value value_lf_alea.pt, eps 0.00, gradient edit of the policy's xyz under the latent CBF condition (gamma 0.5) at every model step, ONLY in chunks whose plan the fork's worst-case irreversibility r_max exceeds 1.3356 (64 futures, 2x errors)",
+  "lfc000": "eval/policy_rollout.py lfc000: the same edit in every chunk"
+ },
+ "arms_from_h2h3": {
+  "record (Fir)": "policy alone",
+  "cbfps3m": "psel",
+  "lsfa030": "labelled LSF stage 2"
+ },
+ "run": "local RTX 3090 only, 6 shards (SHARD i/6), tag _h2h4, each shard runs record, lfci000, lfc000 in turn; one GPU pool; then cluster/merge_paired.py, eval/outcome_audit.py -> outcome_audit_h2h4.json, eval/h2h4_analysis.py -> lsf_h2h4_result.json",
+ "pairing_caveat": "the local arms pair with the Fir arms by episode (same start state, same seeds), not bit-identically (different GPU); the local policy-alone arm is the like-for-like pair for P2, and its agreement with Fir's record is reported",
+ "primary_P1": "lfci000 vs psel (paired by episode): non-inferiority as head-to-head 3 (v4 and v4b one-sided 95% lower bound > -5 pp AND topple one-sided 95% upper bound < +3 pp); topples exact McNemar two-sided, alpha 0.05, reported whatever the outcome (if lfci000 has significantly fewer topples, that is the headline)",
+ "primary_P2": "lfci000 vs the local policy alone: fewer neighbour topples (exact McNemar one-sided p < 0.05) AND higher v4 (paired one-sided 95% lower bound > 0)",
+ "secondary": [
+  "lfci000 vs LSF stage 2 (same statistics as P1)",
+  "lfc000 vs psel, vs LSF, vs policy (same statistics)",
+  "lfci000 vs lfc000",
+  "vs-policy tests also against Fir's record",
+  "time-outs (paired), red falls before / after extraction",
+  "cross-machine agreement of the two policy-alone arms",
+  "gated share of chunks, edits per episode, seconds per episode"
+ ],
+ "stopping": "none; all 600 episodes per arm; infrastructure failures re-run with the same settings; analysis on episodes complete in all six arms",
+ "scope": "label-free (topple labels grade only), task-agnostic (latent patches + the robot's own hand path), no first-frame reference, off-the-shelf DINOv2 latent model_OIL; the fork / intuitive physics engine supplies the irreversibility barrier, the edit is an optimisation on the policy's action"
+}
