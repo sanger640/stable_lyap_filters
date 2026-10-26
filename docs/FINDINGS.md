@@ -1,7 +1,7 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-25 23:40 EDT (LF4: label-free latent-CBF edit lfc000 topples 27 -> 2 at equal v4; CF2).
+Last updated 2026-10-25 23:33 EDT (LF4: label-free latent-CBF edit lfc000 topples 27 -> 2 at equal v4; CF2).
 
 ## 2026-10-25 evening: direction change + label-free latent safety filter (lflsf)
 
