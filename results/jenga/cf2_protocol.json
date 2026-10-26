@@ -1,6 +1,6 @@
 {
  "name": "CF2: time-irreversibility read of the fork, offline (plan then reversed plan vs hold over the same 64 futures)",
- "registered": "2026-10-25 21:25 EDT, before eval/cf_rev.py has run and before CF1's result is known",
+ "registered": "2026-10-25 21:21 EDT (commit 88d1e0f), before eval/cf_rev.py has run and before CF1's result is known",
  "motivation": "User 2026-10-25: scope = the intuitive-physics-engine fork + optimisation methods incl. time irreversibility; task-agnostic; no reference to the first frame (background changes). A topple is bad because it cannot be undone. Reversibility-aware RL (Grinsztajn et al. 2021) and relative reachability (Krakovna et al. 2019) use the same idea. Here it is read off the fork's own imagined futures: do the plan, undo it, compare with having held still.",
  "data_grading": "identical to CF1 (results/jenga/cf1_protocol.json): same 2359 held-out m3 decisions, same noise draws (seed per decision), same grading (AUC pre-topple vs safe; safe gripper-closed share flagged at 50% recall).",
  "statistic": "per scale s in {2, 4}: r_j = q98 over outside-hand-path patches of mean_ch |f_rev_j - f_hold_j| at the 38-control-step end; reverse branch = the fork's 15 look-ahead targets of the policy's plan with the draw's execution noise, then the same targets and gripper commands in reverse order back to the current target (noise-free), then hold. P_irr = share of draws above tau (q98 over pre-grasp decisions, label-free), also mean and max.",
