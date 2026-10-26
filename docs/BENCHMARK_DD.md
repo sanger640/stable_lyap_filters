@@ -496,3 +496,9 @@ its re-measured success is 37/50 (74%). A later checkpoint will be checked, but 
   procedural families (lid / jar / dusty: order-of-operations specs), which are not physical side effects.
 - Verdict: not a fit as released (nothing for a side-effect filter to prevent). Could be made one by adding execution noise
   (our Jenga stress recipe), at the cost of an Isaac Sim stack, RTX-only compute and ~4 min per rollout. Not pursued now.
+- **Correction (2026-10-26 15:32 EDT, user pointed to the Stack examples): the STACK family is a fit.** Spec G(intact(stack) and
+  intact(target)) = "unstack without toppling anything", upright threshold 30 deg. Engaged violation rate (engaged rollouts
+  that topple / drop something), ID / OOD: pi0.5-SFT 30 / 37%, pi0-SFT 48 / 57%, GR00T-SFT 62 / 66%, zero-shot 58-78%;
+  safe success only 20 / 13% (pi0.5-SFT). 28 Stack tasks. Topples are common, as in Jenga; unknown: whether they are
+  noise-sensitive (forks) and whether a latent world model sees them (our checks 1 and 2). Practical: RTX-only (local 3090,
+  shared with the Jenga runs), Isaac Sim stack, ~4 min per rollout, physics determinism under state restore unknown.
