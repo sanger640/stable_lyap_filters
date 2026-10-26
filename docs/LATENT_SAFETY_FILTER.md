@@ -427,3 +427,12 @@ Labelled LSF stage 2 (lsfa030) on the same episodes: 9 / 76 / 59, 7.8 overrides.
 switch (LF3: best lfa-25 11 / 53 / 43) works as an edit: keeping the policy's own command and moving it a few mm along
 the value's gradient avoids the actor's retreat from the grasp. Cost: time-outs 2 -> 21 (lfc), 13 (lfg). Exploratory dev
 selection on 100 episodes; the overall selection (dev_all, with LF5 / LF6) then goes to a fresh-episode head-to-head.
+
+### CF3 RESULT (2026-10-26 00:16; results/jenga/cf3_result.json, protocol cf3_protocol.json): PASS
+The fork's worst-case time irreversibility (CF2's max_r at 2x, fixed label-free threshold 1.3356) on 4679 fresh decisions
+from paired_record_s4 + h2h2 (399 pre-topple, never used to choose a CF statistic): AUC 0.865 (s4 0.858, h2h2 0.874); at
+the threshold, recall of pre-topple decisions 49.9% (by lead 1 / 2 / 3 chunks: 64 / 49 / 37%), safe gripper-closed
+flagged 2.2%, safe gripper-open 7.6% (gate 0.85 / 40% / 5% / 10%). m3 (where it was chosen): 50.0% / 1.9% / 8.2%. Hold
+spread at the same 2x and end, 50%-recall cut: 26.1% of safe grasping decisions flagged (max_r 2.3%). First per-state
+imagined statistic that leaves the grasp alone at useful recall, and it needs no first-frame reference. -> IRR closed loop
+(results/jenga/irr_protocol.json) runs after the LF5 / LF6 dev arms.

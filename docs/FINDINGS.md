@@ -1,10 +1,11 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-25 23:33 EDT (LF4: label-free latent-CBF edit lfc000 topples 27 -> 2 at equal v4; CF2).
+Last updated 2026-10-26 00:18 EDT (CF3 PASS: the fork's worst-case irreversibility confirmed on fresh episodes; LF4 lfc000).
 
 ## 2026-10-25 evening: direction change + label-free latent safety filter (lflsf)
 
+- **CF3 (pre-registered confirmatory, offline, 600 fresh episodes): PASS.** The fork's worst-case time irreversibility (do the plan, undo it, compare with holding still; max over the 64 futures; fixed label-free threshold): AUC 0.865, catches 49.9% of decisions 1-3 chunks before a topple while flagging 2.2% of safe grasping and 7.6% of other safe decisions (hold spread at the same cut: 26%). Replicates m3. Source: results/jenga/cf3_result.json.
 - **lflsf LF4 (pre-registered dev sweep, 100 episodes): the label-free value works as an EDIT.** lfc000 (gradient edit of the policy's xyz under the latent CBF condition V' >= 0.5 V): topples 27 -> 2, v4 64 -> 64, v4b 58 -> 57, time-outs 2 -> 21, 41 overrides/episode of 3.6 mm. lfg000 (gradient edit, level test): 10 / 74 / 64, time-outs 13. Labelled LSF stage 2 on the same episodes: 9 / 76 / 59. Selected (dev, exploratory): lfc000; fresh head-to-head next. Source: results/jenga/lflsf_LF4_dev.json.
 - **CF2 time-irreversibility read of the fork (pre-registered, offline): FAIL as registered; worst-case secondary promising.** Plan, then the reversed plan, vs hold over the same 64 futures: registered P_irr AUC 0.75 / 0.72 (gate 0.85) though it flags only 2.7-3.0% of safe grasping states. The max over draws (worst case over the engine's noise): AUC 0.850 / 0.890, safe grasping states flagged 1.9 / 2.5% at 50% pre-topple recall (hold spread 10.4%). Chosen after looking -> confirmatory CF3 on fresh episodes. Source: results/jenga/cf2_result.json.
 - **CF1 counterfactual fork statistic (pre-registered, offline): FAIL.** Plan vs hold over the same 64 futures, outside the hand path: best AUC 0.72-0.86, flags 7.2-10.3% of safe grasping states at 50% pre-topple recall vs 10.4% for the hold spread (gate: half). Every imagined per-state statistic so far sits at 5-10% there. Source: results/jenga/cf1_result.json.
