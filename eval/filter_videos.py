@@ -128,9 +128,9 @@ def render(job):
         sim.restore((S["state"][d], S["ctrl"][d], S["target"][d], float(S["gripper"][d])))
         k = int(S["chunk_index"][d])
         nom, exe = np.asarray(S["nominal"][d], np.float32), np.asarray(S["executed"][d], np.float32)
-        on = smap is not None and (VALUE_ARMS[arm][1] == "level" or bool(log.get(k, {}).get("irr_gate")))
+        on = smap is not None and (VALUE_ARMS[arm][1] == "level" or bool(log.get(k, {}).get("irr_gate")))   # filter active
         for j, a in enumerate(exe):
-            if on and j % 2 == 0:                                 # the filter's check runs here, before the model step's 2 commands
+            if smap is not None and j % 2 == 0:                   # shown every step; faded while the gate is closed                                 # the filter's check runs here, before the model step's 2 commands
                 mg = smap(sim, nom[j:j + 2])
                 ctr = nom[j + 1, :3].copy()
             a = a.copy(); a[:3] -= noises[k][j]
@@ -139,16 +139,20 @@ def render(job):
             rc.update_scene(sim.data, camera=cam); im = Image.fromarray(rc.render())
             camc = (rc.scene.camera[0], rc.scene.camera[1])
             pr = lambda P: gl_project(camc, CAM, CAM, fov, P)
-            if on:
+            if smap is not None:
+                al = 115 if on else 40
                 ov = Image.new("RGBA", (CAM, CAM), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
                 for ix, gx in enumerate(GRID):
                     for iy, gy in enumerate(GRID):
                         q = pr(ctr + np.array([[gx - CELL, gy - CELL, 0], [gx - CELL, gy + CELL, 0], [gx + CELL, gy + CELL, 0], [gx + CELL, gy - CELL, 0]]))
-                        od.polygon([tuple(v) for v in q], fill=(60, 200, 90, 115) if mg[ix, iy] >= 0 else (200, 40, 190, 115))
+                        od.polygon([tuple(v) for v in q], fill=(60, 200, 90, al) if mg[ix, iy] >= 0 else (200, 40, 190, al))
                 if VALUE_ARMS[arm][1] == "cbf":                   # the edit's bound: +-1 cm
                     q = pr(ctr + np.array([[-0.01, -0.01, 0], [-0.01, 0.01, 0], [0.01, 0.01, 0], [0.01, -0.01, 0], [-0.01, -0.01, 0]]))
-                    od.line([tuple(v) for v in q], fill=(255, 255, 255, 200), width=1)
+                    od.line([tuple(v) for v in q], fill=(255, 255, 255, 200 if on else 70), width=1)
                 im = Image.alpha_composite(im.convert("RGBA"), ov).convert("RGB")
+                if not on:
+                    ImageDraw.Draw(im).rectangle([6, CAM - 24, 196, CAM - 6], fill=(40, 48, 45))
+                    ImageDraw.Draw(im).text((12, CAM - 22), "gate closed: value not used", fill=(205, 212, 208))
             dr = ImageDraw.Draw(im)
             pn, pe = pr(np.vstack([hand[None], nom[j:, :3]])), pr(np.vstack([hand[None], exe[j:, :3]]))
             if arm != "policy":
@@ -163,7 +167,7 @@ def render(job):
             T["t"].append((k * 8 + j) * 0.1); T["tilt"].append(float(np.max(sim.block_diagnostics()["tilt"][1:])))
             T["edit"].append(float(np.linalg.norm(dv))); T["dvec"].append(dv)
             T["grip_pol"].append(bool(nom[j, 3] > 0)); T["grip_exe"].append(bool(exe[j, 3] > 0))
-            T["slice_on"].append(on); T["slice_pol_ok"].append(bool(on and mg[4, 4] >= 0))
+            T["slice_on"].append(on); T["slice_pol_ok"].append(bool(smap is not None and mg[4, 4] >= 0))
     w.close(); rc.close(); sim.close()
     np.savez(OUT / st / "raw" / f"{arm}_ep{ep}.npz", **{k: np.asarray(v) for k, v in T.items()})
     return arm, ep
@@ -231,7 +235,7 @@ def compose(st, ep):
         dr.text((12, 8), f"Episode {ep}: same start and same noise for all four.", fill=(230, 236, 232), font=fb)
         dr.text((12, 25), "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it.",
                 fill=(170, 180, 175), font=f12)
-        dr.text((12, 40), "Green / magenta patch (learned-value filters, while on) = nearby targets the filter's value accepts / rejects.",
+        dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
                 fill=(170, 180, 175), font=f12)
         for a, (x, y) in pos.items():
             _, lab, col = A[a]; Tt = T[a]; m = min(k, len(F[a]) - 1); ended = k >= len(F[a])
