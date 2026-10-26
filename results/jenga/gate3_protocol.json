@@ -14,5 +14,11 @@
   "episodes": "15000-15099, paired with paired_record_lflsfdev, 2x execution noise, HARD_OFF, PER_EPISODE_SEEDS, local RTX 3090, 6 shards, tag _gate3dev",
   "selection": "between lfci000 (IRR dev run, same episodes: 9 / 79 / 70 / 6) and lfcj000: the LSF dev rule (fewest replay-audited topples among arms with v4 >= policy - 5 pp = 59), ties -> fewer time-outs. lfcj000 selected -> pre-register a fresh-episode head-to-head on NEW episodes (h2h4's were used for the diagnosis).",
   "outcomes": "topples, v4, v4b, time-outs, red falls; gate share, value-term share, edits per episode"
+ },
+ "amendment_2_pure_edit": {
+  "registered": "2026-10-26 15:08 EDT, while lfcj000's dev episodes run and before any lfcj000 result is seen (user 2026-10-26: add the pure edit arm)",
+  "arm": "lfck000 = lfcj000 with LSF_NO_FALLBACK=1: the edit keeps the best gradient nudge of the policy's xyz within 1 cm (if it raises the value), never the safety actor's action; the policy's gripper always",
+  "episodes": "as amendment_1 (15000-15099, paired with paired_record_lflsfdev, 6 shards, tag _gate3dev), after lfcj000 and an exploratory 1x policy-alone run",
+  "selection": "among lfci000, lfcj000, lfck000: the LSF dev rule (fewest replay-audited topples among arms with v4 >= 59), ties -> fewer time-outs; if lfck000 is within 2 topples of the selected arm and also eligible, lfck000 is preferred (pure edit = the simpler claim). Selected arm -> fresh-episode head-to-head on new episodes."
  }
 }

@@ -132,7 +132,9 @@ def setup_gated(value_or=False):
 
 if __name__ == "__main__":
     mode, n = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 100
-    assert mode in ("irg", "irs", "lfci000", "lfcj000")
-    setup_gated(mode == "lfcj000") if mode.startswith("lfc") else setup(mode)
+    assert mode in ("irg", "irs", "lfci000", "lfcj000", "lfck000")
+    if mode == "lfck000":                                     # gate3 amendment_2: lfcj000 with the pure edit (no actor fallback)
+        os.environ["LSF_NO_FALLBACK"] = "1"
+    setup_gated(mode in ("lfcj000", "lfck000")) if mode.startswith("lfc") else setup(mode)
     import policy_rollout as pr
     pr._paired(mode, "cbf", n)

@@ -326,7 +326,7 @@ class CBF:
                     with torch.no_grad():
                         x.copy_(torch.minimum(torch.maximum(x, a_pol[:, XYZ] - 0.01), a_pol[:, XYZ] + 0.01))
             info["lsf_edit_iters"] = info.get("lsf_edit_iters", 0) + it + 1
-            if best[0] <= eps:
+            if best[0] <= eps and os.environ.get("LSF_NO_FALLBACK") != "1":   # LSF_NO_FALLBACK=1: pure edit, never the actor
                 with torch.no_grad():
                     va = float(vals(a_act).min())
                 if va > best[0]:
