@@ -378,3 +378,9 @@ local 3090 only, amendment 1), selection over all lflsf arms. Relative-reachabil
 - **LF6a RESULT (20:25; results/jenga/lflsf_LF1_se.json): PASS.** Held out (m3): Spearman 0.967 with its target; AUC
   post-topple vs safe 0.988 (target 0.989); l_hat < 0 on 0.36% of safe-episode states and 78.4% of post-topple states.
   A single frame suffices: the net recognises a changed (toppled) scene without the episode's first view.
+
+### LF3 absolute-switch arms, replay-audited (2026-10-25 20:34; results/jenga/outcome_audit_lflsfdev_partial.json; lfr arms pending)
+Topples / v4 / v4b of 100 (local record arm 27 / 64 / 58): lfa-25 11 / 53 / 43; lfa-15 14 / 35 / 27; lfa000 4 / 26 / 23;
+lfa010 4 / 19 / 14; lfa030 3 / 4 / 4; lfa050 0 / 2 / 2. None within 5 pp of the policy's v4. Overrides per episode 11.7-25.7
+(labelled stage 2 at eps 0.30 on the same episodes: 7.8, topples 9, v4 76). Note: the rollout's logged success flag is far
+stricter than v4 (record 40 vs 64), never compare on it.
