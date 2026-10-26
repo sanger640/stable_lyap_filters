@@ -437,7 +437,7 @@ spread at the same 2x and end, 50%-recall cut: 26.1% of safe grasping decisions 
 imagined statistic that leaves the grasp alone at useful recall, and it needs no first-frame reference. -> IRR closed loop
 (results/jenga/irr_protocol.json) runs after the LF5 / LF6 dev arms.
 
-### LF5 RESULT (2026-10-26 02:15; results/jenga/lflsf_dev_all.json, outcome_audit_lf8dev.json): no gain, lfc000 stays selected
+### LF5 RESULT (2026-10-26 02:11; results/jenga/lflsf_dev_all.json, outcome_audit_lf8dev.json): no gain, lfc000 stays selected
 The margin at the 8x perturbation scale (LF5a pass; value value_lf8_alea.pt passed gate 2: AUROC -V vs any topple 0.885,
 but V < 0.3 on 44% of held-out decisions vs 24% for the 4x value). Label-free matched-rate eps 0.02 / 0.04 (the labelled
 value's 5.4 / 6.9% rates). Same 100 dev episodes, replay-audited, topples / v4 / v4b / time-outs; overrides per episode:

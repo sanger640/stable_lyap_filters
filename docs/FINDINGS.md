@@ -1,7 +1,7 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-10-26 02:15 EDT (LF5 no gain; pconf: psel baseline confirmed vs the policy alone; CF3 PASS; LF4 lfc000).
+Last updated 2026-10-26 02:11 EDT (LF5 no gain; pconf: psel baseline confirmed vs the policy alone; CF3 PASS; LF4 lfc000).
 
 ## 2026-10-25 evening: direction change + label-free latent safety filter (lflsf)
 
