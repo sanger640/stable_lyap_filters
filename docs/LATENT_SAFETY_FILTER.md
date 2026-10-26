@@ -473,3 +473,22 @@ Reading: the irreversibility barrier alone, fixed by G-CEM, removes about 40% of
 label-free value's edit it lets the value act where the engine predicts an irreversible change and nowhere else, which
 removes most of lfc000's stalls at the grasp (21 -> 6) and gives the most successes of any arm (v4 79, v4b 70), at 7
 more topples than the ungated edit. Both go to the fresh head-to-head (exploratory dev selection, 100 episodes).
+
+### Head-to-head 4 RESULT (2026-10-26 14:02; results/jenga/lsf_h2h4_result.json, protocol lsf_h2h4_protocol.json): P1 FAIL, P2 FAIL
+600 fresh episodes 25600-26199; label-free arms local (RTX 3090), psel / LSF / policy from head-to-head 3 (Fir), paired by
+episode. Topples / v4 / v4b / time-outs / red falls before, after extraction:
+policy (local) 95 / 457 / 380 / 14 / 54, 83; lfci000 36 / 476 / 413 / 45 / 55, 66; lfc000 9 / 390 / 324 / 151 / 55, 66;
+psel 24 / 489 / 411 / 40 / 56, 80; LSF stage 2 57 / 424 / 335 / 40 / 91, 90; policy (Fir) 96 / 449 / 378 / 18.
+P1 (lfci000 vs psel, non-inferiority): not shown: topples +2.0 pp (upper +3.7), v4 -2.2 pp (lower -5.7), v4b +0.3 pp
+(lower -3.7); topples McNemar 26 vs 14, p = 0.08. P2 (lfci000 vs local policy): topples -9.8 pp (24 vs 83, p = 4e-9),
+v4 +3.2 pp (lower -0.6; registered bar > 0) -> FAIL; v4b +5.5 pp (lower +1.5). Against Fir's policy arm (secondary) v4
++4.5 pp (lower +0.8). Secondary: lfci000 vs LSF stage 2: topples -3.5 pp (p = 0.03), v4 +8.7, v4b +13.0 pp, non-inferior
+on all three. lfc000: the fewest topples of any arm (9; vs psel 9 vs 24 discordant, p = 0.014) at a large task cost (v4 390,
+151 time-outs): the dev stall rate (21 / 100) held. lfci000 vs lfc000: +4.5 pp topples, +14.3 pp v4, -17.7 pp time-outs.
+Dev -> fresh: lfci000 9 -> 6% topples (policy 27 -> 16%), v4 79 -> 79%; the gate fired on 9.0% of chunks.
+Exploratory: in the 3 chunks before each of lfci000's 36 topples the barrier fired in 13; the other 23 were not flagged
+(CF3 recall at the threshold ~50%), so the gate's recall, not the edit, limits it. Reading: the label-free,
+task-agnostic filter (fork irreversibility gate + learned value edit, no labels anywhere) clearly beats the published
+labelled latent safety filter made faithful, and sits between psel and the always-on edit on the safety / liveness
+trade-off; it does not match psel (which resamples the policy). Cross-machine: local vs Fir policy outcomes agree on
+589 / 576 / 572 / 592 of 600 (topple / v4 / v4b / time-out).
