@@ -34,6 +34,13 @@ SETS = {
 EPS_A = [25630, 25765, 25880, 25882, 26043]          # results/program_b/h2h4_videos (h2h4_videos.choose())
 CAM = 400                                             # close camera, square
 EDIT_MIN, EDIT_MAX = 0.5, 15.0                         # mm: below = untouched; timeline full scale
+# safe-set slice (latent filters only): the filter's own one-step value check, re-run on a 9 x 9 grid of targets around the
+# policy's (both commands of the model step shifted by the same xy offset, +-2 cm): green = passes, red = fails.
+# label-free arms (cbf_filter.lsf_edit, eps 0, gamma 0.5): min_j V(z'_j) >= V(z, g) / 2; labelled LSF (lsf_step): min_j V > 0.3.
+# Same world model, value, noise model and 8 draws as the filter, fresh draws (the run's own draws are not stored).
+VALUE_ARMS = {"lfci000": ("value_lf_alea.pt", "cbf"), "lfcj000": ("value_lf_alea.pt", "cbf"), "lfck000": ("value_lf_alea.pt", "cbf"),
+              "lsf": ("value_unisafe_alea.pt", "level")}
+GRID, CELL = np.linspace(-0.02, 0.02, 9), 0.0025
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 
@@ -55,6 +62,44 @@ def dashed(dr, pts, fill, width=1, on=5, off=4):
             dr.line([tuple(a + (b - a) * s / max(L, 1e-6)), tuple(a + (b - a) * e / max(L, 1e-6))], fill=fill, width=width)
 
 
+def slicer(arm, ep):
+    """-> f(sim, cmds (2, 4)) -> (9, 9) margins min_j V(z'_j) - threshold over the target grid (x rows, y columns)."""
+    os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["LSF_ALEA"] = "8"
+    import cem_filter as cf
+    import lsf as L
+    import step3_world_model as wm
+    mon = cf.Monitor(); torch = mon.torch; mdl = mon.model
+    vf, noise = L.ValueFn(VALUE_ARMS[arm][0]), L.Noise(); noise.rng = np.random.default_rng([20261777, ep])
+    n = 8
+    D = torch.as_tensor(np.array([[gx, gy, 0, 0, gx, gy, 0, 0] for gx in GRID for gy in GRID], np.float32), device="cuda")
+
+    def f(sim, cmds):
+        cmds = np.asarray(cmds, np.float32)
+        with torch.no_grad():
+            z = torch.as_tensor(mon.latent(mon.frame(sim)[None])[0], device="cuda").float()[None]
+            g = torch.as_tensor(np.r_[sim.target, cmds[0][3]][None], dtype=torch.float32, device="cuda")
+            a_pol = torch.as_tensor(cmds.reshape(1, 8), device="cuda"); A = a_pol + D; c = len(A)
+            zs = noise.starts(z.expand(n, *z.shape[1:]).contiguous())
+            G2 = torch.cat([A[:, 4:7], A[:, 7:8]], 1).repeat_interleave(n, 0)
+            Z = zs.repeat(c, *[1] * (zs.dim() - 1))
+            off = noise.actions(a_pol, n)[:, 0] - a_pol         # execution noise, common to all candidates (as lsf_edit)
+            if VALUE_ARMS[arm][1] == "cbf":                   # = cbf_filter.lsf_edit's vals(), threshold eps + (1 - gamma)(V(z,g) - eps)
+                act = mdl._act((A[:, None] + off[None]).reshape(c * n, 8))
+                if mdl.kind == "deterministic":
+                    r = mdl.net(Z, torch.zeros_like(Z), act, torch.zeros(len(Z), device="cuda"))
+                else:
+                    r = torch.randn(Z.shape, device="cuda").float()
+                    for kk in range(wm.EULER):
+                        r = r + mdl.net(Z, r, act, torch.full((len(Z),), kk / wm.EULER, device="cuda")) / wm.EULER
+                V = vf.V((Z + r * mdl.stats.res_std).float(), G2).view(c, n).min(1).values
+                thr = 0.5 * float(vf.V(z, g))
+            else:                                              # = cbf_filter.lsf_step (stage 2): model.step, level eps 0.3
+                act = (A[:, None] + off[None]).reshape(c * n, 8)
+                V = vf.V(mdl.step(Z, act).float(), G2).view(c, n).min(1).values; thr = 0.3
+        return (V.cpu().numpy() - thr).reshape(len(GRID), len(GRID))
+    return f
+
+
 def render(job):
     """One arm, one episode -> raw camera video with the proposed (dashed) and executed (solid) paths, and a per-step trace."""
     st, arm, ep = job
@@ -74,20 +119,37 @@ def render(job):
     rc = mujoco.Renderer(sim.model, height=CAM, width=CAM)
     cam = close_camera(mujoco); fov = float(sim.model.vis.global_.fovy)
     cam.lookat[:] = (0.49, 0.0, 0.49); cam.distance = 0.20          # closer than eval/jenga_render_frames: blocks + gripper fill the frame
+    log = {c["chunk"]: c for c in json.loads((RUNS / run / f"ep{ep}.json").read_text())["log"]}
+    smap = slicer(arm, ep) if arm in VALUE_ARMS and os.environ.get("NO_SLICE") != "1" else None
     w = imageio_ffmpeg.write_frames(str(OUT / st / "raw" / f"{arm}_ep{ep}.mp4"), (CAM, CAM), fps=10, codec="libx264", quality=8,
                                     macro_block_size=1); w.send(None)
-    T = {k: [] for k in ("t", "tilt", "edit", "dvec", "grip_pol", "grip_exe")}
+    T = {k: [] for k in ("t", "tilt", "edit", "dvec", "grip_pol", "grip_exe", "slice_on", "slice_pol_ok")}
     for d in range(len(S["chunk_index"])):
         sim.restore((S["state"][d], S["ctrl"][d], S["target"][d], float(S["gripper"][d])))
         k = int(S["chunk_index"][d])
         nom, exe = np.asarray(S["nominal"][d], np.float32), np.asarray(S["executed"][d], np.float32)
+        on = smap is not None and (VALUE_ARMS[arm][1] == "level" or bool(log.get(k, {}).get("irr_gate")))
         for j, a in enumerate(exe):
+            if on and j % 2 == 0:                                 # the filter's check runs here, before the model step's 2 commands
+                mg = smap(sim, nom[j:j + 2])
+                ctr = nom[j + 1, :3].copy()
             a = a.copy(); a[:3] -= noises[k][j]
             sim.execute(a)
             hand = sim.data.site_xpos[sim.site].copy()
             rc.update_scene(sim.data, camera=cam); im = Image.fromarray(rc.render())
-            camc = (rc.scene.camera[0], rc.scene.camera[1]); dr = ImageDraw.Draw(im)
+            camc = (rc.scene.camera[0], rc.scene.camera[1])
             pr = lambda P: gl_project(camc, CAM, CAM, fov, P)
+            if on:
+                ov = Image.new("RGBA", (CAM, CAM), (0, 0, 0, 0)); od = ImageDraw.Draw(ov)
+                for ix, gx in enumerate(GRID):
+                    for iy, gy in enumerate(GRID):
+                        q = pr(ctr + np.array([[gx - CELL, gy - CELL, 0], [gx - CELL, gy + CELL, 0], [gx + CELL, gy + CELL, 0], [gx + CELL, gy - CELL, 0]]))
+                        od.polygon([tuple(v) for v in q], fill=(60, 200, 90, 115) if mg[ix, iy] >= 0 else (200, 40, 190, 115))
+                if VALUE_ARMS[arm][1] == "cbf":                   # the edit's bound: +-1 cm
+                    q = pr(ctr + np.array([[-0.01, -0.01, 0], [-0.01, 0.01, 0], [0.01, 0.01, 0], [0.01, -0.01, 0], [-0.01, -0.01, 0]]))
+                    od.line([tuple(v) for v in q], fill=(255, 255, 255, 200), width=1)
+                im = Image.alpha_composite(im.convert("RGBA"), ov).convert("RGB")
+            dr = ImageDraw.Draw(im)
             pn, pe = pr(np.vstack([hand[None], nom[j:, :3]])), pr(np.vstack([hand[None], exe[j:, :3]]))
             if arm != "policy":
                 dashed(dr, pn, (255, 255, 255), 3, 6, 4)
@@ -101,6 +163,7 @@ def render(job):
             T["t"].append((k * 8 + j) * 0.1); T["tilt"].append(float(np.max(sim.block_diagnostics()["tilt"][1:])))
             T["edit"].append(float(np.linalg.norm(dv))); T["dvec"].append(dv)
             T["grip_pol"].append(bool(nom[j, 3] > 0)); T["grip_exe"].append(bool(exe[j, 3] > 0))
+            T["slice_on"].append(on); T["slice_pol_ok"].append(bool(on and mg[4, 4] >= 0))
     w.close(); rc.close(); sim.close()
     np.savez(OUT / st / "raw" / f"{arm}_ep{ep}.npz", **{k: np.asarray(v) for k, v in T.items()})
     return arm, ep
@@ -141,7 +204,7 @@ def words(dv):
 
 HEAD, TL, GAP = 30, 78, 14
 PWID, PHEI = CAM, 30 + CAM + 78
-W, H = 2 * CAM + GAP + 24, 44 + 2 * PHEI + GAP + 12
+W, H = 2 * CAM + GAP + 24, 60 + 2 * PHEI + GAP + 12
 
 
 def compose(st, ep):
@@ -154,7 +217,7 @@ def compose(st, ep):
     T = {a: dict(np.load(OUT / st / "raw" / f"{a}_ep{ep}.npz")) for a in A}
     R = {a: audited(st, a, ep) for a in A}
     n = max(len(v) for v in F.values()); tmax = max(T[a]["t"][-1] for a in A) + 0.1
-    pos = {a: (12 + (i % 2) * (CAM + GAP), 44 + (i // 2) * (PHEI + GAP)) for i, a in enumerate(A)}
+    pos = {a: (12 + (i % 2) * (CAM + GAP), 60 + (i // 2) * (PHEI + GAP)) for i, a in enumerate(A)}
 
     def summary(a):
         e = T[a]["edit"]; on = e > EDIT_MIN
@@ -167,6 +230,8 @@ def compose(st, ep):
         im = Image.new("RGB", (W, H), (18, 23, 21)); dr = ImageDraw.Draw(im)
         dr.text((12, 8), f"Episode {ep}: same start and same noise for all four.", fill=(230, 236, 232), font=fb)
         dr.text((12, 25), "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it.",
+                fill=(170, 180, 175), font=f12)
+        dr.text((12, 40), "Green / magenta patch (learned-value filters, while on) = nearby targets the filter's value accepts / rejects.",
                 fill=(170, 180, 175), font=f12)
         for a, (x, y) in pos.items():
             _, lab, col = A[a]; Tt = T[a]; m = min(k, len(F[a]) - 1); ended = k >= len(F[a])
