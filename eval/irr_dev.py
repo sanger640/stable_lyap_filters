@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-ARMS = ("irg", "irs")
+ARMS = ("irg", "irs", "lfci000")
 
 
 def main():

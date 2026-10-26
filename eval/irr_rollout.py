@@ -88,9 +88,38 @@ def setup(mode):
     cbff.CBF.__init__ = init_oil
 
 
+def setup_gated():
+    """lfci000 (irr_protocol amendment_1): LF4's lfc000 (label-free value value_lf_alea.pt, eps 0.00, gradient edit of the
+    policy's xyz under the latent CBF condition, gamma 0.5, every model step) acting ONLY in chunks whose plan the
+    irreversibility barrier flags (r_max > THR, computed once per chunk before it runs); other chunks: the policy's commands."""
+    os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
+    os.environ.update({"LSF_EPS": "0.0", "LSF_VALUE_NAME": "value_lf_alea.pt", "LSF_ALEA": "8", "LSF_REL": "0",
+                       "LSF_EDIT": "grad", "LSF_CBF_GAMMA": "0.5"})          # = policy_rollout's lfc000 settings
+    import time
+    import cbf_filter as cbff
+    cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
+    cbff.CFG["FIX"] = "lsf_step"
+    step = cbff.CBF.lsf_step
+
+    def filter_gate(self, sim, chunk, k, plan=None, hist=None, pol=None):
+        t0 = time.time(); torch = self.mon.torch
+        z0 = torch.as_tensor(self.mon.latent(self.mon.frame(sim)[None])[0], device="cuda").float()
+        r = float(score_irr(self, sim, z0, np.asarray(plan, np.float32)[None], 64)[1][0])
+        self._gate = r > THR
+        return chunk, {"intervened": False, "abstained": False, "kind": "lsf_step", "irr_r": round(r, 4),
+                       "irr_gate": bool(self._gate), "seconds": round(time.time() - t0, 2)}
+
+    def step_gate(self, sim, cmds, k, j, info):
+        if not getattr(self, "_gate", False):
+            info["lsf_steps"] = info.get("lsf_steps", 0) + 1
+            return np.asarray(cmds, np.float32)
+        return step(self, sim, cmds, k, j, info)
+    cbff.CBF.filter, cbff.CBF.lsf_step = filter_gate, step_gate
+
+
 if __name__ == "__main__":
     mode, n = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 100
-    assert mode in ("irg", "irs")
-    setup(mode)
+    assert mode in ("irg", "irs", "lfci000")
+    setup_gated() if mode == "lfci000" else setup(mode)
     import policy_rollout as pr
     pr._paired(mode, "cbf", n)
