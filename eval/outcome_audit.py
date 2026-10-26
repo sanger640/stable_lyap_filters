@@ -45,7 +45,7 @@ def main(tag="dev10"):
         for ep, r in sorted(res.items()):
             with np.load(RUNS / f"paired_{arm}_{tag}" / f"ep{ep:03d}.npz") as f:
                 S = {k: f[k] for k in f.files}
-            L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1))
+            L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1, float(os.environ.get("AUDIT_NOISE_SCALE", 2.0))))
             i3 = int(np.argmax(L >= 0.03)) if (L >= 0.03).any() else None
             rows.append({"ep": ep, "logged_success_3cm": r.get("seconds_to_3cm") is not None and not r["neighbour_toppled"],
                          "logged_neighbour_toppled": r["neighbour_toppled"], "logged_max_lift_mm": r["max_lift_mm"],
@@ -94,7 +94,7 @@ def audit_runs(*runs):
                 continue
             with np.load(p) as f_:
                 S = {k: f_[k] for k in f_.files}
-            L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1))
+            L, TT, NT, XY = replay(sim, S, pl.episode_noises(ep, int(S["chunk_index"][-1]) + 1, float(os.environ.get("AUDIT_NOISE_SCALE", 2.0))))
             ext = (L >= 0.02) | (XY[:, 0] <= -0.02)                       # extracted: lifted >= 2 cm or pulled >= 2 cm toward the arm
             i_ext = int(np.argmax(ext)) if ext.any() else None
             i_fall = int(np.argmax(TT >= 45)) if (TT >= 45).any() else None
