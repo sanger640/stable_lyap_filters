@@ -1,0 +1,9 @@
+{
+ "name": "NSI: noise-sensitive irreversibility (irreversible in some imagined futures, not in the typical one), offline on Jenga",
+ "registered": "2026-10-26 15:23 EDT, before the statistic is computed on any decision set (per-draw residuals already exist: cf2_rows r_2, cf3_rows r)",
+ "motivation": "Generalisation (user discussion 2026-10-26): a plain undo test would flag tasks whose GOAL is irreversible (pouring, cutting). Intended irreversibility should happen in all imagined futures; accidents only in some (decided by small execution errors) -> combine the fork idea with irreversibility. Jenga has no intended irreversibility before extraction, so this is an ablation: how much of the gate's warning survives the restriction, and is it cleaner.",
+ "statistic": "per decision, 64 draws at 2x: r_j as CF3; P = share of draws with r_j > 1.3356; NSI flag iff max_j r_j > 1.3356 AND P <= 0.5 (some futures irreversible, the typical one not). Also reported: share of base-flagged decisions with P > 0.5 ('consistent irreversibility') among pre-topple / safe decisions; the GATE3 combination NSI OR (gripper open AND V < 0).",
+ "data": "m3 decisions (cf2_rows.npz, 2359) and CF3's fresh decisions (cf3_rows_*.npz, 4679); labels grade only",
+ "criterion": "on the fresh CF3 decisions: NSI recall >= 90% of the base gate's recall AND safe_closed and safe_open flags <= the base gate's. PASS -> NSI can replace the plain gate as the more general statistic at no cost on Jenga (closed-loop check later); FAIL -> report how much consistent irreversibility precedes topples.",
+ "scope": "label-free, task-agnostic"
+}
