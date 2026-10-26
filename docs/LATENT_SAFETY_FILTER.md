@@ -416,3 +416,14 @@ for max_r 2x (1.336) coincides with LF6's label-free scale thr = 1.3356 (q98 of 
 grasp, training runs): "the imagined undo leaves more change than anything real changes before contact". At that fixed
 threshold on m3: 2x recall 50.0%, safe 5.4%, safe closed 1.9%; 4x recall 69.4%, safe 14.5%, safe closed 8.6%. Recall by
 lead (2x): 65 / 50 / 35% at 1 / 2 / 3 chunks. Background motion common to both branches cancels by construction.
+
+### LF4 RESULT (2026-10-25 23:26; results/jenga/lflsf_LF4_dev.json, outcome_audit_lflsfdev4.json): lfc000 selected (dev)
+Least-restrictive edits with the label-free value (value_lf_alea.pt, eps 0.00), same 100 dev episodes, replay-audited.
+Topples / v4 / v4b / time-outs / red falls before, after extraction; overrides per episode, edit size:
+record 27 / 64 / 58 / 2 / 12, 9; **lfc000 (gradient edit under the latent CBF condition V' >= 0.5 V) 2 / 64 / 57 / 21 /
+13, 7; 41.2 overrides, 3.6 mm**; lfg000 (gradient edit, level test) 10 / 74 / 64 / 13 / 7, 11; 22.6, 4.2 mm; lfm000 (blend
+toward the actor) 8 / 51 / 43 / 28 / 16, 8; 28.0, 8.0 mm. Eligible (v4 >= 59): lfg000, lfc000 -> lfc000 (fewest topples).
+Labelled LSF stage 2 (lsfa030) on the same episodes: 9 / 76 / 59, 7.8 overrides. The same label-free value that failed as a
+switch (LF3: best lfa-25 11 / 53 / 43) works as an edit: keeping the policy's own command and moving it a few mm along
+the value's gradient avoids the actor's retreat from the grasp. Cost: time-outs 2 -> 21 (lfc), 13 (lfg). Exploratory dev
+selection on 100 episodes; the overall selection (dev_all, with LF5 / LF6) then goes to a fresh-episode head-to-head.
