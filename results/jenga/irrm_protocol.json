@@ -1,0 +1,22 @@
+{
+ "name": "IRRM: time irreversibility as the failure set of the always-on edit's value",
+ "registered": "2026-10-26 21:01 EDT, before any IRRM computation (CF3's 15-step undo-test numbers are known: recall 49.9%, safe closed 2.2%, safe open 7.6%, AUC 0.865)",
+ "origin": "user 2026-10-26: main method = the always-on edit; put time irreversibility (+ fragility?) into its initial failure set; user: fragility alone also flags safe states",
+ "motivation": "the current failure set is fragility only (most fragile 10% of visited states by hold-futures scatter, margin_lf.pt): it flags safe delicate states (V < 0 on ~10% of safe states, mostly grasping; GATE2) and calls post-topple states safe (LF3 diagnosis). Irreversibility measures lasting change, not delicacy.",
+ "stage_1_offline": {
+  "script": "eval/irrm1.py run (2 shards) + grade -> results/jenga/irrm1_result.json",
+  "decisions": "CF3's fresh decisions (cf_conf.select(): paired_record_s4 + paired_record_h2h2), labels for grading only",
+  "candidates": {
+   "irr_2": "undo test over the plan's first 2 control steps (one model step, 0.2 s), 64 draws at 2x, failure iff r_max > 1.3356",
+   "irr_8": "same over 8 control steps (one move, 0.8 s)",
+   "fragility": "current margin net l_hat(z) < 0",
+   "union_2 / union_8": "either"
+  },
+  "eligible": "AUC (pre-topple 1-3 chunks ahead vs safe) >= 0.80 AND at its failure rule: safe gripper-closed flagged <= 5% AND safe gripper-open flagged <= 10% (CF3's limits)",
+  "selection": "the irreversibility-only margin = the shortest eligible horizon among irr_2, irr_8 with recall_pre >= 0.30; if none -> STOP (no value training; report and rethink). The union at the same horizon is trained as the comparison iff it is eligible."
+ },
+ "stage_2": "margin net l_irr(z, a) regressed on the selected horizon's undo residual over training decisions (state + candidate one-step actions around the policy's), held-out gate; specified by amendment before it runs",
+ "stage_3": "value retrained with the LSF stage 2 / UNISafe recipe unchanged except the margin (l = min(l_irr(z,a), uncertainty margin), and the union variant), LF2-style offline gate; amendment before it runs",
+ "stage_4": "closed-loop dev of the always-on edit with runtime check min(l_irr(z, a), min_j V(z'_j)) >= V(z, g)/2 at 2x and 1x noise (imagined noise per N1M's outcome); amendment before it runs",
+ "status": "pre-registered; stage 1 offline"
+}
