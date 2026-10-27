@@ -11,7 +11,7 @@ same 2-step motion repeated over the move): do it, undo back to the current targ
 Margin target t = tanh((THR - r_max) / s), THR = 1.3356, s = IQR(r_max over the train labels) / 2 (label-free);
 net = lsf Critic architecture (trunk + MLP on z, g, [d, 0, 0]) with tanh.
 usage: SHARD=i/n python3 eval/irrm2.py labels;  python3 eval/irrm2.py held;  python3 eval/irrm2.py margin
-       -> results/jenga/irrm2_labels_<i>.npz, irrm2_held.npz, results/program_b/lsf_v1/margin_irr.pt, results/jenga/irrm2_result.json
+       -> results/jenga/irrm2_labels_nl<NL>_<i>.npz, irrm2_held_nl<NL>.npz, lsf_v1/margin_irr_nl<NL>.pt, results/jenga/irrm2_result_nl<NL>.json
 """
 import json
 import os
@@ -112,7 +112,7 @@ def labels():
                 out["z"].append(z.astype(np.float16)); out["g"].append(gg); out["d"].append(np.asarray(d, np.float32)); out["r"].append(rr); out["src"].append(src)
         if n % 200 == 0:
             print("irrm2 labels", i_sh, n, flush=True)
-    np.savez_compressed(OUT / f"irrm2_labels_{i_sh}.npz", **{k: np.asarray(v) for k, v in out.items()})
+    np.savez_compressed(OUT / f"irrm2_labels_nl{NL}_{i_sh}.npz", **{k: np.asarray(v) for k, v in out.items()})
     print("saved", flush=True)
 
 
@@ -141,7 +141,7 @@ def held():
                 out[key].append(v)
         if n % 200 == 0:
             print("irrm2 held", n, flush=True)
-    np.savez_compressed(OUT / "irrm2_held.npz", **{k: np.asarray(v) for k, v in out.items()})
+    np.savez_compressed(OUT / f"irrm2_held_nl{NL}.npz", **{k: np.asarray(v) for k, v in out.items()})
     print("saved", flush=True)
 
 
@@ -151,9 +151,9 @@ def margin():
     from sklearn.metrics import roc_auc_score
     import lsf as L
     torch.manual_seed(SEED); rng = np.random.default_rng(SEED)
-    fs = sorted(OUT.glob("irrm2_labels_*.npz"))
+    fs = sorted(OUT.glob(f"irrm2_labels_nl{NL}_*.npz"))
     T = {k: np.concatenate([np.load(f)[k] for f in fs]) for k in ("z", "g", "d", "r", "src")}
-    H = dict(np.load(OUT / "irrm2_held.npz"))
+    H = dict(np.load(OUT / f"irrm2_held_nl{NL}.npz"))
     s = float(np.subtract(*np.quantile(T["r"], [0.75, 0.25]))) / 2
     tgt = lambda r: np.tanh((THR - r) / s).astype(np.float32)
     tt, th = tgt(T["r"]), tgt(H["r"])
@@ -177,8 +177,8 @@ def margin():
             loss = ((f(z, g, d) - torch.as_tensor(tt[i], device="cuda")) ** 2).mean(); opt.zero_grad(); loss.backward(); opt.step()
         net.eval(); vl = float(np.mean((pred(T["z"][va], T["g"][va], T["d"][va]) - tt[va]) ** 2)); log.append({"epoch": ep, "val_mse": vl}); print(log[-1], flush=True)
         if vl < best:
-            best = vl; torch.save({"state": net.state_dict(), "thr": THR, "s": s, "nl": NL, "kind": "irr_margin_zgd"}, L.OUT / "margin_irr.pt")
-    net.load_state_dict(torch.load(L.OUT / "margin_irr.pt")["state"]); net.eval()
+            best = vl; torch.save({"state": net.state_dict(), "thr": THR, "s": s, "nl": NL, "kind": "irr_margin_zgd"}, L.OUT / f"margin_irr_nl{NL}.pt")
+    net.load_state_dict(torch.load(L.OUT / f"margin_irr_nl{NL}.pt")["state"]); net.eval()
     ph = pred(H["z"], H["g"], H["d"]); fail = H["r"] > THR
     pol = H["pol"].astype(bool); kt, k = H["kt"], H["k"]; pre = pol & (kt >= 0) & (kt - k >= 1) & (kt - k <= 3); safe = pol & (kt < 0)
     out = {"nl": NL, "train_labels": int(len(tt)), "train_share_irreversible": round(float((T["r"] > THR).mean()), 4), "s": s,
@@ -190,7 +190,7 @@ def margin():
            "grading_policy_action_auc_pre_vs_safe": {"hat": round(float(roc_auc_score(pre[pre | safe], -ph[pre | safe])), 3),
                                                      "true_r": round(float(roc_auc_score(pre[pre | safe], H["r"][pre | safe])), 3)},
            "best_val_mse": best, "log": log}
-    (OUT / "irrm2_result.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
+    (OUT / f"irrm2_result_nl{NL}.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
 
 
 if __name__ == "__main__":
