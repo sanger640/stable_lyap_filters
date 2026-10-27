@@ -1,0 +1,52 @@
+{
+ "registered_protocol": "results/jenga/n1f_protocol.json",
+ "episodes": "dev 15000-15099 at 1x execution noise, replay-audited (AUDIT_NOISE_SCALE=1)",
+ "arms": {
+  "policy": {
+   "topples": 5,
+   "v4": 85,
+   "v4b": 76,
+   "timeouts": 5,
+   "red_falls": 5
+  },
+  "lfck000": {
+   "topples": 1,
+   "v4": 78,
+   "v4b": 62,
+   "timeouts": 4,
+   "red_falls": 17,
+   "edits_per_episode": 20.8,
+   "mean_edit_mm": 4.0,
+   "gate_open_pct": 14.0
+  },
+  "lfc000": {
+   "topples": 0,
+   "v4": 61,
+   "v4b": 55,
+   "timeouts": 33,
+   "red_falls": 6,
+   "edits_per_episode": 57.9,
+   "mean_edit_mm": 3.2
+  }
+ },
+ "paired_vs_policy_mcnemar": {
+  "lfck000": {
+   "v4": "17 vs 10, p 0.25",
+   "v4b": "28 vs 14, p 0.044",
+   "red_falls": "4 vs 16, p 0.012",
+   "topples": "5 vs 1, p 0.22"
+  },
+  "lfc000": {
+   "v4": "32 vs 8, p <0.001",
+   "v4b": "33 vs 12, p 0.002",
+   "topples": "5 vs 0, p 0.06"
+  }
+ },
+ "criterion": "no cost iff v4 >= 80 and topples <= 5",
+ "no_cost": {
+  "lfck000": false,
+  "lfc000": false
+ },
+ "notes": "lfck000 lost 17 v4 successes, 15 of them by knocking the red block over before extraction; it edits as often at 1x (20.8 per episode) as at 2x (19.2): its imagination noise is fixed at 2x. lfc000 stalls (33 time-outs).",
+ "graded": "2026-10-26 20:39 EDT"
+}
