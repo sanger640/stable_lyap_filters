@@ -57,3 +57,20 @@ toppling the red blocks" (Sec. IV-B). Failure labels: red blocks toppled, from p
    15000-15099 at 2x, LSF dev rule. Reported next to lsfa030 on the same episodes (9 / 76 / 59).
 4. The decisive head-to-head then includes the stronger of {paper-faithful, strengthened} as the labelled baseline,
    with the other reported, and the naming above.
+
+## Addendum (2026-10-27): our labelled baseline vs UNISafe's code
+
+UNISafe (Seo, Nakamura & Bajcsy, CoRL 2025, arXiv 2505.00779; github.com/CMU-IntentLab/UNISafe,
+reachability/env/takeoff_wm_failure.py, reachability/config.yaml) folds uncertainty into the reward exactly as ours does:
+reward = min(processed (ood_threshold - ensemble disagreement of the current state-action), 1.5 tanh(0.5 - p_fail)),
+SAC in imagination; ood_threshold = 4.0 in its config. (The paper describes reachability on an augmented state; the code
+implements it as this min.) Differences to ours: threshold (theirs a fixed calibrated value; ours the 95th percentile of
+disagreement under the policy's own actions), failure margin (probability classifier vs the LSF hinge classifier), and our
+noise-aware pessimism (worst of 8 noisy transitions in training and at runtime), which UNISafe does not have.
+
+So: value_unisafe.pt (2026-10-21; SAC + uncertainty margin, no noise pessimism) is UNISafe as implemented in its code, up
+to the threshold calibration; with the paper's runtime rule (lsfs, one imagined next latent, every model step) its best
+dev setting was 13 / 63 / 26 (topples / v4 / v4b; policy 27 / 66 / 58). value_unisafe_alea.pt (lsfa030, used in h2h3 /
+h2h4) = UNISafe + noise-aware pessimism: 9 / 76 / 59. Naming in the paper: "LSF (as published)" (pending, lsf_pub),
+"UNISafe (re-implementation)" = value_unisafe.pt, "UNISafe + noise-aware pessimism" = lsfa030 (the strongest; carried to
+the decisive test; the others reported from dev).
