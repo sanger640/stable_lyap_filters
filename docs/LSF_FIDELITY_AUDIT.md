@@ -74,3 +74,14 @@ dev setting was 13 / 63 / 26 (topples / v4 / v4b; policy 27 / 66 / 58). value_un
 h2h4) = UNISafe + noise-aware pessimism: 9 / 76 / 59. Naming in the paper: "LSF (as published)" (pending, lsf_pub),
 "UNISafe (re-implementation)" = value_unisafe.pt, "UNISafe + noise-aware pessimism" = lsfa030 (the strongest; carried to
 the decisive test; the others reported from dev).
+
+## Result (2026-10-27 19:37 EDT): the faithful DDPG fails the pre-registered gate in both versions
+
+| | actor saturated | V after actor / hold / policy (median) | AUROC | gate |
+|---|---|---|---|---|
+| paper (gamma 0.9999) | 100% | -2.75 / -2.74 / -2.74 (diverged out of the margin's range) | 0.72 | FAIL |
+| code (gamma 0 warm-up -> 0.95) | 100% (bang-bang) | 0.87 / 0.84 / 0.84 | 0.75 | FAIL (saturation only) |
+
+With gamma 0.9999 and no warm-up the critic never anchors to the margin and drifts; the authors' own schedule fixes the
+critic (it ranks toppling futures, and the actor beats holding still) but its actor is bang-bang. Per protocol no dev
+sweep was run.
