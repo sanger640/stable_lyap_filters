@@ -453,7 +453,7 @@ def paired(mode, n=100, shrink=None):
         if mode[:3] in ("lfm", "lfg", "lfc"):   # LF4 (results/jenga/lflsf_LF4_protocol.json): least-restrictive edit, not a switch;
             os.environ["LSF_EDIT"] = "line" if mode.startswith("lfm") else "grad"   # lfc = grad edit under the CBF condition
             if mode.startswith("lfc"):
-                os.environ["LSF_CBF_GAMMA"] = "0.5"
+                os.environ.setdefault("LSF_CBF_GAMMA", "0.5")             # IRRM amendment 3: barrier strength from the environment
         import cbf_filter as cbff
         cbff.CFG["FIX"] = "lsf_step"
         return _paired(mode, "cbf", n, shrink)

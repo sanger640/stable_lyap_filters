@@ -52,5 +52,20 @@
   "episodes": "dev 15000-15099, 6 shards, tags _i0dev2x, _i1dev2x, _i0dev1x, _i1dev1x; audits at the run's noise",
   "reading": "exploratory dev, no confirmatory claim. 2x: the LSF dev rule (fewest topples among arms with v4 >= 59). 1x: 'no cost' iff v4 >= 80 and topples <= 5. Also edits per episode, edits with the gripper closed, red falls. Pessimism counted once (median draw) is NOT in this amendment.",
   "order": "I0 2x, I1 2x, I0 1x, I1 1x, one at a time"
+ },
+ "amendment_2_result": "results/jenga/irrm_cl_result.json: I0 1x 1 / 89 / 79 (no cost), 2x 19 / 73 / 67; I1 dropped",
+ "amendment_3_barrier": {
+  "registered": "2026-10-27 13:18 EDT, user 2026-10-27: do 1 and 2; before any run",
+  "arms": "I0 (always-on edit, value_irr8_alea.pt, no action term) with barrier V' >= (1 - gamma) V: gamma 0.2 (V' >= 0.8 V) and 0.1 (V' >= 0.9 V); gamma 0.5 = amendment 2's I0",
+  "conditions": "2x and 1x (matched imagined noise), dev 15000-15099, 6 shards, tags _g20dev2x, _g10dev2x, _g20dev1x, _g10dev1x (policy_rollout lfc000 with LSF_CBF_GAMMA)",
+  "selection": "among gamma 0.5 / 0.2 / 0.1: the fewest 2x topples among settings with 'no cost' at 1x (v4 >= 80 and topples <= 5); ties -> fewer 2x time-outs. Exploratory dev."
+ },
+ "amendment_4_long_horizon": {
+  "registered": "2026-10-27 13:18 EDT, same; before any label",
+  "labels": "eval/irrm2.py at IRRM_NL=16 (1.6 s: the actor's 2-step motion repeated 8 times, then undone; ~CF3's 15-step look-ahead): same states, actions, draws as nl8",
+  "margin_gate": "held-out Spearman >= 0.6 and AUC vs true flag >= 0.85, else STOP",
+  "value": "value_irr16_alea.pt, same recipe as value_irr8_alea.pt (LSF_IRR_MARGIN=margin_irr_nl16.pt, LSF_MARGIN_MODE=irr, 2x)",
+  "value_gate": "as amendment 1 A (LF2 criteria; CF3 decisions AUC >= 0.80, V < 0 on safe closed <= 5%, safe open <= 10%); also reported: V < 0 on pre-topple decisions (nl8: 2.5%)",
+  "closed_loop": "iff the value gate passes: always-on edit with value_irr16 at gamma 0.5 and at amendment 3's selected gamma, 2x and 1x, dev 15000-15099; selection over all irreversibility arms by amendment 3's rule"
  }
 }
