@@ -366,6 +366,18 @@ class Noise:
         return A
 
 
+def load_irr(dev=None):
+    """IRRM (results/jenga/irrm_protocol.json): the learned irreversibility margin l_irr(z, g, d) of eval/irrm2.py
+    (LSF_IRR_MARGIN, a file in OUT), d = the actor's normalised motion (B, 6)."""
+    import torch
+    dev = dev or DEV
+    _, Critic, _ = nets(); w = torch.load(OUT / os.environ["LSF_IRR_MARGIN"], map_location=dev)
+    net = Critic().to(dev).eval(); net.load_state_dict(w["state"])
+    for p_ in net.parameters():
+        p_.requires_grad_(False)
+    return lambda z, g, d: torch.tanh(net(z.float(), g, torch.cat([d, torch.zeros(len(d), 2, device=d.device)], 1)))
+
+
 def alea_step(model, clf, noise, z, a, g2, n=None):
     """Original LSF's pessimistic sampling with our noise model: n noisy transitions of (z, a), keep the one with the
     lowest classifier margin. -> next latent (B, ...), its margin."""
@@ -399,6 +411,8 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
     R_z = np.load(OUT / "train_reset_z.npy"); R_g = np.load(OUT / "train_reset_prop.npy")
     rng = np.random.default_rng(SEED); use_uq = os.environ.get("LSF_UQ", "1") == "1"; pess = os.environ.get("LSF_PESS") == "1"
     noise = Noise() if ALEA else None
+    irr = load_irr() if os.environ.get("LSF_IRR_MARGIN") else None           # IRRM: action-level irreversibility margin (off by default)
+    mode = os.environ.get("LSF_MARGIN_MODE", "frag")                          # frag (default) | irr | union
     # OOD threshold from the policy's own actions (hold-out of nothing: training resets + the recorded policy targets)
     pol = np.load(OUT / "train_reset_plan.npy") if (OUT / "train_reset_plan.npy").exists() else None
     with torch.no_grad():
@@ -425,6 +439,9 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
                     z2, lf, u = pessimistic_step(models, clf, z, a, g2)
                 else:
                     (z2, u), lf = disagreement(models, z, a), clf(z, g)
+                if irr is not None:                                          # l_irr(z, g, d) of THIS transition's action
+                    li = irr(z, g, d)
+                    lf = li if mode == "irr" else torch.minimum(lf, li)
                 l = torch.minimum(lf, (2 * (thr - u) / thr).clamp(-1, 1)) if use_uq else lf
                 k = torch.arange(ptr, ptr + envs, device=DEV) % cap
                 buf["z"][k], buf["g"][k], buf["d"][k], buf["z2"][k], buf["g2"][k], buf["l"][k] = z.half(), g, d, z2.half(), g2, l
@@ -456,7 +473,7 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
                                 "l_mean": float(lb.mean()), "unc_fail_share": float((l < 0).float().mean()), "actor_saturated": sat})
                     print(log[-1], flush=True)
     torch.save({"algo": "sac", "q1": q1.state_dict(), "q2": q2.state_dict(), "actor": A.state_dict(), "ood_threshold": thr, "uq": use_uq, "pess": pess,
-                "alea": ALEA, "alea_scale": ALEA_SCALE},
+                "alea": ALEA, "alea_scale": ALEA_SCALE, "margin_mode": mode, "irr_margin": os.environ.get("LSF_IRR_MARGIN")},
                OUT / os.environ.get("LSF_VALUE_NAME", "value_sac.pt"))
     json.dump(log, open(OUT / f"{os.environ.get('LSF_VALUE_NAME', 'value_sac.pt')[:-3]}_log.json", "w"))
 

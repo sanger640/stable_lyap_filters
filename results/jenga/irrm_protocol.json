@@ -18,5 +18,21 @@
  "stage_2": "margin net l_irr(z, a) regressed on the selected horizon's undo residual over training decisions (state + candidate one-step actions around the policy's), held-out gate; specified by amendment before it runs",
  "stage_3": "value retrained with the LSF stage 2 / UNISafe recipe unchanged except the margin (l = min(l_irr(z,a), uncertainty margin), and the union variant), LF2-style offline gate; amendment before it runs",
  "stage_4": "closed-loop dev of the always-on edit with runtime check min(l_irr(z, a), min_j V(z'_j)) >= V(z, g)/2 at 2x and 1x noise (imagined noise per N1M's outcome); amendment before it runs",
- "status": "pre-registered; stage 1 offline"
+ "status": "pre-registered; stage 1 offline",
+ "stage_1_result": "STOP (results/jenga/irrm1_result.json): irr_2 / irr_8 AUC 0.708 / 0.774 < 0.80",
+ "amendment_1": {
+  "registered": "2026-10-26 23:22 EDT, user chose option (c) after the stage 1 STOP: both (a) and (b), in sequence; before any training or margin-net result",
+  "B_value_at_1x": {
+   "value": "value_lf_alea_n1.pt: the current value's recipe unchanged (eval/lsf.py sac, LSF_CLF=margin_lf.pt fragility margin, LSF_ALEA=8, 60k updates) except execution noise LSF_ALEA_SCALE=1",
+   "offline_gate": "LF2's criteria with the matched noise (LSF_ALEA_SCALE=1 in lsf_audit / lsf_diag): actor saturated < 5%, V after the actor's plan >= after hold, AUROC(-V vs any toppling future) >= 0.70; written to results/jenga/irrm_B_gate.json (lflsf_LF2.json untouched)",
+   "closed_loop_dev": "iff the gate passes: the always-on edit (lfc000 settings, LSF_VALUE_NAME=value_lf_alea_n1.pt) at 1x execution noise with matched imagined noise (LSF_ALEA_SCALE=1), dev 15000-15099, 6 shards, tag _v1xdev; compared with N1M's always-on edit (0 / 76 / 63 / 14 time-outs) and the 1x policy (5 / 85 / 76); 'no cost' iff v4 >= 80 and topples <= 5; exploratory"
+  },
+  "A_irreversibility_value": {
+   "margin_net": "eval/irrm2.py margin at IRRM_NL=8 (labels: lsf_v1 reset states + imagined states, policy / hold / random actions; held-out paired_record_m3). Gate: held-out Spearman(l_hat, target) >= 0.6 AND AUC(-l_hat vs true r_max > 1.3356) >= 0.85, else STOP",
+   "value": "value_irr8_alea.pt: same recipe at 2x (LSF_ALEA_SCALE=2), margin l = min(l_irr(z, g, d of the transition), uncertainty margin) (LSF_IRR_MARGIN=margin_irr_nl8.pt, LSF_MARGIN_MODE=irr); fragility not used",
+   "offline_gate": "LF2's criteria (as B, at 2x) AND, on CF3's 4679 fresh decisions, the value of the state V(z, g): AUC(-V, pre-topple 1-3 chunks vs safe) >= 0.80, share V < 0 on safe gripper-closed <= 5% and safe gripper-open <= 10% (stage 1's bar, now on the value)",
+   "closed_loop": "only by a further amendment after the gate (runtime check min(l_irr(z, a), min_j V(z'_j)) >= V(z)/2 needs new filter code)"
+  },
+  "order": "B training -> B gate -> B closed loop -> A margin net (labels already computed overnight, labels only) -> A value training -> A gate; one GPU training job at a time"
+ }
 }
