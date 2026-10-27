@@ -34,5 +34,23 @@
    "closed_loop": "only by a further amendment after the gate (runtime check min(l_irr(z, a), min_j V(z'_j)) >= V(z)/2 needs new filter code)"
   },
   "order": "B training -> B gate -> B closed loop -> A margin net (labels already computed overnight, labels only) -> A value training -> A gate; one GPU training job at a time"
+ },
+ "amendment_1_results": {
+  "B": "value at 1x: LF2 pass, always-on 1x 0 / 71 / 63 / 14 TO: no-cost FAIL (results/jenga/irrm_B_result.json)",
+  "A": "margin net gate PASS, value gate PASS: AUC 0.809, V<0 on safe grasping 0.6%, safe approach 0.2% (results/jenga/irrm_A_gate.json)"
+ },
+ "amendment_2": {
+  "registered": "2026-10-27 11:41 EDT, after A's gate PASS and one smoke episode (ep 15000, tag _i1smoke, deleted: runs, lifted at chunk 44, 55 edits of 176 checks); before any dev episode",
+  "arms": {
+   "I0": "the always-on edit (policy_rollout paired lfc000 settings) with value_irr8_alea.pt instead of value_lf_alea.pt: isolates the failure set",
+   "I1": "I0 + the action's own irreversibility in the check: min(l_irr(z, g, d), min_j V(z'_j)) >= V(z, g) / 2 (LSF_IRR_CHECK=margin_irr_nl8.pt, also inside the gradient edit)"
+  },
+  "conditions": {
+   "2x": "EXEC_NOISE_SCALE=2, imagined 2x (as all 2x runs); references: policy 27 / 64 / 58 / 2 TO; always-on fragility edit lfc000 2 / 64 / 57 / 21 (LF4); gated pure edit lfck000 6 / 77 / 66 / 9",
+   "1x": "EXEC_NOISE_SCALE=1 with matched imagined noise LSF_ALEA_SCALE=1; references: policy 5 / 85 / 76 / 5; always-on fragility edit (N1M) 0 / 76 / 63 / 14"
+  },
+  "episodes": "dev 15000-15099, 6 shards, tags _i0dev2x, _i1dev2x, _i0dev1x, _i1dev1x; audits at the run's noise",
+  "reading": "exploratory dev, no confirmatory claim. 2x: the LSF dev rule (fewest topples among arms with v4 >= 59). 1x: 'no cost' iff v4 >= 80 and topples <= 5. Also edits per episode, edits with the gripper closed, red falls. Pessimism counted once (median draw) is NOT in this amendment.",
+  "order": "I0 2x, I1 2x, I0 1x, I1 1x, one at a time"
  }
 }

@@ -285,6 +285,10 @@ class CBF:
         gen = torch.Generator(device="cuda").manual_seed(int(self.mon.rng.integers(2**31)))
         x0 = torch.randn(zs.shape, device="cuda", generator=gen)                       # flow noise, common to all candidates
 
+        irr = getattr(self, "_irr", None)
+        if os.environ.get("LSF_IRR_CHECK") and irr is None:          # IRRM amendment 2: the action's own irreversibility margin
+            os.environ["LSF_IRR_MARGIN"] = os.environ["LSF_IRR_CHECK"]; irr = self._irr = L.load_irr("cuda")
+
         def vals(A):               # A (c, 8) -> V after one noisy model step, (c, n)
             c = len(A); Z = zs.repeat(c, *[1] * (zs.dim() - 1)); act = mdl._act((A[:, None] + off[None]).reshape(c * n, 8))
             if mdl.kind == "deterministic":
@@ -294,7 +298,11 @@ class CBF:
                 for kk in range(wm.EULER):
                     r = r + mdl.net(Z, r, act, torch.full((len(Z),), kk / wm.EULER, device="cuda")) / wm.EULER
             G2 = torch.cat([A[:, 4:7], A[:, 7:8]], 1).repeat_interleave(n, 0)
-            return vf.V((Z + r * mdl.stats.res_std).float(), G2).view(c, n)
+            Vn = vf.V((Z + r * mdl.stats.res_std).float(), G2).view(c, n)
+            if irr is not None:                                        # min(l_irr(z, g, d), V(z'_j)): the action must not itself be irreversible
+                d = (torch.cat([A[:, 0:3] - g[:, :3], A[:, 4:7] - A[:, 0:3]], 1) / L.MAX_STEP).clamp(-1, 1)
+                Vn = torch.minimum(Vn, irr(z.expand(c, *z.shape[1:]), g.expand(c, -1), d)[:, None])
+            return Vn
         mode = os.environ["LSF_EDIT"]
         gam = os.environ.get("LSF_CBF_GAMMA")
         with torch.no_grad():
