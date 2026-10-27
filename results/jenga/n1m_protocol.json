@@ -1,0 +1,13 @@
+{
+ "name": "N1M: the label-free filters at 1x execution noise with their imagined noise matched to 1x",
+ "registered": "2026-10-26 20:56 EDT, after N1F (filters at 2x imagined noise in a 1x world: both cost successes) and before any N1M episode has run",
+ "origin": "user 2026-10-26: run the matched-noise test; N1F showed the filter edits as often at 1x as at 2x",
+ "change": "imagined noise only: gate IRR_S=1 (perception + execution noise of the 64 futures at 1x, was 2x); edit LSF_ALEA_SCALE=1 (execution noise of the 8 one-step draws at 1x, was 2x; perception noise was already 1x). Unchanged: code otherwise, value_lf_alea.pt (trained at 2x), gate threshold 1.3356 (from real latents, noise-free), value-term gate, 1 cm edit limit",
+ "arms": {
+  "lfck000": "gated pure edit (selected), matched noise",
+  "lfc000": "always-on edit, matched noise"
+ },
+ "episodes": "dev 15000-15099 at 1x execution noise (EXEC_NOISE_SCALE=1), paired with paired_record_n1dev and N1F's arms; 60-chunk cap, HARD_OFF, PER_EPISODE_SEEDS, local RTX 3090, 6 shards, tag _n1mdev; audit AUDIT_NOISE_SCALE=1",
+ "criterion": "as N1F: 'no cost' vs the 1x policy alone iff v4 >= 80 and topples <= 5; also reported vs N1F (same arm, 2x imagined noise): topples, v4, v4b, time-outs, red falls, edits per episode, gate-open share; paired McNemar vs the policy",
+ "status": "exploratory, pre-registered"
+}
