@@ -287,6 +287,72 @@ def stage_value(iters=int(os.environ.get("LSF_ITERS", 300)), envs=256, horizon=1
     json.dump(log, open(OUT / "value_log.json", "w"))
 
 
+def stage_ddpg_pub(envs=256, ep_len=10, batch=512, cap=40_000, upd_ratio=8):
+    """Paper / author-code faithful latent reachability DDPG (docs/LSF_FIDELITY_AUDIT.md; Nakamura, Peters & Bajcsy, RSS
+    2025, Table VI; CMU-IntentLab/latent-safety, dino branch run_training_ddpg-dinowm.py + franka-DINOwm.py):
+      actor / critic 4 x 512 ReLU (after our conv trunk for the 28 x 28 x 8 patch latent), AdamW actor lr 1e-4, critic lr 1e-3
+      (critic weight decay 1e-3 as the code), tau 0.005, batch 512, replay 40k, Gaussian exploration sigma 0.1 on the
+      normalised action, one gradient step per 8 imagined transitions, imagined episodes of 10 steps from encoded data
+      latents (DINO Franka env), deterministic transitions (DINO-WM: no sampling, no pessimism, no uncertainty margin),
+      reward r = l(z', g') = classifier margin of the NEXT latent, target y = gamma min(r, Q'(z', pi'(z'))) + (1 - gamma) r,
+      no terminal handling (PyHJ ignores done).
+    LSF_PUB_MODE=paper: gamma 0.9999 constant (Table VI), 76,250 updates;
+    LSF_PUB_MODE=code:  the dino-branch schedule: 1,250 critic-only updates at gamma 0 (warm-up epoch), then 75,000 at gamma 0.95.
+    Not reproduced: the code's extra actor penalties on rotation / xyz magnitude (rotation does not exist in our action)."""
+    import copy
+    import torch
+    import step3_world_model as wm
+    wm.DEVICE = DEV
+    torch.manual_seed(SEED)
+    mode = os.environ.get("LSF_PUB_MODE", "paper")
+    Classifier, Critic, Actor = nets()
+    model = wm.WorldModel.load(WM_PATH); model.net.eval()
+    clf = Classifier().to(DEV); clf.load_state_dict(torch.load(OUT / "classifier.pt", map_location=DEV)); clf.eval()
+    Q, A = Critic().to(DEV), Actor().to(DEV); Qt, At = copy.deepcopy(Q), copy.deepcopy(A)
+    oq = torch.optim.AdamW(Q.parameters(), lr=1e-3, weight_decay=1e-3); oa = torch.optim.AdamW(A.parameters(), lr=1e-4)
+    R_z = np.load(OUT / "train_reset_z.npy"); R_g = np.load(OUT / "train_reset_prop.npy")
+    buf = {"z": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV), "g": torch.zeros(cap, 4, device=DEV),
+           "a": torch.zeros(cap, 8, device=DEV), "z2": torch.zeros(cap, 28, 28, 8, dtype=torch.float16, device=DEV),
+           "g2": torch.zeros(cap, 4, device=DEV), "r": torch.zeros(cap, device=DEV)}
+    sched = [(0.0, False)] * 1250 + [(0.95, True)] * 75000 if mode == "code" else [(0.9999, True)] * 76250
+    n, ptr, rng, log, upd, t = 0, 0, np.random.default_rng(SEED), [], 0, ep_len
+    while upd < len(sched):
+        if t == ep_len:                                                # reset: encoded data latents
+            i = rng.choice(len(R_z), envs); z = torch.as_tensor(R_z[i], device=DEV).float(); g = torch.as_tensor(R_g[i], device=DEV).float(); t = 0
+        with torch.no_grad():
+            a = A(z, g); d = torch.cat([a[:, 0:3] - g[:, :3], a[:, 4:7] - a[:, 0:3]], 1) / MAX_STEP
+            d = (d + 0.1 * torch.randn_like(d)).clamp(-1, 1); a = plan_from_d(g, d)
+            z2 = model.step(z, a).float(); g2 = torch.cat([a[:, 4:7], a[:, 7:8]], 1); r = clf(z2, g2)
+            k = torch.arange(ptr, ptr + envs, device=DEV) % cap
+            buf["z"][k], buf["g"][k], buf["a"][k], buf["z2"][k], buf["g2"][k], buf["r"][k] = z.half(), g, a, z2.half(), g2, r
+            ptr = (ptr + envs) % cap; n = min(n + envs, cap); z, g, t = z2, g2, t + 1
+        for _ in range(envs // upd_ratio):
+            if upd >= len(sched):
+                break
+            gam, actor_on = sched[upd]
+            j = torch.as_tensor(rng.integers(0, n, batch), device=DEV)
+            zb, gb, ab, z2b, g2b, rb = (buf[x][j] for x in ("z", "g", "a", "z2", "g2", "r"))
+            with torch.no_grad():
+                y = gam * torch.minimum(rb, Qt(z2b, g2b, At(z2b, g2b))) + (1 - gam) * rb
+            lq = ((Q(zb, gb, ab) - y) ** 2).mean(); oq.zero_grad(); lq.backward(); oq.step()
+            la = torch.zeros(())
+            if actor_on:
+                la = -Q(zb, gb, A(zb, gb)).mean(); oa.zero_grad(); la.backward(); oa.step()
+            with torch.no_grad():
+                for p_, pt in zip(Q.parameters(), Qt.parameters()):
+                    pt.mul_(1 - TAU).add_(TAU * p_)
+                for p_, pt in zip(A.parameters(), At.parameters()):
+                    pt.mul_(1 - TAU).add_(TAU * p_)
+            upd += 1
+            if upd % 2000 == 0:
+                with torch.no_grad():
+                    aa = A(zb, gb); dd = torch.cat([aa[:, 0:3] - gb[:, :3], aa[:, 4:7] - aa[:, 0:3]], 1) / MAX_STEP
+                log.append({"update": upd, "gamma": gam, "critic_loss": float(lq), "actor_value": float(-la), "r_mean": float(rb.mean()),
+                            "actor_saturated": float((dd.abs() > 0.95).float().mean())}); print(log[-1], flush=True)
+    torch.save({"critic": Q.state_dict(), "actor": A.state_dict(), "algo": "ddpg_pub", "mode": mode}, OUT / os.environ.get("LSF_VALUE_NAME", "value_pub.pt"))
+    json.dump(log, open(OUT / (os.environ.get("LSF_VALUE_NAME", "value_pub.pt")[:-3] + "_log.json"), "w"))
+
+
 def ensemble():
     import step3_world_model as wm
     ms = [wm.WorldModel.load(WM_PATH)] + [wm.WorldModel.load(ROOT / f"results/program_b/ens_v1/model_ENS{e}.pt") for e in range(4)]
@@ -479,4 +545,5 @@ def stage_sac(updates=int(os.environ.get("LSF_UPDATES", 60000)), envs=256, horiz
 
 
 if __name__ == "__main__":
-    {"data": stage_data, "merge": stage_merge, "classifier": stage_classifier, "value": stage_value, "sac": stage_sac}[sys.argv[1]]()
+    {"data": stage_data, "merge": stage_merge, "classifier": stage_classifier, "value": stage_value, "sac": stage_sac,
+     "ddpg_pub": stage_ddpg_pub}[sys.argv[1]]()

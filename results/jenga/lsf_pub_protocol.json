@@ -1,0 +1,14 @@
+{
+ "name": "LSF-pub: the latent safety filter as published (paper + authors' code), next to our strengthened LSF stage 2",
+ "registered": "2026-10-27 14:36 EDT, after the fidelity audit (docs/LSF_FIDELITY_AUDIT.md), before any training",
+ "origin": "user 2026-10-27: make sure the labelled latent safety filter is implemented faithfully to the paper and its code",
+ "values": {
+  "value_pub_paper.pt": "eval/lsf.py ddpg_pub, LSF_PUB_MODE=paper (gamma 0.9999 constant, 76,250 updates)",
+  "value_pub_code.pt": "LSF_PUB_MODE=code (dino-branch schedule: 1,250 critic-only updates at gamma 0, then 75,000 at 0.95)"
+ },
+ "shared": "labelled classifier.pt (unchanged), model_OIL, training resets, DDPG 4 x 512, AdamW 1e-4 / 1e-3 (critic wd 1e-3), tau 0.005, batch 512, replay 40k, sigma 0.1, 1 update per 8 transitions, 10-step imagined episodes, deterministic, reward = next-latent margin, no terminal",
+ "offline_gate": "the 2026-10-21 re-audit gate: actor saturated < 20%, imagined V after its own plan >= hold, AUROC(-V vs any toppling future) >= 0.70 (eval/lsf_audit.py, lsf_diag.py; results/jenga/lsf_pub_gate.json)",
+ "dev": "for each value that passes: policy_rollout modes lsfp010 ... lsfp050 (eps 0.1-0.5; the paper's rule: one imagined next latent from the real frame, V > eps, else the safety actor at the current latent; every model step), dev 15000-15099 at 2x, local, tags _pubpdev / _pubcdev; LSF dev rule (fewest replay-audited topples among eps with v4 >= policy - 5 pp = 59); reported next to lsfa030 on the same episodes (9 / 76 / 59)",
+ "use": "the decisive head-to-head includes the stronger labelled baseline by the same rule (topples among v4-eligible), the other reported; naming per the audit",
+ "status": "pre-registered"
+}
