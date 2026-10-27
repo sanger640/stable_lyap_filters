@@ -10,5 +10,12 @@
  "offline_gate": "the 2026-10-21 re-audit gate: actor saturated < 20%, imagined V after its own plan >= hold, AUROC(-V vs any toppling future) >= 0.70 (eval/lsf_audit.py, lsf_diag.py; results/jenga/lsf_pub_gate.json)",
  "dev": "for each value that passes: policy_rollout modes lsfp010 ... lsfp050 (eps 0.1-0.5; the paper's rule: one imagined next latent from the real frame, V > eps, else the safety actor at the current latent; every model step), dev 15000-15099 at 2x, local, tags _pubpdev / _pubcdev; LSF dev rule (fewest replay-audited topples among eps with v4 >= policy - 5 pp = 59); reported next to lsfa030 on the same episodes (9 / 76 / 59)",
  "use": "the decisive head-to-head includes the stronger labelled baseline by the same rule (topples among v4-eligible), the other reported; naming per the audit",
- "status": "pre-registered"
+ "status": "pre-registered",
+ "gate_result": "both FAIL (results/jenga/lsf_pub_gate.json): paper diverged + saturated; code saturated only (V actor 0.87 >= hold 0.84, AUROC 0.75)",
+ "amendment_1": {
+  "registered": "2026-10-27 19:41 EDT, user chose option (b) after the gate result, before any closed-loop episode with these values",
+  "arm": "value_pub_code.pt (authors' dino-branch schedule) despite failing the saturation criterion, labelled as such; EXPLORATORY",
+  "dev": "as pre-registered: lsfp010 ... lsfp050 (the paper's runtime rule), dev 15000-15099 at 2x, local, tag _pubcdev, after the IRRM a4 chain; LSF dev rule (fewest topples among eps with v4 >= 59); reported next to lsfa030 (9 / 76 / 59) and UNISafe without noise pessimism (lsfs070: 13 / 63 / 26)",
+  "not_run": "value_pub_paper.pt (diverged: V outside the margin's range)"
+ }
 }
