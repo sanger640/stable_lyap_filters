@@ -66,6 +66,11 @@ def analyse(nz):
     lifts = {}
     for a in ARMS:
         lifts[a], out["time"][a] = times(nz, a, eps)
+        succ = [e for e, ok in zip(eps, vec(V, eps, a, "v4_success")) if ok]              # average time per success
+        dur = [json.loads((RUNS / ARMS[a].format(n=nz) / f"ep{e}.json").read_text())["chunks"] * 0.8 for e in succ]
+        lt = [lifts[a][e] for e in succ if e in lifts[a]]
+        out["time"][a]["per_success"] = {"successes": len(succ), "mean_time_to_lift_s": round(float(np.mean(lt)), 2) if lt else None,
+                                         "lifted_successes": len(lt), "mean_episode_duration_s": round(float(np.mean(dur)), 2) if dur else None}
     for a in ARMS:
         if a != "policy":
             both = sorted(set(lifts[a]) & set(lifts["policy"]))
@@ -80,21 +85,24 @@ def analyse(nz):
 def main():
     r2, r1 = analyse("2x"), analyse("1x")
     p = lambda r, a, b, k: r["pairs"][f"{a}_vs_{b}"][k]
-    H = {"H1_2x_vs_policy": p(r2, "ours90", "policy", "topple")["p_one_sided_a_fewer"] < 0.05 and p(r2, "ours90", "policy", "v4_success")["lower95_pp"] > 0,
-         "H2_1x_no_cost": p(r1, "ours90", "policy", "v4_success")["lower95_pp"] > -5 and p(r1, "ours90", "policy", "topple")["upper95_pp"] < 3,
-         "H3_2x_vs_unisafe_noninferior": p(r2, "ours90", "unisafe", "topple")["upper95_pp"] < 3 and p(r2, "ours90", "unisafe", "v4_success")["lower95_pp"] > -5
-                                         and p(r2, "ours90", "unisafe", "v4b_success")["lower95_pp"] > -5,
-         "H4_2x_vs_lsf_pub": p(r2, "ours90", "lsf_pub", "topple")["p_one_sided_a_fewer"] < 0.05}
-    sec = {f"{h}_ours80": v for h, v in {
-        "H1": p(r2, "ours80", "policy", "topple")["p_one_sided_a_fewer"] < 0.05 and p(r2, "ours80", "policy", "v4_success")["lower95_pp"] > 0,
-        "H2": p(r1, "ours80", "policy", "v4_success")["lower95_pp"] > -5 and p(r1, "ours80", "policy", "topple")["upper95_pp"] < 3,
-        "H3": p(r2, "ours80", "unisafe", "topple")["upper95_pp"] < 3 and p(r2, "ours80", "unisafe", "v4_success")["lower95_pp"] > -5
-              and p(r2, "ours80", "unisafe", "v4b_success")["lower95_pp"] > -5,
-        "H4": p(r2, "ours80", "lsf_pub", "topple")["p_one_sided_a_fewer"] < 0.05}.items()}
-    sec["ours90_superior_to_unisafe_topples_2x"] = p(r2, "ours90", "unisafe", "topple")["p_one_sided_a_fewer"] < 0.05
-    out = {"stage": "h2h5", "primary": {k: bool(v) for k, v in H.items()}, "secondary": {k: bool(v) for k, v in sec.items()}, "2x": r2, "1x": r1}
+    PRI, SEC = "ours80", "ours90"                       # user 2026-10-28, before launch: primary = 80% barrier
+    H = {"H1_2x_vs_policy": p(r2, PRI, "policy", "topple")["p_one_sided_a_fewer"] < 0.05 and p(r2, PRI, "policy", "v4_success")["lower95_pp"] > 0,
+         "H2_1x_no_cost": p(r1, PRI, "policy", "v4_success")["lower95_pp"] > -5 and p(r1, PRI, "policy", "topple")["upper95_pp"] < 3,
+         "H3_2x_vs_unisafe_noninferior": p(r2, PRI, "unisafe", "topple")["upper95_pp"] < 3 and p(r2, PRI, "unisafe", "v4_success")["lower95_pp"] > -5
+                                         and p(r2, PRI, "unisafe", "v4b_success")["lower95_pp"] > -5,
+         "H4_2x_vs_lsf_pub": p(r2, PRI, "lsf_pub", "topple")["p_one_sided_a_fewer"] < 0.05}
+    sec = {f"{h}_{SEC}": v for h, v in {
+        "H1": p(r2, SEC, "policy", "topple")["p_one_sided_a_fewer"] < 0.05 and p(r2, SEC, "policy", "v4_success")["lower95_pp"] > 0,
+        "H2": p(r1, SEC, "policy", "v4_success")["lower95_pp"] > -5 and p(r1, SEC, "policy", "topple")["upper95_pp"] < 3,
+        "H3": p(r2, SEC, "unisafe", "topple")["upper95_pp"] < 3 and p(r2, SEC, "unisafe", "v4_success")["lower95_pp"] > -5
+              and p(r2, SEC, "unisafe", "v4b_success")["lower95_pp"] > -5,
+        "H4": p(r2, SEC, "lsf_pub", "topple")["p_one_sided_a_fewer"] < 0.05}.items()}
+    sec[f"{PRI}_superior_to_unisafe_topples_2x"] = p(r2, PRI, "unisafe", "topple")["p_one_sided_a_fewer"] < 0.05
+    out = {"stage": "h2h5", "primary_arm": PRI, "primary": {k: bool(v) for k, v in H.items()}, "secondary": {k: bool(v) for k, v in sec.items()}, "2x": r2, "1x": r1}
     (ROOT / "results/jenga/h2h5_result.json").write_text(json.dumps(out, indent=1))
-    print(json.dumps({"primary": out["primary"], "secondary": out["secondary"], "counts_2x": r2["counts"], "counts_1x": r1["counts"]}, indent=1))
+    print(json.dumps({"primary_arm": PRI, "primary": out["primary"], "secondary": out["secondary"], "counts_2x": r2["counts"], "counts_1x": r1["counts"],
+                      "time_per_success_2x": {a: r2["time"][a]["per_success"] for a in ARMS},
+                      "time_per_success_1x": {a: r1["time"][a]["per_success"] for a in ARMS}}, indent=1))
 
 
 if __name__ == "__main__":
