@@ -1,0 +1,28 @@
+{
+ "name": "H2H5: decisive fresh head-to-head - always-on irreversibility filter vs the policy, the latent safety filter as published and UNISafe",
+ "registered": "2026-10-27 23:24 EDT (draft; launched only after the user's go)",
+ "episodes": "600 fresh episodes 26200-26799 (never used by any run), paired across arms (same starts, same seeds), local RTX 3090, 6 shards",
+ "time_limit": "120 chunks = 96 s for every arm (TO2x showed 48 s mostly measures slowness); replay audit at the run's noise",
+ "conditions": {
+  "2x": "EXEC_NOISE_SCALE=2 (stress); filters imagine 2x",
+  "1x": "EXEC_NOISE_SCALE=1 (the arm's measured noise); filters with noise models imagine 1x (LSF_ALEA_SCALE=1); the published LSF has no noise model"
+ },
+ "arms": {
+  "policy": "policy alone (record)",
+  "ours90": "PRIMARY: always-on edit, value_irr8_alea.pt (fragile-irreversibility failure set, 0.8 s), barrier V' >= 0.9 V (LSF_CBF_GAMMA=0.1), gradient edit of the policy xyz <= 1 cm with the safety-actor fallback (policy_rollout lfc000 settings, as in all dev runs), every model step; selected by the pre-registered rule (results/jenga/irrm_a3_select.json, irrm_a4_select.json)",
+  "ours80": "SECONDARY: the same at V' >= 0.8 V",
+  "lsf_pub": "latent safety filter as published (value_pub_code.pt, authors' schedule, eps 0.2 by the LSF dev rule; failed the saturation criterion, reported as such)",
+  "unisafe": "UNISafe + noise-aware pessimism (value_unisafe_alea.pt, eps 0.30, worst of 8 noisy next latents; the strongest labelled baseline, lsfa030)"
+ },
+ "outcomes": "neighbour topples, v4 and v4b successes, red-block drops before extraction, time-outs, edits / overrides per episode, compute per move",
+ "statistics": "paired by episode, normal approximation one-sided 95%, exact McNemar (eval/h2h4_analysis.py functions)",
+ "primary_hypotheses": {
+  "H1_2x_vs_policy": "ours90 vs policy at 2x: fewer topples (one-sided McNemar p < 0.05) AND v4 lower 95% bound > 0",
+  "H2_1x_no_cost": "ours90 vs policy at 1x: v4 lower bound > -5 pp AND topples upper bound < +3 pp",
+  "H3_2x_vs_unisafe": "ours90 vs unisafe at 2x: non-inferior (topples upper < +3 pp; v4 and v4b lower > -5 pp)",
+  "H4_2x_vs_lsf_pub": "ours90 vs lsf_pub at 2x: fewer topples (one-sided McNemar p < 0.05)"
+ },
+ "secondary": "the same tests for ours80; superiority of ours90 over unisafe; all comparisons at 1x; red-block drops; no multiplicity correction claimed for secondary results",
+ "not_included": "psel (not runtime-worthy, user 2026-10-27); ablations (fragility value, gated edit, 1.6 s horizon) deferred to the end (user 2026-10-27)",
+ "order": "2x: policy, ours90, ours80, unisafe, lsf_pub; then 1x in the same order; audit each condition; analysis eval/h2h5_analysis.py (written before results are read)"
+}
