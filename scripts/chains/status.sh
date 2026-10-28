@@ -1,0 +1,5 @@
+cd /home/corey/wksp/stable_lyap_filters; date
+ssh nibi 'cd ~/projects/def-soojeon/ali313/slf/repo; for d in paired_record_dev4 paired_cbf_dev4 paired_cbfopt_dev4 paired_record_cltrain; do echo "nibi $d $(ls results/program_b/policy_rollouts/$d 2>/dev/null | grep -c json)"; done; squeue -u ali313 -h -o "%j %T" | sort | uniq -c' < /dev/null
+timeout 60 ssh rorqual 'for d in paired_record_dev4 paired_cbf_dev4 paired_cbfopt_dev4; do echo "rorqual $d $(ls /scratch/ali313/slf/repo/results/program_b/policy_rollouts/$d 2>/dev/null | grep -c json)"; done; squeue -u ali313 -h -o "%j %T" | sort | uniq -c' < /dev/null
+timeout 60 ssh narval 'for d in paired_record_dev4 paired_cbf_dev4 paired_cbfopt_dev4; do echo "narval $d $(ls ~/projects/def-soojeon/ali313/slf/repo/results/program_b/policy_rollouts/$d 2>/dev/null | grep -c json)"; done; squeue -u ali313 -h -o "%j %T" | sort | uniq -c' < /dev/null
+tail -1 results/program_b/upload_nibi.log; grep "HYB step\|trained" results/program_b/hyb_cl_train.log | tail -1

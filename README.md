@@ -1,5 +1,10 @@
 # stable_lyap_filters
 
+> **Current state (2026-10-27): start with [HANDOFF.md](HANDOFF.md).** This README describes an earlier phase
+> (Sept 2026, monitor + state world models) and is kept for history. The active work is the label-free
+> always-on safety filter on Jenga; results in [docs/FINDINGS.md](docs/FINDINGS.md).
+
+
 A research testbed for a **task-label-free runtime safety monitor**. The monitor asks whether small,
 realistic changes to a proposed robot action produce one smooth family of futures or split into
 persistent physical regimes.

@@ -1,143 +1,88 @@
-# Handoff — stability-based safety monitor
+# Handoff (2026-10-27): label-free safety filter on Jenga
 
-## Read this first
+For the next agent continuing this project on the same machine. Read this file, then `docs/AGENT_CONTEXT.md`
+(the user's decisions and working rules), then `docs/FINDINGS.md` (every result with its source file). The previous
+handoff (2026-09-29, an earlier phase) is in `docs/history/`; README.md and the top-level *.md notes are historical too.
 
-The project has validated a calibration-free structural monitor when counterfactual trajectories
-are accurate. It has **not** produced a deployable learned world model that preserves the required
-local intervention geometry.
+## 1. The project in one paragraph
 
-The latest bounded experiment, D21, is the stopping point for incremental state-world-model tuning.
-It improved D2 but failed one predeclared held-out contact-retention gate. Do not continue with a
-D22 variant without defining a materially new research program.
+Goal (user's framing): give a robot a rough, noisy "intuitive physics engine" (Battaglia et al. 2013): imagine many
+slightly-off futures of an action in a learned world model and use them to judge fragility, then filter a learned
+policy's actions with a reachability / control-barrier-style rule. No failure labels, task-agnostic. Testbed: a
+simulated Franka (MuJoCo) picks the MIDDLE of three upright Jenga-like blocks without toppling its two neighbours
+(not a tower). Policy = a diffusion policy (`data/jenga/policy/latest.ckpt`). World model = `model_OIL` (DINOv2 patch
+latents 28x28x8, deterministic, `results/program_b/oil_v1/model/model_OIL.pt`). Stress setting = 2x the arm's measured
+execution noise; the arm's real noise = 1x.
 
-Recommended reading order:
+## 2. Where things stand
 
-1. [README.md](README.md) — question and headline evidence.
-2. [MONITOR.md](MONITOR.md) — current monitor and its scope.
-3. [WORLD_MODEL.md](WORLD_MODEL.md) — complete model synthesis.
-4. [PLAN_NEXT.md](PLAN_NEXT.md) — permitted next directions.
-5. [NOTES.md](NOTES.md) — chronological evidence when exact provenance is needed.
+**Method (frozen by the pre-registered rule, 2026-10-27):** an *always-on* least-restrictive edit. Every 0.2 s (one
+world-model step) it imagines the policy's next 2 commands under 8 noisy draws and checks a control-barrier condition
+on a learned label-free value: min_j V(z'_j) >= (1 - gamma) V(z), with gamma = 0.1 (barrier "90%"). If it fails, a
+gradient step nudges the policy's xyz targets by at most 1 cm (gripper unchanged; safety-actor fallback as in all runs).
+The value `value_irr8_alea.pt` is learned in imagination (UNISafe-style SAC recipe) with a **fragile-irreversibility**
+failure set: an action fails if, in the worst of 64 noisy imagined futures, doing it for 0.8 s and undoing it leaves
+lasting latent change outside the hand vs holding still (threshold 1.3356 = label-free calibration on real latent change
+before the first grasp). Code: `eval/policy_rollout.py paired lfc000` with `LSF_VALUE_NAME=value_irr8_alea.pt
+LSF_CBF_GAMMA=0.1` (and `LSF_ALEA_SCALE` = the condition's noise); filter logic `eval/cbf_filter.py` `lsf_edit`;
+value training `eval/lsf.py sac` with `LSF_IRR_MARGIN` / `LSF_MARGIN_MODE=irr`; margin network `eval/irrm2.py`.
 
-## Current scientific state
+**Dev evidence (100 episodes 15000-15099; topples / v4 / v4b):** 2x: policy 27 / 64 / 58, ours (90%) 7 / 72 / 58,
+ours (80%) 14 / 78 / 68, UNISafe + noise-aware pessimism 9 / 76 / 59, latent safety filter as published 26 / 65 / 58.
+1x: policy 5 / 85 / 76, ours (90%) 1 / 90 / 80, ours (80%) 1 / 92 / 82. Real-time on the RTX 3090.
 
-### What worked
+**Why this method (the story of the last week, details in `docs/REVIEW_2026-10-27.md`):** the earlier failure set
+(fragility = most fragile 10% of visited states) called ~13% of the policy's normal states failures and was blind to
+the red block dropping, so the always-on edit stalled and interfered at 1x; fragile irreversibility fixed both.
 
-- Frozen Regime Monitor v0 uses no task/failure labels, safe calibration set or fitted alarm
-  threshold.
-- Physical Jenga TEST: **55/84** topple forks and **4/113** quiet alarms.
-- Independent upright-push TEST: **14/20** mixed topple forks and **0/15** stable-centred alarms.
-- In 100 Jenga episodes, the conservative intervention wrapper reduced neighbouring-block failures
-  **34 → 25** and increased safe completions **51 → 59**, while pick success stayed **80 → 79**.
-- On common successful episodes, monitoring added about **0.23 s mean / 0.20 s median** to first
-  pick success.
+**Labelled baselines (fidelity audit `docs/LSF_FIDELITY_AUDIT.md`):** "LSF as published" (faithful DDPG re-implementation,
+`value_pub_code.pt`, eps 0.2; failed its training gate: saturated actor; no effect in closed loop) and "UNISafe +
+noise-aware pessimism" (`value_unisafe_alea.pt`, mode `lsfa030`; the strongest labelled baseline). psel (an older
+policy-sample-selection filter) is NOT reported: not real-time (user decision).
 
-These results establish useful boundary sensitivity and intervention value under exact simulator
-rollouts. They do not imply every alarm is a failure prediction.
+## 3. The next step: the decisive fresh test (H2H5) - needs the user's go
 
-### What did not work
+Pre-registration draft: `results/jenga/h2h5_protocol.json` (600 fresh episodes 26200-26799, 2x and 1x noise, 96 s cap,
+arms policy / ours90 / ours80 / UNISafe / LSF-as-published, primary hypotheses H1-H4, task-time outcomes).
+Runner: `scripts/run_h2h5.sh` (~10-12 h locally). Analysis: `eval/h2h5_analysis.py` (written before any H2H5 data;
+dry-run tested on dev data). **Do not launch without the user's explicit go** (it consumes the fresh episodes).
+Dev-scale caution: at n = 100 the primary arm (90%) did not meet H1's success bound and the 80% arm did; at n = 600 the
+power is higher - report as registered, do not swap arms after seeing results.
 
-The learned model must preserve *differences between nearby actions*, not merely predict plausible
-average motion. D2 remains the strongest conventional privileged-state baseline but reaches only
-**31.1% mean Jenga fork recall** across ten seeds, versus **65.5%** for physical trajectories.
+After H2H5: record in FINDINGS + dashboard; then the paper (RSS 2027 Stage 1, Dec 4, 2026); ablations at the end
+(list in `docs/AGENT_CONTEXT.md` section "Deferred ablations"); real robot after Jenga.
 
-The decisive crossover diagnostic found two independent failures:
+## 4. How to run things
 
-- D2-selected pairs evaluated physically: **0/23** topple alarms — wrong neighbourhood topology.
-- Physically selected pairs evaluated through D2: **4/23** — branch dynamics are also smoothed.
-- Physical selection and physical trajectories: **18/23**.
+- Python: `/home/corey/wksp/dp_venv/bin/python` (see `docs/ENVIRONMENT.md`; torch lives in `~/.local`, fragile).
+- One closed-loop dev arm: see `scripts/chains/irrm_lib.sh` (`cl tag exec_noise imagined_noise value gamma`): 6 shards of
+  `eval/policy_rollout.py paired <mode> <n>` with `EP_OFFSET`, `SHARD=i/6`, `PAIRED_TAG`, `PER_EPISODE_SEEDS=1`,
+  `PAIRED_PER_EP=1`, `HARD_OFF=1`, `EXEC_NOISE_SCALE`, `CBF_WM`, `CBF_CALIB=results/jenga/cbf_calibration_OIL.json`,
+  then `cluster/merge_paired.py <runs>` and `eval/outcome_audit.py runs <runs>` with `AUDIT_OUT=...` and
+  `AUDIT_NOISE_SCALE` = the run's noise. Outcomes: ALWAYS the replay audit (v4 and v4b), never the logged success flag.
+- Modes: `record` (policy alone), `lfc000` (always-on edit), `lsfa030` (UNISafe + noise pessimism), `lsfp<eps>`
+  (LSF as published), `eval/irr_rollout.py lfci000|lfcj000|lfck000` (gated edits, ablations).
+- Selection rules as code: `eval/irrm_select.py`; offline gates: `eval/irrm_gate.py`, `eval/lsf_pub_gate.py`.
+- Every past experiment's exact launch recipe: `scripts/chains/` (historical; PIDs in wait loops are dead).
+- Videos: `eval/filter_videos.py A|B [ep...]` (annotated four-way videos; outcomes from the audit).
+- Dashboard source: `dashboard/index.html` (the live page belongs to the user's claude.ai account; a new account must
+  publish its own copy). Videos it references: `results/program_b/filter_videos/`.
 
-D3–D21 tested boundary-scale losses, switching modes, relational objectives, trajectory mixtures,
-direct response prediction, learned routing, explicit curves, direct monitor evidence, anonymous
-graphs, short history, richer Markov state, supervised contact transitions and a D2 residual. The
-full staged gate was never passed.
+## 5. Repo map (what matters now)
 
-### Final bounded model result: D21
+- `docs/FINDINGS.md`: the ledger. Newest first. Quote numbers only from here or the JSON it cites.
+- `docs/REVIEW_2026-10-27.md`: step-back analysis, root causes, self-reflection.
+- `docs/LSF_FIDELITY_AUDIT.md`, `docs/LATENT_SAFETY_FILTER.md`: baselines.
+- `results/jenga/*_protocol.json`: every pre-registration (irrm_protocol.json = the method's development, with amendments).
+- `results/jenga/outcome_audit_*.json`: replay audits per run; `paired_*.jsonl`: per-episode logs.
+- `docs/MANIFEST.md`: models / data that are not in git (all on this machine) with sizes and checksums.
+- `eval/`: all code (flat); `src/`: world model + simulator glue; `cluster/`: Alliance sbatch scripts.
 
-D21 starts as an exact frozen-D2 identity and learns only enhanced-state/contact residuals.
+## 6. Loose ends
 
-| Held-out TRAIN axis | D2 NRMSE | D21 NRMSE | D2 contact F1 | D21 contact F1 | Required contact floor |
-|---|---:|---:|---:|---:|---:|
-| episode | 0.462 | **0.444** | 0.426 | **0.499** | 0.472 |
-| configuration | 0.466 | **0.453** | 0.431 | **0.508** | **0.535** |
-
-It improves D2 on all measured quantities but misses D20's best configuration contact floor. The
-frozen gate therefore fails. H8, response curves, monitor agreement, DEV and TEST were not opened.
-
-Canonical files:
-
-- `results/jenga/d21_d2_enhanced_residual_protocol.json`
-- `results/jenga/d21_d2_enhanced_residual_result.json`
-- `results/jenga/d20_enhanced_hybrid_result.json`
-- `results/jenga/regime_monitor_v0/d2/aggregate.json`
-
-Hashes are recorded in [PLAN_NEXT.md](PLAN_NEXT.md) and [NOTES.md](NOTES.md).
-
-## Operational state
-
-Repository:
-
-```bash
-cd /home/corey/wksp/stable_lyap_filters
-git status --short
-source .venv/bin/activate
-python -m pytest tests/ -q
-```
-
-The suite currently contains **400 tests**. Batch simulator jobs must use `SIM_HEADLESS=1`. Keep
-worker counts conservative: exact replay is memory- and simulator-heavy, and prior high-parallelism
-runs froze the machine.
-
-Verify v0 before any physical evaluation:
-
-```bash
-python eval/jenga_regime_monitor_v0_freeze.py verify
-```
-
-Protocol SHA-256:
-`4e1a20ca3c64bf18733315fe31df5850529027f8f48cda2c5f547ce43ecdc317`.
-
-## Experimental discipline
-
-- Keep task labels grading-only; never train or select the monitor with topple/success labels.
-- Keep physical monitor v0 frozen. Its TEST panels are immutable.
-- Evaluate learned models in order: one-step dynamics → H8 rollout → local action-response geometry
-  → monitor agreement → DEV/TEST.
-- Stop at the first failed gate. Do not inspect later panels to rescue an arm.
-- Report both recall and quiet-alarm rate; accuracy is misleading under class imbalance.
-- Mark every feature as universal/deployable, privileged diagnostic, or grading-only.
-- Do not reinterpret simulator cloning or exact block state as deployable perception.
-
-## What the next agent should do
-
-**Update 2026-09-29:** the Program A feasibility test ran and failed its T1 gate (causal
-re-anchoring recovers at most 0.155 of the gap vs 0.50 required); its T3 found that a model-free
-fixed-pair rule outperforms D2's pair selection. Program B is now the active direction, starting
-with an availability survey of pretrained world models. The original text below is kept for
-provenance.
-
-No automatic model run is pending. First choose and preregister one of two genuinely different
-programs:
-
-1. **Pretrained physical/visual world model:** new interaction data and broader pretraining,
-   stochastic futures, object persistence and 3-D geometry; freeze before benchmark evaluation.
-2. **Online re-observation/active sensing:** execute smaller increments, observe again and update
-   the counterfactual set, reducing open-loop horizon and treating repeated disagreement/model
-   uncertainty as evidence.
-
-The second is the lower-cost next scientific test because it directly attacks compounded rollout
-error without another Jenga-specific architecture sweep. A detailed rationale and falsification
-logic for both directions is in [WORLD_MODEL.md](WORLD_MODEL.md).
-
-For a re-observation takeover, do not begin with a new model. First freeze a simulator-state
-diagnostic using existing D2 and v0: split H8 into short causal segments, replace D2's imagined
-state with the exact observed state between segments, and compare pair-selection and monitor-stage
-agreement against open-loop D2 on both held-out TRAIN axes. Keep DEV and TEST closed. A positive
-result licenses a rendered-observation version; a negative result at one- or two-step horizons
-points toward the larger/pretrained-model direction instead.
-
-## Documentation policy
-
-Active documents stay short and represent the current truth. Detailed experiment results are
-append-only in [NOTES.md](NOTES.md). Superseded plans are indexed in
-[docs/archive/README.md](docs/archive/README.md); do not restore their “next step” sections as
-current guidance.
+- 7 files were modified in the working tree before the 2026-10-26/27 sessions (eval/cbf_qp.py, eval/hyb_reliability.py,
+  paper/submissions/physwm_oct7/paper.pdf, results/jenga/outcome_audit_runs.json, results/program_b/bench2/truth_*.json,
+  results/program_b/cbf_qp/reliability_hyb.json). Their provenance is unclear; they were left uncommitted on purpose.
+  Ask the user before committing or reverting them.
+- Raw per-episode rollouts (`results/program_b/policy_rollouts/`, ~2 GB) and other large arrays stay untracked (manifest).
+- Cluster (Alliance: Fir/Nibi/Rorqual) needs the user's Duo login; H2H5 does not need the cluster.

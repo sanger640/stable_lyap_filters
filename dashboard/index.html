@@ -1,0 +1,514 @@
+<title>Fork Monitor Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500&family=STIX+Two+Text:ital@0;1&display=swap">
+<style>
+:root {
+  --bg: #f5f6f4; --surface: #ffffff; --ink: #18201e; --muted: #64706c; --faint: #8b9792; --line: #e1e5e2; --soft: #eef1ef;
+  --accent: #1d6f68; --good: #2f7d4f; --bad: #c2491d; --wait: #a86b00; --policy: #b9c2be;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1514; --surface: #161e1c; --ink: #e5ece9; --muted: #9aa8a3; --faint: #74827d; --line: #26312e; --soft: #1f2826;
+  --accent: #5fc0b5; --good: #6cc48f; --bad: #f08a5d; --wait: #e2b04a; --policy: #4a5753; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1514; --surface: #161e1c; --ink: #e5ece9; --muted: #9aa8a3; --faint: #74827d; --line: #26312e; --soft: #1f2826;
+  --accent: #5fc0b5; --good: #6cc48f; --bad: #f08a5d; --wait: #e2b04a; --policy: #4a5753; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); padding-inline: 16px; padding-block: 0 64px; margin: 0 }
+.wrap { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 56px }
+.wrap > *, .hero > * { min-width: 0 }
+header { padding-block: 32px 0; display: grid; gap: 6px }
+h1 { font: 700 28px/1.1 var(--display); margin: 0; letter-spacing: -0.02em }
+.sub { color: var(--muted); max-width: 60ch; margin: 0 }
+.stamp { font: 500 12px/1.4 var(--mono); color: var(--faint) }
+h2 { font: 700 13px/1 var(--body); text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 16px }
+h3 { font: 700 19px/1.25 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance }
+p { margin: 0 }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums }
+
+/* bottom line */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 28px; align-items: center }
+.hero h3 { font-size: 24px }
+.hero .say { color: var(--muted); margin-top: 10px; max-width: 46ch }
+.hnote { font-size: 13px; color: var(--faint); margin-top: 8px }
+.kpis { display: flex; gap: 28px; margin-top: 18px; flex-wrap: wrap }
+.kpi b { display: block; font: 600 24px/1.1 var(--mono); font-variant-numeric: tabular-nums }
+.kpi span { font-size: 13px; color: var(--muted) }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin-top: 6px }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px }
+@media (max-width: 720px) { .hero { grid-template-columns: minmax(0, 1fr) } }
+
+/* running */
+.run { display: grid; gap: 18px }
+.job { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: baseline }
+.job .t { font-weight: 600 }
+.job .n { font: 500 13px/1 var(--mono); color: var(--muted) }
+.job .d { grid-column: 1 / -1; font-size: 14px; color: var(--muted) }
+.bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--wait); border-radius: 3px }
+
+/* results feed */
+.feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 18px 16px; display: grid; gap: 10px; align-content: start; min-width: 0 }
+.meta { display: flex; justify-content: space-between; align-items: center; gap: 8px }
+.chip { font: 600 11px/1 var(--body); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 8px; border-radius: 99px; color: var(--k); background: color-mix(in srgb, var(--k) 13%, transparent) }
+.when { font: 500 11px/1 var(--mono); color: var(--faint) }
+.card p { color: var(--muted); font-size: 15px }
+.cmp { display: grid; gap: 6px; margin-top: 4px }
+.cmp .cap { font-size: 12px; color: var(--faint) }
+.row { display: grid; grid-template-columns: 7.2em minmax(0, 1fr) 3.4em; gap: 8px; align-items: center; font-size: 13px }
+.row .lab { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row .trk { height: 10px; background: var(--soft); border-radius: 2px; overflow: hidden }
+.row .trk i { display: block; height: 100%; border-radius: 2px }
+.row .v { font: 500 12px/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums }
+details.older { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 14px }
+details.older summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 15px }
+.olist { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px }
+.olist li { display: grid; grid-template-columns: 5.6em minmax(0, 1fr); gap: 10px; font-size: 15px; align-items: baseline }
+.olist li span { font: 600 10px/1 var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--k) }
+
+
+/* method */
+.method { display: grid; gap: 16px }
+.mlead { color: var(--muted); max-width: 70ch; margin: 0 }
+.pipe { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; overflow-x: auto }
+.pipe svg { display: block; width: 100%; min-width: 640px }
+.pb rect { fill: var(--soft); stroke: var(--line) }
+.pb.acc rect { fill: color-mix(in srgb, var(--accent) 12%, var(--surface)); stroke: var(--accent) }
+.mgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px }
+.mfig { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0 }
+.mfig svg { width: 100%; height: auto; display: block }
+.mh { font: 700 17px/1.2 var(--display); display: flex; align-items: center; gap: 10px }
+.mh span { font: 700 13px/1 var(--display); color: var(--accent); border: 1.5px solid var(--accent); border-radius: 99px; width: 24px; height: 24px; display: grid; place-items: center; flex: none }
+.mfig figcaption { font-size: 15px; color: var(--muted) }
+.eq { font: 16px/1.7 "STIX Two Text", "Cambria Math", "Times New Roman", serif; background: var(--soft); border-radius: 8px; padding: 8px 12px; overflow-x: auto; color: var(--ink) }
+.eq sub, .eq sup { font-size: 0.72em; line-height: 0 }
+.note { font-size: 13px; color: var(--faint); margin: 0 }
+.mfoot { font-size: 15px; color: var(--muted); margin: 0 }
+.mfoot b { color: var(--ink) }
+@media (max-width: 720px) { .mgrid { grid-template-columns: minmax(0, 1fr) } }
+
+/* charts */
+svg text { fill: var(--muted); font: 12px var(--body) }
+svg .ink { fill: var(--ink); font-weight: 600 }
+.chartwrap { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px }
+.chartwrap .say { color: var(--muted); margin-bottom: 8px; max-width: 64ch }
+.scroll { overflow-x: auto }
+
+/* watch */
+.watch { display: grid; gap: 12px }
+.watch video { width: 100%; max-width: 100%; border-radius: 10px; background: #000; display: block }
+.picks { display: flex; flex-wrap: wrap; gap: 8px }
+.picks button { font: 600 14px/1 var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--muted); padding: 9px 12px; border-radius: 99px; cursor: pointer }
+.picks button[aria-pressed="true"] { color: var(--ink); border-color: var(--accent) }
+.picks button:focus-visible, details summary:focus-visible, footer a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.vcap { font-size: 14px; color: var(--muted) }
+.picks { flex-direction: column; gap: 10px }
+.pgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.pg { font: 600 11px/1 var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); width: 100%; }
+.vread summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 15px }
+.vread ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 6px; color: var(--muted); font-size: 15px; max-width: 75ch }
+.vread b { color: var(--ink) }
+footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 24px }
+footer a { color: var(--accent) }
+code { font: 500 12px var(--mono) }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stamp" id="stamp"></div>
+    <h1>Fork Monitor Lab</h1>
+    <p class="sub">A robot pulls the middle block out of three without toppling the others. A safety filter imagines the policy's move many times, slightly off, in a learned world model, and nudges the move when the imagined future looks unsafe. No topple labels anywhere.</p>
+  </header>
+
+  <section aria-labelledby="h-bottom">
+    <h2 id="h-bottom">Bottom line</h2>
+    <div class="hero">
+      <div>
+        <h3>Without labels, the filter beats the labelled latent safety filter.</h3>
+        <p class="say">600 fresh episodes, pre-registered, 2× noise, 48 s limit. The label-free filter cuts the policy's topples 95 → 36 and beats the labelled baseline (UNISafe-style latent safety filter) on topples and successes. The newer always-on version with an irreversibility value is free at the arm's real noise; its fresh-episode test comes next.</p>
+        <div class="kpis">
+          <div class="kpi"><b>95 → 36</b><span>topples, policy → label-free</span></div>
+          <div class="kpi"><b>36 vs 57</b><span>topples, label-free vs labelled</span></div>
+        </div>
+        <p class="say">Next: the decisive fresh test of the always-on irreversibility filter against the policy, the published latent safety filter and UNISafe.</p>
+      </div>
+      <div>
+        <div id="heroChart"></div>
+        <p class="hnote">* Always-on edit with its time-outs re-run at 96 s. With 96 s for every controller (pre-registered check): gated 38 topples / 508 successes, labelled 61 / 431, policy 95 / 459.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-run">
+    <h2 id="h-run">Running now</h2>
+    <div class="run" id="run"></div>
+  </section>
+
+  <section aria-labelledby="h-upd">
+    <h2 id="h-upd">Latest results</h2>
+    <div class="feed" id="feed"></div>
+    <details class="older"><summary>Earlier results</summary><ul class="olist" id="older"></ul></details>
+  </section>
+
+  <section aria-labelledby="h-how">
+    <h2 id="h-how">Method: label-free gated edit</h2>
+    <div class="method">
+      <p class="mlead">The filter never sees a topple label. It judges a move only by imagining it many times, slightly off, in a learned world model. If the imagined move cannot be undone, the filter nudges the policy's move by at most 1 cm toward states a learned value calls steady. The value is trained only on how much the imagined futures scatter.</p>
+      <p class="mlead"><b style="color:var(--ink)">Imagination at runtime, two depths:</b> the gate rolls out 64 noisy futures over the whole look-ahead once per move (0.8 s). While the gate is open, the edit rolls out 8 noisy futures one step ahead every 0.2 s and scores them with the value V. V stands in for the long rollout: it was trained offline on how far 64 imagined futures scatter.</p>
+
+      <div class="pipe"><svg viewBox="0 0 940 170" role="img" aria-label="Pipeline: camera image, encode to latent, imagine 64 noisy futures, gate asks whether the move can be undone; if not, the move is edited by at most 1 cm, otherwise the policy's move runs unchanged">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--muted)"/></marker></defs>
+        <g class="pb"><rect x="8" y="56" width="112" height="56" rx="9"/><text x="64" y="80" text-anchor="middle" class="ink">camera</text><text x="64" y="99" text-anchor="middle">one image</text></g>
+        <g class="pb"><rect x="148" y="56" width="150" height="56" rx="9"/><text x="223" y="80" text-anchor="middle" class="ink">encode</text><text x="223" y="99" text-anchor="middle">DINOv2 → latent z</text></g>
+        <g class="pb"><rect x="326" y="56" width="150" height="56" rx="9"/><text x="401" y="80" text-anchor="middle" class="ink">imagine</text><text x="401" y="99" text-anchor="middle">64 noisy futures</text></g>
+        <g class="pb acc"><rect x="504" y="56" width="150" height="56" rx="9"/><text x="579" y="80" text-anchor="middle" class="ink">gate</text><text x="579" y="99" text-anchor="middle">can it be undone?</text></g>
+        <g class="pb acc"><rect x="700" y="56" width="132" height="56" rx="9"/><text x="766" y="80" text-anchor="middle" class="ink">edit</text><text x="766" y="99" text-anchor="middle">nudge xyz ≤ 1 cm</text></g>
+        <g class="pb"><rect x="858" y="56" width="74" height="56" rx="9"/><text x="895" y="89" text-anchor="middle" class="ink">robot</text></g>
+        <g style="stroke:var(--muted);stroke-width:1.5;fill:none">
+          <path d="M120 84 H146" marker-end="url(#ar)"/><path d="M298 84 H324" marker-end="url(#ar)"/><path d="M476 84 H502" marker-end="url(#ar)"/>
+          <path d="M654 84 H698" marker-end="url(#ar)"/><path d="M832 84 H856" marker-end="url(#ar)"/>
+          <path d="M579 112 V146 H895 V114" marker-end="url(#ar)" style="stroke-dasharray:4 3"/>
+          <path d="M579 26 V54" marker-end="url(#ar)"/>
+        </g>
+        <text x="579" y="18" text-anchor="middle" class="ink">policy proposes its move a<tspan baseline-shift="sub" style="font-size:9px">π</tspan> (8 steps, 0.8 s)</text>
+        <text x="676" y="76" text-anchor="middle" style="fill:var(--bad)">no</text>
+        <text x="740" y="162" text-anchor="middle">yes, ~87% of moves: the policy's move runs unchanged</text>
+      </svg></div>
+
+      <div class="mgrid">
+        <figure class="mfig">
+          <div class="mh"><span>1</span>Imagine</div>
+          <svg viewBox="0 0 300 150" role="img" aria-label="64 imagined futures from the same start, split by small errors" id="fanM"></svg>
+          <figcaption>A small world model on frozen DINOv2 features rolls the move forward 64 times. Each copy has its own small camera and arm errors, at twice their measured size.</figcaption>
+          <div class="eq"><i>z</i> = <i>E</i>(image) ∈ ℝ<sup>28×28×8</sup> &nbsp;·&nbsp; <i>z</i><sub><i>j</i></sub>′ = <i>f</i>(<i>z̃</i><sub><i>j</i></sub>, <i>a</i> + <i>η</i><sub><i>j</i></sub>), &nbsp;<i>j</i> = 1…64</div>
+          <p class="note"><i>z̃</i><sub><i>j</i></sub> is the start as seen with camera error <i>j</i>, and <i>η</i><sub><i>j</i></sub> is that copy's arm error. One model step covers 0.2 s.</p>
+        </figure>
+
+        <figure class="mfig">
+          <div class="mh"><span>2</span>Gate: can the move be undone?</div>
+          <svg viewBox="0 0 300 150" role="img" aria-label="Latent patches after plan-then-undo compared with holding still; a patch outside the hand changed, so the move is flagged" id="gateM"></svg>
+          <figcaption>Imagine doing the move and then reversing it, and compare with just holding still. Any change left outside the hand means the move broke something that can't be undone. The gate also opens when the gripper is open and the value (3) is already negative.</figcaption>
+          <div class="eq"><i>r</i> = max<sub><i>j</i></sub> q98<sub>patches ∉ hand</sub> |<i>f</i><sub><i>j</i></sub>(<i>a</i><sub>π</sub> then undo) − <i>f</i><sub><i>j</i></sub>(hold)| &nbsp;&nbsp; open if <i>r</i> &gt; <i>τ</i> = 1.34</div>
+          <p class="note"><i>τ</i> is the 98th percentile of real latent change before the first grasp, so it comes from the robot's own data with no labels.</p>
+        </figure>
+
+        <figure class="mfig">
+          <div class="mh"><span>3</span>Value from the fork signal</div>
+          <svg viewBox="0 0 300 160" role="img" aria-label="Steady state: futures stay together, margin positive. Fragile state: futures scatter, margin negative" id="valM"></svg>
+          <figcaption>Fragility is how far 64 imagined futures scatter if the robot just holds still. The most fragile tenth of visited states counts as unsafe. A reachability value then learns, in imagination, which states can stay out of that set.</figcaption>
+          <div class="eq"><i>m</i>(<i>z</i>) = −log <i>λ</i><sub>max</sub>(Cov<sub><i>j</i></sub>[<i>z</i><sub><i>j</i></sub>′ | hold, 4× errors]) &nbsp;→&nbsp; <i>ℓ</i>(<i>z</i>) = tanh((<i>m</i> − <i>m</i><sub>10%</sub>)/<i>s</i>)<br><i>V</i>(<i>z</i>) = (1−<i>γ</i>) <i>ℓ</i>(<i>z</i>) + <i>γ</i> min{<i>ℓ</i>(<i>z</i>), max<sub><i>a</i></sub> <i>V</i>(<i>f</i>(<i>z</i>, <i>a</i>))}</div>
+          <p class="note"><i>V</i> &gt; 0 means steady now and able to stay steady. Training uses SAC in the world model's imagination with <i>γ</i> = 0.9999.</p>
+        </figure>
+
+        <figure class="mfig">
+          <div class="mh"><span>4</span>Edit: nudge, don't replace</div>
+          <svg viewBox="0 0 300 160" role="img" aria-label="The policy's move lies on the unsafe side of the value boundary; gradient steps move it just across, inside a 1 cm box" id="editM"></svg>
+          <figcaption>While the gate is open, every 0.2 s: if any imagined next state falls below the barrier, gradient steps move the policy's xyz targets, by at most 1 cm, until all 8 imagined draws clear it. The gripper is always the policy's. There is no fallback controller.</figcaption>
+          <div class="eq"><i>a</i>* = <i>a</i><sub>π</sub> + <i>δ</i>, &nbsp;‖<i>δ</i>‖<sub>∞</sub> ≤ 1 cm &nbsp;&nbsp;s.t.&nbsp; min<sub><i>j</i></sub> <i>V</i>(<i>f</i><sub><i>j</i></sub>(<i>z</i>, <i>a</i>*)) ≥ ½ <i>V</i>(<i>z</i>)</div>
+          <p class="note">This is a discrete-time control-barrier condition: the value may fall by at most half per step. On dev episodes, edits happen on 9.5% of 0.2 s steps and average 4.1 mm.</p>
+        </figure>
+      </div>
+      <p class="mfoot">Topple labels are used only to grade results. On dev episodes (100, 2× noise): <b>27 → 6</b> topples vs the policy alone, successes 64 → 77. The method is being updated to an always-on edit with an irreversibility value (see latest results); this section will be redrawn when it is frozen.</p>
+    </div>
+  </section>
+
+
+  <section aria-labelledby="h-watch">
+    <h2 id="h-watch">Watch</h2>
+    <div class="watch">
+      <video id="vid" controls preload="metadata" playsinline></video>
+      <p class="vcap" id="vcap"></p>
+      <div class="picks" id="picks" role="group" aria-label="Choose a video"></div>
+      <details class="vread"><summary>How to read the filter videos</summary>
+        <ul>
+          <li>Four controllers, same start, same noise. <b>Dashed white</b> is where the policy wanted to move (○ marks its end). <b>Solid</b> is what was actually executed.</li>
+          <li>An <b>orange frame</b> means the filter is changing the policy's action right now, and the badge says by how much. No orange means the policy's action runs untouched.</li>
+          <li><b>Green / magenta patch</b> (learned-value filters, only while the filter is on): the filter's own check re-run for targets up to 2 cm around the policy's. Green = its value accepts the target, magenta = it rejects it. The white square is the 1 cm edit limit. It is a slice of the latent safe set, not the set itself, and uses fresh noise draws; it agrees with the filter's real decision on the policy's own action on 82–88% of steps for the label-free arms and 99% for the labelled filter (all 9 episodes).</li>
+          <li>The <b>bars</b> under each view mark every 0.1 s step the filter changed, with height = how far it moved the target (full scale 15 mm).</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    <span>Every number has a source in <code>docs/FINDINGS.md</code>.</span>
+    <a href="archive.html">Full archive: method, episode inspector, all videos</a>
+  </footer>
+</div>
+
+<script>
+const UPDATED = "Tue 27 Oct, 21:42 EDT";
+
+// verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
+const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
+
+const RUNNING = [
+  { t: "Nothing running. Next: freeze the method and pre-register the decisive fresh test", n: [0, 1], d: "Policy vs our irreversibility filter (90% and 80% barriers) vs the latent safety filter as published vs UNISafe, at 2× and 1× noise, all local." },
+];
+
+// rows: [label, value, colour token]; bars scaled to max; unit appended to values
+const UPDATES = [
+  { v: "find", when: "Tue 21:38", title: "The latent safety filter as published does nothing here",
+    say: "Exploratory (it failed its training gate). Re-implemented faithfully to the paper and the authors' code, it overrides the policy 3–17 times per episode but prevents no topples at any threshold. UNISafe (the same group's follow-up) does: 13 topples, 9 with noise-aware pessimism. Our label-free filter: 7. Same 100 dev episodes, 2× noise.",
+    cap: "neighbour topples per 100 at 2× noise (successes: 64, 65, 63, 76, 72)", unit: "", max: 30,
+    rows: [["policy alone", 27, "--policy"], ["latent safety filter (as published)", 26, "--wait"], ["UNISafe (re-implemented)", 13, "--wait"], ["UNISafe + noise-aware pessimism", 9, "--wait"], ["ours, label-free", 7, "--good"]] },
+  { v: "find", when: "Tue 20:58", title: "Longer-horizon irreversibility: a gentler value; the method is selected",
+    say: "Pre-registered. Training the value on 1.6 s instead of 0.8 s irreversibility gives a better value at the default barrier (1× noise: 0 topples, 91 successes vs the policy's 5 and 85) but it stalls with the strict barrier. Over all irreversibility variants, the pre-registered rule selects the 0.8 s value with the 90% barrier (7 topples under 2× noise, free at 1×). Also tonight: the latent safety filter exactly as published fails training in our setting (its safety actor saturates); a fair exploratory run follows.",
+    cap: "neighbour topples per 100 at 2× noise; all keep ≥ 89 successes at 1× except the stalled one", unit: "", max: 30,
+    rows: [["policy alone", 27, "--policy"], ["1.6 s value, barrier 50%", 16, "--accent"], ["0.8 s value, barrier 80%", 14, "--accent"], ["0.8 s value, barrier 90% (selected)", 7, "--good"]] },
+  { v: "find", when: "Tue 14:22", title: "A stricter barrier: 4× fewer topples under stress, still free at real noise",
+    say: "Pre-registered dev runs of the always-on edit with the irreversibility value, asking the next state to keep 80% or 90% of the current value instead of 50%. Under 2× noise, topples fall 27 → 14 (80%) or 7 (90%, selected by the pre-registered rule); at the real 1× noise every setting keeps 1 topple and more successes than the policy (90–92 vs 85). The 80% setting keeps more clean lifts under stress; the rule only weighed topples.",
+    cap: "neighbour topples per 100 at 2× noise (successes at 1×: 85, 89, 92, 90)", unit: "", max: 30,
+    rows: [["policy alone", 27, "--policy"], ["barrier 50%", 19, "--accent"], ["barrier 80%", 14, "--accent"], ["barrier 90% (selected)", 7, "--good"]] },
+  { v: "find", when: "Tue 12:20", title: "Irreversibility as the failure set: the always-on edit stops interfering",
+    say: "Pre-registered dev runs. Defining failure as lasting change under realistic errors (instead of fragility) gives the first label-free filter that costs nothing at the arm's real noise: 1 topple and 89 successes vs the policy's 5 and 85, with under one edit per episode. At 2× noise it beats the policy on every outcome but prevents only 8 of 27 topples (fragility prevented 25 while stalling). Next: make it act a little earlier.",
+    cap: "successes (v4) per 100 at 1× noise (topples: 5, 0, 1)", unit: "", max: 100,
+    rows: [["policy alone", 85, "--policy"], ["always-on, fragility value", 76, "--wait"], ["always-on, irreversibility value", 89, "--accent"]] },
+  { v: "neg", when: "Tue 07:21", title: "Training the value at the robot's real noise doesn't make it less cautious",
+    say: "Pre-registered. The fragility value retrained at 1× noise passes its offline checks, but it still calls 19% of safe grasping moments unsafe (the 2× value: 19%), and the always-on edit with it edits just as often and loses successes at 1× noise. The caution comes from the fragility failure set itself, not from the training noise. Next: the irreversibility-based value, training now.",
+    cap: "successes (v4) per 100 at 1× noise (topples: 5, 0, 0)", unit: "", max: 100,
+    rows: [["policy alone", 85, "--policy"], ["always-on, value trained at 2×", 76, "--accent"], ["always-on, value trained at 1×", 71, "--wait"]] },
+  { v: "find", when: "Mon 22:47", title: "With twice the time, the always-on edit resolves most of its stalls",
+    say: "Pre-registered sensitivity check: every time-out of the 600-episode head-to-head re-run with 96 s instead of 48 s, all five controllers. The always-on edit resolves most of its stalls: 13 topples and 490 successes. The gated edit has the most successes (508) but 38 topples. The registered 48 s verdicts stand.",
+    cap: "neighbour topples per 600 with 96 s (successes: 459, 431, 508, 490)", unit: "", max: 100,
+    rows: [["policy alone", 95, "--policy"], ["labelled latent filter", 61, "--wait"], ["label-free, gated", 38, "--accent"], ["label-free, always on", 13, "--accent"]] },
+  { v: "fail", when: "Mon 22:40", title: "Short-horizon irreversibility can't be the always-on filter's failure set",
+    say: "Pre-registered, offline, 4,679 fresh decisions. Judged over just the next 0.2 s or 0.8 s, irreversibility almost never flags a safe move, but it catches only 5% / 22% of moves before a topple: lasting damage takes the policy's look-ahead to see coming. The current fragility margin catches 42% but flags 1 in 6 safe grasping moves. None met the bar, so no new value was trained.",
+    cap: "pre-topple moves caught vs safe grasping moves flagged (%)", unit: "%", max: 60,
+    rows: [["irreversibility 0.2 s: caught", 5, "--accent"], ["irreversibility 0.8 s: caught", 22, "--accent"], ["fragility: caught", 42, "--wait"], ["fragility: safe grasps flagged", 17, "--bad"]] },
+  { v: "find", when: "Mon 21:44", title: "Calibrating the filter's imagined noise fixes most of the 1× cost",
+    say: "Same 1× episodes, but the filter now imagines the robot's real noise instead of 2×. The gated pure edit keeps the policy's successes (83 vs 85) with zero topples. The always-on edit stalls far less (time-outs 33 → 14; successes 61 → 76) but still trails the policy. Both still knock the red block over more often (5 → 10–12), a blind spot of the world model.",
+    cap: "successes (v4) per 100 at 1× noise, imagined noise matched (topples: 5, 0, 0)", unit: "", max: 100,
+    rows: [["policy alone", 85, "--policy"], ["gated pure edit", 83, "--accent"], ["always-on edit", 76, "--accent"]] },
+  { v: "neg", when: "Mon 20:37", title: "At normal arm noise, the filter costs successes",
+    say: "Same 100 dev episodes with the arm's real (1×) noise instead of the 2× stress setting; filters unchanged. The policy alone rarely topples here (5). The gated pure edit cuts that to 1 but loses successes, mostly by knocking the red block over (5 → 17). It edits as often as at 2×, because its imagination still assumes 2× noise. The always-on edit stalls (33 time-outs). Next: match the filter's imagined noise to the robot's real noise.",
+    cap: "successes (v4) per 100 at 1× noise (topples: 5, 1, 0)", unit: "", max: 100,
+    rows: [["policy alone", 85, "--policy"], ["gated pure edit", 78, "--accent"], ["always-on edit", 61, "--wait"]] },
+  { v: "find", when: "Mon 17:10", title: "Pure edit wins the dev round: 6 topples, no fallback controller",
+    say: "100 dev episodes, 2× noise, pre-registered selection. Wider gate (undo test OR gripper open with negative value) plus a pure edit that only nudges the policy's xyz by at most 1 cm. The wider gate alone gained nothing; dropping the safety actor's fallback did. 6 vs 9 is within noise, so the fresh-episode test against psel decides.",
+    cap: "neighbour topples per 100 dev episodes (successes: 64, 79, 73, 77)", unit: "", max: 30,
+    rows: [["policy alone", 27, "--policy"], ["gated edit + actor fallback", 9, "--wait"], ["wider gate + fallback", 9, "--wait"], ["wider gate, pure edit", 6, "--accent"]] },
+  { v: "fail", when: "Mon 14:00", title: "Head-to-head: label-free filter beats the labelled one, not psel",
+    say: "600 fresh episodes, pre-registered. The label-free filter (undo-test gate + learned-value edit, no labels anywhere) has fewer topples and many more successes than the labelled latent safety filter. It cut topples 95 → 36 vs the policy, but its success gain was not significant, and it did not match psel (24 topples). The always-on edit had the fewest topples of all (9) but stalled in 151 episodes. The gate missed 23 of its 36 topples.",
+    cap: "neighbour topples per 600 (successes: 457, 424, 476, 489, 390)", unit: "", max: 100,
+    rows: [["policy alone", 95, "--policy"], ["labelled latent filter", 57, "--wait"], ["label-free, gated", 36, "--accent"], ["label-free, always on", 9, "--wait"]] },
+  { v: "find", when: "Mon 07:50", title: "Undo test as a gate: most successes of any filter (dev)",
+    say: "Letting the label-free value edit the policy's move only when the imagined undo test flags it (8% of moves) keeps most of the safety and drops most of the stalls. Labelled latent safety filter on the same episodes: 9 topples, 76 successes. 100 dev episodes; the fresh head-to-head is running.",
+    cap: "successes, 100 dev episodes (topples: 27, 2, 16, 9)", unit: "", max: 90,
+    rows: [["policy alone", 64, "--policy"], ["edit always on", 64, "--wait"], ["undo test + fix", 73, "--wait"], ["edit gated by undo test", 79, "--good"]] },
+  { v: "pass", when: "Mon 03:40", title: "Head-to-head: picking from the policy beats the latent safety filter",
+    say: "600 fresh episodes, pre-registered. Both filters cut topples relative to the policy alone, but the latent safety filter (labelled, done properly) gives up successes; picking from the policy's own samples gains them. This is the bar the label-free filter has to clear on the same episodes.",
+    cap: "neighbour topples per 600 (successes: 449, 424, 489)", unit: "", max: 100,
+    rows: [["policy alone", 96, "--policy"], ["latent safety filter", 57, "--wait"], ["policy's own pick", 24, "--good"]] },
+  { v: "pass", when: "Mon 01:55", title: "Confirmed: picking from the policy vs the policy alone",
+    say: "600 fresh episodes: topples 112 → 18 and successes 430 → 501. A wider 4× margin on top removed 5 more topples (not significant) and added 20 stalls, so it is not adopted.",
+    cap: "neighbour topples per 600 (successes: 430, 501, 488)", unit: "", max: 120,
+    rows: [["policy alone", 112, "--policy"], ["policy's own pick", 18, "--good"], ["+ 4× margin", 13, "--wait"]] },
+  { v: "pass", when: "Mon 00:15", title: "Undo test confirmed on fresh episodes",
+    say: "On 600 episodes it was not chosen on, the worst-case undo test catches half the moments 1–3 moves before a topple and flags only 2.2% of safe grasping moments (old fork signal: 26%). It needs no picture of the starting scene, so background changes cancel. Wider 8× fragility margin for the learned value: no gain (12 topples at best).",
+    cap: "safe grasping moments flagged, at half of pre-topple moments caught", unit: "%", max: 30,
+    rows: [["fork spread", 26.1, "--policy"], ["undo test, worst case", 2.3, "--good"]] },
+  { v: "find", when: "Sun 23:30", title: "Label-free edits cut topples and keep the task",
+    say: "The safety value learned without labels works when it nudges the policy's own move a few millimetres instead of taking over: topples 27 → 2 with as many successes as the policy alone (64). The labelled baseline gets 9. Cost: 21 stalls at the grasp (policy alone 2). Dev episodes only; a fresh head-to-head is next.",
+    cap: "neighbour topples, 100 dev episodes (successes: 64, 53, 76, 64)", unit: "", max: 30,
+    rows: [["policy alone", 27, "--policy"], ["label-free, takes over", 11, "--wait"], ["labelled baseline", 9, "--wait"], ["label-free, edits", 2, "--good"]] },
+  { v: "fail", when: "Sun 21:25", title: "Taking over gives up the task",
+    say: "Switching to the learned safety controller whenever the label-free value is low prevents topples but stalls: at best successes fall 64 → 53. The value treats every fragile moment, including the grasp, as danger, and its controller backs away.",
+    cap: "successes, 100 dev episodes", unit: "", max: 80,
+    rows: [["policy alone", 64, "--policy"], ["best switch", 53, "--bad"], ["strictest switch", 2, "--bad"]] },
+  { v: "find", when: "Sun 23:15", title: "Undo test: the clearest fork signal so far",
+    say: "Imagine doing the move and then undoing it, and compare with having held still, across the 64 noisy futures. If something fell, the undo leaves it fallen. The registered version failed its test; its worst case over the futures flags 4–5× fewer safe grasping moments than the old signal. Confirmation on fresh episodes is running.",
+    cap: "safe grasping moments flagged, at half of pre-topple moments caught", unit: "%", max: 12,
+    rows: [["fork spread", 10.4, "--policy"], ["move vs hold", 7.2, "--wait"], ["undo test, worst case", 1.9, "--good"]] },
+  { v: "pass", when: "Sun 17:45", title: "A safety value learned without labels",
+    say: "New main line: instead of picking among the policy's samples, learn a safety value and a corrective controller, as the latent safety filter does, but from our label-free fragility signal instead of topple labels. It passes its offline test and ranks dangerous futures better than the labelled version. It runs cautious on real scenes, so the threshold sweep now includes 0.",
+    cap: "how well the value ranks futures that topple (AUROC)", unit: "", max: 1,
+    rows: [["labelled value", 0.829, "--policy"], ["label-free value", 0.885, "--good"]] },
+  { v: "find", when: "Sun 17:45", title: "The safety check mostly repeats itself",
+    say: "Re-checking 100 of the filter's choices with fresh imagined noise: the chosen move passes again 82–92% of the time, other passing samples 87–98%, rejected ones 3–12%. A mild lean toward borderline picks.",
+    cap: "share passing again on fresh noise (mean over 5 strata)", unit: "%", max: 100,
+    rows: [["rejected samples", 6, "--bad"], ["chosen move", 87, "--wait"], ["other passing samples", 91, "--good"]] },
+  { v: "fail", when: "Sun 10:00", title: "Letting go is not the problem",
+    say: "At the 129 saved moments where a fix opened the gripper on a held block, forcing the policy's own gripper made things worse: fewer clean extractions and more dropped blocks. The openings were mostly protective. The fix keeps its gripper freedom.",
+    cap: "clean extractions from the same 129 moments", unit: "%", max: 100,
+    rows: [["policy's move", 57.4, "--policy"], ["fix, policy's gripper", 68.2, "--wait"], ["fix, free gripper", 71.3, "--good"]] },
+  { v: "find", when: "Sun 08:40", title: "The latent safety filter, done properly, is strong",
+    say: "Checking every 0.2 s and training its value on noisy imagined futures (as the original method does) turns the baseline around: at its published threshold it cuts dev topples by two thirds and finishes more episodes. Its earlier failures were our implementation. Now a fair head-to-head with our filter.",
+    cap: "neighbour topples, 99 dev episodes", unit: "", max: 30,
+    rows: [["policy alone", 27, "--policy"], ["as we first ran it", 23, "--wait"], ["checked every 0.2 s", 13, "--wait"], ["+ noisy value (eps 0.30)", 9, "--good"]] },
+  { v: "pass", when: "Sun 05:20", title: "Picking from the policy's own samples ends the stalls",
+    say: "In 600 fresh episodes, the filter that fixes a move by choosing among the policy's own samples timed out 34 times against 85 for the adopted one, with the same 16 topples. Grasps come 7 moves sooner. It is now the adopted filter, pending a confirmation run.",
+    cap: "time-outs per 600 fresh episodes (topples 16 vs 16)", unit: "", max: 90,
+    rows: [["G-CEM fix", 85, "--policy"], ["policy's own pick", 34, "--good"]] },
+  { v: "find", when: "Sun 05:15", title: "4× imagined noise is the sweet spot",
+    say: "Inflating the imagined noise made the alarm warn earlier up to 4×; beyond that it degrades. The monitor stays as it is.",
+    cap: "topples flagged ≥ 3 moves ahead, dev set m3", unit: "%", max: 100,
+    rows: [["2×", 76.7, "--wait"], ["3×", 85.0, "--wait"], ["4×", 91.7, "--good"], ["8×", 81.7, "--wait"], ["12×", 70.0, "--bad"]] },
+];
+
+const OLDER = [
+  ["fail", "The imagined spread beats the true spread: the simulator's own outcome scatter is a worse early alarm than the world model's."],
+  ["pass", "Pick from the policy, don't reshape its move: from 150 saved moments, our fix delays the grasp 1.4 moves, a policy sample half that."],
+  ["find", "The latent safety filter works when it checks often: The published baseline re-checks 15 times a second; ours checked every 0.8 s and acted too late."],
+  ["fail", "Re-training the dynamics on 'real' data did not help: with lighter neighbour blocks as the 'real world', fine-tuning did not recover the alarm."],
+  ["fail", "The alarms at the grasp are not about the hand: ignoring the hand's region did not reduce them."],
+  ["fail", "Fewer fixes, same stalls: Letting the filter act only when the move also scatters the imagined outcomes cut fixes by 17%, with no extra topples."],
+  ["find", "Each fix costs more time than it removes: most cost nothing, but about 1 in 6 sends the policy on a long detour."],
+  ["pass", "The sensitivity alarm wins again on fresh episodes: On 600 episodes never used before, asking how much more the plan scatters the imagined outcomes than standing still flags more topples in time than the fork test."],
+  ["fail", "Steering made fixes faster, but stalls stayed: Each fix keeps more of the move, but the grasp still comes ~9 moves later than without the filter."],
+  ["fail", "Spread as the filter's barrier: worse in closed loop: The spread alarm warns earlier, but as the filter's safety rule it acts too often, stalls more and approves riskier moves."],
+  ["find", "Both alarms light up at the grasp: Just before the gripper closes, both alarms fire on nearly half of the moves."],
+  ["find", "One world model checks as well as five: Dropping four of the five checking models keeps the same topple risk and makes each fix 40% faster (red-block falls +0.1 pp)."],
+  ["pass", "The fork beats the standard uncertainty alarm: Disagreement between world models fires too, but only once the scene is already going wrong."],
+  ["find", "Near the grasp the robot creeps ~3 mm per move and the filter acts there; with the filter the grasp comes ~9 moves later (28 vs 19)."],
+  ["pass", "First held-out test: relative spread flagged 85.0 vs 76.7% of topples in time (fork test)."],
+  ["fail", "Gripper-timing knob: failures 52 vs 61 per 300, not significant (p = 0.15)."],
+  ["find", "Wider 4× margin: would catch ~1/4 of the remaining pre-topple moves but adds interventions, which cause the stalls. Not pursued."],
+  ["find", "Offline, the steer knob kept more progress (0.51 vs 0.28) at the same topple risk; in closed loop it did not cut stalls."],
+  ["queue", "A value function learned in simulation from the simulator's own outcome sensitivity (label-free), after the sim-to-sim test."],
+  ["find", "Offline, the spread rule as approver froze on 30% of decisions (vs 8%) and approved riskier moves (0.76 vs 0.40% topple risk)."],
+  ["fail", "“Act when risk is rising” trigger (control-barrier decrease condition): 16 vs 23 topples, not significant."],
+  ["find", "More imagined futures do not help: the alarm repeats itself 95% of the time with fresh noise."],
+  ["find", "Red-block falls are invisible to this world model: every imagined future falls, so nothing splits."],
+  ["pass", "3× margin (no split even at 3× the arm errors): topples 60 → 7 per 300. Adopted."],
+  ["fail", "Minimising imagined disturbance (O-CEM): 16 vs 22 topples for the basic filter, not significant."],
+  ["fail", "Full-token DINO-WM (off the shelf) ranks moves no better than our small model."],
+  ["pass", "Hold timed by the fork test vs random holds at the same rate: 8 vs 34 topples."],
+  ["pass", "vs the published latent safety filter: 19 vs 55 topples per 300."],
+  ["fail", "Learned reachability (HJ) values: failed their gates three times."],
+  ["pass", "Final test 2, 600 fresh episodes: topples 114 → 30."],
+];
+
+const VIDS = [
+  { g: "Head-to-head episodes", f: "videos/filters/A_ep25765.mp4", b: "All three filters prevent it", c: "Episode 25765: the policy alone topples a neighbour; the label-free gated edit, psel and the labelled filter all extract the block. Compare where each one bends the policy's path." },
+  { g: "Head-to-head episodes", f: "videos/filters/A_ep25880.mp4", b: "Same save, different edits", c: "Episode 25880: the policy alone topples; all three filters extract. psel edits often and small (21% of steps, 4.6 mm on average); the labelled filter rarely and large (5%, 12 mm on average, up to 27 mm); the label-free edit sits between (11%, 6 mm)." },
+  { g: "Head-to-head episodes", f: "videos/filters/A_ep26043.mp4", b: "Another save", c: "Episode 26043: the policy alone topples; all three filters extract the block." },
+  { g: "Head-to-head episodes", f: "videos/filters/A_ep25630.mp4", b: "A label-free failure", c: "Episode 25630: the label-free gated edit topples a neighbour; the policy alone and the labelled filter extract; psel runs out of time." },
+  { g: "Head-to-head episodes", f: "videos/filters/A_ep25882.mp4", b: "Edits on a safe episode", c: "Episode 25882: nothing topples and all four extract. Compare how much each filter edits an episode that needed no help." },
+  { g: "Label-free variants (dev)", f: "videos/filters/B_ep15092.mp4", b: "Actor fallback stalls", c: "Dev episode 15092: the policy alone topples; the narrow-gate arm and the pure edit extract; the wider gate with the actor fallback runs out of time." },
+  { g: "Label-free variants (dev)", f: "videos/filters/B_ep15021.mp4", b: "All three save it", c: "Dev episode 15021: the policy alone topples; all three label-free arms extract." },
+  { g: "Label-free variants (dev)", f: "videos/filters/B_ep15030.mp4", b: "Narrow gate misses", c: "Dev episode 15030: the policy alone and the narrow-gate arm topple; both wider-gate arms extract." },
+  { g: "Label-free variants (dev)", f: "videos/filters/B_ep15098.mp4", b: "A pure-edit failure", c: "Dev episode 15098: the pure edit topples a neighbour; the other two label-free arms extract; the policy alone knocks the red block over." },
+  { g: "Earlier", f: "videos/final2/reel.mp4", b: "Fork filter highlight reel", c: "Five episodes from final test 2 (the earlier fork filter). Left: the policy topples a neighbour. Right: same start with the filter." },
+  { g: "Earlier", f: "videos/monitor_video_3block.mp4", b: "The monitor live", c: "Nine layouts. A monitor decision every 0.8 s, with the real outcome below." },
+];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (x, u) => (Number.isInteger(x) ? String(x) : x < 10 ? x.toFixed(2) : x.toFixed(1)) + u;
+
+$("#stamp").textContent = "Updated " + UPDATED;
+
+$("#run").innerHTML = RUNNING.map(j => `<div class="job"><span class="t">${esc(j.t)}</span><span class="n">${j.n[0]} / ${j.n[1]}</span>
+  <div class="bar"><i style="width:${(100 * j.n[0] / j.n[1]).toFixed(1)}%"></i></div><span class="d">${esc(j.d)}</span></div>`).join("");
+
+$("#feed").innerHTML = UPDATES.map(u => `<article class="card">
+  <div class="meta"><span class="chip" style="--k:var(${V[u.v][1]})">${V[u.v][0]}</span><span class="when">${esc(u.when)}</span></div>
+  <h3>${esc(u.title)}</h3><p>${esc(u.say)}</p>
+  <div class="cmp"><span class="cap">${esc(u.cap)}</span>${u.rows.map(([l, x, k]) => `<div class="row"><span class="lab">${esc(l)}</span>
+    <span class="trk"><i style="width:${Math.min(100, 100 * x / u.max).toFixed(1)}%;background:var(${k})"></i></span><span class="v">${fmt(x, u.unit)}</span></div>`).join("")}</div>
+</article>`).join("");
+
+$("#older").innerHTML = OLDER.map(([v, t]) => `<li><span style="--k:var(${V[v][1]})">${V[v][0]}</span>${esc(t)}</li>`).join("");
+
+// bottom line: head-to-head 4, 600 fresh episodes: neighbour topples and successes (v4) per controller
+(function () {
+  const R = [["policy alone", 95, 457, "--policy"], ["labelled latent filter", 57, 424, "--wait"], ["label-free, gated", 36, 476, "--accent"],
+             ["label-free, always on", 9, 390, "--accent"], ["always on, 96 s*", 13, 490, "--accent"]];
+  const W = 480, L = 150, c1 = [L, L + 120], c2 = [L + 150, W - 34], rh = 34, top = 30, H = top + R.length * rh + 6;
+  const x1 = v => c1[0] + (c1[1] - c1[0]) * v / 100, x2 = v => c2[0] + (c2[1] - c2[0]) * v / 600;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Topples and successes per 600 fresh episodes for each controller">`;
+  s += `<text x="${c1[0]}" y="14" class="ink">topples</text><text x="${c2[0]}" y="14" class="ink">successes</text>`;
+  s += `<text x="${c1[1]}" y="14" text-anchor="end">of 600</text><text x="${c2[1]}" y="14" text-anchor="end">of 600</text>`;
+  R.forEach(([n, t, v, k], i) => {
+    const y = top + i * rh, dash = n.endsWith("*") ? ";stroke:var(" + k + ");stroke-dasharray:3 2;fill-opacity:.35" : "";
+    s += `<text x="${L - 10}" y="${y + 14}" text-anchor="end"${i === 2 ? ' class="ink"' : ""}>${n}</text>`;
+    s += `<rect x="${c1[0]}" y="${y + 3}" width="${(x1(t) - c1[0]).toFixed(1)}" height="14" rx="2" style="fill:var(${k})${dash}"/><text x="${x1(t) + 5}" y="${y + 14}" class="ink">${t}</text>`;
+    s += `<rect x="${c2[0]}" y="${y + 3}" width="${(x2(v) - c2[0]).toFixed(1)}" height="14" rx="2" style="fill:var(${k})${dash}"/><text x="${x2(v) + 5}" y="${y + 14}" class="ink">${v}</text>`;
+  });
+  $("#heroChart").innerHTML = s + "</svg>";
+})();
+
+// fan diagrams: imagined futures from one start point
+function fan(id, fork) {
+  let r = fork ? 11 : 7, s = "";
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 40; i++) {
+    const g = fork ? (i % 2 ? -1 : 1) : 0, e = (rnd() - 0.5) * (fork ? 18 : 22), y = 75 - g * 42 + e;
+    const k = fork && g > 0 ? "--bad" : "--accent";
+    s += `<path d="M30 75 C 110 75, ${150 + rnd() * 30} ${75 + (y - 75) * 0.3}, 250 ${y.toFixed(1)}" style="fill:none;stroke:var(${k});stroke-width:1;opacity:.45"/>`;
+    s += `<circle cx="250" cy="${y.toFixed(1)}" r="2.2" style="fill:var(${k})"/>`;
+  }
+  s += `<circle cx="30" cy="75" r="5" style="fill:var(--ink)"/><text x="30" y="98" text-anchor="middle">now</text>`;
+  s += fork ? `<text x="296" y="37" text-anchor="end" class="ink" style="fill:var(--bad)">topple</text><text x="296" y="121" text-anchor="end" class="ink">fine</text>`
+            : `<text x="296" y="79" text-anchor="end" class="ink">fine</text>`;
+  document.getElementById(id).innerHTML = s;
+}
+// method diagrams (label-free gated edit)
+fan("fanM", true);
+(function () {
+  // gate: three 6x6 latent grids (plan-then-undo, hold, |difference| outside the hand)
+  const hand = (r, c) => r <= 1 && (c === 2 || c === 3), hit = (r, c) => (r === 4 && c >= 3 && c <= 4) || (r === 5 && c === 4);
+  let x = 1, s = "";
+  const rnd = () => (x = (x * 16807) % 2147483647) / 2147483647;
+  const grid = (ox, kind, lab) => {
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) {
+      const n = rnd();
+      let k = "--soft", o = 1;
+      if (kind === "diff") { if (hand(r, c)) { k = "--line"; } else if (hit(r, c)) { k = "--bad"; } else { k = "--accent"; o = 0.08 + n * 0.12; } }
+      else { k = "--accent"; o = 0.18 + n * 0.25; if (kind === "undo" && hit(r, c)) { k = "--bad"; o = 0.85; } if (hand(r, c)) { o += 0.25; } }
+      s += `<rect x="${ox + c * 13}" y="${14 + r * 13}" width="12" height="12" rx="2" style="fill:var(${k});opacity:${o.toFixed(2)}"/>`;
+    }
+    if (kind === "diff") s += `<rect x="${ox + 2 * 13 - 1.5}" y="12.5" width="27" height="27" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:3 2"/>`;
+    s += `<text x="${ox + 38.5}" y="108" text-anchor="middle" class="ink">${lab[0]}</text><text x="${ox + 38.5}" y="123" text-anchor="middle">${lab[1]}</text>`;
+  };
+  grid(6, "undo", ["move, then undo", "imagined"]); grid(112, "hold", ["just hold", "imagined"]); grid(218, "diff", ["difference", "hand masked"]);
+  s += `<text x="97" y="58" text-anchor="middle" class="ink">vs</text><text x="203" y="58" text-anchor="middle" class="ink">=</text>`;
+  s += `<text x="150" y="145" text-anchor="middle" style="fill:var(--bad)" class="ink">a neighbour moved for good: r = 2.1 &gt; 1.34, gate opens</text>`;
+  document.getElementById("gateM").innerHTML = s;
+})();
+(function () {
+  // value: steady (futures stay together) vs fragile (futures scatter) and the margin bar
+  let x = 5, s = "";
+  const rnd = () => (x = (x * 16807) % 2147483647) / 2147483647;
+  const mini = (ox, spread, k) => {
+    for (let i = 0; i < 22; i++) { const y = 55 + (rnd() - 0.5) * spread; s += `<path d="M${ox} 55 C ${ox + 40} 55, ${ox + 60} ${55 + (y - 55) * 0.3}, ${ox + 100} ${y.toFixed(1)}" style="fill:none;stroke:var(${k});stroke-width:1;opacity:.5"/><circle cx="${ox + 100}" cy="${y.toFixed(1)}" r="1.8" style="fill:var(${k})"/>`; }
+    s += `<circle cx="${ox}" cy="55" r="4" style="fill:var(--ink)"/>`;
+  };
+  mini(14, 10, "--accent"); mini(170, 84, "--bad");
+  s += `<text x="64" y="104" text-anchor="middle" class="ink">steady</text><text x="64" y="118" text-anchor="middle">ℓ ≈ +1</text>`;
+  s += `<text x="220" y="104" text-anchor="middle" class="ink" style="fill:var(--bad)">fragile</text><text x="220" y="118" text-anchor="middle">ℓ &lt; 0 (most fragile 10%)</text>`;
+  s += `<defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" style="stop-color:var(--good)"/><stop offset="0.82" style="stop-color:var(--good);stop-opacity:.25"/><stop offset="0.9" style="stop-color:var(--bad);stop-opacity:.7"/><stop offset="1" style="stop-color:var(--bad)"/></linearGradient></defs>`;
+  s += `<rect x="14" y="130" width="272" height="8" rx="4" style="fill:url(#lg)"/><text x="14" y="150">holds still well</text><text x="286" y="150" text-anchor="end">scatters</text>`;
+  document.getElementById("valM").innerHTML = s;
+})();
+(function () {
+  // edit: policy move on the unsafe side; gradient steps cross the barrier inside the 1 cm box
+  const L = x => 160 - 0.52 * (x - 40), ap = [135, 75], n = [0.46, 0.89], d = 36;
+  const as = [ap[0] + n[0] * d, ap[1] + n[1] * d];
+  let s = `<polygon points="0,0 300,0 300,${L(300).toFixed(1)} 0,${L(0).toFixed(1)}" style="fill:var(--bad);opacity:.08"/>`;
+  s += `<line x1="0" y1="${L(0)}" x2="300" y2="${L(300)}" style="stroke:var(--bad);stroke-width:2"/>`;
+  s += `<rect x="${ap[0] - 52}" y="${ap[1] - 52}" width="104" height="104" style="fill:none;stroke:var(--muted);stroke-dasharray:4 3"/>`;
+  s += `<text x="${ap[0] - 48}" y="${ap[1] - 40}">±1 cm</text>`;
+  [0.33, 0.66].forEach(t => s += `<circle cx="${ap[0] + n[0] * d * t}" cy="${ap[1] + n[1] * d * t}" r="2.5" style="fill:var(--muted)"/>`);
+  s += `<path d="M${ap[0]} ${ap[1]} L${as[0]} ${as[1]}" style="stroke:var(--muted);stroke-width:1.2;stroke-dasharray:2 2"/>`;
+  s += `<circle cx="${ap[0]}" cy="${ap[1]}" r="5" style="fill:none;stroke:var(--ink);stroke-width:2"/><text x="${ap[0] - 9}" y="${ap[1] - 6}" text-anchor="end" class="ink">policy a<tspan baseline-shift="sub" style="font-size:9px">π</tspan></text>`;
+  s += `<circle cx="${as[0]}" cy="${as[1]}" r="5" style="fill:var(--accent)"/><text x="${as[0] + 9}" y="${as[1] + 16}" class="ink" style="fill:var(--accent)">a* executed</text>`;
+  s += `<text x="250" y="22" text-anchor="middle" style="fill:var(--bad)">unsafe side</text>`;
+  s += `<text x="262" y="${L(262) + 22}" text-anchor="middle" style="fill:var(--bad)">V′ = ½ V(z)</text>`;
+  document.getElementById("editM").innerHTML = s;
+})();
+
+// video picker
+function pick(i) {
+  const v = VIDS[i]; $("#vid").src = v.f; $("#vcap").textContent = v.c;
+  document.querySelectorAll("#picks button").forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
+}
+$("#picks").innerHTML = [...new Set(VIDS.map(v => v.g))].map(g => `<div class="pgroup"><span class="pg">${esc(g)}</span>${VIDS.map((v, i) => v.g === g ? `<button type="button" data-i="${i}">${esc(v.b)}</button>` : "").join("")}</div>`).join("");
+$("#picks").addEventListener("click", e => { const b = e.target.closest("button"); if (b) pick(+b.dataset.i); });
+pick(0);
+</script>

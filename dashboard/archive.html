@@ -1,0 +1,1226 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fork Monitor Lab Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: four tabs (Today, Monitor, Filter, Videos); one question per card, one chart per step, details behind toggles. */
+:root {
+  --bg: #f4f6f5; --surface: #ffffff; --ink: #17201e; --muted: #5f6c68; --line: #dde3e0; --soft: #eaefed;
+  --accent: #1d6f68; --good: #2f7d4f; --bad: #c2491d; --wait: #a86b00;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #101715; --surface: #18211f; --ink: #e6edea; --muted: #9aa8a3; --line: #2b3734; --soft: #1f2a27;
+  --accent: #5fc0b5; --good: #6cc48f; --bad: #f08a5d; --wait: #e2b04a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #101715; --surface: #18211f; --ink: #e6edea; --muted: #9aa8a3; --line: #2b3734; --soft: #1f2a27;
+  --accent: #5fc0b5; --good: #6cc48f; --bad: #f08a5d; --wait: #e2b04a; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--body); padding-inline: 16px; padding-block: 0 56px }
+.wrap { max-width: 1040px; margin: 0 auto }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 8px 24px; padding-block: 24px 16px }
+h1 { font: 700 30px/1.1 var(--display); margin: 0; letter-spacing: -0.02em }
+.stamp { font: 500 12px/1.4 var(--mono); color: var(--muted) }
+nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 28px; overflow-x: auto; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 2 }
+nav.tabs button { font: 600 15px/1 var(--body); background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted); padding: 14px 14px 12px; cursor: pointer; white-space: nowrap }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent) }
+nav.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+h2 { font: 700 22px/1.2 var(--display); margin: 0 0 6px; letter-spacing: -0.01em; text-wrap: balance }
+.lede { color: var(--muted); margin: 0 0 20px; max-width: 64ch }
+section[role="tabpanel"] { display: flex; flex-direction: column; gap: 32px }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; border-top: 4px solid var(--c, var(--line)) }
+.card .q { font: 500 12.5px/1.2 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em }
+.card .a { font: 700 20px/1.25 var(--display); margin: 0; text-wrap: balance }
+.card p { margin: 0; color: var(--muted); font-size: 15px }
+.card button.more { align-self: start; font: 600 14px/1 var(--body); color: var(--accent); background: none; border: 0; padding: 4px 0; cursor: pointer }
+.card button.more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.bar { height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--c, var(--accent)) }
+.barlabel { font: 500 12px/1 var(--mono); color: var(--muted) }
+ul.news { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px }
+ul.news li { display: grid; grid-template-columns: 12px 1fr; gap: 10px; align-items: baseline; max-width: 72ch }
+ul.news li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent) }
+ul.news li.bad::before { background: var(--bad) } ul.news li.good::before { background: var(--good) }
+.chartbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; min-width: 0 }
+.chartbox h3 { margin: 0 0 4px; font: 600 17px/1.3 var(--body) }
+.chartbox .say { margin: 0 0 14px; color: var(--muted); font-size: 15px; max-width: 70ch }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13.5px; color: var(--muted); margin-bottom: 12px }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--k); vertical-align: -1px }
+.hb { display: grid; grid-template-columns: minmax(110px, 34%) minmax(0, 1fr); gap: 10px 14px; align-items: center; font-variant-numeric: tabular-nums }
+.hb .name { font-size: 14.5px; line-height: 1.25; min-width: 0 }
+.hb .name small { display: block; color: var(--muted); font-size: 12.5px }
+.hb .name.key { font-weight: 600 }
+.hb .pair { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) 48px; gap: 8px; align-items: center }
+.track { height: 12px; background: var(--soft); border-radius: 3px; overflow: hidden }
+.track i { display: block; height: 100%; border-radius: 3px; background: var(--k) }
+.v { font: 500 12.5px/1 var(--mono); text-align: right }
+details.num { margin-top: 14px }
+details.num summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px }
+.scroll { overflow-x: auto; margin-top: 10px }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap }
+th { font: 500 11.5px/1.2 var(--mono); text-transform: uppercase; color: var(--muted) }
+.steps { display: flex; flex-wrap: wrap; gap: 8px }
+.steps button { font: 600 14px/1.2 var(--body); padding: 9px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: flex; gap: 8px; align-items: center }
+.steps button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
+.steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--k); flex: none }
+.verdict { display: inline-block; font: 500 12px/1 var(--mono); padding: 5px 8px; border-radius: 4px; color: var(--surface); background: var(--k); margin-bottom: 10px }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; margin-top: 6px }
+.cmp div { background: var(--soft); border-radius: 6px; padding: 12px 14px }
+.cmp b { display: block; font: 700 28px/1.1 var(--display) }
+.cmp span { color: var(--muted); font-size: 14px }
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.player video { display: block; width: 100%; max-width: 100%; background: #000; aspect-ratio: var(--ar, 8/3) }
+.player .cap { padding: 12px 16px 14px }
+.player .cap h3 { margin: 0 0 4px; font: 600 17px/1.3 var(--body) }
+.player .cap p { margin: 0; color: var(--muted); font-size: 15px }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 10px }
+.chips button { font: 600 13.5px/1 var(--body); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer }
+.chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface) }
+.chips button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+ul.vlist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden }
+ul.vlist li button { width: 100%; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 11px 14px; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--ink); cursor: pointer; font: 600 15px/1.35 var(--body) }
+ul.vlist li:last-child button { border-bottom: 0 }
+ul.vlist li button[aria-current="true"] { background: var(--soft) }
+ul.vlist li button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+ul.vlist small { grid-column: 1; color: var(--muted); font-size: 13.5px; font-weight: 400 }
+.tag { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 500 11.5px/1 var(--mono); padding: 5px 7px; border-radius: 4px; border: 1px solid var(--k); color: var(--k); white-space: nowrap }
+.note { font-size: 14px; color: var(--muted); margin: 10px 0 0 }
+abbr[title] { text-decoration: underline dotted; cursor: help }
+.eplist { display: flex; flex-wrap: wrap; gap: 6px }
+.eplist button { font: 500 13px/1 var(--mono); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: flex; gap: 6px; align-items: center }
+.eplist button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent) }
+.eplist button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.pair2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px }
+.side { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; min-width: 0 }
+.side video { display: block; width: 100%; max-width: 100%; aspect-ratio: 56/26; background: #000 }
+.side .hd { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px 4px; align-items: baseline }
+.side .hd b { font: 600 15px/1.2 var(--body) }
+.side .hd span { font: 500 12px/1 var(--mono); color: var(--muted) }
+.strip { display: flex; gap: 2px; padding: 8px 12px 12px; overflow-x: auto }
+.strip button { flex: 0 0 auto; width: 14px; height: 34px; border: 0; padding: 0; border-radius: 2px; cursor: pointer; position: relative; background: var(--soft); display: flex; flex-direction: column; justify-content: space-between }
+.strip button i { display: block; height: 10px; border-radius: 2px 2px 0 0 }
+.strip button em { display: block; height: 20px; border-radius: 0 0 2px 2px }
+.strip button[aria-current="true"] { outline: 2px solid var(--ink); outline-offset: 1px }
+.strip button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+.strip button.top::after { content: ""; position: absolute; left: 3px; bottom: -9px; border: 4px solid transparent; border-bottom-color: var(--bad); transform: rotate(180deg) }
+.stripkey { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted) }
+.stripkey span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; background: var(--k); vertical-align: -1px }
+.cardgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; margin-top: 8px }
+.cardgrid > div { background: var(--soft); border-radius: 6px; padding: 12px; min-width: 0 }
+.cardgrid h4 { margin: 0 0 6px; font: 600 14px/1.3 var(--body) }
+.cardgrid canvas { width: 100%; max-width: 100%; aspect-ratio: 1; display: block; background: var(--surface); border-radius: 4px }
+.futures { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; margin-top: 6px }
+.futures i { aspect-ratio: 1; border-radius: 2px; background: var(--good) }
+.futures i.t { background: var(--bad) }
+.big { font: 700 26px/1.1 var(--display) }
+
+/* Method tab */
+.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; list-style: none; padding: 0; margin: 4px 0 0; counter-reset: t }
+.toc li { counter-increment: t }
+.toc { counter-reset: t -1 }
+.toc a { display: inline-block; font: 600 13.5px/1 var(--body); color: var(--ink); text-decoration: none; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface) }
+.toc a::before { content: counter(t); font: 500 11px/1 var(--mono); color: var(--accent); margin-right: 6px }
+.toc a:hover { border-color: var(--accent) }
+.msec { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; min-width: 0; scroll-margin-top: 64px }
+.msec > h3 { margin: 0 0 14px; font: 700 19px/1.25 var(--display); display: flex; align-items: center; gap: 10px; text-wrap: balance }
+.msec .num { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--surface); font: 500 13px/26px var(--mono); text-align: center }
+.msec .say { margin: 0 0 12px; color: var(--muted); font-size: 15px; max-width: 66ch }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 18px 26px; align-items: start }
+.two > * { min-width: 0 }
+.eq { background: var(--soft); border-radius: 6px; padding: 4px 12px; margin: 0 0 12px; overflow-x: auto; color: var(--ink) }
+.eq mjx-container { margin: 8px 0 !important }
+.flow { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: stretch }
+.stage { position: relative; flex: 1 1 130px; min-width: 0; background: var(--soft); border-radius: 6px; padding: 10px 12px; border-left: 4px solid var(--muted); display: flex; flex-direction: column; gap: 4px }
+.stage b { font: 600 14.5px/1.25 var(--body) }
+.stage span { font-size: 13px; color: var(--muted); line-height: 1.35 }
+.stage.hot { border-left-color: var(--accent) }
+.stage.ok { border-left-color: var(--good) }
+.stage:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); color: var(--muted); font: 600 16px/1 var(--body) }
+table.sym td { white-space: normal; vertical-align: top; font-size: 14px }
+table.sym td:first-child { white-space: nowrap; color: var(--accent); font-weight: 600 }
+.fig { margin: 0; min-width: 0 }
+.fig h4 { margin: 0 0 8px; font: 600 14.5px/1.3 var(--body) }
+.fig figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.45 }
+.figpair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.figpair canvas { width: 100%; max-width: 100%; aspect-ratio: 1; display: block; background: var(--soft); border-radius: 6px }
+.cap2 { font: 500 12px/1.35 var(--mono); color: var(--muted); margin: 6px 0 0 }
+.figgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; margin-bottom: 16px }
+.figgrid .fig { background: var(--soft); border-radius: 8px; padding: 14px }
+svg.chart { display: block; width: 100%; height: auto; max-width: 100%; overflow: visible }
+#mmask svg.chart { max-width: 300px; margin: 0 auto }
+svg.chart text { fill: var(--muted); font: 500 11px var(--mono) }
+svg.chart .ink { fill: var(--ink) }
+.msec button.more { font: 600 14px/1 var(--body); color: var(--accent); background: none; border: 0; padding: 4px 0; cursor: pointer }
+.eq { font-size: 14.5px }
+.stage { flex: 1 1 150px }
+.stage span { overflow-wrap: anywhere }
+ol.algo { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px }
+ol.algo li::marker { color: var(--accent); font-weight: 700 }
+ul.tight { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; max-width: 70ch }
+ul.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 8px 26px; max-width: none }
+.pgrid { display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); gap: 2px }
+.pgrid i { aspect-ratio: 1; border-radius: 2px; background: var(--k) }
+@media (max-width: 520px) { .stage { flex: 0 0 auto } .stage:not(:last-child)::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -19px; transform: translateX(-50%) } .flow { flex-direction: column; gap: 24px } }
+.figwide { overflow-x: auto; margin: 0 -4px; padding: 0 4px }
+svg.pipe { display: block; width: 100%; min-width: 860px; height: auto }
+svg.pipe text { font: 400 12.5px var(--body); fill: var(--ink) }
+svg.pipe .ph { font: 700 13px var(--display); fill: var(--accent); letter-spacing: .01em }
+svg.pipe .bt { font: 600 13.5px var(--body) }
+svg.pipe .lb { font: 500 13.5px var(--body) }
+svg.pipe .sm { font: 400 11.5px var(--body); fill: var(--muted) }
+svg.pipe .sm.ink { fill: var(--ink) }
+svg.pipe .m { font-family: "Times New Roman", "STIX Two Math", serif; font-style: italic; font-size: 1.12em }
+svg.pipe .sub, svg.pipe .sup { font-size: .72em }
+svg.pipe .note2 { font: 500 11.5px var(--mono); fill: var(--accent) }
+svg.pipe .panel rect { fill: var(--soft); stroke: var(--line); stroke-width: 1 }
+svg.pipe .box { fill: var(--surface); stroke: var(--muted); stroke-width: 1.2 }
+svg.pipe .box.hot { stroke: var(--accent); stroke-width: 1.6 }
+svg.pipe .box.ok { stroke: var(--good); stroke-width: 1.6 }
+svg.pipe .box.alt { stroke-dasharray: 4 3 }
+svg.pipe .scene { fill: var(--surface); stroke: var(--line) }
+svg.pipe .ground { stroke: var(--muted); stroke-width: 1.5 }
+svg.pipe .blk { fill: var(--muted); opacity: .55 }
+svg.pipe .blk.tgt { fill: var(--bad); opacity: .85 }
+svg.pipe .grip { fill: var(--ink) }
+svg.pipe .enc { fill: var(--surface); stroke: var(--accent); stroke-width: 1.6 }
+svg.pipe .grid rect { fill: var(--surface); stroke: var(--accent); stroke-width: 1.2 }
+svg.pipe .grid.soft rect { stroke: var(--wait) }
+svg.pipe .gl { stroke: var(--line); stroke-width: 1; fill: none }
+svg.pipe .ar { stroke: var(--muted); stroke-width: 1.5; fill: none }
+svg.pipe .ar.dash { stroke-dasharray: 5 4 }
+svg.pipe .ar.g { stroke: var(--good) } svg.pipe .ar.b { stroke: var(--bad) }
+svg.pipe .ar.loop { stroke-dasharray: 2 4; stroke-width: 1.4 }
+svg.pipe .yes { fill: var(--good) } svg.pipe .no { fill: var(--bad) }
+svg.pipe .cloud { fill: var(--surface); stroke: var(--line) }
+svg.pipe .pts.a circle { fill: var(--accent) } svg.pipe .pts.b circle { fill: var(--bad) }
+svg.pipe .brace { stroke: var(--accent); stroke-width: 1.2; fill: none; stroke-dasharray: 3 3 }
+svg.pipe .dia { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4 }
+svg.pipe .mask rect { fill: var(--surface); stroke: var(--line) } svg.pipe .mask rect.mk { fill: var(--wait); opacity: .6; stroke: none }
+svg.pipe .pill { fill: var(--surface); stroke: var(--line) }
+.pfig figcaption { max-width: 100ch }
+.plain { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 14px 26px; background: var(--soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: 14px 16px; margin-bottom: 18px }
+.plain > div { min-width: 0 }
+.plain h4 { margin: 0 0 6px; font: 600 15px/1.3 var(--body); color: var(--accent) }
+.plain p { margin: 0 0 10px; font-size: 15px; max-width: 64ch }
+.plain table { margin-bottom: 10px; background: var(--surface); border-radius: 6px }
+.pill2 { display: inline-block; font: 600 12.5px/1 var(--body); padding: 4px 8px; border-radius: 999px; color: var(--surface); background: var(--k) }
+.big1 { font-size: 17px !important; color: var(--ink) !important; max-width: 70ch }
+.story { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; margin: 14px 0 18px }
+.sstep { background: var(--soft); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+.sstep b { font: 700 15px/1.2 var(--display) }
+.sstep span { font-size: 14px; color: var(--muted); line-height: 1.45 }
+.ico { width: 44px; height: 44px }
+.ico .ln { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round }
+.ico .lnok { fill: none; stroke: var(--good); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round }
+.ico .fl { fill: var(--accent) } .ico .hl { fill: var(--surface) }
+.ico .dots circle { fill: var(--accent); opacity: .8 }
+.ico .ok { fill: var(--accent) } .ico .bad { fill: var(--bad) }
+h4.mini { margin: 0 0 6px; font: 600 15px/1.3 var(--body); color: var(--accent) }
+</style>
+<script>window.MathJax = {tex: {inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']]}, svg: {fontCache: 'global'}};</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+
+<div class="wrap">
+  <header>
+    <h1>Fork Monitor Lab</h1>
+    <div class="stamp" id="stamp"></div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="t-today" aria-controls="p-today">Today</button>
+    <button role="tab" id="t-method" aria-controls="p-method">Method</button>
+    <button role="tab" id="t-monitor" aria-controls="p-monitor">Monitor</button>
+    <button role="tab" id="t-filter" aria-controls="p-filter">Filter</button>
+    <button role="tab" id="t-inspect" aria-controls="p-inspect">Inspector</button>
+    <button role="tab" id="t-videos" aria-controls="p-videos">Videos</button>
+  </nav>
+
+  <section role="tabpanel" id="p-today" aria-labelledby="t-today">
+    <div>
+      <h2>Where things stand</h2>
+      <p class="lede">Three open questions and their current answers.</p>
+      <div class="cards" id="cards"></div>
+    </div>
+    <div>
+      <h2>Since you last looked</h2>
+      <ul class="news" id="news"></ul>
+    </div>
+    <div>
+      <h2>Second benchmark: what a real fork looks like on SafeManip</h2>
+      <p class="lede">Each row of images is one moment in a pi0.5 episode, replayed 33 times: the exact replay plus 32 replays with small arm noise, shown at the end of the next chunk. In a <b>fork</b>, some futures end badly and some do not. Top row: our fixed monitor camera; bottom row: pi0.5's own wrist camera. Blue = robot pixels, which the fork test ignores. Futures are shown from least to most different from the exact replay (by pixels away from the robot); per-future good/bad labels were not saved for these runs (saved from now on). Fork test on these real futures: masked wrist view AUROC 0.83 / 0.74 (two independent sets), masked monitor camera 0.65 / 0.74.</p>
+      <figure style="margin:0 0 14px"><img src="img/fork_2.jpg" alt="Sort bottles: from the same moment, the green bottle stays upright in some futures and is knocked flat in others" style="width:100%;border-radius:6px"><figcaption class="cap"><p>Sort bottles by type: in 19 of 32 futures a bottle is knocked over. Compare the green bottle: upright next to the gripper in the left columns, knocked flat in the right ones.</p></figcaption></figure>
+      <figure style="margin:0 0 14px"><img src="img/fork_0.jpg" alt="Stack bowls: the held bowl ends at different tilts across futures from the same moment" style="width:100%;border-radius:6px"><figcaption class="cap"><p>Stack bowls in the cabinet: in 24 of 32 futures the bowl is released in an unstable pose. The wrist view shows the bowl seated at different tilts.</p></figcaption></figure>
+      <figure style="margin:0 0 14px"><img src="img/fork_1.jpg" alt="Stack bowls, a later moment: 23 of 32 futures end with an unstable release" style="width:100%;border-radius:6px"><figcaption class="cap"><p>Same task, a later moment: 23 of 32 futures end with an unstable release.</p></figcaption></figure>
+    </div>
+    <div>
+      <h2>Featured clip</h2>
+      <div class="player"><video controls preload="metadata" playsinline src="videos/s4b/s4b_long_comparison.mp4" style="--ar:1064/556"></video>
+        <div class="cap"><h3>Policy alone vs G-CEM filter, 10 episodes</h3><p>Same start and seeds on both sides. The filter acts only when its imagined futures fork, then slows, pauses, shrinks or backs off the policy's own chunk. Includes two episodes where the filter does not help, for honesty.</p></div></div>
+    </div>
+  </section>
+
+  <section role="tabpanel" id="p-method" aria-labelledby="t-method" hidden>
+    <div>
+      <h2>How the monitor and filter work</h2>
+      <p class="lede">The robot imagines many possible futures for its next move, using only its camera latent. If those futures split into different outcomes (a <b>fork</b>), the move is fragile, so the filter changes <b>that same move</b> (slower, a pause, smaller, or backed off) until its futures stop splitting. This is <b>G-CEM</b>, the current filter: no extra policy samples, no hand-made moves. It matched the earlier selection filter in two pre-registered closed-loop tests (Stage 4 + 4b, 600 episodes: 37 vs 39 topples, 492 vs 493 successes) and beat the policy alone (137 → 37 topples). The trigger (sections 1–7) is the same one used by the <b>final filter</b> (\(h_{\text{safe}}=\log_2 3\), 114 → 30 topples in final test 2); figures in section 9 come from that selection filter, and those marked <i>first final test</i> from the earlier \(h_{\text{safe}}=1\) version.</p>
+      <ol class="toc" id="mtoc">
+        <li><a href="#m-intuit">In plain words</a></li><li><a href="#m-pipe">Pipeline</a></li><li><a href="#m-latent">Latent world model</a></li><li><a href="#m-fut">Imagined futures</a></li>
+        <li><a href="#m-fork">Fork test</a></li><li><a href="#m-barrier">Barrier h</a></li><li><a href="#m-regime">Regime check o</a></li>
+        <li><a href="#m-cbf">Safety condition</a></li><li><a href="#m-filter">Filter</a></li><li><a href="#m-effect">What changes</a></li>
+        <li><a href="#m-eval">Evaluation</a></li><li><a href="#m-limits">Limits</a></li>
+      </ol>
+    </div>
+
+    <div class="msec" id="m-intuit">
+      <h3><span class="num">0</span>The filter in plain words</h3>
+      <p class="say big1">Before every move, the robot asks itself: <b>"If my eyes and my arm were a bit worse than usual, would this move still turn out the same way?"</b> If yes, it goes ahead. If the answer is "it could go two very different ways", it picks a nearby move that doesn't have that problem.</p>
+      <p class="say">Think of carrying a full cup of coffee past a shelf of glasses. You don't calculate physics; you <i>imagine</i> the next second a few times. If in some versions your elbow clips a glass, you move a little wider or slow down, <i>before</i> anything happens. That is all this filter does, using a learned "imagination" (the world model) instead of a human one.</p>
+      <div class="story" aria-label="Four steps, every 0.8 s">
+        <div class="sstep">
+          <svg viewBox="0 0 64 64" class="ico" aria-hidden="true"><ellipse cx="32" cy="32" rx="26" ry="15" class="ln"/><circle cx="32" cy="32" r="9" class="fl"/><circle cx="35" cy="29" r="3" class="hl"/></svg>
+          <b>1 · Look</b><span>The camera image is squeezed into a compact "memory of the scene" (the latent). No object list, no goal.</span>
+        </div>
+        <div class="sstep">
+          <svg viewBox="0 0 64 64" class="ico" aria-hidden="true"><g class="dots"><circle cx="20" cy="26" r="3"/><circle cx="27" cy="20" r="3"/><circle cx="25" cy="32" r="3"/><circle cx="33" cy="26" r="3"/><circle cx="30" cy="38" r="3"/><circle cx="38" cy="34" r="3"/><circle cx="41" cy="24" r="3"/><circle cx="45" cy="40" r="3"/><circle cx="18" cy="40" r="3"/></g></svg>
+          <b>2 · Imagine</b><span>The world model plays out the policy's next move 64 times, each with slightly different seeing and shaking errors, at normal errors and at 2× worse.</span>
+        </div>
+        <div class="sstep">
+          <svg viewBox="0 0 64 64" class="ico" aria-hidden="true"><path d="M10 32 H28 M28 32 L48 18 M28 32 L48 46" class="ln"/><circle cx="50" cy="17" r="5" class="ok"/><circle cx="50" cy="47" r="5" class="bad"/></svg>
+          <b>3 · Check</b><span>Do the imagined futures <b>split</b> into two outcomes (a "fork")? Does anything move that the hand isn't touching?</span>
+        </div>
+        <div class="sstep">
+          <svg viewBox="0 0 64 64" class="ico" aria-hidden="true"><path d="M14 34 L27 46 L50 18" class="lnok"/></svg>
+          <b>4 · Decide</b><span>No fork: run the policy's move unchanged (about 93% of the time). Fork: search over four simple changes of that same move (speed, pause, shrink, back off along its own reverse) for the smallest change whose futures don't fork; if none passes, hold still.</span>
+        </div>
+      </div>
+      <div class="two">
+        <div>
+          <h4 class="mini">What "safe enough" means (the final filter)</h4>
+          <p class="say">A move must keep a single outcome <b>even if the robot's errors were twice as large</b>. The first version only asked for normal errors, so it often noticed danger at the very moment the block started tipping, too late. Asking for 2× headroom makes it react <b>one step earlier</b>, while there is still a safe alternative.</p>
+          <h4 class="mini">What it never uses</h4>
+          <p class="say">Object positions, the task goal, or examples of failures. Its thresholds come from the robot's own normal behaviour.</p>
+        </div>
+        <div>
+          <div class="cmp">
+            <div><b>74%</b><span>fewer neighbour topples (114 → 30) in the pre-registered test</span></div>
+            <div><b>+46</b><span>more successful picks (374 → 420)</span></div>
+            <div><b>7%</b><span>of decisions changed; median change 10 mm</span></div>
+          </div>
+          <p class="note"><b>A real moment</b> (section 3, from the first final test): the policy's next move had imagined futures that split, and in 39% of real futures a neighbour toppled. The filter moved the hand by 7 mm; real risk dropped to 2%.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="msec" id="m-pipe">
+      <h3><span class="num">1</span>Pipeline: one decision, every 0.8 s</h3>
+      <figure class="fig pfig">
+        <div class="figwide">
+        <svg class="pipe" viewBox="0 0 1200 470" role="img" aria-label="Pipeline: observation and policy, imagination with the world model under uncertainty, assessment with fork test, barrier and regime check, and the safety filter that executes the plan, closing the loop every 0.8 s">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker>
+            <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--good)"/></marker>
+            <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--bad)"/></marker>
+          </defs>
+
+          <!-- stage panels -->
+          <g class="panel"><rect x="8" y="8" width="252" height="380" rx="10"/><text x="22" y="30" class="ph">(a) Observe &amp; propose</text></g>
+          <g class="panel"><rect x="272" y="8" width="462" height="380" rx="10"/><text x="286" y="30" class="ph">(b) Imagine: 64 futures under uncertainty</text></g>
+          <g class="panel"><rect x="746" y="8" width="190" height="380" rx="10"/><text x="760" y="30" class="ph">(c) Assess</text></g>
+          <g class="panel"><rect x="948" y="8" width="244" height="380" rx="10"/><text x="962" y="30" class="ph">(d) Safety filter</text></g>
+
+          <!-- (a) scene -->
+          <rect x="28" y="52" width="132" height="92" rx="6" class="scene"/>
+          <line x1="34" y1="128" x2="154" y2="128" class="ground"/>
+          <rect x="52" y="86" width="16" height="42" rx="1.5" class="blk"/>
+          <rect x="86" y="86" width="16" height="42" rx="1.5" class="blk tgt"/>
+          <rect x="120" y="86" width="16" height="42" rx="1.5" class="blk"/>
+          <rect x="80" y="62" width="28" height="6" rx="2" class="grip"/><rect x="80" y="66" width="4" height="22" rx="1" class="grip"/><rect x="104" y="66" width="4" height="22" rx="1" class="grip"/><rect x="92" y="52" width="4" height="12" class="grip"/>
+          <text x="94" y="162" text-anchor="middle" class="lb">camera image <tspan class="m">I</tspan><tspan class="m sub" dy="3">k</tspan></text>
+
+          <!-- encoder -->
+          <path d="M176,72 L224,84 L224,112 L176,124 z" class="enc"/>
+          <text x="200" y="103" text-anchor="middle" class="bt m">Φ</text>
+          <text x="200" y="140" text-anchor="middle" class="sm">DINOv2 + PCA</text>
+          <line x1="160" y1="98" x2="174" y2="98" class="ar" marker-end="url(#ah)"/>
+
+          <!-- policy -->
+          <line x1="94" y1="168" x2="94" y2="200" class="ar" marker-end="url(#ah)"/>
+          <rect x="28" y="202" width="214" height="52" rx="7" class="box"/>
+          <text x="40" y="224" class="bt">Diffusion policy <tspan class="m">π</tspan></text>
+          <text x="40" y="243" class="sm">plan <tspan class="m">p<tspan class="sup" dy="-5">π</tspan><tspan dy="5"> = (a</tspan><tspan class="sub" dy="3">1</tspan><tspan dy="-3">, …, a</tspan><tspan class="sub" dy="3">16</tspan><tspan dy="-3">)</tspan></tspan></text>
+          <line x1="135" y1="254" x2="135" y2="282" class="ar dash" marker-end="url(#ah)"/>
+          <rect x="28" y="284" width="214" height="78" rx="7" class="box alt"/>
+          <text x="40" y="304" class="bt">Candidates <tspan class="m">𝒫</tspan><tspan class="m sub" dy="3">k</tspan></text>
+          <text x="40" y="322" class="sm">• <tspan class="m">p<tspan class="sup" dy="-5">π</tspan></tspan><tspan dy="5"> + 15 more samples of </tspan><tspan class="m">π</tspan></text>
+          <text x="40" y="338" class="sm">• slow · vertical · back off</text>
+          <text x="40" y="354" class="sm">(scored only if <tspan class="m">p<tspan class="sup" dy="-5">π</tspan></tspan><tspan dy="5"> is unsafe)</tspan></text>
+
+          <!-- (b) z0 stack -->
+          <line x1="226" y1="98" x2="290" y2="98" class="ar" marker-end="url(#ah)"/>
+          <g class="grid"><rect x="300" y="80" width="40" height="40"/><rect x="296" y="76" width="40" height="40"/><rect x="292" y="72" width="40" height="40"/></g>
+          <path d="M292,82 h40 M292,92 h40 M292,102 h40 M302,72 v40 M312,72 v40 M322,72 v40" class="gl"/>
+          <text x="316" y="140" text-anchor="middle" class="lb m">z<tspan class="sub" dy="3">0</tspan></text>
+          <text x="316" y="156" text-anchor="middle" class="sm">28×28×8</text>
+
+          <!-- perception perturbation G -->
+          <text x="398" y="50" text-anchor="middle" class="sm"><tspan class="m">d</tspan><tspan class="m sub" dy="3">j</tspan><tspan dy="-3"> ~ </tspan><tspan class="m">p</tspan><tspan class="sub" dy="3">perc</tspan></text>
+          <text x="398" y="64" text-anchor="middle" class="sm">perception error × <tspan class="m">s</tspan></text>
+          <line x1="398" y1="68" x2="398" y2="80" class="ar" marker-end="url(#ah)"/>
+          <line x1="344" y1="98" x2="370" y2="98" class="ar" marker-end="url(#ah)"/>
+          <rect x="372" y="82" width="52" height="34" rx="6" class="box hot"/>
+          <text x="398" y="104" text-anchor="middle" class="bt m">G</text>
+          <line x1="424" y1="98" x2="446" y2="98" class="ar" marker-end="url(#ah)"/>
+          <g class="grid soft"><rect x="466" y="84" width="30" height="30"/><rect x="462" y="80" width="30" height="30"/><rect x="458" y="76" width="30" height="30"/><rect x="454" y="72" width="30" height="30"/><rect x="450" y="68" width="30" height="30"/></g>
+          <text x="476" y="134" text-anchor="middle" class="lb m">ẑ<tspan class="sup" dy="-5">j</tspan><tspan class="sub" dy="8">0</tspan></text>
+          <text x="476" y="150" text-anchor="middle" class="sm">j = 1…64</text>
+
+          <!-- world model unrolled -->
+          <line x1="500" y1="92" x2="526" y2="92" class="ar" marker-end="url(#ah)"/>
+          <rect x="528" y="74" width="58" height="38" rx="7" class="box hot"/>
+          <text x="557" y="98" text-anchor="middle" class="bt m">f<tspan class="sub" dy="3">θ</tspan></text>
+          <path d="M586,82 C612,62 612,122 586,104" class="ar" marker-end="url(#ah)"/>
+          <text x="550" y="164" text-anchor="end" class="sm">19 steps × 0.2 s</text>
+          <text x="550" y="178" text-anchor="end" class="sm">residual CNN + FiLM</text>
+
+          <!-- action input -->
+          <path d="M242,228 H557 V114" class="ar" marker-end="url(#ah)"/>
+          <text x="300" y="220" class="sm">actions <tspan class="m">ã</tspan><tspan class="m sup" dy="-5">j</tspan><tspan class="m sub" dy="8">t</tspan><tspan dy="-3"> = a</tspan><tspan class="m sub" dy="3">t</tspan><tspan dy="-3"> − s·ε</tspan><tspan class="m sub" dy="3">j,t</tspan><tspan dy="-3">   (plan a</tspan><tspan class="sub" dy="3">1:15</tspan><tspan dy="-3">, then hold)</tspan></text>
+          <text x="300" y="248" class="sm">ε: measured robot tracking error × <tspan class="m">s</tspan></text>
+          <path d="M242,323 H520 V240" class="ar dash" marker-end="url(#ah)"/>
+          <text x="300" y="316" class="sm">each candidate scored the same way (32 futures)</text>
+
+          <!-- endpoints cloud -->
+          <line x1="612" y1="92" x2="636" y2="92" class="ar" marker-end="url(#ah)"/>
+          <rect x="638" y="52" width="86" height="88" rx="8" class="cloud"/>
+          <g class="pts a"><circle cx="660" cy="80" r="3"/><circle cx="667" cy="86" r="3"/><circle cx="656" cy="90" r="3"/><circle cx="664" cy="95" r="3"/><circle cx="672" cy="78" r="3"/><circle cx="670" cy="92" r="3"/><circle cx="659" cy="100" r="3"/><circle cx="675" cy="88" r="3"/><circle cx="666" cy="104" r="3"/></g>
+          <g class="pts b"><circle cx="702" cy="112" r="3"/><circle cx="708" cy="118" r="3"/><circle cx="698" cy="122" r="3"/><circle cx="711" cy="108" r="3"/><circle cx="704" cy="126" r="3"/></g>
+          <text x="681" y="158" text-anchor="middle" class="lb m">e<tspan class="sup" dy="-5">j</tspan><tspan dy="5" class="sm"> at 1 s, 3 s</tspan></text>
+          <text x="681" y="174" text-anchor="middle" class="sm">2 groups = fork</text>
+          <text x="503" y="200" text-anchor="middle" class="note2">repeat at uncertainty scales  <tspan class="m">s</tspan> ∈ {½, 1, 2, 3}</text>
+          <path d="M290,190 H716" class="brace"/>
+
+          <!-- (c) assess -->
+          <path d="M724,90 H766" class="ar" marker-end="url(#ah)"/>
+          <rect x="768" y="52" width="154" height="58" rx="7" class="box"/>
+          <text x="780" y="73" class="bt">Fork test</text>
+          <text x="780" y="90" class="sm">BIC<tspan class="sub" dy="3">2</tspan><tspan dy="-3"> &lt; BIC</tspan><tspan class="sub" dy="3">1</tspan><tspan dy="-3">, D &gt; 2,</tspan></text>
+          <text x="780" y="104" class="sm">at 1 s and 3 s</text>
+          <line x1="845" y1="110" x2="845" y2="128" class="ar" marker-end="url(#ah)"/>
+          <rect x="768" y="130" width="154" height="58" rx="7" class="box hot"/>
+          <text x="780" y="151" class="bt">Barrier <tspan class="m">h(p)</tspan></text>
+          <text x="780" y="168" class="sm">log<tspan class="sub" dy="3">2</tspan><tspan dy="-3"> of the smallest </tspan><tspan class="m">s</tspan></text>
+          <text x="780" y="182" class="sm">at which it forks</text>
+          <path d="M700,140 V262 H766" class="ar" marker-end="url(#ah)"/>
+          <rect x="768" y="232" width="154" height="70" rx="7" class="box hot"/>
+          <text x="780" y="253" class="bt">Regime <tspan class="m">o(p)</tspan></text>
+          <text x="780" y="270" class="sm">change outside the</text>
+          <text x="780" y="284" class="sm">hand mask <tspan class="m">M</tspan><tspan class="m sub" dy="3">p</tspan></text>
+          <g class="mask"><rect x="894" y="270" width="22" height="22"/><rect x="902" y="270" width="6" height="22" class="mk"/><rect x="899" y="283" width="12" height="7" class="mk"/></g>
+          <text x="780" y="322" class="sm">also <tspan class="m">h</tspan><tspan class="sub" dy="3">now</tspan><tspan dy="-3"> = </tspan><tspan class="m">h</tspan><tspan dy="0">(hold still)</tspan></text>
+
+          <!-- (d) filter: decision diamond -->
+          <path d="M922,159 H968" class="ar" marker-end="url(#ah)"/>
+          <path d="M922,267 H946 V170 H968" class="ar"/>
+          <path d="M1030,118 L1092,159 L1030,200 L968,159 z" class="dia"/>
+          <text x="1030" y="155" text-anchor="middle" class="bt">Safe(<tspan class="m">p<tspan class="sup" dy="-5">π</tspan></tspan><tspan dy="5">)?</tspan></text>
+          <text x="1030" y="171" text-anchor="middle" class="sm">93% yes</text>
+          <text x="962" y="330" class="sm ink">Safe(<tspan class="m">p</tspan>):</text>
+          <text x="972" y="346" class="sm"><tspan class="m">h(p)</tspan><tspan> ≥ min(</tspan><tspan class="m">h</tspan><tspan class="sub" dy="3">now</tspan><tspan dy="-3">, </tspan><tspan class="m">h</tspan><tspan class="sub" dy="3">safe</tspan><tspan dy="-3">)  and</tspan></text>
+          <text x="972" y="362" class="sm"><tspan class="m">o(p)</tspan> ≤ O<tspan class="sub" dy="3">max</tspan></text>
+          <path d="M1092,159 H1112 V118" class="ar g" marker-end="url(#ahg)"/>
+          <text x="1098" y="152" class="sm yes">yes</text>
+          <rect x="1062" y="60" width="122" height="56" rx="7" class="box ok"/>
+          <text x="1074" y="82" class="bt">Execute</text>
+          <text x="1074" y="100" class="sm"><tspan class="m">p</tspan><tspan class="m sup" dy="-5">π</tspan><tspan class="sub" dy="8">1:8</tspan><tspan dy="-3"> unchanged</tspan></text>
+          <path d="M1030,200 V226" class="ar b" marker-end="url(#ahb)"/>
+          <text x="1038" y="218" class="sm no">no</text>
+          <rect x="962" y="228" width="222" height="74" rx="7" class="box"/>
+          <text x="974" y="250" class="bt"><tspan class="m">p</tspan><tspan class="sup" dy="-5">⋆</tspan><tspan dy="5"> = argmin ‖p</tspan><tspan class="sub" dy="3">1:8</tspan><tspan dy="-3"> − </tspan><tspan class="m">p</tspan><tspan class="sup m" dy="-5">π</tspan><tspan class="sub" dy="8">1:8</tspan><tspan dy="-3">‖</tspan></text>
+          <text x="974" y="270" class="sm">s.t. Safe(<tspan class="m">p</tspan>), <tspan class="m">p</tspan> ∈ <tspan class="m">𝒫</tspan><tspan class="sub m" dy="3">k</tspan></text>
+          <text x="974" y="288" class="sm">none safe → largest <tspan class="m">h</tspan></text>
+          <path d="M1173,228 V116" class="ar" marker-end="url(#ah)"/>
+          <text x="1146" y="180" class="sm" transform="rotate(-90 1160 180)">execute p*</text>
+
+          <!-- closed loop -->
+          <path d="M1123,60 V40 H1196 V420 H16 V98 H26" class="ar loop" marker-end="url(#ah)"/>
+          <rect x="430" y="408" width="370" height="24" rx="12" class="pill"/>
+          <text x="615" y="425" text-anchor="middle" class="sm ink">robot runs 8 commands (0.8 s) → new image <tspan class="m">I</tspan><tspan class="m sub" dy="3">k+1</tspan></text>
+          <text x="600" y="458" text-anchor="middle" class="sm">No object state, task goal or failure labels anywhere in the loop: only the camera latent, the robot's own plan and measured noise.</text>
+        </svg>
+        </div>
+        <figcaption><b>Figure 1.</b> One decision of the monitor + filter. <b>(a)</b> The camera image is encoded into a latent grid; the diffusion policy proposes a plan. <b>(b)</b> The world model imagines 64 futures of that plan, each starting from a perturbed latent (perception error) and driven by perturbed actions (tracking error), at four uncertainty scales. <b>(c)</b> If the futures split into two groups, that is a fork. The barrier \(h\) is the smallest error scale that causes one; the regime check \(o\) looks for change away from the hand. <b>(d)</b> A safe plan runs untouched; otherwise the closest safe candidate runs. The loop repeats every 0.8 s.</figcaption>
+      </figure>
+    </div>
+
+    <div class="msec" id="m-latent">
+      <h3><span class="num">2</span>Latent state and world model</h3>
+      <div class="two">
+        <div>
+          <div class="eq">\[ z=\Phi(I)=\mathrm{PCA}_8\!\big(\mathrm{DINOv2\text{-}S/14}(I)\big)\in\mathbb R^{28\times28\times8} \]</div>
+          <div class="eq">\[ z_{t+1}=z_t+\sigma_r\,F_\theta\big(z_t,\,[a_{2t},a_{2t+1}]\big) \]</div>
+          <p class="say">One model step covers 2 robot commands (0.2 s). \(F_\theta\) is a residual CNN: 6 blocks, width 128, with the 8-number action pair injected by FiLM. It is deterministic; all randomness comes from the uncertainty below.</p>
+        </div>
+        <div>
+          <table class="sym"><tbody>
+            <tr><td>\(a_t\)</td><td>gripper target \((x,y,z)\) + open/close, 10 Hz</td></tr>
+            <tr><td>\(p^\pi\)</td><td>policy's 16-step plan; it executes \(a_{1:8}\)</td></tr>
+            <tr><td>training data</td><td>replayed demos + the <b>policy's own closed-loop states</b> (2,200)</td></tr>
+            <tr><td>effect of the closed-loop data</td><td>warning AUC 0.69 → <b>0.88</b> on held-out policy states</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="msec" id="m-fut">
+      <h3><span class="num">3</span>Imagining futures under uncertainty</h3>
+      <div class="two">
+        <div>
+          <p class="say">For each future \(j=1,\dots,N\) (\(N=64\)) and uncertainty scale \(s\):</p>
+          <div class="eq">\[ \begin{aligned}
+            d_j&\sim p_{\text{perc}} &&\text{perception error }(x,y,\psi)\\
+            \hat z^{\,j}_0&=G(z_0,\;s\,d_j) &&\text{perturbed start latent}\\
+            \tilde a^{\,j}_t&=a_t-s\,\varepsilon_{j,t} &&\text{measured robot tracking error}\\
+            \hat z^{\,j}_{t+1}&=f_\theta(\hat z^{\,j}_t,\tilde a^{\,j}_t) &&\text{roll out } a_{1:15}\text{, then hold}
+          \end{aligned} \]</div>
+          <p class="say">The endpoints \(e^j_{\text{short}},e^j_{\text{long}}\) are read 1 s and 3 s after the motion. \(p_{\text{perc}}\) and \(\varepsilon\) were measured from the camera pipeline and from real-time controller logs, not tuned.</p>
+        </div>
+        <figure class="fig">
+          <div class="figpair">
+            <div><h4>Policy's plan</h4><canvas id="mf0" aria-label="64 imagined futures of the policy's plan"></canvas><p class="cap2" id="mf0c"></p></div>
+            <div><h4>Filter's choice</h4><canvas id="mf1" aria-label="64 imagined futures of the filter's plan"></canvas><p class="cap2" id="mf1c"></p></div>
+          </div>
+          <figcaption id="mfcap"></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="msec" id="m-fork">
+      <h3><span class="num">4</span>Fork test: do the futures split?</h3>
+      <div class="two">
+        <div>
+          <p class="say">Project the endpoints onto their main direction, find the best two-way cut, and ask whether two groups explain the futures better than one:</p>
+          <div class="eq">\[ y_j=u_1^{\top}(e^j-\bar e) \]\[ k^\star=\arg\max_{2\le k\le N-2}\ \tfrac{k(N-k)}{N}\big(\bar y_{\le k}-\bar y_{>k}\big)^2 \]</div>
+          <div class="eq">\[ \mathrm{Fork}\iff\begin{cases}\mathrm{BIC}_2<\mathrm{BIC}_1 & \text{two groups fit better}\\ D=\dfrac{\sqrt2\,|\mu_a-\mu_b|}{\sqrt{\sigma_a^2+\sigma_b^2}}>2 & \text{clearly separated}\\ \min(n_a,n_b)\ge2 & \text{not one outlier}\end{cases} \]</div>
+          <p class="say">\(D\) (Ashman's D) means the two groups are clearly separated, not one wide blob. A fork must appear at <b>both</b> the 1 s and 3 s endpoints.</p>
+        </div>
+        <figure class="fig"><div id="mstrip"></div><figcaption>The same 64 futures as in section 3, projected onto the main axis (top: policy's plan, bottom: filter's choice). The policy's plan forks; the filter's does not.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="msec" id="m-barrier">
+      <h3><span class="num">5</span>Barrier: how much uncertainty before it forks?</h3>
+      <div class="plain">
+        <div>
+          <h4>In plain words</h4>
+          <p>Before each move the robot asks: <i>"if my perception and motor control were a bit worse than usual, would this move still have <b>one</b> predictable outcome, or could it go two very different ways?"</i> Think of carrying a full cup of coffee. Some motions are fine even if your hand shakes a lot; others spill at the slightest shake. You pick the motion that tolerates the most shake.</p>
+          <p><b>\(h\) is how much shake a move tolerates.</b> We multiply the robot's normal errors by \(s=\tfrac12, 1, 2, 3\) and find the smallest \(s\) at which the imagined futures split (a <b>fork</b>). \(h=\log_2 s\), so each step up means "survives twice the error".</p>
+          <p><b>The rule:</b> a move is allowed if it is at least as robust as standing still (or does not fork even at 2× the robot's normal errors), and does not make things move away from the hand. That is the "barrier": \(h\) is the distance to the edge where outcomes become unpredictable, and the filter never steps closer to that edge than standing still would.</p>
+        </div>
+        <div>
+          <table class="sym htab"><thead><tr><th>\(h\)</th><th>forks at</th><th>meaning</th></tr></thead><tbody>
+            <tr><td>\(-1\)</td><td>½× errors</td><td><span class="pill2" style="--k:var(--bad)">very fragile</span></td></tr>
+            <tr><td>\(0\)</td><td>1× (normal)</td><td><span class="pill2" style="--k:var(--bad)">fragile</span></td></tr>
+            <tr><td>\(1\)</td><td>2×</td><td><span class="pill2" style="--k:var(--wait)">marginal: the filter acts</span></td></tr>
+            <tr><td>\(\log_2 3\)</td><td>3× or never</td><td><span class="pill2" style="--k:var(--good)">robust (= \(h_{\text{safe}}\))</span></td></tr>
+          </tbody></table>
+          <table class="sym"><tbody>
+            <tr><td>\(p,\ p^\pi\)</td><td>a candidate move (next 1.6 s); the policy's own move</td></tr>
+            <tr><td>\(s\)</td><td>error multiplier (1 = the robot's normal errors)</td></tr>
+            <tr><td>\(h_{\text{now}}\)</td><td>margin of "hold still": how fragile the scene already is</td></tr>
+            <tr><td>\(h_{\text{safe}}=\log_2 3\)</td><td>"good enough": no fork even at 2× the robot's errors (the first filter used 1 = normal errors only)</td></tr>
+            <tr><td>\(o,\ O_{\max}\)</td><td>change away from the hand; its normal range for this policy</td></tr>
+            <tr><td>\(\gamma=0\)</td><td>optional slack in the rule (unused)</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="eq">\[ h(p)=\log_2\ \min\{\,s\in\mathcal S:\ \mathrm{Fork}(p,s)\,\} \]\[ \mathcal S=\{\tfrac12,\,1,\,2,\,3\}\ \Rightarrow\ h\in\{-1,\,0,\,1,\,\log_2 3\} \]</div>
+          <p class="say">(\(h=\log_2 3\) if it never forks.) The idea: a robust move survives even 2–3× the expected errors; a fragile one forks at the errors the robot already has. \(h_{\text{now}}=h(\text{hold still})\) measures how fragile the scene is right now.</p>
+          <div id="mladder"></div>
+        </div>
+        <figure class="fig"><div id="mhdist"></div><figcaption>Barrier of the policy's own plan over all 27,148 decisions in final test 2. Most plans never fork. The final filter acts when a plan forks at 2× or less (\(h\le 1\)): about 7% of decisions.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="msec" id="m-regime">
+      <h3><span class="num">6</span>Regime check: is the world changing away from the hand?</h3>
+      <div class="two">
+        <div>
+          <div class="eq">\[ o(p)=\max_j\ \frac{1}{|\bar M_p|}\sum_{u\in\bar M_p}\tfrac18\big\|e^j_{\text{long}}(u)-z_0(u)\big\|^2 \]</div>
+          <p class="say">\(M_p\) is the robot's own region: latent patches within 32 px of the projected gripper path, plus the arm corridor above it. \(\bar M_p\) is everything else. Large \(o\) means the plan moves things the robot is not touching (e.g. a neighbour tipping).</p>
+          <div class="eq">\[ O_{\max}=\mathrm{P}_{99}\big(o(p^\pi)\big)\ \text{over 300 dev decisions}=0.484 \]</div>
+          <p class="say">This is calibrated without labels: it is just the policy's normal range.</p>
+        </div>
+        <figure class="fig"><div id="mmask"></div><figcaption>Schematic of the mask on the 28×28 latent grid: the robot's region (path + corridor) is ignored; change anywhere else counts.</figcaption></figure>
+      </div>
+    </div>
+
+    <div class="msec" id="m-cbf">
+      <h3><span class="num">7</span>Safety condition: the rule, written as a control barrier function</h3>
+      <div class="two">
+        <div>
+          <p class="say">Assume the current regime is safe, and treat the fork as the boundary of the safe set. A plan is admissible if it keeps at least the margin that holding still has (capped at \(h_{\text{safe}}\)), and does not change the world away from the hand:</p>
+          <div class="eq">\[ \mathrm{Safe}(p)\iff\begin{cases} h(p)\ \ge\ \min\big(h_{\text{now}},\,h_{\text{safe}}\big)-\gamma\\ o(p)\ \le\ O_{\max}\end{cases} \]</div>
+          <p class="say">\(h_{\text{safe}}=\log_2 3\) (no fork even at 2× the robot's errors), \(\gamma=0\). The first filter used \(h_{\text{safe}}=1\), which let plans that fork at 2× through; raising the margin makes the filter act one decision earlier (final test 2: 114 → 30 topples). This is the discrete-time CBF condition \(h(x_{k+1})\ge(1-\alpha)h(x_k)\) with \(\alpha=0\), relative to doing nothing; the cap stops it from demanding more than "no fork at 2× error".</p>
+        </div>
+        <div id="mtrig" class="fig"></div>
+      </div>
+    </div>
+
+    <div class="msec" id="m-filter">
+      <h3><span class="num">8</span>The filter (G-CEM): the smallest change to the policy's own move</h3>
+      <div class="two">
+        <div>
+          <div class="eq">\[ \theta^\star=\arg\min_{\theta}\ \big\|\,P_{1:5}(G_\theta(p^\pi))-P_{1:5}(p^\pi)\big\|^2+\eta\,\|\Delta^2\cdot\|^2\quad\text{s.t.}\quad \mathrm{Safe}\big(G_\theta(p^\pi)\big) \]</div>
+          <div class="eq">\[ \theta=(v,k,s,b)\in[0,1]\times[0,8]\times[0,1]\times[0,30\,\text{mm}] \]</div>
+          <p class="say"><b>It edits the one chunk the policy proposed, with four universal moves:</b> speed \(v\) (re-time the plan slower), pause \(k\) steps before starting, amplitude \(s\) (shrink the move toward where the hand is now), and back-off \(b\) (a ramped retreat along the reverse of the chunk's own net direction). The gripper stays on the policy's clock (re-timing it too, "G2", was tested and rejected in Stage 4b). The cost is how far the executed hand path moves from the policy's, so \(\theta=(1,0,1,0)\), the policy's move unchanged, costs nothing.</p>
+          <p class="say"><b>Search and certificate:</b> cross-entropy search (16 candidates × 3 rounds, 32 imagined futures each, the same random draws for every candidate), then the 4 best are re-checked with 64 fresh futures by the world model <i>and</i> a 4-member ensemble; all must pass. Cheapest certified move wins; if none certifies, hold still if holding is safe, otherwise the most robust candidate. It keeps a median 64–67% of the chunk's motion (offline).</p>
+        </div>
+        <div class="fig">
+          <ol class="algo">
+            <li>Score \(p^\pi\) and "hold still" with 64 futures at each \(s\in\mathcal S\) → \(h(p^\pi),o(p^\pi),h_{\text{now}}\)</li>
+            <li>\(\mathrm{Safe}(p^\pi)\)? → execute it unchanged. Done.</li>
+            <li>Else CEM over \(\theta\): sample, score (32 futures), keep the elites, repeat 3×</li>
+            <li>Certify the 4 best with fresh futures on every model; run the cheapest that passes, else hold</li>
+            <li>Re-plan from the new image 0.8 s later</li>
+          </ol>
+          <p class="note">Earlier fixes, kept for the record: selecting among 15 policy samples + 3 hand-made moves (the final-test filter, matched by G-CEM), and free millimetre offsets (F, 6–7% offline risk vs G's 0.7%).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="msec" id="m-effect">
+      <h3><span class="num">9</span>What the filter changes <small>· selection filter, final test 2; G-CEM results in section 10</small></h3>
+      <div class="figgrid">
+        <figure class="fig"><h4>600 paired episodes (final test 2)</h4><div id="mgrid"></div><div class="legend" id="mgridkey"></div>
+          <figcaption>Each square is one start layout, run twice with identical seeds: once with the policy alone, once with the filter.</figcaption></figure>
+        <figure class="fig"><h4>Real risk before → after each intervention <small>· first final test</small></h4><div class="chips" id="mscchips" role="group" aria-label="Trigger"></div><div id="mscatter"></div>
+          <figcaption id="msccap">Real topple risk (64 simulated futures) of the policy's plan vs the executed plan. Below the diagonal = safer.</figcaption></figure>
+        <figure class="fig"><h4>Which replacement did it pick? <small>· first final test</small></h4><div id="mrepl"></div>
+          <figcaption>Mean real risk before → after, and how often each replacement really helped or hurt.</figcaption></figure>
+        <figure class="fig"><h4>When does it act? <small>· final test 2</small></h4><div id="mwhen"></div>
+          <figcaption>Interventions per decision over the episode (line) and when neighbour topples start (bars: policy alone vs with filter). Most action is during the grasp and lift.</figcaption></figure>
+        <figure class="fig"><h4>How early before the topple? <small>· first final test</small></h4><div id="mlead"></div>
+          <figcaption>For the 27 prevented topples: the filter's last action relative to the decision at which the unfiltered run starts toppling.</figcaption></figure>
+        <figure class="fig"><h4>Does it slow the task? <small>· final test 2</small></h4><div id="mlift"></div>
+          <figcaption>Time to lift the block 3 cm. Median 21.6 s with the final filter vs 18.8 s without: acting earlier costs about 3 s, but 46 more episodes succeed (374 → 420).</figcaption></figure>
+      </div>
+      <div class="pair2" id="mvids"></div>
+      <p class="note" id="mvidnote"></p>
+    </div>
+
+    <div class="msec" id="m-eval">
+      <h3><span class="num">10</span>How it was evaluated</h3>
+      <div class="two">
+        <div>
+          <ul class="tight">
+            <li><b>Paired:</b> 600 fresh layouts (episodes 10000–10599), each run with the policy alone, the first filter and the final filter, all three in one cluster job (same seeds, same GPU).</li>
+            <li><b>Stress setting:</b> normal blocks, 2× measured robot tracking error (about 20% topples alone).</li>
+            <li><b>Pre-registered:</b> the filter (including \(h_{\text{safe}}=\log_2 3\), chosen on separate dev episodes) and the pass rule were frozen before any test episode ran.</li>
+            <li><b>Ground truth:</b> for diagnosis, each decision is re-simulated 64 times in the exact simulator.</li>
+            <li><b>Success (v4 / v4b):</b> no neighbour ever toppled and the red block was extracted (lifted or pulled ≥ 2 cm) without being knocked over first; v4b also requires it not to tip over afterwards.</li>
+          </ul>
+          <h4 class="mini">G-CEM, pre-registered closed loop (Stage 4 + 4b, 600 fresh episodes)</h4>
+          <div class="scroll"><table>
+            <thead><tr><th>Arm</th><th>Topples</th><th>Success v4</th><th>Success v4b</th></tr></thead>
+            <tbody>
+              <tr><td>Policy alone</td><td>137</td><td>417</td><td>350</td></tr>
+              <tr><td>Selection filter</td><td>39</td><td>493</td><td>415</td></tr>
+              <tr><td><b>G-CEM</b></td><td><b>37</b></td><td><b>492</b></td><td><b>427</b></td></tr>
+            </tbody></table></div>
+          <p class="note">G-CEM vs selection: topples upper bound +1.5 pp, v4 lower bound −3.2 pp, v4b −1.5 pp (non-inferior; pooling is exploratory). Hold-and-replan alone also cuts topples, so the trigger carries most of the benefit; holding the gripper still costs 8 pp success.</p>
+        </div>
+        <div>
+          <div class="eq">\[ p=\Pr\big[X\ge b\big],\quad X\sim\mathrm{Bin}\big(b+c,\tfrac12\big) \]</div>
+          <p class="say">McNemar's exact test on discordant pairs. Final test 2: \(b\)=95 topples prevented, \(c\)=11 caused, so \(p=4\times10^{-18}\); success 374 → 420 (pass rule: \(p<0.05\), success down by at most 15). Against the first filter: 52 vs 9 (\(p=9\times10^{-9}\)). The first filter's own final test: 27 vs 9 (\(p=0.002\)); pooled with four replications, 143 vs 34 over 1,500 episodes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="msec" id="m-limits">
+      <h3><span class="num">11</span>Known limits</h3>
+      <ul class="tight cols">
+        <li><b>Remaining failures:</b> 30 of 114 baseline topples still happen (11 of them caused by the filter).</li>
+        <li><b>More interventions:</b> it acts on 7% of decisions (2× the first filter), slowing the median lift by about 3 s.</li>
+        <li><b>Which failures it catches:</b> fragile ones, where small errors decide the outcome (Jenga: forks). On SafeLIBERO most of pi0.5's collisions happen in every imagined future (drive-throughs, ~80%), and our port's world model missed the forks that did exist (0 of 13): no safety effect in a 60-episode pilot. New benchmarks are now checked for real forks first (OopsieBench pick_egg: 50–80% of egg-damage moments fork).</li>
+        <li><b>Speed:</b> G-CEM takes about 26 s per intervention vs 0.8 s per chunk; real time needs a much faster model.</li>
+        <li><b>Scope:</b> one task in simulation so far. SafeLIBERO did not transfer (above); Physion (monitor) and OopsieBench (filter) are under due diligence; the real robot is pending.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section role="tabpanel" id="p-monitor" aria-labelledby="t-monitor" hidden>
+    <div class="chartbox">
+      <h3>Which signal warns earliest? (held-out, pre-registered)</h3>
+      <p class="say">Policy-alone episodes never used for any choice: 60 neighbour topples, 3327 decisions. At the adopted trigger's false-alarm rate (12%), the fork test warns at least 3 chunks ahead for 77% of topples. Measuring how much more the plan spreads the same imagined futures than stopping does warns for 85%. World-model ensemble disagreement, the usual epistemic monitor, manages 38%.</p>
+      <div class="legend"><span style="--k:var(--accent)">relative spread (x3)</span><span style="--k:var(--good)">relative total variance (x4)</span><span style="--k:var(--bad)">ensemble disagreement</span><span style="--k:var(--ink)">fork test, 2x / 3x / 4x margin</span></div>
+      <div class="scroll"><svg class="chart" viewBox="0 0 560 300" role="img" aria-label="Held-out early warning vs false-alarm rate for four monitors"><line x1="52" x2="544" y1="260.0" y2="260.0" style="stroke:var(--line)"/><text x="46" y="264.0" text-anchor="end">0%</text><line x1="52" x2="544" y1="198.5" y2="198.5" style="stroke:var(--line)"/><text x="46" y="202.5" text-anchor="end">25%</text><line x1="52" x2="544" y1="137.0" y2="137.0" style="stroke:var(--line)"/><text x="46" y="141.0" text-anchor="end">50%</text><line x1="52" x2="544" y1="75.5" y2="75.5" style="stroke:var(--line)"/><text x="46" y="79.5" text-anchor="end">75%</text><line x1="52" x2="544" y1="14.0" y2="14.0" style="stroke:var(--line)"/><text x="46" y="18.0" text-anchor="end">100%</text><text x="52.0" y="276" text-anchor="middle">0%</text><text x="134.0" y="276" text-anchor="middle">5%</text><text x="216.0" y="276" text-anchor="middle">10%</text><text x="298.0" y="276" text-anchor="middle">15%</text><text x="380.0" y="276" text-anchor="middle">20%</text><text x="462.0" y="276" text-anchor="middle">25%</text><text x="544.0" y="276" text-anchor="middle">30%</text><text x="298" y="294" text-anchor="middle">false-alarm rate on safe episodes</text><text x="14" y="137" text-anchor="middle" transform="rotate(-90 14 137)">topples warned &#8805; 3 chunks ahead</text><polyline points="85.1,182.0 117.6,145.1 150.7,116.6 183.2,83.6 216.3,59.0 248.8,50.9 281.9,46.7 314.4,46.7 380.0,38.6 462.2,26.3 544.3,26.3" style="fill:none;stroke:var(--accent);stroke-width:2.2"/><circle cx="85.1" cy="182.0" r="2.6" style="fill:var(--accent)"/><circle cx="117.6" cy="145.1" r="2.6" style="fill:var(--accent)"/><circle cx="150.7" cy="116.6" r="2.6" style="fill:var(--accent)"/><circle cx="183.2" cy="83.6" r="2.6" style="fill:var(--accent)"/><circle cx="216.3" cy="59.0" r="2.6" style="fill:var(--accent)"/><circle cx="248.8" cy="50.9" r="2.6" style="fill:var(--accent)"/><circle cx="281.9" cy="46.7" r="2.6" style="fill:var(--accent)"/><circle cx="314.4" cy="46.7" r="2.6" style="fill:var(--accent)"/><circle cx="380.0" cy="38.6" r="2.6" style="fill:var(--accent)"/><circle cx="462.2" cy="26.3" r="2.6" style="fill:var(--accent)"/><circle cx="544.3" cy="26.3" r="2.6" style="fill:var(--accent)"/><polyline points="85.1,202.7 117.6,137.0 150.7,87.8 183.2,63.2 216.3,55.1 248.8,38.6 281.9,34.4 314.4,26.3 380.0,18.2 462.2,18.2 544.3,18.2" style="fill:none;stroke:var(--good);stroke-width:2.2"/><circle cx="85.1" cy="202.7" r="2.6" style="fill:var(--good)"/><circle cx="117.6" cy="137.0" r="2.6" style="fill:var(--good)"/><circle cx="150.7" cy="87.8" r="2.6" style="fill:var(--good)"/><circle cx="183.2" cy="63.2" r="2.6" style="fill:var(--good)"/><circle cx="216.3" cy="55.1" r="2.6" style="fill:var(--good)"/><circle cx="248.8" cy="38.6" r="2.6" style="fill:var(--good)"/><circle cx="281.9" cy="34.4" r="2.6" style="fill:var(--good)"/><circle cx="314.4" cy="26.3" r="2.6" style="fill:var(--good)"/><circle cx="380.0" cy="18.2" r="2.6" style="fill:var(--good)"/><circle cx="462.2" cy="18.2" r="2.6" style="fill:var(--good)"/><circle cx="544.3" cy="18.2" r="2.6" style="fill:var(--good)"/><polyline points="85.1,231.2 117.6,206.6 150.7,182.0 183.2,169.7 216.3,165.8 248.8,165.8 281.9,153.5 314.4,145.1 380.0,116.6 462.2,92.0 544.3,59.0" style="fill:none;stroke:var(--bad);stroke-width:2.2"/><circle cx="85.1" cy="231.2" r="2.6" style="fill:var(--bad)"/><circle cx="117.6" cy="206.6" r="2.6" style="fill:var(--bad)"/><circle cx="150.7" cy="182.0" r="2.6" style="fill:var(--bad)"/><circle cx="183.2" cy="169.7" r="2.6" style="fill:var(--bad)"/><circle cx="216.3" cy="165.8" r="2.6" style="fill:var(--bad)"/><circle cx="248.8" cy="165.8" r="2.6" style="fill:var(--bad)"/><circle cx="281.9" cy="153.5" r="2.6" style="fill:var(--bad)"/><circle cx="314.4" cy="145.1" r="2.6" style="fill:var(--bad)"/><circle cx="380.0" cy="116.6" r="2.6" style="fill:var(--bad)"/><circle cx="462.2" cy="92.0" r="2.6" style="fill:var(--bad)"/><circle cx="544.3" cy="59.0" r="2.6" style="fill:var(--bad)"/><rect x="165.8" y="145.3" width="8" height="8" style="fill:var(--ink)"/><text x="176.8" y="161.3" class="ink">fork 2x</text><rect x="246.6" y="67.3" width="8" height="8" style="fill:var(--ink)"/><text x="257.6" y="83.3" class="ink">fork 3x</text><rect x="319.6" y="51.1" width="8" height="8" style="fill:var(--ink)"/><text x="330.6" y="67.1" class="ink">fork 4x</text></svg></div>
+      <p class="note">results/jenga/deep_dive/monitor_curves_m3.json. Primary tests: spread vs fork +8.3 pp (lower bound +1.7), fork vs disagreement +38.3 pp (lower bound +28.3).</p>
+    </div>
+    <div class="chartbox">
+      <h3>Final test: does the monitor flag the risky moments?</h3>
+      <p class="say">On 281 fresh three-block states never used for any choice, our monitor catches 80% of forks with 5% false alarms. A physics engine that knows the exact true state does better; it is the ceiling, since our monitor only sees a camera image.</p>
+      <div class="legend"><span style="--k:var(--accent)"><abbr title="Share of real forks the monitor flags.">Caught</abbr></span><span style="--k:var(--bad)"><abbr title="Share of safe states the monitor flags anyway.">False alarm</abbr></span></div>
+      <div class="hb" id="monchart"></div>
+      <details class="num"><summary>Show numbers</summary><div class="scroll"><table>
+        <thead><tr><th>Monitor</th><th>Any outcome: caught / false</th><th>Neighbour topple: caught / false</th></tr></thead>
+        <tbody>
+          <tr><td>Our monitor (clean-trained)</td><td>80% / 5%</td><td>86% / 6%</td></tr>
+          <tr><td>Plain model, clean data</td><td>86% / 12%</td><td>89% / 15%</td></tr>
+          <tr><td>Plain model, old data</td><td>82% / 7%</td><td>90% / 9%</td></tr>
+          <tr><td>Physics engine, exact state, old readout</td><td>85% / 18%</td><td>92% / 19%</td></tr>
+          <tr><td>Physics engine, exact state (ceiling)</td><td>92% / 0%</td><td>97% / 3%</td></tr>
+        </tbody></table></div><p class="note">108 forks and 173 safe states (any outcome); 97 and 188 (neighbour topple). Panels 6 and 7, ground truth with the corrected perception error.</p></details>
+    </div>
+    <div class="chartbox">
+      <h3>Running alongside your policy</h3>
+      <p class="say">Over 138 decisions in two minutes on new layouts, the monitor flagged all 8 neighbour topples. It misses most cases where only the grasped block drops or tips in the gripper.</p>
+      <div class="cmp"><div><b>8 / 8</b><span>neighbour topples flagged</span></div><div><b>1 / 13</b><span>block drops or tips in the gripper</span></div><div><b>9%</b><span>false alarms on safe moments</span></div></div>
+    </div>
+  </section>
+
+  <section role="tabpanel" id="p-filter" aria-labelledby="t-filter" hidden>
+    <div>
+      <h2>Can the monitor prevent failures?</h2>
+      <p class="lede">The filter nudges the policy's next actions whenever the monitor sees a fork. Click through the steps in order.</p>
+      <div class="steps" id="steps" role="group" aria-label="Filter steps"></div>
+    </div>
+    <div class="chartbox" id="stepview"></div>
+  </section>
+
+
+  <section role="tabpanel" id="p-inspect" aria-labelledby="t-inspect" hidden>
+    <div>
+      <h2>Inspect one episode</h2>
+      <p class="lede">The same episode twice: your policy alone (left) and with the filter (right). They are identical until the filter first acts. Click any decision in a strip to jump both videos there and see what the monitor imagined versus what really happens.</p>
+      <div class="chips" id="iruns" role="group" aria-label="Which test"></div>
+      <div class="chips" id="ichips" role="group" aria-label="Episode type"></div>
+      <div class="eplist" id="eplist" role="group" aria-label="Episodes"></div>
+    </div>
+    <div class="pair2" id="pair2"></div>
+    <div class="chartbox" id="card"><p class="say">Pick a decision in either strip.</p></div>
+  </section>
+  <section role="tabpanel" id="p-videos" aria-labelledby="t-videos" hidden>
+    <div class="player" id="player"><video id="vid" controls preload="metadata" playsinline></video>
+      <div class="cap"><h3 id="vtitle"></h3><p id="vdesc"></p></div></div>
+    <div class="chips" id="vchips" role="group" aria-label="Filter videos"></div>
+    <ul class="vlist" id="vlist"></ul>
+    <p class="note">"Final filter vs policy" clips are replayed from the saved decision states of final test 2 (exact simulator, the run's own noise sequence).</p>
+  </section>
+</div>
+
+<script>
+const UPDATED = "2026-10-24 09:15 EDT";
+const CARDS = [
+  {q: "Does the monitor work?", a: "Yes: catches 80% of risky moments, 5% false alarms", p: "Final test on 281 fresh states. A physics engine with the perfect state gets 92% / 0%.", c: "--good", tab: "monitor"},
+  {q: "Does the safety filter work?", a: "Yes: 74% fewer topples in the second final test", p: "Pre-registered, 600 fresh episodes: 114 -> 30 neighbour topples (95 prevented, 11 caused, p = 4e-18), successes 374 -> 420. One change from the first filter: plans must stay fork-free even at 2x the robot's errors, so it acts one step earlier.", c: "--good", tab: "filter"},
+  {q: "What made it work?", a: "Four changes, each from a measurement", p: "1) Test in physics the world model knows (normal blocks, 2x tracking error). 2) Look ahead along the policy's own 15-step plan. 3) Retrain the world model on the policy's own states (warning quality 0.69 -> 0.88). 4) Act one step earlier: require no fork even at 2x errors (h_safe = log2 3), 73 -> 30 topples in final test 2.", c: "--accent", tab: "method"},
+  {q: "Optimisation-only filter?", a: "Yes now: G-CEM matches the selection filter over 600 episodes", p: "Optimises only the ONE policy chunk with 4 universal moves (speed, pause, shrink, back off) - no extra policy samples, no hand-made safety moves. Stage 4 + 4b pooled: topples 37 vs 39 (selection), successes 492 vs 493, vs policy 137 topples / 417 successes.", c: "--good", tab: "videos"},
+  {q: "What is happening now?", a: "Spread-barrier filter: 600-episode closed-loop test running", p: "The relative-spread monitor beat the fork test on held-out data (85 vs 77% of topples warned >= 3 chunks ahead at the same alarm rate). The filter with that continuous barrier (same G-CEM optimiser, ensemble certificate, hold fallback; 4x faster per intervention) now runs against the adopted 3x fork filter and the policy on 600 fresh episodes on Fir (policy and 3x arms done, spread arm 443/600). Offline on the 3x filter's own interventions the spread certificate held more and accepted riskier actions, so a pass is not expected. Also done: ensemble-disagreement baseline beaten (+38 pp); the trigger is not noise-limited; the 3x filter time-outs are a CBF liveness stall near the grasp pose.", c: "--accent", tab: "filter"},
+];
+const NEWS = [
+  {"k": "info", "t": "Spread barrier as a certificate, offline (exploratory, 268 interventions of the 3x filter, real outcomes from the exact simulator): it holds still far more often (30% vs 8% of decisions) and the actions it does accept are riskier (neighbour topple risk 0.76% vs 0.40%, red fall +0.2 pp). A better alarm is not automatically a better certificate. The 600-episode closed loop (cbfgs at 443/600) decides."},
+  {"k": "good", "t": "Monitor improvement (pre-registered, held-out PASS): the fork's bimodality test is not what makes the monitor work. Measuring how much MORE the plan spreads the imagined outcomes than stopping does (relative spread of the same 64 futures at 3x the errors) warns >= 3 chunks before 85% of held-out topples vs 77% for the fork test at the same alarm rate (+8 pp, lower bound +1.7; at a lower alarm rate +18 pp). It also gives the CBF a continuous barrier: a plan may raise outcome spread at most e-fold over stopping (threshold set label-free). The spread-barrier filter is now running in closed loop: 600 fresh episodes vs the adopted 3x filter (pre-registered)."},
+  {"k": "good", "t": "Baseline monitor beaten (pre-registered, held-out): world-model ensemble disagreement, the standard epistemic-uncertainty monitor, warns >= 3 chunks before only 38% of topples at the same alarm rate where the fork test warns before 77% (+38 pp, lower bound +28 pp; 23 topples caught early only by the fork test, 0 only by disagreement). Disagreement fires too, but late."},
+  {"k": "info", "t": "Why the 3x filter times out: near the grasp pose the policy creeps forward ~3 mm per chunk; the filter slows exactly those chunks, and under 2x execution noise the hand never gets deep enough for the policy to close the gripper (it never closes in any of the 69 time-outs). A CBF liveness limit: the grasp pose sits inside the 3x barrier. Not trigger noise: the same decision re-scored with fresh random draws fires the same way 95% of the time (kappa 0.80), and pooling 4 fork tests gives no earlier warnings at the same alarm rate."},
+  {"k": "bad", "t": "Gripper-timing knob in closed loop (pre-registered, 300 fresh episodes): failures (topple or red fall) 52 vs 61 for the 3x filter (26 vs 35 discordant, p = 0.15), success -1.3 pp (lower bound -5.7 < -5) -> PRIMARY FAIL, not kept. Same direction as offline (after-extraction red falls 26 vs 34). The 3x filter vs the policy, third time: topples 63 -> 10, failures 110 -> 61."},
+  {"k": "bad", "t": "Trend trigger in closed loop (pre-registered, 300 fresh episodes): adding a CBF decrease condition (act when the fork distance is falling) does not beat G-CEM: topples 16 vs 23 (13 vs 20 discordant, p = 0.15), success -2.0 pp (lower bound -6.7 < -5) -> PRIMARY FAIL. It costs as many interventions as the 3x margin (8.3 vs 8.6 per episode) for the same topples. The 3x margin replicates in direction on these fresh episodes: topples 15 vs 23 (p = 0.10 alone; pooled with the margin test 16 vs 38 discordant, p = 0.002); all failures incl. red falls 63 vs 80 (p = 0.048); time-outs 35 vs 19. 3x margin stays the default."},
+  {"k": "good", "t": "Faster filter, same decisions: compiling the world model (torch.compile) gives identical trigger and certificate decisions on all 150 benchmark-v2 dev states (pre-registered equivalence gate PASS) at 2x the speed locally and 3.7x on the cluster's GPU slices. Used for every run started from now on."},
+  {"k": "bad", "t": "HJ reachability, stage B (pre-registered): a learned safety value V (PNCBF policy value with lambda-reachability targets, trained on 1200 logged episodes) ranks upcoming topples better than the instantaneous margin (AUC 4-6 chunks ahead 0.77 vs 0.66), but as an alarm at the same rate it warns >= 3 chunks ahead for only 58-67% of held-out topples vs 83% for the fork-distance trend rule -> FAIL; stage C not run."},
+  {"k": "info", "t": "Why the 3x filter loses some successes: 32 of 300 episodes time out without extracting (policy alone 12). In 18 of them the policy alone would have succeeded. Not a gripper-timing bug (aborted grasps are equally common with and without a fix); each fix removes part of the motion by design (slow, pause, shrink, back off), so time-outs grow with the number of interventions. Fewer unneeded interventions (trend trigger, running) is the lever."},
+  {"k": "bad", "t": "Red-block falls at release are invisible to this world model: a fall that happens in every imagined future has no fork, and a new readout of how much the imagined scene keeps moving after the robot stops ranks them backwards (AUC 0.25-0.37: falls look calmer), as on the pillar task. The hold reference's gripper encoding is not the cause (checked). GO-CEM (least imagined disturbance as the objective) also failed its offline gate. A world-model resolution limit, outside the filter."},
+  {k: "good", t: "3x barrier margin in closed loop (pre-registered, 300 fresh episodes): neighbour topples policy 60, G-CEM (no fork up to 2x) 21, G-CEM with no fork up to 3x 7 (p = 0.0033), O-CEM with the 3x trigger 15. Successes v4 213 / 235 / 239 / 231, v4b 174 / 195 / 193 / 200 -> PRIMARY PASS, the 3x margin is adopted. Price: 8.8 vs 3.9 interventions per episode. Gripper-timing knob (G-grip) on benchmark dev: neutral (neighbour +0.1 pp, red falls -0.4 pp); holdout running."},
+  {k: "info", t: "Why the last topples happen: the trigger fires before 19 of 22 (G-CEM) and 16 of 16 (O-CEM) residual topples, but often only 0-1 chunks ahead, too late for any fix. Offline, a larger barrier margin (no fork up to 3x / 4x the errors) warns >= 3 chunks ahead in 72% / 89% of topples vs 54% now, at 17% / 23% alarms vs 8%. Also: the ranking information sits in the extreme tail of the imagined disturbance, which more futures sharpen only a little."},
+  {k: "bad", t: "O-CEM closed loop (pre-registered, 300 fresh episodes): topples policy 55, G-CEM 22, O-CEM 16 (also 17 with G's trigger); successes 214 / 245 / 240. Fewer topples but not significant (p = 0.16) and success -1.7 pp (lower bound -6.0 < -5) -> PRIMARY FAIL; G-CEM stays. Extending the trigger to relative passes added nothing."},
+  {k: "bad", t: "Full-token DINO-WM (off-the-shelf architecture, bundled checkpoint, fine-tuned on 1000 new counterfactual states from Rorqual) fails its gate: it ranks candidate chunks from the same state no better than our 2.3M-parameter PCA8 model (relpass: fork score 0.57 vs 0.80, disturbance 0.63 vs 0.70). Capacity and representation are not the bottleneck on Jenga."},
+  {k: "good", t: "Matched-rate random-hold baseline (pre-registered, 200 fresh paired episodes): the same hold, fired by the fork test vs at random decisions at the same rate (8.7% vs 9.6%): neighbour topples 8 vs 34 (policy 32), McNemar p = 2e-5; random holds are no better than the policy (p = 0.71); successes +10 pp. The benefit is foresight - the trigger knows WHEN - not caution."},
+  {k: "good", t: "O-CEM passes both pre-registered offline tests. Fix = CEM over the policy's own chunk (speed, pause, amplitude, back-off) minimising the imagined outside-hand disturbance, pessimistic over 5 world models. Real one-chunk risk: holdout 1.50% vs G-CEM 2.25% / hold 1.77% / policy 5.75% (H1 pass); fresh hard set where plan and hold both fork 3.71% vs policy 5.07% / hold 6.61% (H2 pass, p = 0.001, 30 better / 11 worse). A continuous barrier value beats a pass/fail certificate as the fix objective."},
+  {k: "good", t: "Head-to-head vs the published latent safety filter (LSF, UNISafe recipe, trained correctly, dev-selected threshold), pre-registered, 300 fresh Jenga episodes: G-CEM 19 topples vs LSF 55 vs policy 64 (G vs LSF: 10 vs 46 discordant, p = 1e-6); successes 247 vs 217 vs 209. Our label-free filter beats the labelled baseline on both safety and task success."},
+  {k: "bad", t: "Relative-pass test (pre-registered): at the 403 decisions where both the plan and holding were forked, G-CEM with an absolute fork-free rule made things worse (real risk 7.7% vs policy 5.1%). Chunks the check certified after modification were riskier than the policy's own: the world model spots risky states but cannot rank nearby chunks. Deep dive started (docs/FILTER_DEEP_DIVE.md): the 8-channel latent keeps only 24% of what a chunk changes in the scene; a full-token DINO-WM world model is being trained."},
+  {k: "bad", t: "Pillar root cause, correcting the diagnostic: a disturbance readout would NOT fix the trigger. At the 61 real releases the world model imagines doomed ones as calmer than safe ones. Reason: a doomed release has the cube ~4.4 mm off-centre vs ~2.3 mm when safe, and one latent patch spans ~15 mm (the 2 mm difference is ~1 pixel). Even the real image features, zoomed 2.2x or uncompressed, locate the cube only to ~2.6-3 mm. The pillar as tuned is a mm-precision task, decided below what our perception resolves; Jenga's failures are cm-scale."},
+  {k: "bad", t: "HJ reachability on Jenga, idea 3 (learned viability value V, trained label-free from our own certificate): FAILS its gate (held-out AUROC 0.76 < 0.85). 98.6% of visited states have a cheap backup (hold, lift, small retreat) that certifies, so V has almost no unsafe examples to learn from. Idea 4 (V as the barrier) is therefore not run."},
+  {k: "bad", t: "HJ reachability on Jenga, idea 2 (fire only if no backup after the policy's next chunk certifies): FAILS its gate. False alarms 5.2% -> 1.0%, but topples caught 93% -> 74% and the warning comes 1 chunk ahead instead of 3. The current trigger stays; on Jenga the work left is in the fix, not the trigger."},
+  {k: "info", t: "Pillar diagnostic (true risk by re-simulating 16 futures per moment): the world model is fine; 31 of 33 failures are decided at the RELEASE - a rare noise draw leaves the cube off-centre and opening the gripper makes the fall certain. Every future fails, so there is no spread for the fork score to see (it catches 9% of risky moments). The filter never touches the gripper; keeping it closed and lifting 3 cm cuts doomed-release risk from 97% to 68%. These three gaps define the pillar redo."},
+  {k: "bad", t: "StackThree with an IMAGE-based Diffusion Policy (cameras, not exact poses; epoch 200, 30% success): 3 forks in 94 moments at Jenga-matched noise. Less precise than the low-dim policy, but it still rarely forks. Training continues; a later checkpoint will be checked."},
+  {k: "bad", t: "Pillar task, closed-loop filter test (pre-registered universality test: Jenga's G-CEM filter frozen, only the world model swapped): FAILS. 300 paired episodes, failures: policy alone 33, G-CEM 43, hold-and-replan 63. Neither filter beats the policy; simply pausing doubles the failures here because a paused chunk still gets execution noise, so waiting next to the pillar adds risk instead of removing it. The trigger fires on 9-14% of decisions but the episode's highest score does not predict which episodes fail (AUROC 0.50)."},
+  {k: "good", t: "Pillar world model (trained label-free from the side camera, SafeManip recipe): the imagined fork test does see the real forks once scored by distance. The first pre-registered score (imagined split) FAILED (AUROC 0.54); the real image latents themselves separate forks (0.93), so a distance score was pre-registered and run on fresh held-out seeds: AUROC 0.78 (27 forks in 405 moments). The world model works at the moment level; the closed-loop test above is where it fails."},
+  {k: "good", t: "Pillar task, now with a CLOSED-LOOP chunked policy (re-plans every chunk, Jenga's 16-target interface; it sees the pillar with a 2 mm perception error, size chosen by a pre-set rule so success sits at 90% under 2x noise): its own rollouts fork. 61 forks in 1097 moments with the filter's look-ahead (58% of bad moments, 0 deterministic), 95 with the full look-ahead; zero-noise control 0. Next: the pillar world model (data collecting now) and its pre-registered check."},
+  {k: "bad", t: "StackThree with our own Diffusion Policy (85% success; it reads exact object poses): only 1 fork in 145 moments. Like LiftPeg, a policy trained on 1000 demos with exact poses is precise and fails by timing out. The demo forks came from MimicGen's own generation noise. Training an IMAGE-based Diffusion Policy (like our Jenga policy, which sees through cameras) overnight to test the realistic case."},
+  {k: "info", t: "Thorough recheck of every earlier benchmark (docs/BENCHMARK_RECHECK.md): no bug changed a reported verdict. Noise matched Jenga's or was higher; state restore was exact (one MimicGen gripper-state bug was caught by the zero-noise control before any result). ToolHang re-run with generic labels at matched noise: still 7 forks. Corrections: ~40% of LiftPeg's strict forks were GPU float chaos; SafeLIBERO's fork rate used 3 replays per moment (may be understated ~2x)."},
+  {k: "good", t: "New custom task, built overnight in MuJoCo with Jenga's robot, controller, camera and noise: PRECARIOUS PLACEMENT (put a cube on a narrow pillar, release, retreat). Different contact mode from Jenga (placing vs pulling), different failure (load falls / support tips). Pillar width chosen by a rule fixed beforehand (narrowest width where the expert still succeeds >= 60% under 2x noise: 1.6 cm). Fork check PASSES: 42 forks in 551 moments with the filter's own look-ahead (84% of all bad moments are forks, 0 deterministic), 114 with the full look-ahead; zero-noise control 0. Videos below."},
+  {k: "bad", t: "LiftPegUpright stops here for now: forks exist, but no policy we have is both chunked and fork-prone. Our planner-demo Diffusion Policy (79%) sets the peg down robustly (1 fork in 1024 moments). Diffusion Policies trained on PPO's demos never learn the task (at most 11%, with chunks of 2, 4 or 8). PPO forks, but only over ~8 steps of accumulated error: it breaks if forced to repeat actions (38% -> 0%), and branching a single PPO action finds just 2 forks. Waiting for your decision on how to continue."},
+  {k: "info", t: "LiftPegUpright: whether failures fork depends on the policy. PPO holds the peg balanced against the table and forks (24 in 224 moments). Our Diffusion Policy trained on motion-planner demos reaches 79% but sets the peg down fully upright, which is robust: 1 fork in 1024 moments, so the filter would have nothing to fix. Now trying a Diffusion Policy trained on PPO's demos with shorter chunks (2 and 4 actions), to get a chunked policy with PPO's fork-prone style."},
+  {k: "info", t: "Latent safety filter, trained correctly (UNISafe recipe), 99 dev episodes: it no longer collapses, but barely helps. Best threshold 0.10: topples 27 -> 23, success 66 -> 70; stricter thresholds stop topples only by stopping the task (0.70: 8 topples, 5 successes). By the pre-registered plan it goes to a head-to-head with G-CEM (protocol written), but that is on hold: G-CEM did not reproduce a Stage 4 episode on Rorqual (same interventions, different outcome from tiny numerical differences across clusters), and Fir/Nibi need a fresh login."},
+  {k: "info", t: "LiftPegUpright policies. PPO (shipped, per-step): leaves the peg standing at the end in 38% of 200 episodes, and its own closed-loop rollouts pass the fork check (24 forks in 224 moments; bar 15). Diffusion Policy on 100 of the PPO demos learned nothing (0-1%): RL demos are jerky and DP runs 8-step chunks open-loop. Now training two fixes: DP on all 927 PPO demos (the pre-set fallback) and DP on 992 smooth motion-planner demos (grasp, lift, rotate upright in the air, lower, release - the release is the stand-or-fall moment). Fork check on the DP follows."},
+  {k: "good", t: "ManiSkill3 quick fork check (GPU simulator, 33 parallel replays per moment, minutes instead of hours). LiftPegUpright PASSES: 20 moments in 192 where the same policy chunk under ~2.5 mm noise leaves the peg standing in some replays and flat on the table in others (bar 15); 65% of all moments where the peg falls are such forks. StackPyramid FAILS (10 loose forks, 0 success splits) and is dropped. Honest correction made on the way: the first count (73) used a loose label that also counted small tilt spread; the strict stand-vs-flat count (20) is the one we use. World-model camera chosen: a fixed side camera that sees the peg in profile. Videos below. Caveat: checked on the shipped expert policy; our own chunked Diffusion Policy must be re-checked once trained."},
+  {k: "good", t: "Latent safety filter re-audit: you were right, our earlier LSF failure was our bug. Our DDPG safety actor had collapsed (100% of its outputs at the action limit, the same push-down move everywhere, and its own value rated it worse than holding still). Retrained with the authors' follow-up recipe (UNISafe: SAC + a world-model-uncertainty penalty), it passes the pre-set check: 0.03% saturated, its own move scores above holding still (0.85 vs 0.76), value predicts real topples at AUROC 0.81. The original paper's pessimism trick alone did NOT fix our DDPG (still 100% saturated). Closed-loop dev sweep (100 episodes, 6 thresholds, pre-registered) starting on Rorqual - Fir and Nibi are down."},
+  {k: "bad", t: "ToolHang fails the pre-registered fork check: across 8 episodes (289 branched moments x 32 noisy replays) only 1 moment forks (bar: 15). When ToolHang goes wrong it goes wrong the same way under every noise draw (all or nearly all 32 replays bad), and the policy's real failures are timeouts at the hook, not noise-sensitive slips. So the fork test has nothing to catch here. As agreed, we stop hunting simulated benchmarks: Jenga stays the sim evidence, ToolHang and SafeManip become stated scope limits, and the real robot is the second domain."},
+  {k: "bad", t: "SafeManip world-model check fails on both views (pre-registered). We trained one world model per camera (robot-masked fixed camera, wrist camera) on 32 pi0.5 episodes and asked whether its imagined fork test flags the real forks in 8 held-out episodes: AUROC 0.45 and 0.50 (gate 0.7); imagined futures never split at real forks. Why: on held-out kitchens the model is only 25% better than predicting no change (75% on its training kitchens), its imagined futures spread half as much as the real ones, and on this held-out set even the real futures separate forks only weakly (0.64 / 0.62; hazards are rare, about 1 in 75 decisions). More data would help the first problem but not the second."},
+  {k: "good", t: "SafeManip is our second benchmark. The pre-registered confirmation on fresh episodes passes: with the robot's pixels masked, the policy's own wrist camera separates real forks (bowls tipping, bottles knocked, slips) at AUROC 0.74, splitting on 54% of forks vs 20% of non-fork moments (gate: 0.7 and 2x). Next: does our world model's imagined fork test catch them."},
+  {k: "info", t: "Latent safety filter with a hold-still fallback (LSF-hold), 99 dev episodes: its learned value works as a trigger (topples 27 -> 19-20) but costs 6-8 points of success, just failing the pre-registered 5-point rule. Exploratory 300-episode head-to-head now running on Fir: policy vs G-CEM vs hold-and-replan vs LSF-hold (eps 0)."},
+  {k: "bad", t: "Latent safety filter baseline (Nakamura et al., RSS 2025) on Jenga, 92 dev episodes per arm: as published it fails - no threshold keeps success within 5 points of the policy (policy: 25 topples, 62 successes; eps 0: 80 topples, 2 successes; eps >= 0.15: 0 topples, 0 successes). Its learned value is sensible (falls as the gripper nears the block), but its DDPG safety actor saturates and drives the arm down through the blocks. Value training needed gamma 0.95 (the paper's 0.9999 collapsed). Now running the strongest fair variant: same learned value, hold-still fallback (LSF-hold)."},
+  {k: "good", t: "SafeManip visibility check with 32 real futures per moment (8 were too few: non-fork moments falsely split 34-42%, now 10-21%): the pre-registered gate view (masked fixed camera) fails at 0.65, but the robot-masked wrist camera separates real forks at AUROC 0.83 and agentview at 0.72. Confirmation on fresh episodes with the wrist view as the gate is running."},
+  {k: "info", t: "Second-benchmark search: SafeManip (RoboCasa365 + the published pi0.5 checkpoint). On its multi-object tasks real fork-type hazards are common - 32 forks in 28 episodes (bowls tipping, bottles knocked over, slips), check 1 passed - but a whole-image fork test is swamped by the robot arm's own motion (check 2a failed: 0.62; wrist camera 0.75). Now testing the fork test with the robot's pixels masked out, plus a dedicated fixed monitoring camera. New videos of pi0.5 succeeding and failing on SafeManip in the Videos tab. Also closed: OopsieBench egg (damage is invisible) and Physion (forks are real but our world model cannot simulate the chains)."},
+  {k: "bad", t: "Physion (Dominoes) due diligence: real forks exist - 11 of 32 scenes change outcome under 5 mm of perception noise - but our fork test does not detect them (AUROC 0.50, pre-registered gate 0.7). The cause is the world model: it cannot simulate the domino chain (outcome readable from its imagined ending at 0.59 vs 0.84 from real frames). Overnight: is it data? Same setup with 5x the training trials (exploratory)."},
+  {k: "good", t: "OopsieBench (pick up an egg without crushing it): real forks are common - 28 / 50 / 82% of egg-damage moments split under 2 / 5 / 10% arm noise, vs ~20% of contacts on SafeLIBERO. Exact replay reproduces the recorded damage 97-100%. Next for it: does our fork test see them (needs a world model)."},
+  {k: "bad", t: "SafeLIBERO closed-loop pilot (exploratory, 60 paired episodes on Rorqual): the filter has no safety effect - obstacle damaged in 83% with the filter vs 85% for pi0.5 alone; success 50% vs 62% (not significant). It acts ~2 times per episode, mostly on fork alarms, and almost half of its interventions certify the unchanged chunk. The method as built does not transfer to SafeLIBERO."},
+  {k: "bad", t: "SafeLIBERO offline check failed its pre-registered gate: the fork score does not predict which pi0.5 chunk first hits the obstacle (AUROC 0.54, needed 0.7). pi0.5 drives into obstacles confidently, so imagined futures rarely split. The disturbance score predicts damage moderately (0.73; 0.87 on real frames), and 1 mm touches are nearly invisible in the latent."},
+  {k: "good", t: "SafeLIBERO baseline done (all 1,600 episodes): pi0.5 alone is collision-free in 16.8% and succeeds in 59.3% (AEGIS paper: 17.1% / 57.8%) - reproduction gate passed in every suite. We report two safety measures, fixed in advance: the benchmark's strict rule (obstacle moved > 1 mm) and damage (knocked over >= 45 deg or moved >= 5 cm). Success without damage: 18-42% per suite. Next: world model on the unlabelled branched futures (L2, 75% collected), offline check (AUROC >= 0.7), then the closed-loop filter."},
+  {k: "info", t: "SafeLIBERO (32 scenarios x 50 episodes, obstacles next to or in the path of the target): pi0.5 alone reproduces the AEGIS paper's baseline - collision-free 14-21% per suite (paper 14-20%), success 56-63% (paper 58-60%). The obstacle is knocked over (tilt >= 45 deg) in 19-75% of episodes. Now collecting unlabelled branched futures on initial states 0-24 to train a LIBERO world model; 25-49 stay untouched for the final test."},
+  {k: "good", t: "Stage 4b (300 fresh episodes, Nibi + Rorqual): G-CEM 18 topples / 246 successes vs selection 19 / 243 vs policy 68 / 211. Pooled with Stage 4 (600 episodes): G-CEM 37 topples vs selection 39, successes 492 vs 493 - the optimisation-only filter matches selection without extra policy samples."},
+  {k: "bad", t: "G2 (re-time the gripper together with the arm) did not help: 23 topples / 239 successes vs G's 18 / 246; failed its pre-registered non-inferiority test vs selection. Dropped. Holding the gripper still also hurt hold-and-replan (222 vs 246 successes)."},
+  {k: "good", t: "Formulation G: instead of free millimetre offsets, the optimiser searches 4 coarse universal moves of the policy's own chunk (speed, pause, shrink, back off along its own reverse). Offline: holdout risk 2.25% (selection 2.38%, policy 5.75%), 26 s per decision. Stage 4 closed loop: G-CEM 19 topples / 246 successes, selection 20 / 250, policy 69 / 206."},
+  {k: "info", t: "Success definition audited (your catch): the old rule counted 'lifted 3 cm, then dropped it flat' as success and missed 2-3 cm lifts. New: picked up >= 2 cm, then held or placed back upright, no neighbour topple. dev10 recount policy 47, selection 55, optimisation 44 (was 47 / 55 / 45). The optimiser's signature failure: never picks the block up, nothing falls (12 episodes vs 4 selection, 0 policy)."},
+  {k: "info", t: "dev10 closed loop (75 episodes, round-1 world model): optimisation-only filter 5 topples / 45 successes; selection with the same model 3 / 55; policy alone 13 / 47. The better model helped both filters (7 -> 5 and 6 -> 3 topples), but the optimiser loses picks: its larger bends (median 15 vs 10 mm) can make the hand drop the block. Pre-registered rule not met on success. New videos in the Videos tab."},
+  {k: "good", t: "World model is the lever: the same optimiser, offline on 75 risky decisions, gets 24.8% real risk with the oldest world model, 15.1% with the closed-loop one, 12.4% with the counterfactual one and 11.8% after training on the optimiser's own proposals (selection 13.8%, policy 27.6%)."},
+  {k: "info", t: "Correction: several of yesterday's offline optimiser comparisons silently used the oldest world model; they were not comparable to the 12.4% run. Every run now records its model."},
+  {k: "good", t: "FINAL TEST 2 PASSED (pre-registered, 600 fresh episodes): the filter with the larger safety margin cut neighbour topples 114 -> 30 (95 prevented, 11 caused, p = 4e-18) and raised successes 374 -> 420. Against the original filter: 30 vs 73 topples (p = 9e-9)."},
+  {k: "good", t: "dev7 (600 episodes): requiring a larger barrier margin (no fork even at 2x errors) cut topples to 45, vs 87 for the current filter and 113 for the policy alone, with MORE successes (425 vs 379 vs 364). It acts one step earlier. Pre-registered final test 2 (600 fresh episodes) running now."},
+  {k: "good", t: "dev6 (600 episodes, Alliance): current filter 136 -> 78 topples (64 prevented, 6 caused), successes 346 -> 408. Pooled over 1,500 paired episodes: 315 -> 206 topples (35% fewer), 143 prevented vs 34 caused (p = 2e-17), successes 893 -> 990."},
+  {k: "info", t: "Readout veto on the filter's choices: no closed-loop gain (85 vs 78 topples), so the current filter stays. Remaining failures: 53 of 78 are detected but too late (the filter acts at the topple decision). Testing a larger safety margin to act one step earlier (dev7)."},
+  {k: "good", t: "Pooled evidence for the current filter: 900 paired episodes over 4 runs (final test + 3 replications, local and Alliance): topples 179 -> 128 (28% fewer), 79 prevented vs 28 caused (p = 4e-7), and successes up 547 -> 582."},
+  {k: "good", t: "dev5 (300 fresh episodes, Alliance, pre-registered): the current filter replicated strongly: 53 -> 34 topples (p = 0.0007) and MORE successes (186 -> 209). Third independent confirmation."},
+  {k: "info", t: "Readout flaw found: the fork test treats 'everything topples' as safe. Fixed, it picks safer plans offline (14.5% vs 20%), but in closed loop it made big changes and lost successes (dev5: 37 topples, 182 successes), so the current filter stays."},
+  {k: "info", t: "World-model checks (overnight): the hybrid world model (flow head on the closed-loop model) is a high-precision alarm (4.6% false alarms vs 20% for the barrier trigger) but, like every model so far, cannot pick the safer of the policy's own samples (about random). Testing whether that is the world model or the readout."},
+  {k: "info", t: "dev4 on Alliance (150 episodes, pre-registered): the single CBF optimisation filter 25 topples vs the current filter 27 vs policy 30; success 87 vs 93 -> keep the current filter. Not distinguishable head to head (p = 0.41)."},
+  {k: "good", t: "Offline (75 risky decisions): a single CBF optimisation without hand-made moves cut real risk 27.6% -> 12.4%, better than the current selection (13.8%); selection + gradient refinement 11.7%."},
+  {k: "info", t: "Gradient-based CBF: the fork barrier's gradients don't track reality (r = 0.12-0.15); a smooth 'predicted disturbance away from the hand' barrier does (r = 0.76)."},
+  {k: "info", t: "Alliance clusters ready (Nibi, Narval, Rorqual): a 300-episode paired test now takes under an hour."},
+  {k: "", t: "Alliance clusters ready: Narval reproduces a local paired episode exactly (MuJoCo renders on CPU because GPU slices have no OpenGL); a paired episode takes 9 min per GPU slice."},
+  {k: "", t: "Started dev3: filter variants B1 (barrier-only trigger) and B2 (+ largest-margin selection) vs the final-test filter, 150 fresh dev episodes, pre-registered selection rule."},
+  {k: "info", t: "Diagnosis of all 502 interventions (real outcomes): real topple risk 9.4% to 6.0% per intervention; 115 helped, 19 hurt. When the policy's plan was really risky, the filter helped 115 times and hurt 12. 6 of the 9 caused topples were correctly flagged moments where the replacement plan was itself risky."},
+  {k: "good", t: "FINAL (pre-registered, 300 paired episodes): fork-boundary CBF filter passes. Topples 65 to 47 (27 prevented, 9 caused, McNemar p = 0.002); success 179 to 187; acts on 502 of 13,850 decisions."},
+  {k: "good", t: "Interim final test (152/300 paired episodes): fork-boundary CBF filter, 38 to 26 topples (16 prevented, 4 caused, p = 0.006), success 89 to 99, intervenes on 3.6% of decisions."},
+  {k: "", t: "Retrained world model (closed-loop data): barrier AUC 0.69 to 0.88 on held-out closed-loop decisions; forks caught by the split 27% to 46%."},
+  {k: "", t: "Final filter test pre-registered: 300 fresh episodes (1000-1299), policy alone vs fork-boundary CBF filter, decision rules fixed in advance."},
+  {k: "", t: "Key result: the camera latent sees closed-loop forks (97.5% / 3.7%), but the world model predicts only 35% of them. The weak link is the world model on policy states, so it gets closed-loop training data next."},
+  {k: "", t: "Overnight: neighbours at normal mass, but 2x execution error, give a 17% topple rate the world model can foresee (the light-neighbour test was outside its physics)."},
+  {k: "bad", t: "Filter v2 final: no effect with your policy (29 vs 28 topples in 100 paired episodes)."},
+  {k: "", t: "Diagnosis: most interventions happen at harmless moments, the warning comes about one chunk too late, and v2 kept the policy's (toppling) outcome."},
+  {k: "good", t: "New: the Inspector tab shows each episode with and without the filter, side by side, with what the monitor imagined at every decision."},
+];
+const MON = [
+  {n: "Our monitor", s: "clean-trained (primary)", c: 80, f: 5, key: true},
+  {n: "Plain model", s: "clean data", c: 86, f: 12},
+  {n: "Physics engine", s: "exact state, old readout", c: 85, f: 18},
+  {n: "Physics engine", s: "exact state (ceiling)", c: 92, f: 0},
+];
+const STEPS = [
+  {t: "1. First filter", k: "--bad", v: "weak", h: "Rule-based filter on fixed risky states",
+   say: "Tried 25 small sideways shifts and took the first one the monitor called safe. It barely helped; a physics engine doing the same did much better.",
+   bars: [["No filter", 30], ["Rule-based filter", 21], ["Physics-engine filter", 10]], unit: "% chance a neighbour topples, 32 risky states"},
+  {t: "2. CEM v1, fixed states", k: "--bad", v: "does not work", h: "Optimizing filter v1 on fixed risky states",
+   say: "Searches for the smallest change the monitor no longer flags. No real gain (p = 0.14): it sometimes moved to actions where every imagined future topples, which shows no split and so looked safe.",
+   bars: [["No filter", 30.1], ["CEM v1", 28.4]], unit: "% chance a neighbour topples, 32 risky states"},
+  {t: "3. CEM v1, with your policy", k: "--bad", v: "makes things worse", h: "Filter v1 with your policy, 100 paired episodes",
+   say: "The same 100 episodes with and without the filter. It prevented 9 topples but caused 17, and success dropped from 63 to 55.",
+   bars: [["Policy alone", 29], ["With filter v1", 37]], unit: "neighbour topples in 100 episodes"},
+  {t: "4. CEM v2, fixed states", k: "--good", v: "halves topples", h: "Filter v2 must keep the policy's intended outcome",
+   say: "A change is only allowed if the imagined outcome stays the one the policy was going for. Topples halve (p = 0.0003). On 13 of 32 risky states it found nothing safe nearby and paused instead.",
+   bars: [["No filter", 30.1], ["Filter v2", 14.1]], unit: "% chance a neighbour topples, 32 risky states"},
+  {t: "5. CEM v2, with your policy", k: "--bad", v: "no effect", h: "Filter v2 with your policy, 100 paired episodes",
+   say: "The deciding test. It prevented 13 topples and caused 12; success 63 vs 61. No effect.",
+   bars: [["Policy alone", 29], ["With filter v2", 28]], unit: "neighbour topples in 100 episodes"},
+  {t: "6. Why it fails", k: "--wait", v: "diagnosis", h: "What really happened at each decision",
+   say: "We simulated the real outcome of 908 decisions. Only 54 of 351 monitor flags were at moments with real topple risk. Risk is near 0% two chunks before a topple and already high one chunk before, so the warning comes late. At that moment the policy's plan already topples in most futures, and v2 kept that outcome.",
+   bars: [["Flags at moments with no real risk", 297], ["Flags at moments with real risk", 54]], unit: "monitor flags in closed loop (policy alone)"},
+  {t: "7. Light blocks were the wrong test", k: "--wait", v: "finding", h: "The world model never saw light blocks",
+   say: "The same latent signals score 0.90 on normal-mass test states but only 0.68 with 30%-weight neighbours, physics the world model never trained on. New stress test: normal blocks with 2x robot tracking error (20% topples).",
+   bars: [["Barrier quality, light neighbours", 0.68], ["Barrier quality, normal blocks", 0.90]], unit: "AUC for picking out real risk (0.5 = chance)"},
+  {t: "8. The world model was the weak link", k: "--wait", v: "finding", h: "Real futures show the forks; imagined ones did not",
+   say: "Encoding the real closed-loop futures into the same camera latent catches 97.5% of forks at 3.7% false alarms. The world model, trained only on replayed demonstrations, caught 35%. So we retrained it on the policy's own states.",
+   bars: [["Real futures in the latent", 97.5], ["Imagined futures, old world model", 35], ["Imagined, retrained world model", 46]], unit: "% of real forks caught (held-out decisions)"},
+  {t: "9. Fork-boundary filter, final test", k: "--good", v: "passed", h: "CBF filter with your policy, 300 paired episodes (pre-registered)",
+   say: "Keeps the policy's plan unless its imagined futures move toward a fork or change the world away from the hand; otherwise picks the closest safe plan the policy itself proposes. Final: 27 topples prevented, 9 caused (p = 0.002); success up from 179 to 187. Of the 9 caused, about half come from runs drifting apart long after a harmless nudge; the rest are world-model blind spots (see Inspector).",
+   bars: [["Policy alone", 65], ["With fork-boundary filter", 47]], unit: "neighbour topples in 300 paired test episodes"},
+  {t: "10. What each intervention really did", k: "--wait", v: "diagnosis", h: "Ground truth for all 502 interventions in the final test",
+   say: "Barrier-triggered actions do the work (85 helped, 14 hurt). The away-from-the-hand regime check fires 197 times but almost never matters (7 helped, 2 hurt). Backing off is the best fallback (11 of 13 helped, risk 25% to 1%). The caused topples mostly come from picking a near-copy of a risky policy plan at a correctly flagged moment.",
+   bars: [["Helped (really safer)", 115], ["No real difference", 368], ["Hurt (really riskier)", 19]], unit: "interventions, by real effect (64 simulated futures each)"},
+  {t: "11. Optimisation instead of selection", k: "--wait", v: "mixed", h: "Single CBF optimisation (no hand-made moves): offline win, closed-loop tie",
+   say: "Smooth path bends + speed, multi-start from the policy's own samples, relative disturbance barrier, exact fork check. Offline on 75 risky decisions it beat selection (12.4% vs 13.8% real risk). In closed loop (dev4, 150 episodes) it was not distinguishable from the current filter (25 vs 27 topples) and lost a few successes, so the current filter stays.",
+   bars: [["Policy alone (dev4)", 30], ["Current filter (dev4)", 27], ["CBF optimisation (dev4)", 25]], unit: "neighbour topples, 150 dev episodes (Alliance)"},
+  {t: "12. Where the headroom is", k: "--wait", v: "finding", h: "Choosing the safer action inside one decision",
+   say: "Among the policy's own 13 plans at a risky moment, the safest has 6.7% real risk and a random one 20%. Neither world model (deterministic or hybrid) picks better than random. Overnight: is that the model (imagined futures inaccurate) or the readout (statistic can't separate similar plans even from real futures)?",
+   bars: [["Random policy sample", 19.9], ["Model's pick (deterministic / hybrid)", 20.3], ["Best sample (oracle)", 6.7]], unit: "% real topple risk, 75 risky dev decisions"},
+  {t: "13. Replication on Alliance", k: "--good", v: "replicated", h: "The current filter on 300 fresh episodes (dev5)",
+   say: "Pre-registered, all arms of each episode in one cluster job. The current filter prevented 26 topples and caused 7 (p = 0.0007), and the robot succeeded more often. A new readout-based selection prevented almost as many but cost task progress.",
+   bars: [["Policy alone", 53], ["Current filter", 34], ["Readout selection", 37]], unit: "neighbour topples in 300 dev episodes"},
+  {t: "14. Largest replication", k: "--good", v: "replicated", h: "600 fresh episodes (dev6) and 1,500 pooled",
+   say: "The current filter, unchanged since its final test, prevented 64 topples and caused 6 in dev6. Pooled over five runs it prevents 143 and causes 34. Most remaining failures are detected only at the decision where the topple starts, i.e. too late; dev7 tests acting one step earlier.",
+   bars: [["Policy alone (pooled)", 315], ["Current filter (pooled)", 206]], unit: "neighbour topples, 1,500 paired episodes"},
+  {t: "15. Act one step earlier", k: "--good", v: "dev win", h: "A larger safety margin: h_safe = log2 3 instead of 1",
+   say: "Most remaining failures were caught only at the decision where the topple starts. Requiring plans to stay fork-free even at 2x the robot's errors makes the filter act on 'marginal' plans one step earlier. On 600 dev episodes: 45 topples vs 87 (current filter) vs 113 (policy alone), and more successes. It intervenes about twice as often (still ~6% of decisions). Final test 2 is pre-registered and running.",
+   bars: [["Policy alone", 113], ["Current filter (h_safe = 1)", 87], ["Larger margin (h_safe = log2 3)", 45]], unit: "neighbour topples, 600 dev episodes (dev7)"},
+  {t: "16. Final test 2", k: "--good", v: "passed", h: "Larger safety margin, 600 fresh episodes (pre-registered)",
+   say: "Frozen before the test: the original fork-boundary filter with h_safe = log2 3. It prevented 95 topples and caused 11 (p = 4e-18), and the robot succeeded more often (374 -> 420). Against the original filter it avoided 52 topples and suffered 9 that the original avoided.",
+   bars: [["Policy alone", 114], ["Original filter (h_safe = 1)", 73], ["Final filter (h_safe = log2 3)", 30]], unit: "neighbour topples in 600 fresh episodes"},
+];
+const VIDS = [
+  {f: "pillar/pillar_fork.mp4", g: "pillar", t: "Pillar task: one moment, two outcomes", d: "Our new custom MuJoCo task (same robot, controller, camera and noise as Jenga): place a cube on a narrow 1.6 cm pillar. From the same moment during the descent, the same 8 actions replayed with two different draws of Jenga's 2x execution noise: in one the cube stays on top, in the other it falls to the table. 1/3 speed, from the world-model camera (fixed, side-on to the pillar).", tag: ["fork", "--wait"], ar: "960/288"},
+  {f: "pillar/pillar_eps.mp4", g: "pillar", t: "Pillar task: scripted expert under noise", d: "Four episodes of the scripted expert with Jenga's 2x closed-loop execution noise: pick the cube, lift, move over the pillar, descend, release, retreat. The expert succeeds 80% of the time at this pillar width; the failures are the cube falling off. Real time (0.1 s per action).", tag: ["expert", "--good"], ar: "320/288"},
+  {f: "maniskill/LiftPeg_PPO_rollouts.mp4", g: "maniskill", t: "LiftPegUpright: PPO closed loop (forks)", d: "The shipped PPO policy, 4 of the 32 fork-check episodes, from the world-model camera. It grips the peg near the top and holds it balanced upright against the table; small errors decide whether it stays up. Its own rollouts pass the fork check (24 forks in 224 moments). Strict success = within 4.6 deg of vertical at the end, so a slightly leaning peg counts as a failure. 1/2 speed.", tag: ["forks", "--wait"], ar: "1536/432"},
+  {f: "maniskill/LiftPeg_DP_rollouts.mp4", g: "maniskill", t: "LiftPegUpright: Diffusion Policy closed loop (no forks)", d: "Our Diffusion Policy trained on motion-planner demos (79% success), 3 of the 32 fork-check episodes: a success (lifts the peg high, rotates it, sets it down fully upright and lets go), a stall at ~45 deg, and a never-lift. Its failures are deterministic and its release is robust to noise, so its rollouts FAIL the fork check (1 fork in 1024 moments). It lifts the peg partly out of the side camera's frame. Real time.", tag: ["no forks", "--bad"], ar: "1152/432"},
+  {f: "maniskill/LiftPeg_fork.mp4", g: "maniskill", t: "LiftPegUpright: one moment, two outcomes (a real fork)", d: "From the same simulator state, the policy's next 8 actions are replayed 33 times in parallel on the GPU: exactly, and with ~2.5 mm of smoothed execution noise. Under one noise draw the released peg stays standing (9 deg); under another it falls flat (90 deg; it falls along the camera axis, so it shows as a small square). 18 of 32 draws stand, 14 fall. This is the kind of moment our filter is built for. Shown at 1/3 speed from the chosen world-model camera.", tag: ["fork", "--wait"], ar: "1152/432"},
+  {f: "maniskill/LiftPeg_policy_demo3.mp4", g: "maniskill", t: "LiftPegUpright: policy success", d: "The task: grip a lying peg near one end and pivot it upright onto the table. Policy = ManiSkill's shipped PPO expert (its recorded rollout, replayed exactly). Left: the camera chosen for the world model, a fixed side camera that sees the peg's tilt in profile with little robot in the way. Right: an oblique overview. Half speed.", tag: ["success", "--good"], ar: "768/432"},
+  {f: "maniskill/LiftPeg_policy_demo7.mp4", g: "maniskill", t: "LiftPegUpright: policy success (second start)", d: "Same policy, a different peg placement. Left: world-model camera (fixed side view). Right: oblique overview. Half speed.", tag: ["success", "--good"], ar: "768/432"},
+  {f: "maniskill/StackPyramid_policy_demo5.mp4", g: "maniskill", t: "StackPyramid: policy success", d: "The task: stack three cubes into a pyramid. Policy = ManiSkill's motion planner (its recorded demo, replayed exactly). Left: fixed side camera. Right: oblique overview. Real time. This task FAILED our fork check (10 loose forks in 373 moments, 0 where success splits) and was dropped.", tag: ["success", "--good"], ar: "768/432"},
+  {f: "maniskill/StackPyramid_policy_demo11.mp4", g: "maniskill", t: "StackPyramid: policy success (second start)", d: "Same planner, different cube placement. Left: fixed side camera. Right: overview. Real time.", tag: ["success", "--good"], ar: "768/432"},
+  {f: "maniskill/StackPyramid_fork.mp4", g: "maniskill", t: "StackPyramid: its most fork-like moment does not fork", d: "The moment where the most noisy replays changed outcome in the check (24 of 32), replayed again with fresh ~2.5 mm noise: the exact replay and the two most different noisy replays look the same, and none of 32 ends more than 20 mm from the exact one. This is why StackPyramid was dropped: its outcomes barely depend on small execution errors. 1/3 speed.", tag: ["no fork", "--bad"], ar: "1152/432"},
+  {f: "toolhang/ToolHang_s103_success.mp4", g: "toolhang", t: "ToolHang: clean success", d: "Our Diffusion Policy (robomimic, trained on the 200 human demos, epoch-600 checkpoint, 62% success on 50 fresh episodes; its failures turned out not to fork under noise) inserts the frame into the stand, then hangs the tool on it. Real time (20 Hz control). Left: the fixed front camera (agentview, the camera our fork check is gated on). Right: the front camera, facing the robot. Banner shows the episode's outcome from the start.", tag: ["success", "--good"], ar: "768/420"},
+  {f: "toolhang/ToolHang_s102_success.mp4", g: "toolhang", t: "ToolHang: success after a slow hang", d: "Same policy, a different start. It needs several attempts to line the tool's hole up with the hook, then succeeds at step 655 of 800. Real time (20 Hz control). Left: the fixed front camera (agentview, the camera our fork check is gated on). Right: the front camera, facing the robot. Banner shows the episode's outcome from the start.", tag: ["success", "--good"], ar: "768/420"},
+  {f: "toolhang/ToolHang_s101_fail.mp4", g: "toolhang", t: "ToolHang: tool slides off the hook (fails)", d: "The frame goes in and the tool reaches the hook, but it slides off onto the base: a fragile, contact-sensitive failure of the kind the fork test targets. Real time (20 Hz control). Left: the fixed front camera (agentview, the camera our fork check is gated on). Right: the front camera, facing the robot. Banner shows the episode's outcome from the start.", tag: ["fails, slips", "--bad"], ar: "768/420"},
+  {f: "toolhang/ToolHang_s107_fail.mp4", g: "toolhang", t: "ToolHang: never threads the hook (fails)", d: "The policy keeps adjusting the tool around the hook without threading it, and runs out of time at step 800. Real time (20 Hz control). Left: the fixed front camera (agentview, the camera our fork check is gated on). Right: the front camera, facing the robot. Banner shows the episode's outcome from the start.", tag: ["fails, timeout", "--bad"], ar: "768/420"},
+  {f: "safemanip/PickPlaceCounterToStove_s21_e0_success.mp4", g: "safemanip", t: "SafeManip: pick and place onto the stove (success)", d: "pi0.5 alone, clean success. Real time. Top: a raised viewing camera (visualisation only). Bottom: the three cameras pi0.5 actually receives (the fork test is now evaluated on the wrist camera and on a separate fixed monitor camera). Banner shows the outcome from the start and flashes red when an object tips over or slips from the closed gripper.", tag: ["success", "--good"], ar: "768/786"},
+  {f: "safemanip/PickPlaceCounterToStove_s21_e1_success.mp4", g: "safemanip", t: "SafeManip: stove pick-and-place (success, object tips)", d: "Task succeeds, but the object tips over when placed. Real time. Top: a raised viewing camera (visualisation only). Bottom: the three cameras pi0.5 actually receives (the fork test is now evaluated on the wrist camera and on a separate fixed monitor camera). Banner shows the outcome from the start and flashes red when an object tips over or slips from the closed gripper.", tag: ["success + tip", "--wait"], ar: "768/786"},
+  {f: "safemanip/StackBowlsCabinet_s21_e1_fail.mp4", g: "safemanip", t: "SafeManip: stack bowls in the cabinet (fails)", d: "Bowls repeatedly slip from the gripper and one tips over - the fragile, fork-type hazard our monitor targets. Real time. Top: a raised viewing camera (visualisation only). Bottom: the three cameras pi0.5 actually receives (the fork test is now evaluated on the wrist camera and on a separate fixed monitor camera). Banner shows the outcome from the start and flashes red when an object tips over or slips from the closed gripper.", tag: ["fails, tips", "--bad"], ar: "768/786"},
+  {f: "safemanip/RecycleBottlesByType_s21_e0_fail.mp4", g: "safemanip", t: "SafeManip: sort bottles by type (fails)", d: "Several bottles are knocked over and one slips from the gripper. Real time. Top: a raised viewing camera (visualisation only). Bottom: the three cameras pi0.5 actually receives (the fork test is now evaluated on the wrist camera and on a separate fixed monitor camera). Banner shows the outcome from the start and flashes red when an object tips over or slips from the closed gripper.", tag: ["fails, knocks", "--bad"], ar: "768/786"},
+  {f: "safemanip/LoadDishwasher_s21_e1_fail.mp4", g: "safemanip", t: "SafeManip: load the dishwasher (fails)", d: "Dishes slip from the gripper and tip over. Real time. Top: a raised viewing camera (visualisation only). Bottom: the three cameras pi0.5 actually receives (the fork test is now evaluated on the wrist camera and on a separate fixed monitor camera). Banner shows the outcome from the start and flashes red when an object tips over or slips from the closed gripper.", tag: ["fails, slips", "--bad"], ar: "768/786"},
+  {f: "safemanip/PickPlaceToasterToCounter_s21_e0_fail.mp4", g: "safemanip", t: "SafeManip: toaster to counter (fails, no safety event)", d: "pi0.5 runs out of time without dropping or knocking anything - a task failure that is not a safety event. Real time. Top: a raised viewing camera (visualisation only). Bottom: the three cameras pi0.5 actually receives (the fork test is now evaluated on the wrist camera and on a separate fixed monitor camera). Banner shows the outcome from the start and flashes red when an object tips over or slips from the closed gripper.", tag: ["fails, safe", "--wait"], ar: "768/786"},
+  {f: "s4b/s4b_long_comparison.mp4", g: "opt", t: "3 minutes: policy alone vs G-CEM filter (10 episodes)", d: "Stage 4b, same start and noise seeds on both sides. Six episodes where the policy topples a neighbour and G-CEM finishes the pick safely, two where both succeed (the filter barely touches the policy), and, for honesty, one where both topple and one where only the filter topples. Orange ticks = decisions where the filter acted.", tag: ["new", "--accent"], ar: "1064/556"},
+  {f: "libero/pi05_safelibero_policy.mp4", g: "libero", t: "SafeLIBERO: pi0.5 alone, working and failing", d: "Ten episodes, no filter, outcome banner on every clip and a red flash at the first obstacle contact: two clean successes, one success that only nudges the obstacle (still a 'collision' under the benchmark's 1 mm rule), three successes that knock the obstacle over, and four failures (clips 7-10) where it knocks the obstacle over and fails the task. Real time (20 Hz control).", tag: ["new", "--accent"], ar: "544/620"},
+  {f: "s4/policy_hold_gcem_10min.mp4", g: "opt", t: "10 minutes: policy vs hold-and-replan vs G-CEM", d: "Stage 4 episodes back to back; plain-language description of each G-CEM change (speed, pause, shrink, back off).", tag: ["G-CEM", "--accent"], ar: "1592/556"},
+  {f: "dev10/long_web.mp4", g: "opt", t: "11 minutes: policy vs selection vs optimisation (14 episodes)", d: "Same start and noise seeds in all three columns; both filters on the round-1 world model. Main view: low front camera (heights visible); inset: top-down. Green = the hand's path when the filter did not act. When it acts: white dashed = what the policy wanted, thick orange = what the filter executed, arrow between their endpoints, and a sentence (how far, which way, slower). Timeline ticks = decisions where that filter acted. Outcomes use the audited definition (picked up >= 2 cm, then held or placed upright, no neighbour topple).", tag: ["new", "--accent"], ar: "1592/556"},
+  {f: "dev10/reel.mp4", g: "opt", t: "Policy vs optimisation filter vs selection filter", d: "Three dev10 episodes, same start and seeds, both filters on the round-1 world model. Under each filter: orange ticks = when it fired; the policy's chunk (grey) vs the executed chunk (orange), top and side view, with the largest change in mm.", tag: ["new", "--accent"], ar: "1696/428"},
+  {f: "dev10/triple_ep12101.mp4", g: "opt", t: "Episode 12101: both filters prevent the topple", d: "The policy alone topples a neighbour. Both filters intervene a few times and both finish the pick.", tag: ["both prevent", "--good"], ar: "1696/428"},
+  {f: "dev10/triple_ep12096.mp4", g: "opt", t: "Episode 12096: the optimiser drops the block", d: "The policy alone succeeds. At decision 41 the policy wants to lift; the optimiser rewrites the chunk by 38.5 mm (keeps the hand low and moves it sideways), the block slips out and falls flat. Selection changes 4 mm and succeeds. This is the failure the plausibility cost targets.", tag: ["opt fails", "--bad"], ar: "1696/428"},
+  {f: "dev10/triple_ep12144.mp4", g: "opt", t: "Episode 12144: only the optimiser prevents the topple", d: "The policy alone topples a neighbour; the selection filter fires but still topples; the optimiser prevents it.", tag: ["opt wins", "--good"], ar: "1696/428"},
+  {f: "final2/reel.mp4", g: "final", t: "Highlight reel: policy alone vs final filter", d: "Five episodes from final test 2. Left: the policy topples a neighbour. Right: the same start with the filter, which acts early (orange banner) and finishes the pick.", tag: ["filter wins", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10436.mp4", g: "final", t: "Episode 10436: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10447.mp4", g: "final", t: "Episode 10447: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10036.mp4", g: "final", t: "Episode 10036: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10109.mp4", g: "final", t: "Episode 10109: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10370.mp4", g: "final", t: "Episode 10370: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10007.mp4", g: "final", t: "Episode 10007: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10209.mp4", g: "final", t: "Episode 10209: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "final2/pair_ep10024.mp4", g: "final", t: "Episode 10024: topple prevented", d: "Same start and seeds. Policy alone topples a neighbour; with the final filter no topple and the block is lifted.", tag: ["prevented", "--good"], ar: "1140/330"},
+  {f: "monitor_video_3block.mp4", g: "monitor", t: "Two minutes of the monitor", d: "Nine new layouts. Monitor decision every 0.8 s, real outcome below.", tag: ["monitor", "--accent"], ar: "16/9"},
+  {f: "films_cem/ep11_ok_8flags.mp4", g: "filter", t: "Filter v1: eight interventions, success", d: "The banner shows each decision: OK, shifted, or paused.", tag: ["success", "--good"]},
+  {f: "films_cem/ep06_toppled_2flags.mp4", g: "filter", t: "Filter v1: topple not prevented", d: "Two flagged moments; a neighbour still topples during the lift.", tag: ["toppled", "--bad"]},
+  {f: "films_cem/ep03_ok_4flags.mp4", g: "filter", t: "Filter v1: slow but successful", d: "Four interventions; lifts 85 mm after 41 s.", tag: ["success", "--good"]},
+  {f: "films_cem/ep01_fail_5flags.mp4", g: "filter", t: "Filter v1: never lifts", d: "Five interventions; the block is never lifted.", tag: ["no lift", "--wait"]},
+  {f: "diagnose/ep09_ok.mp4", g: "policy", t: "Your policy: fast lift", d: "Lifts the block 3 cm after 12 s.", tag: ["success", "--good"]},
+  {f: "diagnose/ep05_ok.mp4", g: "policy", t: "Your policy: typical success", d: "Lifts after 15 s and holds it about 6 cm up.", tag: ["success", "--good"]},
+  {f: "diagnose/ep03_fail.mp4", g: "policy", t: "Your policy: grasp fails", d: "Never lifts the block within 60 s.", tag: ["no lift", "--wait"]},
+  {f: "diagnose/ep12_fail.mp4", g: "policy", t: "Your policy: another miss", d: "Never lifts the block within 60 s.", tag: ["no lift", "--wait"]},
+  {f: "threeblock_fix_verification.mp4", g: "data", t: "Data check: three-block", d: "Old vs fixed perception error with the robot holding still. Nothing should move in the fixed panels.", tag: ["check", "--accent"], ar: "4/1"},
+  {f: "t2_fix_verification.mp4", g: "data", t: "Data check: push past cylinders", d: "The same check for the cylinder task.", tag: ["check", "--accent"], ar: "4/1"},
+  {f: "perturbation_fix_verification.mp4", g: "data", t: "The bug we found", d: "The old perception error knocks objects over with nobody touching them.", tag: ["bug", "--bad"], ar: "4/1"},
+];
+const GROUPS = [["all", "All"], ["pillar", "Pillar (custom)"], ["maniskill", "ManiSkill"], ["toolhang", "ToolHang"], ["safemanip", "SafeManip"], ["opt", "Optimisation filter"], ["libero", "SafeLIBERO"], ["final", "Final filter vs policy"], ["filter", "Filter"], ["policy", "Policy alone"], ["monitor", "Monitor"], ["data", "Data checks"]];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
+$("#stamp").textContent = "updated " + UPDATED;
+
+const TABS = ["today", "method", "monitor", "filter", "inspect", "videos"];
+function show(name) {
+  TABS.forEach(t => { $("#t-" + t).setAttribute("aria-selected", t === name); $("#p-" + t).hidden = t !== name; });
+  try { localStorage.setItem("lab-tab", name) } catch (e) {}
+  try { if (location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name) } catch (e) {}
+}
+TABS.forEach(t => $("#t-" + t).addEventListener("click", () => show(t)));
+let first = location.hash.slice(1);
+if (!TABS.includes(first)) { try { first = localStorage.getItem("lab-tab") } catch (e) {} }
+show(TABS.includes(first) ? first : "today");
+
+$("#cards").innerHTML = CARDS.map(c => `<div class="card" style="--c:var(${c.c})"><div class="q">${esc(c.q)}</div><p class="a">${esc(c.a)}</p><p>${esc(c.p)}</p>
+  ${c.prog ? `<div class="bar" style="--c:var(${c.c})"><i style="width:${Math.round(100 * c.prog[0] / c.prog[1])}%"></i></div><div class="barlabel">${c.prog[0].toLocaleString()} / ${c.prog[1].toLocaleString()} ${esc(c.prog[2])}</div>` : ""}
+  ${c.tab ? `<button type="button" class="more" data-tab="${c.tab}">See details →</button>` : ""}</div>`).join("");
+$("#cards").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (b) { show(b.dataset.tab); window.scrollTo(0, 0) } });
+$("#news").innerHTML = NEWS.map(n => `<li class="${n.k}">${esc(n.t)}</li>`).join("");
+
+$("#monchart").innerHTML = MON.map(m => `<div class="name${m.key ? " key" : ""}">${esc(m.n)}<small>${esc(m.s)}</small></div>
+  <div class="pair"><div class="row"><div class="track"><i style="width:${m.c}%;--k:var(--accent)"></i></div><span class="v">${m.c}%</span></div>
+  <div class="row"><div class="track"><i style="width:${m.f}%;--k:var(--bad)"></i></div><span class="v">${m.f}%</span></div></div>`).join("");
+
+let step = STEPS.length - 1;
+function drawSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `<button type="button" data-i="${i}" aria-pressed="${i === step}"><span class="dot" style="--k:var(${s.k})"></span>${esc(s.t)}</button>`).join("");
+  const s = STEPS[step], max = Math.max(...s.bars.map(b => b[1])) * 1.15;
+  $("#stepview").innerHTML = `<span class="verdict" style="--k:var(${s.k})">${esc(s.v)}</span><h3>${esc(s.h)}</h3><p class="say">${esc(s.say)}</p>
+    <div class="hb">${s.bars.map((b, j) => `<div class="name">${esc(b[0])}</div><div class="row"><div class="track"><i style="width:${(100 * b[1] / max).toFixed(1)}%;--k:var(${j === 0 ? "--muted" : s.k})"></i></div><span class="v">${b[1]}</span></div>`).join("")}</div>
+    <p class="note">${esc(s.unit)}</p>`;
+}
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; step = +b.dataset.i; drawSteps() });
+drawSteps();
+
+let group = "all", cur = 0;
+function drawList() {
+  $("#vchips").innerHTML = GROUPS.map(([k, l]) => `<button type="button" data-g="${k}" aria-pressed="${k === group}">${l}</button>`).join("");
+  $("#vlist").innerHTML = VIDS.map((v, i) => (group === "all" || v.g === group) ? `<li><button type="button" data-i="${i}" aria-current="${i === cur}">${esc(v.t)}<small>${esc(v.d)}</small><span class="tag" style="--k:var(${v.tag[1]})">${esc(v.tag[0])}</span></button></li>` : "").join("");
+}
+function play(i) {
+  cur = i; const v = VIDS[i], el = $("#vid");
+  el.src = "videos/" + v.f; el.style.setProperty("--ar", v.ar || "8/3");
+  $("#vtitle").textContent = v.t; $("#vdesc").textContent = v.d;
+  drawList();
+}
+$("#vchips").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; group = b.dataset.g; drawList() });
+$("#vlist").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; play(+b.dataset.i); $("#player").scrollIntoView({block: "nearest"}) });
+play(0);
+
+// ---------------- inspector
+let INS = null, iep = null, icat = "all", irun = 0;
+const IRUNS = [{dir: "inspector_test", label: "Final test: fork-boundary filter", arm: "fork-boundary filter"},
+               {dir: "inspector", label: "Earlier: filter v2, light blocks", arm: "filter v2"}];
+const IDIR = () => IRUNS[irun].dir;
+const ICATS = [["all", "All"], ["prevented", "Filter prevented a topple"], ["caused", "Filter caused a topple"], ["both toppled", "Both toppled"], ["neither", "Neither toppled"]];
+const CATK = {prevented: "--good", caused: "--bad", "both toppled": "--wait", neither: "--muted"};
+const riskColor = r => r >= 0.5 ? "var(--bad)" : r >= 0.03 ? "var(--wait)" : "var(--good)";
+const actColor = r => r.paused ? "var(--muted)" : r.changed ? "var(--wait)" : r.flag ? "var(--bad)" : "transparent";
+const pct = x => Math.round(100 * x) + "%";
+async function loadIns(force) {
+  if (INS && !force) return;
+  $("#iruns").innerHTML = IRUNS.map((r, i) => `<button type="button" data-r="${i}" aria-pressed="${i === irun}">${r.label}</button>`).join("");
+  try { INS = await (await fetch(IDIR() + "/episodes.json")).json() } catch (e) { INS = {episodes: []} }
+  iep = null;
+  drawEpList();
+  if (INS.episodes.length) pickEp(INS.episodes[0].episode);
+  else $("#pair2").innerHTML = '<p class="note">Episode data is still being built.</p>';
+}
+function drawEpList() {
+  $("#ichips").innerHTML = ICATS.map(([k, l]) => `<button type="button" data-c="${k}" aria-pressed="${k === icat}">${l}</button>`).join("");
+  $("#eplist").innerHTML = INS.episodes.filter(e => icat === "all" || e.category === icat).map(e =>
+    `<button type="button" data-e="${e.episode}" aria-pressed="${e.episode === iep}"><span class="dot" style="--k:var(${CATK[e.category]})"></span>episode ${e.episode}</button>`).join("");
+}
+$("#iruns").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b || +b.dataset.r === irun) return; irun = +b.dataset.r; loadIns(true) });
+$("#ichips").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; icat = b.dataset.c; drawEpList() });
+$("#eplist").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; pickEp(+b.dataset.e) });
+function side(E, arm, label) {
+  const A = E.arms[arm]; if (!A) return "";
+  const cells = A.rows.map((r, i) => {
+    const tip = `t ${r.t} s, real risk ${pct(r.risk_exec)}` + (r.flag ? ", flagged" : "") + (r.changed ? ", action changed" : r.paused ? ", paused" : "");
+    return `<button type="button" data-i="${i}" class="${A.topple_chunk === r.chunk ? "top" : ""}" title="${tip}" aria-label="${tip}"><i style="background:${actColor(r)}"></i><em style="background:${riskColor(r.risk_exec)}"></em></button>`;
+  }).join("");
+  return `<div class="side"><div class="hd"><b>${label}</b><span>${A.toppled ? "neighbour toppled" : A.success ? "success" : "no lift"}</span></div>
+    <video id="v-${arm}" controls muted preload="metadata" playsinline src="${IDIR()}/${A.video}"></video>
+    <div class="strip" data-arm="${arm}">${cells}</div></div>`;
+}
+function pickEp(e) {
+  iep = e; drawEpList();
+  const E = INS.episodes.find(x => x.episode === e);
+  $("#pair2").innerHTML = side(E, "alone", "Policy alone") + side(E, "filter", "Policy + " + IRUNS[irun].arm) +
+    `<div class="stripkey"><span style="--k:var(--bad)">top: monitor flag</span><span style="--k:var(--wait)">top: filter changed the action</span><span style="--k:var(--muted)">top: paused</span><span style="--k:var(--good)">bottom: real risk 0%</span><span style="--k:var(--wait)">bottom: some risk</span><span style="--k:var(--bad)">bottom: risk 50%+</span><span style="--k:transparent">▲ topple starts</span></div>`;
+  const div = E.first_divergence_chunk;
+  $("#card").innerHTML = `<h3>Episode ${e}: ${esc(E.category)}</h3><p class="say">${div != null ? `The two runs are identical until ${(div * 0.8).toFixed(1)} s, when the filter first acts.` : "The filter never acted in this episode."} Pick a decision in either strip.</p>`;
+}
+$("#pair2").addEventListener("click", ev => {
+  const b = ev.target.closest(".strip button"); if (!b) return;
+  const arm = b.closest(".strip").dataset.arm, E = INS.episodes.find(x => x.episode === iep), r = E.arms[arm].rows[+b.dataset.i];
+  document.querySelectorAll(".strip button").forEach(x => x.setAttribute("aria-current", "false")); b.setAttribute("aria-current", "true");
+  for (const a of ["alone", "filter"]) { const v = document.getElementById("v-" + a), A = E.arms[a]; if (v && A) { v.pause(); try { v.currentTime = Math.max(0, r.t - A.video_t0) } catch (e) {} } }
+  drawCard(arm, r);
+});
+function scatter(cv, P, groups) {
+  const ctx = cv.getContext("2d"), W = cv.width = Math.max(200, cv.clientWidth) * devicePixelRatio, H = cv.height = W;
+  const cs = getComputedStyle(document.documentElement), c0 = cs.getPropertyValue("--accent"), c1 = cs.getPropertyValue("--bad"), gl = cs.getPropertyValue("--line");
+  ctx.clearRect(0, 0, W, H); ctx.strokeStyle = gl; ctx.lineWidth = devicePixelRatio;
+  ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+  const span = Math.max(1e-6, ...P.flat().map(Math.abs)) * 1.2, minor = groups.reduce((a, b) => a + b, 0) <= 32 ? 1 : 0;
+  P.forEach((p, j) => { ctx.fillStyle = groups[j] === minor ? c1 : c0; ctx.beginPath(); ctx.arc(W / 2 + p[0] / span * W / 2, H / 2 - p[1] / span * H / 2, 4 * devicePixelRatio, 0, 7); ctx.fill() });
+}
+function drawCard(arm, r) {
+  const fut = f => `<div class="futures">${f.map(x => `<i class="${x ? "t" : ""}"></i>`).join("")}</div>`;
+  const acted = r.changed || r.paused;
+  const verdict = !acted ? "" : r.risk_exec < r.risk_orig - 0.03 ? "The filter's choice was safer." : r.risk_exec > r.risk_orig + 0.03 ? "The filter's choice was riskier." : "The filter's choice made no real difference.";
+  const monitorSays = r.split_orig ? "The monitor saw its imagined futures split into two groups and flagged this moment." : (r.flag ? "Flagged." : "The monitor saw a single outcome and did not flag this moment.");
+  const n = a => a.reduce((x, y) => x + y, 0);
+  $("#card").innerHTML = `<h3>${arm === "alone" ? "Policy alone" : "With " + IRUNS[irun].arm} · t = ${r.t} s · decision ${r.d}</h3>
+    <p class="say">${monitorSays} Real chance a neighbour topples with the policy's action: <b>${pct(r.risk_orig)}</b>.${acted ? ` ${r.paused ? "The filter paused" : "The filter changed the action, by up to " + r.offset_mm + " mm"}; real chance then: <b>${pct(r.risk_exec)}</b>. ${verdict}` : ""}</p>
+    <div class="cardgrid">
+      <div><h4>Imagined: policy's action</h4><canvas id="cv0" aria-label="64 imagined futures for the policy's action"></canvas><p class="note">64 imagined futures, 3 s ahead. Two colours mean it found two outcome groups.</p></div>
+      <div><h4>Real: policy's action</h4><span class="big">${n(r.real_orig)} / 64</span> topple${fut(r.real_orig)}<p class="note">Each square is one simulated future with the same kinds of error. Red means a neighbour topples.</p></div>
+      ${acted ? `<div><h4>Imagined: filter's ${r.paused ? "pause" : "choice"}</h4><canvas id="cv1" aria-label="64 imagined futures for the filter's choice"></canvas></div>
+      <div><h4>Real: filter's ${r.paused ? "pause" : "choice"}</h4><span class="big">${n(r.real_exec)} / 64</span> topple${fut(r.real_exec)}</div>` : ""}
+    </div>`;
+  scatter($("#cv0"), r.img_orig, r.groups_orig);
+  if (r.img_exec) scatter($("#cv1"), r.img_exec, r.groups_exec);
+}
+document.getElementById("t-inspect").addEventListener("click", () => loadIns());
+if (!$("#p-inspect").hidden) loadIns();
+// ---------------- method
+let MD = null, msTrig = "all";
+const svgEl = (w, h, body, label) => `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">${body}</svg>`;
+const KEY = items => `<div class="legend">${items.map(([k, l]) => `<span style="--k:var(${k})">${esc(l)}</span>`).join("")}</div>`;
+const T = (x, y, s, a = "start", cls = "") => `<text x="${x}" y="${y}" text-anchor="${a}"${cls ? ` class="${cls}"` : ""}>${esc(s)}</text>`;
+const R = (x, y, w, h, k, rx = 2) => `<rect x="${x}" y="${y}" width="${Math.max(0, w)}" height="${Math.max(0, h)}" rx="${rx}" style="fill:var(${k})"/>`;
+const pc = x => (x < 0.01 && x > 0 ? (100 * x).toFixed(1) : Math.round(100 * x)) + "%";
+
+async function loadMethod() {
+  if (MD) return;
+  try { MD = await (await fetch("method/data.json")).json() } catch (e) { $("#m-effect").insertAdjacentHTML("beforeend", '<p class="note">Figure data could not be loaded.</p>'); return }
+  const X = MD.example;
+  scatter($("#mf0"), X.img_orig, X.groups_orig); scatter($("#mf1"), X.img_exec, X.groups_exec);
+  const n = a => a.reduce((s, v) => s + v, 0);
+  $("#mf0c").textContent = `forks · real: ${n(X.real_orig)}/64 topple`;
+  $("#mf1c").textContent = `one outcome · real: ${n(X.real_exec)}/64 topple`;
+  $("#mfcap").textContent = `A real decision from the first final test (episode ${X.episode}, t = ${X.t} s). Each dot is one imagined future 3 s ahead, in the first two principal components of the latent; colours are the two groups the fork test finds. The filter moved the plan by ${X.offset_mm.toFixed(1)} mm and real topple risk fell from ${pc(X.risk_orig)} to ${pc(X.risk_exec)}.`;
+  drawStrip(); drawLadder(); drawHdist(); drawMask(); drawTrig(); drawGrid(); drawScatter(); drawRepl(); drawWhen(); drawLead(); drawLift(); drawVids();
+  try { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([$("#mladder")]).catch(() => {}) } catch (e) {}
+  window.addEventListener("resize", () => { scatter($("#mf0"), X.img_orig, X.groups_orig); scatter($("#mf1"), X.img_exec, X.groups_exec) });
+}
+
+function drawStrip() {
+  const X = MD.example, W = 420, H = 96, all = [...X.img_orig, ...X.img_exec].map(p => p[0]);
+  const lo = Math.min(...all), hi = Math.max(...all), sx = v => 20 + (v - lo) / (hi - lo || 1) * (W - 40);
+  const row = (P, g, y, lab) => {
+    const minor = g.reduce((a, b) => a + b, 0) <= 32 ? 1 : 0;
+    return T(20, y - 14, lab) + `<line x1="20" x2="${W - 20}" y1="${y}" y2="${y}" style="stroke:var(--line)"/>` +
+      P.map((p, j) => `<circle cx="${sx(p[0]).toFixed(1)}" cy="${y + ((j * 37) % 11) - 5}" r="3.2" style="fill:var(${g[j] === minor ? "--bad" : "--accent"});opacity:.85"/>`).join("");
+  };
+  $("#mstrip").innerHTML = svgEl(W, H, row(X.img_orig, X.groups_orig, 30, "policy's plan: 2 groups, D > 2 → fork") + row(X.img_exec, X.groups_exec, 78, "filter's choice: no clear split"), "1-D projection of the futures");
+}
+
+function drawLadder() {
+  const S = [0.5, 1, 2, 3], W = 420, H = 118, cw = W / 4;
+  let b = "";
+  S.forEach((s, i) => {
+    const cx = i * cw + cw / 2, split = s >= 2;
+    for (let j = 0; j < 22; j++) {
+      const a = (j * 2.399) % 6.283, r = (6 + s * 7) * Math.sqrt(((j * 7) % 22) / 22);
+      const off = split ? (j % 3 === 0 ? 16 : -6) * Math.min(1.6, s / 2) : 0;
+      b += `<circle cx="${(cx + off + r * Math.cos(a)).toFixed(1)}" cy="${(48 + r * Math.sin(a) * 0.7).toFixed(1)}" r="2.6" style="fill:var(${split && j % 3 === 0 ? "--bad" : "--accent"});opacity:.8"/>`;
+    }
+    b += T(cx, 100, `s = ${s}`, "middle", "ink") + T(cx, 114, split ? "fork" : "1 outcome", "middle");
+    if (s === 2) b += `<rect x="${i * cw + 6}" y="8" width="${cw - 12}" height="98" rx="6" style="fill:none;stroke:var(--wait);stroke-width:1.5"/>`;
+  });
+  $("#mladder").innerHTML = svgEl(W, H, b, "Uncertainty scale ladder") + `<p class="note">Schematic: this plan first forks at \\(s=2\\), so \\(h=\\log_2 2=1\\): below \\(h_{\\text{safe}}=\\log_2 3\\), so the final filter acts (the first filter, with \\(h_{\\text{safe}}=1\\), let it through).</p>`;
+}
+
+function drawHdist() {
+  const H = Object.fromEntries(Object.entries(MD.final2.h_nom).map(([k, v]) => [String(Math.round(parseFloat(k) * 100) / 100), v])), rows = [["-1", "forks at ½× errors", "--bad"], ["0", "forks at 1×", "--bad"], ["1", "forks at 2×", "--wait"], ["1.58", "3× or never", "--good"]];
+  const W = 420, rh = 34, mx = Math.log10(Math.max(...Object.values(H)) + 1);
+  let b = "";
+  rows.forEach(([k, lab, c], i) => {
+    const v = H[k] || 0, y = 10 + i * rh, w = Math.log10(v + 1) / mx * 230;
+    b += T(0, y + 14, `h = ${k === "1.58" ? "log₂3" : k}`, "start", "ink") + T(0, y + 27, lab) + R(130, y + 4, w, 18, c) + T(136 + w, y + 18, v.toLocaleString());
+  });
+  $("#mhdist").innerHTML = svgEl(W, 10 + rows.length * rh, b, "Distribution of barrier values") + `<p class="note">Bar length on a log scale.</p>`;
+}
+
+function drawMask() {
+  const G = 28, c = 10, W = G * c;
+  const path = [[17, 6], [16, 9], [15, 12], [14.5, 15], [14, 17]];
+  let b = "";
+  for (let r = 0; r < G; r++) for (let q = 0; q < G; q++) {
+    const inM = path.some(([u, v]) => (q + .5 - u) ** 2 + (r + .5 - v) ** 2 <= 2.4 ** 2 || (Math.abs(q + .5 - u) <= 3.1 && r + .5 <= v));
+    const blk = (r >= 15 && r <= 24) && ((q >= 6 && q <= 9) || (q >= 13 && q <= 16) || (q >= 20 && q <= 23));
+    b += `<rect x="${q * c + .5}" y="${r * c + .5}" width="${c - 1}" height="${c - 1}" style="fill:var(${inM ? "--wait" : blk ? "--accent" : "--line"});opacity:${inM ? .55 : blk ? .55 : .5}"/>`;
+  }
+  b += `<polyline points="${path.map(([u, v]) => `${u * c},${v * c}`).join(" ")}" style="fill:none;stroke:var(--ink);stroke-width:2"/>`;
+  $("#mmask").innerHTML = svgEl(W, W, b, "Hand mask schematic") + KEY([["--wait", "robot region M (ignored)"], ["--accent", "objects"], ["--ink", "planned gripper path"]]);
+}
+
+function drawTrig() {
+  const t = MD.diag.by_trigger, rows = [["barrier", "Barrier only"], ["both", "Barrier + regime"], ["regime", "Regime only"]];
+  const W = 420, mx = Math.max(...rows.map(([k]) => t[k].n)); let b = "";
+  rows.forEach(([k, lab], i) => {
+    const y = 8 + i * 44, v = t[k], s = 190 / mx; let x = 120;
+    b += T(0, y + 12, lab, "start", "ink") + T(0, y + 26, `${v.n} interventions`);
+    [["helped", "--good"], ["neutral", "--muted"], ["hurt", "--bad"]].forEach(([e, c]) => { b += R(x, y, v[e] * s, 20, c, 0); x += v[e] * s });
+    b += T(x + 6, y + 14, `${v.helped} helped · ${v.hurt} hurt`);
+  });
+  $("#mtrig").innerHTML = `<h4>What triggered the 502 interventions (first final test)</h4>` + KEY([["--good", "helped"], ["--muted", "no real effect"], ["--bad", "hurt"]]) + svgEl(W, 8 + rows.length * 44, b, "Interventions by trigger") +
+    `<p class="note">The barrier does the useful work; the regime check alone almost never matters (these interventions are harmless).</p>`;
+}
+
+function drawGrid() {
+  const K = {P: ["--good", "filter prevented a topple"], C: ["--bad", "filter caused a topple"], B: ["--wait", "both toppled"], N: ["--line", "neither toppled"]};
+  const cs = [...MD.final2.paired].sort((a, b) => "PCBN".indexOf(a) - "PCBN".indexOf(b));
+  const cnt = k => [...MD.final2.paired].filter(x => x === k).length;
+  $("#mgrid").innerHTML = `<div class="pgrid">${cs.map(k => `<i style="--k:var(${K[k][0]})" title="${K[k][1]}"></i>`).join("")}</div>`;
+  $("#mgridkey").innerHTML = "PCBN".split("").map(k => `<span style="--k:var(${K[k][0]})">${cnt(k)} ${K[k][1]}</span>`).join("");
+}
+
+function drawScatter() {
+  const TR = [["all", "All"], ["b", "Barrier"], ["r", "Regime only"], ["o", "Both"]];
+  $("#mscchips").innerHTML = TR.map(([k, l]) => `<button type="button" data-t="${k}" aria-pressed="${k === msTrig}">${l}</button>`).join("");
+  const W = 340, P = 36, S = W - P - 10, f = v => Math.sqrt(v), X = v => P + f(v) * S, Y = v => 10 + S - f(v) * S;
+  let b = `<rect x="${P}" y="10" width="${S}" height="${S}" style="fill:var(--surface)"/>`;
+  [0, 0.01, 0.1, 0.25, 0.5, 1].forEach(v => {
+    b += `<line x1="${X(v)}" x2="${X(v)}" y1="10" y2="${10 + S}" style="stroke:var(--line)"/><line x1="${P}" x2="${P + S}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)"/>`;
+    b += T(X(v), 24 + S, pc(v), "middle") + T(P - 4, Y(v) + 4, pc(v), "end");
+  });
+  b += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" style="stroke:var(--muted);stroke-dasharray:4 3"/>`;
+  const pts = MD.scatter.filter(p => msTrig === "all" || p[2] === msTrig);
+  pts.forEach(([a, e]) => {
+    const k = e < a - 0.03 ? "--good" : e > a + 0.03 ? "--bad" : "--muted";
+    b += `<circle cx="${X(a).toFixed(1)}" cy="${Y(e).toFixed(1)}" r="3" style="fill:var(${k});opacity:.7"/>`;
+  });
+  b += T(P + S / 2, 40 + S, "real risk of the policy's plan", "middle", "ink") + `<text x="10" y="${10 + S / 2}" text-anchor="middle" transform="rotate(-90 10 ${10 + S / 2})" class="ink">real risk of the executed plan</text>`;
+  const h = pts.filter(([a, e]) => e < a - 0.03).length, u = pts.filter(([a, e]) => e > a + 0.03).length;
+  $("#mscatter").innerHTML = svgEl(W, W + 34, b, "Risk before and after each intervention");
+  $("#msccap").textContent = `${pts.length} interventions: ${h} really safer (green, below the diagonal), ${u} riskier (red), the rest no real change. Square-root axes. Real risk = share of 64 simulated futures in which a neighbour topples.`;
+}
+$("#mscchips").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; msTrig = b.dataset.t; drawScatter() });
+
+function drawRepl() {
+  const R0 = MD.diag.by_replacement, rows = [["policy sample", "Another policy sample"], ["vertical", "Vertical only"], ["slow", "Half speed"], ["back off", "Back off (lift 3 cm)"]];
+  const W = 420; let b = T(150, 12, "risk before → after") + T(300, 12, "helped / hurt");
+  rows.forEach(([k, lab], i) => {
+    const v = R0[k], y = 30 + i * 40;
+    b += T(0, y + 4, lab, "start", "ink") + T(0, y + 18, `n = ${v.n}`);
+    const sc = 120 / 0.25, x0 = 150;
+    b += R(x0, y - 8, v.mean_risk_policy * sc, 8, "--muted") + R(x0, y + 3, v.mean_risk_exec * sc, 8, "--accent");
+    b += T(x0 + Math.max(v.mean_risk_policy, v.mean_risk_exec) * sc + 6, y + 4, `${pc(v.mean_risk_policy)} → ${pc(v.mean_risk_exec)}`);
+    b += R(300, y - 6, v.helped / v.n * 90, 14, "--good", 0) + R(300 + v.helped / v.n * 90, y - 6, v.hurt / v.n * 90, 14, "--bad", 0) + T(396, y + 5, `${v.helped}/${v.hurt}`, "start");
+  });
+  $("#mrepl").innerHTML = svgEl(W + 20, 30 + rows.length * 40, b, "Replacement types");
+}
+
+function drawWhen() {
+  const A = MD.final2.act_by_chunk, D = MD.final2.dec_by_chunk, W = 420, H = 170, P = 30, n = 60, bw = (W - P) / n;
+  const rate = A.map((a, i) => D[i] ? a / D[i] : 0), rm = Math.max(...rate);
+  const bin = arr => { const h = new Array(n).fill(0); arr.forEach(c => { if (c < n) h[c]++ }); return h };
+  const ha = bin(MD.final2.topple_chunk_alone), hf = bin(MD.final2.topple_chunk_filter), hm = Math.max(...ha, ...hf);
+  let b = "";
+  for (let i = 0; i < n; i++) {
+    const x = P + i * bw;
+    b += R(x, H - 20 - ha[i] / hm * 70, bw / 2 - .5, ha[i] / hm * 70, "--muted", 0) + R(x + bw / 2, H - 20 - hf[i] / hm * 70, bw / 2 - .5, hf[i] / hm * 70, "--bad", 0);
+  }
+  b += `<polyline points="${rate.map((r, i) => `${(P + (i + .5) * bw).toFixed(1)},${(H - 20 - r / rm * 130).toFixed(1)}`).join(" ")}" style="fill:none;stroke:var(--accent);stroke-width:2"/>`;
+  [0, 15, 30, 45, 59].forEach(c => b += T(P + (c + .5) * bw, H - 6, `${(c * 0.8).toFixed(0)} s`, "middle"));
+  $("#mwhen").innerHTML = KEY([["--accent", `interventions per decision (peak ${pc(rm)})`], ["--muted", "topple starts, policy alone"], ["--bad", "topple starts, with filter"]]) + svgEl(W, H, b, "When interventions and topples happen");
+}
+
+function drawLead() {
+  const L = MD.prevented_lead, cats = [["0", v => v === 0], ["1 before", v => v === -1], ["2–3 before", v => v === -2 || v === -3], ["4+ before", v => v !== null && v <= -4], ["none", v => v === null]];
+  const W = 420, mx = L.length; let b = "";
+  cats.forEach(([lab, f], i) => {
+    const v = L.filter(f).length, y = 8 + i * 26;
+    b += T(0, y + 13, lab === "0" ? "same decision" : lab === "none" ? "no action before" : `${lab}`, "start", "ink") + R(130, y, v / mx * 230, 18, i < 3 ? "--good" : "--muted") + T(136 + v / mx * 230, y + 13, String(v));
+  });
+  $("#mlead").innerHTML = svgEl(W, 8 + cats.length * 26, b, "Lead time for prevented topples") + `<p class="note">Decisions are 0.8 s apart. "Same decision" means the filter changed exactly the chunk that started the topple in the unfiltered run.</p>`;
+}
+
+function drawLift() {
+  const W = 420, H = 150, P = 30, bins = 12, bw = (W - P) / bins, h = arr => { const c = new Array(bins).fill(0); arr.forEach(v => c[Math.min(bins - 1, Math.floor(v / 5))]++); return c };
+  const a = h(MD.final2.lift_alone), f = h(MD.final2.lift_filter), m = Math.max(...a, ...f); let b = "";
+  for (let i = 0; i < bins; i++) {
+    const x = P + i * bw;
+    b += R(x + 2, H - 22 - a[i] / m * 100, bw / 2 - 2, a[i] / m * 100, "--muted", 0) + R(x + bw / 2, H - 22 - f[i] / m * 100, bw / 2 - 2, f[i] / m * 100, "--accent", 0);
+    if (i % 2 === 0) b += T(x, H - 8, `${i * 5} s`, "middle");
+  }
+  $("#mlift").innerHTML = KEY([["--muted", `policy alone (${MD.final2.lift_alone.length} lifts)`], ["--accent", `with final filter (${MD.final2.lift_filter.length} lifts)`]]) + svgEl(W, H, b, "Time to lift");
+}
+
+function drawVids() {
+  const X = MD.example, at = Math.max(0, X.t - X.video_t0 - 1.6);
+  $("#mvids").innerHTML = ["alone", "filter"].map(a => `<div class="side"><div class="hd"><b>${a === "alone" ? "Policy alone" : "With fork-boundary filter"}</b><span>${a === "alone" ? "neighbour topples" : "topple avoided"}</span></div>
+    <video id="mv-${a}" controls muted preload="metadata" playsinline src="inspector_test/video/${a}_ep${X.episode}.mp4"></video></div>`).join("");
+  $("#mvidnote").innerHTML = `First final test, episode ${X.episode}: the same decision as in section 3. <button type="button" class="more" id="mjump">Jump both to t = ${X.t} s</button>`;
+  $("#mjump").addEventListener("click", () => ["alone", "filter"].forEach(a => { const v = $("#mv-" + a); try { v.currentTime = at; v.play().catch(() => {}) } catch (e) {} }));
+}
+
+document.getElementById("t-method").addEventListener("click", () => loadMethod());
+if (!$("#p-method").hidden) loadMethod();
+document.querySelectorAll("#mtoc a").forEach(a => a.addEventListener("click", e => { e.preventDefault(); const t = document.querySelector(a.getAttribute("href")); if (t) t.scrollIntoView({behavior: "smooth", block: "start"}) }));
+</script>
