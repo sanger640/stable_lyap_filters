@@ -85,3 +85,9 @@ the decisive test; the others reported from dev).
 With gamma 0.9999 and no warm-up the critic never anchors to the margin and drifts; the authors' own schedule fixes the
 critic (it ranks toppling futures, and the actor beats holding still) but its actor is bang-bang. Per protocol no dev
 sweep was run.
+
+## Exploratory dev sweep of the authors'-schedule value (2026-10-27 21:42 EDT; lsf_pub_protocol amendment 1)
+
+Paper's runtime rule, dev 15000-15099 at 2x. Topples / v4 / v4b, overrides per episode: policy 27 / 64 / 58; eps 0.1 27 / 64 / 57,
+2.7; 0.2 26 / 65 / 58, 4.7; 0.3 27 / 65 / 57, 5.4; 0.4 28 / 64 / 56, 10.3; 0.5 28 / 64 / 56, 17.4. No effect at any eps:
+the value rarely drops and the bang-bang safety actor does not prevent topples. LSF dev rule -> eps 0.2.
