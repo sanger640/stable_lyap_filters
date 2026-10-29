@@ -273,7 +273,7 @@ def compose(st, ep):
                 dr.rectangle([x + 6, y + HEAD + CAM - 30, x + 22 + dr.textlength("NEIGHBOUR TOPPLED", font=fb), y + HEAD + CAM - 6], fill=(200, 60, 45))
                 dr.text((x + 14, y + HEAD + CAM - 26), "NEIGHBOUR TOPPLED", fill=(255, 255, 255), font=fb)
             if ended:
-                t, c = outcome(R[a]); bw = dr.textlength("ended: " + t, font=fb) + 16
+                t, c = outcome(R[a]); t = t.replace(", no topple", "") if ROW else t; bw = dr.textlength("ended: " + t, font=fb) + 16
                 dr.rectangle([x + 6, y + HEAD + 6, x + 6 + bw, y + HEAD + 28], fill=(20, 26, 24)); dr.text((x + 14, y + HEAD + 10), "ended: " + t, fill=c, font=fb)
             # timeline: how far the filter moved the policy's target, every 0.1 s step
             ty0, ty1 = y + HEAD + CAM + 8, y + HEAD + CAM + 50
