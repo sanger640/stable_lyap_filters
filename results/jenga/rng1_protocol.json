@@ -1,0 +1,32 @@
+{
+ "name": "RNG1: give the undo-test score a range (area of irreversible change instead of the 98th-percentile patch), then calibrate its threshold directly on undo-vs-hold scores",
+ "registered": "2026-10-29 08:45 EDT, user request 2026-10-29 ('fix the score range first, then the calibration directly on undo vs hold scores'); before any RNG1 statistic is computed. Known: TAU1 (the current score saturates near 1.46, tau 1.3356 on a cliff), the latent channel scale (unit std; two unrelated scenes' patches differ by ~1.26 at the 98th percentile, checked on 200 training reset latents), ABL1 and H2H5 results.",
+ "diagnosis": "r = max_j q98_outside-hand d_p, d_p = mean over the 8 channels of |f_rev_j - f_hold_j|. d_p is bounded by how different two patch contents can be, so once ~2% of the patches have changed content r stops growing: the score answers 'has ~2% of the view changed completely' and cannot express how much changed.",
+ "stage_R_offline": {
+  "undo_test": "unchanged from CF3 / irrm1 at 0.8 s: the policy's real first 8 control steps, undone back to the current target, then hold; vs hold; 64 draws at 2x noise, CF3's seeds; per-patch residual d_p outside the hand path",
+  "candidates": {
+   "S1_area": "max_j share of outside-hand patches with d_p > c",
+   "S2_mass": "max_j mean over outside-hand patches of max(0, d_p - c)",
+   "S0_q98": "the current score, recalibrated the same way; reported only"
+  },
+  "calibration_label_free": "3000 seeded decisions (any decision, no outcome used) of paired_record_ocl (policy alone, 300 dev episodes, never a CF3 or H2H decision). c = pooled 99.5th percentile of d_p over all their patches and draws, rounded up to the 0.05 grid (0.10-2.00). tau = conformal 98% of each score over these decisions (the policy's own moves flagged at most 2% of the time).",
+  "evaluation": "CF3's 4679 fresh decisions (paired_record_s4 + h2h2; pre-topple 1-3 chunks ahead vs safe-episode decisions, gripper closed / open; labels for grading only). Reproduction check: S0 per draw vs the stored irrm1 r8 rows, max |dr| <= 0.01.",
+  "gate_R_per_candidate_at_its_tau": "(range) recall(0.85 tau) - recall(1.15 tau) <= 20 pp (current score: 44 pp); (auc) AUC(score, pre vs safe) >= 0.75 (current 0.774); safe gripper-closed flagged <= 2%; safe gripper-open flagged <= 10%; recall of pre-topple decisions >= the current score's at 1.3356 on the same decisions",
+  "selection": "among passing S1 / S2 the higher recall at tau, then higher AUC. None passes -> STOP, report, no labels.",
+  "code": "eval/rng1.py (calib, cf3, grade) -> results/jenga/rng1_result.json"
+ },
+ "stage_L_value": {
+  "labels": "eval/irrm2.py with IRRM_STAT=rng IRRM_NL=8: the same 59,690 (state, action) rows and held-out m3 rows as value_irr8_alea.pt, per-draw score = the selected statistic, THR = its tau, s = IQR/2 of the new r; per-draw scores kept (for a later NSI retry). Target tanh((tau - r)/s).",
+  "gate_MR": "as M: held-out Spearman >= 0.6 and AUC vs the true flag >= 0.85; FAIL -> STOP",
+  "value": "eval/lsf.py sac, recipe of value_irr8_alea.pt unchanged, margin margin_rng_nl8.pt -> value_rng8_alea.pt",
+  "gate_AR": "as A: LF2 criteria AND on CF3's fresh decisions AUC(-V) >= 0.80, V < 0 on safe closed <= 5%, safe open <= 10%; FAIL -> STOP. Also reported: share of pre-topple decisions with V < 0 (value_irr8_alea: 2.5%), the quantity the range fix is meant to raise."
+ },
+ "stage_D_dev_closed_loop": {
+  "arms": "lfc000 with value_rng8_alea.pt at the 80% barrier (r20, LSF_CBF_GAMMA=0.2) and 90% (r10, 0.1); dev 15000-15099, 2x then 1x, imagined noise = run noise, HARD_OFF, 6 local shards; replay audit",
+  "comparators": "the irreversibility value's dev audits g20 / g10 (same episodes, paired)",
+  "rule": "exploratory dev. 'RNG1 value is a candidate for a fresh-episode test' iff for at least one barrier: 1x no cost (v4 >= 80, topples <= 5) AND at 2x topples <= the same barrier's irreversibility arm AND v4 >= that arm's v4 - 5. Caveat: g10 was selected on these episodes.",
+  "code": "eval/rng1_dev_analysis.py -> results/jenga/rng1_dev_result.json"
+ },
+ "runner": "scripts/run_rng1.sh (GPU idle at registration; one pool at a time)",
+ "not_in_scope": "NSI retry on the new score, fresh-episode confirmation, H2H5 confirmatory runs: separate registrations"
+}
