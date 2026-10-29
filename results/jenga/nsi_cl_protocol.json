@@ -1,0 +1,21 @@
+{
+ "name": "H2H5-NSI: irreversible fragility (ignore irreversibility that happens in every imagined future) in closed loop, added arm on H2H5's episodes",
+ "registered": "2026-10-28 23:17 EDT, user request 2026-10-28 ('do testing and add this to h2h results'); before any NSI label, margin, value or episode exists. H2H5's 2x audit counts for the other arms were seen before this registration; this arm's design is fixed here, before any of its own results.",
+ "motivation": "Generality: a plain undo test flags tasks whose goal is irreversible (pouring, cutting). An intended change happens in every imagined future; an accident only in some. NSI (results/jenga/nsi_result.json) showed offline that the restriction costs 0.5 pp recall on Jenga; this tests whether a value trained on it costs anything in closed loop.",
+ "failure_set": "per (z, a), the 64-draw undo test of eval/irrm2.py at 0.8 s (same states, actions, seeds as value_irr8_alea.pt's labels), keeping all 64 per-draw residuals r_j. Failure iff r_max > 1.3356 AND median_j r_j <= 1.3356 (irreversible in some futures, not in the typical one; NSI's P <= 0.5 up to ties at exactly 32 of 64). Margin target t = max(tanh((1.3356 - r_max)/s), tanh((r_med - 1.3356)/s)), s = IQR(r_max)/2 as before.",
+ "pipeline": {
+  "labels": "IRRM_NSI=1 IRRM_NL=8 eval/irrm2.py labels (2 shards) + held -> irrm2_labels_nsi8_*.npz, irrm2_held_nsi8.npz. Reported: max |r_max - stored nl8 r| (reproducibility of the existing labels).",
+  "margin": "IRRM_NSI=1 eval/irrm2.py margin -> margin_nsi_nl8.pt; gate MN (as M): held-out Spearman >= 0.6 and AUC vs the NSI flag >= 0.85. FAIL -> STOP, report.",
+  "value": "eval/lsf.py sac with LSF_IRR_MARGIN=margin_nsi_nl8.pt LSF_MARGIN_MODE=irr LSF_ALEA=8 (recipe of value_irr8_alea.pt unchanged) -> value_nsi8_alea.pt; gate AN (as A): LF2 criteria AND on CF3's fresh decisions AUC(-V) >= 0.80, V < 0 on safe closed <= 5%, safe open <= 10%. FAIL -> STOP, report (no closed loop).",
+  "closed_loop": "arm nsi80 = H2H5's ours80 exactly (lfc000, LSF_CBF_GAMMA=0.2, imagined noise = run noise) with LSF_VALUE_NAME=value_nsi8_alea.pt; episodes 26200-26799, 2x then 1x, same seeds, 96 s limit, 6 local shards, one GPU pool at a time; replay audit at the run's noise -> outcome_audit_h5nsi_{2x,1x}.json"
+ },
+ "hypotheses": {
+  "N1_2x": "nsi80 vs ours80 (paired), 2x: topples upper 95% bound < +3 pp AND v4 success lower 95% bound > -5 pp",
+  "N2_1x": "the same at 1x",
+  "primary_claim": "'irreversible fragility costs nothing on Jenga' iff N1 AND N2",
+  "secondary": "nsi80 vs policy: H1 / H2 of H2H5; v4b bounds vs ours80; counts; average time per success"
+ },
+ "analysis": "eval/h2h5_nsi_analysis.py (written before any NSI result) -> results/jenga/h2h5_nsi_result.json",
+ "reporting": "reported next to H2H5 as an added arm with its own registration; H2H5's registered hypotheses and arms are unchanged",
+ "runner": "scripts/run_h2h5_nsi.sh (starts after the H2H5 chain exits)"
+}

@@ -5,6 +5,7 @@
                                    gripper-closed <= 5%, safe gripper-open <= 10%
   M: python3 eval/irrm_gate.py M   the margin net's gate from results/jenga/irrm2_result_nl8.json
   A16 / M16: the same for the 1.6 s labels (amendment 4: value_irr16_alea.pt, irrm2_result_nl16.json)
+  AN / MN: the same for the irreversible-fragility (NSI) variant (results/jenga/nsi_cl_protocol.json: value_nsi8_alea.pt, irrm2_result_nsi8.json)
 -> results/jenga/irrm_{A,B,M}_gate.json (lflsf_LF2.json is not touched)"""
 import json
 from pathlib import Path
@@ -14,7 +15,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt"}
+NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt"}
 
 
 def lf2(stem):
@@ -59,13 +60,13 @@ def decisions(name):
 
 
 def main(which):
-    if which in ("M", "M16"):
-        r = json.loads((ROOT / f"results/jenga/irrm2_result_nl{16 if which == 'M16' else 8}.json").read_text())
+    if which in ("M", "M16", "MN"):
+        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8'}[which] }.json").read_text())
         out = {"held_spearman": r["held_spearman"], "held_auc_hat_vs_true_flag": r["held_auc_hat_vs_true_flag"]}
         out["M_pass"] = bool(r["held_spearman"] >= 0.6 and (r["held_auc_hat_vs_true_flag"] or 0) >= 0.85)
     else:
         out = lf2(NAME[which][:-3])
-        if which in ("A", "A16"):
+        if which in ("A", "A16", "AN"):
             out["cf3_decisions"] = decisions(NAME[which])
             out["A_pass"] = bool(out["LF2_pass"] and out["cf3_decisions"]["decisions_pass"])
         else:

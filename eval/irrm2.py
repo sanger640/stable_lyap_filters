@@ -10,6 +10,10 @@ same 2-step motion repeated over the move): do it, undo back to the current targ
   held-out:        1500 decisions of paired_record_m3 (not a value-training run): the policy's action + 1 random
 Margin target t = tanh((THR - r_max) / s), THR = 1.3356, s = IQR(r_max over the train labels) / 2 (label-free);
 net = lsf Critic architecture (trunk + MLP on z, g, [d, 0, 0]) with tanh.
+NSI variant (IRRM_NSI=1, results/jenga/nsi_cl_protocol.json): the same labels with all 64 per-draw residuals kept ('rall');
+target t = max(tanh((THR - r_max) / s), tanh((r_med - THR) / s)), r_med = median over draws: negative iff r_max > THR AND
+r_med <= THR (irreversible in some futures, not in the typical one = irreversible fragility; consistent irreversibility, as an
+intended change would show, is not failure). Files tagged nsi8 instead of nl8.
 usage: SHARD=i/n python3 eval/irrm2.py labels;  python3 eval/irrm2.py held;  python3 eval/irrm2.py margin
        -> results/jenga/irrm2_labels_nl<NL>_<i>.npz, irrm2_held_nl<NL>.npz, lsf_v1/margin_irr_nl<NL>.pt, results/jenga/irrm2_result_nl<NL>.json
 """
@@ -26,6 +30,8 @@ OUT = ROOT / "results/jenga"
 S, THR, N_FUT, SEED = 2.0, 1.3356, 64, 20261027
 NL = int(os.environ.get("IRRM_NL", 2))
 K_RAND = 3
+NSI = os.environ.get("IRRM_NSI") == "1"
+TAG = f"nsi{NL}" if NSI else f"nl{NL}"
 
 
 class Undo:
@@ -52,6 +58,10 @@ class Undo:
         return g[:3] + np.cumsum(steps, 0)
 
     def r_max(self, z0, g, D, seed):
+        return self.r_all(z0, g, D, seed).max(1)
+
+    def r_all(self, z0, g, D, seed):
+        """(len(D), N_FUT) per-draw residuals; r_max = their max"""
         torch, wm = self.torch, self.wm
         z0 = torch.as_tensor(z0, device="cuda").float()
         d_ = np.stack([np.concatenate([(p * [1, 1, 0] * S).reshape(9), (r * [0, 0, 1] * S).reshape(9)])
@@ -78,7 +88,7 @@ class Undo:
             for t in range(wm.STEPS):
                 z = self.model.step(z, pairs[:, t]).float()
         z = z.float().reshape(B, N_FUT, *z.shape[1:])
-        return np.array([float(torch.quantile((z[b] - z[-1]).abs().mean(-1)[:, masks[b]], 0.98, dim=1).max()) for b in range(len(D))])
+        return np.stack([torch.quantile((z[b] - z[-1]).abs().mean(-1)[:, masks[b]], 0.98, dim=1).float().cpu().numpy() for b in range(len(D))])
 
     def imagine(self, z0, g, rng, steps):
         """roll the deterministic model `steps` model steps under random actor motions -> (z, g)"""
@@ -95,7 +105,7 @@ def labels():
     i_sh, n_sh = map(int, os.environ.get("SHARD", "0/1").split("/"))
     U = Undo(); L = U.L
     Rz = np.load(L.OUT / "train_reset_z.npy"); Rg = np.load(L.OUT / "train_reset_prop.npy"); Rp = np.load(L.OUT / "train_reset_plan.npy")
-    out = {k: [] for k in ("z", "g", "d", "r", "src")}
+    out = {k: [] for k in ("z", "g", "d", "r", "src", "rall")}
     for n, i in enumerate(range(i_sh, len(Rz), n_sh)):
         rng = np.random.default_rng([SEED, i])
         g = Rg[i].astype(np.float32)
@@ -107,12 +117,15 @@ def labels():
             else:
                 z, gg = U.imagine(Rz[i], g, rng, int(rng.integers(1, 9)))
                 D = [np.zeros(6)] + list(rng.uniform(-1, 1, (K_RAND + 1, 6)))
-            r = U.r_max(z, gg, D, SEED + 7919 * i + src)
-            for d, rr in zip(D, r):
+            ra = U.r_all(z, gg, D, SEED + 7919 * i + src); r = ra.max(1)
+            for d, rr, rj in zip(D, r, ra):
                 out["z"].append(z.astype(np.float16)); out["g"].append(gg); out["d"].append(np.asarray(d, np.float32)); out["r"].append(rr); out["src"].append(src)
+                out["rall"].append(rj.astype(np.float16))
         if n % 200 == 0:
             print("irrm2 labels", i_sh, n, flush=True)
-    np.savez_compressed(OUT / f"irrm2_labels_nl{NL}_{i_sh}.npz", **{k: np.asarray(v) for k, v in out.items()})
+    if not NSI:
+        out.pop("rall")
+    np.savez_compressed(OUT / f"irrm2_labels_{TAG}_{i_sh}.npz", **{k: np.asarray(v) for k, v in out.items()})
     print("saved", flush=True)
 
 
@@ -126,7 +139,7 @@ def held():
             kt, k = int(d["topple_chunk"]), d["chunk_index"]
         rows += [(f.stem, i, kt, int(k[i])) for i in range(len(k))]
     rng = np.random.default_rng(SEED); sel = [rows[j] for j in sorted(rng.choice(len(rows), 1500, replace=False))]
-    out = {k: [] for k in ("z", "g", "d", "r", "pol", "kt", "k")}
+    out = {k: [] for k in ("z", "g", "d", "r", "pol", "kt", "k", "rall")}
     for n, (stem, i, kt, k) in enumerate(sel):
         with np.load(data / f"{stem}.npz") as d:
             z, pr = d["z"][i].astype(np.float32), d["proprio"][i]
@@ -135,13 +148,16 @@ def held():
         g = np.r_[target, plan[0, 3]].astype(np.float32)
         p = plan[1:3, :3]; dpol = np.clip(np.concatenate([p[0] - g[:3], p[1] - p[0]]) / L.MAX_STEP, -1, 1)
         D = [dpol, rng.uniform(-1, 1, 6)]
-        r = U.r_max(z, g, D, SEED + 104729 * int(stem[2:]) + i)
-        for j, (dd, rr) in enumerate(zip(D, r)):
-            for key, v in (("z", z.astype(np.float16)), ("g", g), ("d", np.asarray(dd, np.float32)), ("r", rr), ("pol", j == 0), ("kt", kt), ("k", k)):
+        ra = U.r_all(z, g, D, SEED + 104729 * int(stem[2:]) + i); r = ra.max(1)
+        for j, (dd, rr, rj) in enumerate(zip(D, r, ra)):
+            for key, v in (("z", z.astype(np.float16)), ("g", g), ("d", np.asarray(dd, np.float32)), ("r", rr), ("pol", j == 0), ("kt", kt), ("k", k),
+                           ("rall", rj.astype(np.float16))):
                 out[key].append(v)
         if n % 200 == 0:
             print("irrm2 held", n, flush=True)
-    np.savez_compressed(OUT / f"irrm2_held_nl{NL}.npz", **{k: np.asarray(v) for k, v in out.items()})
+    if not NSI:
+        out.pop("rall")
+    np.savez_compressed(OUT / f"irrm2_held_{TAG}.npz", **{k: np.asarray(v) for k, v in out.items()})
     print("saved", flush=True)
 
 
@@ -151,12 +167,20 @@ def margin():
     from sklearn.metrics import roc_auc_score
     import lsf as L
     torch.manual_seed(SEED); rng = np.random.default_rng(SEED)
-    fs = sorted(OUT.glob(f"irrm2_labels_nl{NL}_*.npz"))
-    T = {k: np.concatenate([np.load(f)[k] for f in fs]) for k in ("z", "g", "d", "r", "src")}
-    H = dict(np.load(OUT / f"irrm2_held_nl{NL}.npz"))
+    fs = sorted(OUT.glob(f"irrm2_labels_{TAG}_*.npz"))
+    T = {k: np.concatenate([np.load(f)[k] for f in fs]) for k in ("z", "g", "d", "r", "src") + (("rall",) if NSI else ())}
+    H = dict(np.load(OUT / f"irrm2_held_{TAG}.npz"))
     s = float(np.subtract(*np.quantile(T["r"], [0.75, 0.25]))) / 2
-    tgt = lambda r: np.tanh((THR - r) / s).astype(np.float32)
-    tt, th = tgt(T["r"]), tgt(H["r"])
+    if NSI:
+        med = lambda X: np.median(X["rall"].astype(np.float32), 1)
+        T["flag"], H["flag"] = (T["r"] > THR) & (med(T) <= THR), (H["r"] > THR) & (med(H) <= THR)
+        tgt = lambda X: np.maximum(np.tanh((THR - X["r"]) / s), np.tanh((med(X) - THR) / s)).astype(np.float32)
+        tt, th = tgt(T), tgt(H)
+    else:
+        T["flag"], H["flag"] = T["r"] > THR, H["r"] > THR
+        tgt = lambda r: np.tanh((THR - r) / s).astype(np.float32)
+        tt, th = tgt(T["r"]), tgt(H["r"])
+    mname = f"margin_nsi_nl{NL}.pt" if NSI else f"margin_irr_nl{NL}.pt"
     _, Critic, _ = L.nets(); net = Critic().cuda(); opt = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-4)
     a8 = lambda d: torch.cat([d, torch.zeros(len(d), 2, device="cuda")], 1)
     f = lambda z, g, d: torch.tanh(net(z, g, a8(d)))
@@ -168,7 +192,7 @@ def margin():
                 out.append(f(*(torch.as_tensor(x[b:b + 2048], device="cuda").float() for x in (Z, Gg, Dd))).cpu().numpy())
         return np.concatenate(out)
     va = rng.random(len(tt)) < 0.05; idx = np.flatnonzero(~va); best, log = 1e9, []
-    w = np.where(T["r"][idx] > THR, 4.0, 1.0); w /= w.sum()                        # irreversible actions are rare: oversample 4x
+    w = np.where(T["flag"][idx], 4.0, 1.0); w /= w.sum()                        # irreversible actions are rare: oversample 4x
     for ep in range(40):
         net.train()
         for _ in range(len(idx) // 512):
@@ -177,11 +201,12 @@ def margin():
             loss = ((f(z, g, d) - torch.as_tensor(tt[i], device="cuda")) ** 2).mean(); opt.zero_grad(); loss.backward(); opt.step()
         net.eval(); vl = float(np.mean((pred(T["z"][va], T["g"][va], T["d"][va]) - tt[va]) ** 2)); log.append({"epoch": ep, "val_mse": vl}); print(log[-1], flush=True)
         if vl < best:
-            best = vl; torch.save({"state": net.state_dict(), "thr": THR, "s": s, "nl": NL, "kind": "irr_margin_zgd"}, L.OUT / f"margin_irr_nl{NL}.pt")
-    net.load_state_dict(torch.load(L.OUT / f"margin_irr_nl{NL}.pt")["state"]); net.eval()
-    ph = pred(H["z"], H["g"], H["d"]); fail = H["r"] > THR
+            best = vl; torch.save({"state": net.state_dict(), "thr": THR, "s": s, "nl": NL, "kind": "nsi_margin_zgd" if NSI else "irr_margin_zgd"}, L.OUT / mname)
+    net.load_state_dict(torch.load(L.OUT / mname)["state"]); net.eval()
+    ph = pred(H["z"], H["g"], H["d"]); fail = H["flag"]
     pol = H["pol"].astype(bool); kt, k = H["kt"], H["k"]; pre = pol & (kt >= 0) & (kt - k >= 1) & (kt - k <= 3); safe = pol & (kt < 0)
-    out = {"nl": NL, "train_labels": int(len(tt)), "train_share_irreversible": round(float((T["r"] > THR).mean()), 4), "s": s,
+    out = {"nl": NL, "nsi": NSI, "train_labels": int(len(tt)), "train_share_irreversible": round(float(T["flag"].mean()), 4), "s": s,
+           "train_share_consistent_irreversible": round(float((T["r"] > THR).mean() - T["flag"].mean()), 4),
            "held_labels": int(len(th)), "held_share_irreversible": round(float(fail.mean()), 4),
            "held_spearman": round(float(spearmanr(ph, th).correlation), 3),
            "held_auc_hat_vs_true_flag": round(float(roc_auc_score(fail, -ph)), 3) if 0 < fail.sum() < len(fail) else None,
@@ -190,7 +215,7 @@ def margin():
            "grading_policy_action_auc_pre_vs_safe": {"hat": round(float(roc_auc_score(pre[pre | safe], -ph[pre | safe])), 3),
                                                      "true_r": round(float(roc_auc_score(pre[pre | safe], H["r"][pre | safe])), 3)},
            "best_val_mse": best, "log": log}
-    (OUT / f"irrm2_result_nl{NL}.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
+    (OUT / f"irrm2_result_{TAG}.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
 
 
 if __name__ == "__main__":
