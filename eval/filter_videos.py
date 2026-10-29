@@ -127,9 +127,11 @@ def render(job):
     smap = slicer(arm, ep) if arm in VALUE_ARMS and os.environ.get("NO_SLICE") != "1" else None
     w = imageio_ffmpeg.write_frames(str(OUT / st / "raw" / f"{arm}_ep{ep}.mp4"), (CAM, CAM), fps=10, codec="libx264", quality=8,
                                     macro_block_size=1); w.send(None)
-    T = {k: [] for k in ("t", "tilt", "edit", "dvec", "grip_pol", "grip_exe", "slice_on", "slice_pol_ok")}
+    T = {k: [] for k in ("t", "tilt", "edit", "dvec", "grip_pol", "grip_exe", "slice_on", "slice_pol_ok", "red_lift", "red_dx")}
     for d in range(len(S["chunk_index"])):
         sim.restore((S["state"][d], S["ctrl"][d], S["target"][d], float(S["gripper"][d])))
+        if d == 0:
+            red0 = sim.data.xpos[sim.tracked_block_ids[0]].copy()
         k = int(S["chunk_index"][d])
         nom, exe = np.asarray(S["nominal"][d], np.float32), np.asarray(S["executed"][d], np.float32)
         on = smap is not None and (VALUE_ARMS[arm][1] == "level" or bool(log.get(k, {}).get("irr_gate")))   # filter active
@@ -174,6 +176,8 @@ def render(job):
             T["edit"].append(float(np.linalg.norm(dv))); T["dvec"].append(dv)
             T["grip_pol"].append(bool(nom[j, 3] > 0)); T["grip_exe"].append(bool(exe[j, 3] > 0))
             T["slice_on"].append(on); T["slice_pol_ok"].append(bool(smap is not None and mg[4, 4] >= 0))
+            rp = sim.data.xpos[sim.tracked_block_ids[0]] - red0
+            T["red_lift"].append(float(rp[2])); T["red_dx"].append(float(rp[0]))
     w.close(); rc.close(); sim.close()
     np.savez(OUT / st / "raw" / f"{arm}_ep{ep}.npz", **{k: np.asarray(v) for k, v in T.items()})
     return arm, ep
@@ -214,6 +218,21 @@ def words(dv):
 
 
 HEAD, TL, GAP = 30, 78, 14
+AFTER = 30                                            # frames (3 s) a panel keeps playing after the red block is out and let go
+
+
+def panel_end(T, n):
+    """frames to show for one panel: the run's own end, or AFTER frames after the gripper first opens once the red block is
+    extracted (the audit's rule: lifted >= 2 cm or pulled >= 2 cm toward the arm). A run that sets the block down below the
+    5 cm stop height otherwise keeps going to the 120-step cap with nothing left to show. Old raw renders (no red trace): no trim."""
+    if "red_lift" not in T or not len(T["red_lift"]):
+        return n
+    ext = (T["red_lift"] >= 0.02) | (T["red_dx"] <= -0.02)
+    if not ext.any():
+        return n
+    rel = np.flatnonzero(~T["grip_exe"][int(np.argmax(ext)):])
+    return n if not len(rel) else min(n, int(np.argmax(ext)) + int(rel[0]) + AFTER)
+
 PWID, PHEI = CAM, 30 + CAM + 78
 ROW = os.environ.get("VID_LAYOUT") == "row"
 IDLE, ACTIVE = (60, 130, 255), (40, 225, 90)              # row layout: untouched (all arms) / filter editing (all filters)
@@ -230,6 +249,8 @@ def compose(st, ep):
     F = {a: frames(OUT / st / "raw" / f"{a}_ep{ep}.mp4") for a in A}
     T = {a: dict(np.load(OUT / st / "raw" / f"{a}_ep{ep}.npz")) for a in A}
     R = {a: audited(st, a, ep) for a in A}
+    for a in A:
+        e_ = panel_end(T[a], len(F[a])); F[a] = F[a][:e_]; T[a] = {k: v[:e_] for k, v in T[a].items()}
     n = max(len(v) for v in F.values()); tmax = max(T[a]["t"][-1] for a in A) + 0.1
     pos = {a: ((12 + i * (CAM + GAP), 60) if ROW else (12 + (i % 2) * (CAM + GAP), 60 + (i // 2) * (PHEI + GAP))) for i, a in enumerate(A)}
 
