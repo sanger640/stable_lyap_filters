@@ -1,0 +1,26 @@
+{
+ "name": "REDM1: is the red block hidden from the irreversibility score by the hand mask?",
+ "registered": "2026-10-29 (before any MASK1 number is computed)",
+ "type": "offline, CPU only, cached data; descriptive diagnostic with a pre-set decision rule (no new labels, no training)",
+ "motivation": "H2H5: our filters neither cause nor prevent red-block falls (paired vs policy: 1x 27/26, 2x 40/59). The undo-vs-hold score r = max_j q98 over patches OUTSIDE the hand mask (eval/cbf_barrier.hand_mask: 32 px radius around the hand and its planned path + 84 px-wide strip from the image top down to the path, 384 px image, 28x28 patches). During grasping the red block sits under the gripper.",
+ "data": "CF3's 4679 fresh decisions (eval/cf_fork.select on paired_record_s4 + paired_record_h2h2, policy alone, 2x noise) and their stored scores (results/jenga/cf3_rows_*.npz, r = 64 draws). Nothing in MASK1 was used to choose the score, the mask or tau.",
+ "definitions": {
+  "red_fall_chunk": "kr = the chunk during which the red block's tilt first crosses 45 deg (saved chunk-start states: tilt(kr) < 45 <= tilt(kr+1)), only if the red block has not yet been extracted (lifted >= 2 cm or pulled >= 2 cm toward the arm, as in eval/outcome_audit.py) and the episode has no neighbour topple",
+  "pre_red": "CF3 decisions with 1 <= kr - k <= 3 (mirrors CF3's pre-topple window)",
+  "clean_safe": "CF3 decisions from episodes with no neighbour topple and no red fall before extraction",
+  "pre_topple": "CF3's 399 pre-topple decisions (reference)",
+  "red_share_masked": "share of the 28x28 patches covered by the red block's projected 3D box (8 corners, convex hull, patch centre inside) that lie inside the hand mask built exactly as CF3 (hand position + plan steps 1..15); same for each neighbour",
+  "score": "r_max = max over the 64 stored draws (CF3's statistic); tau = 1.3356"
+ },
+ "measures": [
+  "M1 median red_share_masked at pre_red decisions (and at all gripper-closed decisions); neighbours' shares for reference",
+  "M2 AUC(r_max, pre_red vs clean_safe) and recall of pre_red at tau, next to pre_topple's (CF3: AUC 0.865, recall 0.499, safe-closed flags 0.022, safe-open 0.076)"
+ ],
+ "decision_rule": {
+  "MASK_BLINDS": "median red_share_masked at pre_red >= 0.5 AND AUC(pre_red) < 0.65 -> the mask hides red falls; next step = pre-register a finger-only mask (relabel + retrain value + dev closed loop), queued after NSI3",
+  "NOT_MASK": "median red_share_masked < 0.5 AND AUC(pre_red) < 0.65 -> red falls are visible but the 0.8 s imagined undo test does not separate them (world model / horizon), not the mask",
+  "SCORE_SEES": "AUC(pre_red) >= 0.65 -> the score does react to red falls; the gap is elsewhere (value / filter), report descriptively",
+  "min_n": "if fewer than 30 pre_red decisions: report descriptively only, no verdict"
+ },
+ "outputs": "eval/redm1.py -> results/jenga/redm1_result.json", "note": "first committed by mistake as results/jenga/mask1_protocol.json (63b4ea9, 2026-10-29 14:54, before any number was computed), overwriting the unrelated 2026-10-26 MASK1 protocol; renamed REDM1 and MASK1 restored, content otherwise unchanged"
+}
