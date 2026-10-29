@@ -1,0 +1,16 @@
+{
+ "name": "NSI3: irreversible fragility on the 1.6 s undo test (ignore irreversibility present in the typical imagined future)",
+ "registered": "2026-10-29 10:15 EDT, user request 2026-10-29 ('do nsi too as u suggested'): RNG1 showed the 0.8 s undo test misses about half the pre-topple decisions, the 1.6 s value did best in ABL1, and H2H5-NSI (0.8 s) missed gate AN narrowly. Before any NSI3 label.",
+ "failure_set": "per (z, a), the 64-draw undo test of eval/irrm2.py at 1.6 s (IRRM_NL=16; same states, actions and seeds as value_irr16_alea.pt's labels), all 64 per-draw residuals kept. Failure iff r_max > 1.3356 AND median_j r_j <= 1.3356. Target max(tanh((1.3356 - r_max)/s), tanh((r_med - 1.3356)/s)), s = IQR(r_max)/2.",
+ "pipeline": {
+  "labels": "IRRM_NSI=1 IRRM_NL=16 eval/irrm2.py labels (2 shards) + held -> irrm2_labels_nsi16_*.npz, irrm2_held_nsi16.npz; reported: max |r_max - stored nl16 r| (reproduction)",
+  "margin": "-> margin_nsi_nl16.pt; gate MN16 (as M): held-out Spearman >= 0.6 and AUC vs the NSI flag >= 0.85; FAIL -> STOP",
+  "value": "eval/lsf.py sac, recipe of value_irr16_alea.pt unchanged -> value_nsi16_alea.pt; gate AN16 (as A): LF2 AND on CF3's fresh decisions AUC(-V) >= 0.80, V < 0 safe closed <= 5%, safe open <= 10%; FAIL -> STOP",
+  "dev_closed_loop": "lfc000 with value_nsi16_alea.pt at the 80% barrier (n16g20, LSF_CBF_GAMMA=0.2), dev 15000-15099, 2x then 1x, imagined noise = run noise; replay audit"
+ },
+ "comparator": "ABL1's a16g20 (value_irr16_alea.pt, 80% barrier, same dev episodes, paired)",
+ "rule": "exploratory dev. 'Irreversible fragility costs nothing on Jenga at 1.6 s' iff 2x topples <= a16g20 + 3 AND 2x v4 >= a16g20 - 5 AND 1x v4 >= 80 AND 1x topples <= 5",
+ "order": "after the H2H6 chain exits (one GPU pool at a time)",
+ "analysis": "eval/nsi3_dev_analysis.py -> results/jenga/nsi3_dev_result.json",
+ "runner": "scripts/run_nsi3.sh"
+}

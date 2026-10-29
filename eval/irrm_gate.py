@@ -8,6 +8,7 @@
   AN / MN: the same for the irreversible-fragility (NSI) variant (results/jenga/nsi_cl_protocol.json: value_nsi8_alea.pt, irrm2_result_nsi8.json)
   AR / MR: the same for the RNG1 area / mass score (results/jenga/rng1_protocol.json: value_rng8_alea.pt, irrm2_result_rng8.json)
   AN2 / MN2: NSI on the RNG1 score (results/jenga/nsi2_protocol.json: value_rngnsi8_alea.pt, irrm2_result_rngnsi8.json)
+  AN16 / MN16: NSI on the 1.6 s undo test (results/jenga/nsi3_protocol.json: value_nsi16_alea.pt, irrm2_result_nsi16.json)
 -> results/jenga/irrm_{A,B,M}_gate.json (lflsf_LF2.json is not touched)"""
 import json
 from pathlib import Path
@@ -17,7 +18,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt", "AR": "value_rng8_alea.pt", "AN2": "value_rngnsi8_alea.pt"}
+NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt", "AR": "value_rng8_alea.pt", "AN2": "value_rngnsi8_alea.pt", "AN16": "value_nsi16_alea.pt"}
 
 
 def lf2(stem):
@@ -62,13 +63,13 @@ def decisions(name):
 
 
 def main(which):
-    if which in ("M", "M16", "MN", "MR", "MN2"):
-        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8'}[which] }.json").read_text())
+    if which in ("M", "M16", "MN", "MR", "MN2", "MN16"):
+        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16'}[which] }.json").read_text())
         out = {"held_spearman": r["held_spearman"], "held_auc_hat_vs_true_flag": r["held_auc_hat_vs_true_flag"]}
         out["M_pass"] = bool(r["held_spearman"] >= 0.6 and (r["held_auc_hat_vs_true_flag"] or 0) >= 0.85)
     else:
         out = lf2(NAME[which][:-3])
-        if which in ("A", "A16", "AN", "AR", "AN2"):
+        if which in ("A", "A16", "AN", "AR", "AN2", "AN16"):
             out["cf3_decisions"] = decisions(NAME[which])
             out["A_pass"] = bool(out["LF2_pass"] and out["cf3_decisions"]["decisions_pass"])
         else:

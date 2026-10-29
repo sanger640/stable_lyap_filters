@@ -1,0 +1,24 @@
+{
+ "name": "H2H6: confirmatory fresh head-to-head - the 90% barrier as primary, the 1.6 s value at the 80% barrier as secondary",
+ "registered": "2026-10-29 10:15 EDT, user request 2026-10-29 ('run the fresh test with 90% and 1.6s at 80%'); before any H2H6 episode. Known: H2H5 (ours90 passed H1-H4 as secondary; ours80 primary passed H2/H4), ABL1 (a16g20 dev 6 / 77 / 62 at 2x), RNG1 (stop).",
+ "episodes": "600 fresh episodes 26800-27399 (never used by any run; s2s uses 30000+), paired across arms, local RTX 3090, 6 shards, one arm at a time",
+ "time_limit": "120 chunks = 96 s; replay audit at the run's noise",
+ "conditions": "2x (EXEC_NOISE_SCALE=2, filters imagine 2x) and 1x (measured noise, LSF_ALEA_SCALE=1), as H2H5",
+ "arms": {
+  "policy": "policy alone (record)",
+  "ours90": "PRIMARY: always-on edit, value_irr8_alea.pt, V' >= 0.9 V (LSF_CBF_GAMMA=0.1), = H2H5's ours90",
+  "a16g20": "SECONDARY: always-on edit, value_irr16_alea.pt (1.6 s undo test), V' >= 0.8 V (LSF_CBF_GAMMA=0.2), = ABL1's a16g20",
+  "unisafe": "UNISafe + noise-aware pessimism (lsfa030), = H2H5's unisafe"
+ },
+ "not_included": "LSF as published: no effect in any run (H2H5: 126 topples vs policy 118 at 2x; ours90 vs it passed H4 on fresh episodes); dropped to save ~2 h GPU",
+ "hypotheses_each_arm": {
+  "H1_2x_vs_policy": "fewer topples (one-sided exact McNemar p < 0.05) AND v4 lower 95% bound > 0",
+  "H2_1x_no_cost": "v4 lower bound > -5 pp AND topples upper bound < +3 pp vs policy",
+  "H3_2x_vs_unisafe_noninferior": "topples upper bound < +3 pp AND v4 and v4b lower bounds > -5 pp vs UNISafe",
+  "S_2x_fewer_topples_than_unisafe": "reported (one-sided McNemar p < 0.05), not part of the confirmation"
+ },
+ "claim_rule": "'the 90% barrier is confirmed' iff ours90 passes H1, H2 and H3. a16g20 is reported against the same hypotheses (secondary) and paired with ours90 descriptively; a16g20 replacing the method would need its own confirmation.",
+ "outcomes": "as H2H5: topples, v4, v4b, red drops, time-outs, edits per episode, compute per move, time per success",
+ "analysis": "eval/h2h6_analysis.py -> results/jenga/h2h6_result.json",
+ "runner": "scripts/run_h2h6.sh (~10-11 h); NSI3 (results/jenga/nsi3_protocol.json) runs after it"
+}
