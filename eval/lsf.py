@@ -24,6 +24,7 @@ OUT = Path(os.environ.get("LSF_OUT", str(ROOT / "results/program_b/lsf_v1")))
 SOURCES = os.environ.get("LSF_SOURCES", "closedloop_v1,cf_v1,cf_v2,oil_v1").replace("+", ",").split(",")
 TAG = os.environ.get("LSF_TAG", "")                 # part files (data built where the sources live), merged by stage_merge
 SAFE_PER_FAIL, SEED = 3, 20261020
+LABEL = os.environ.get("LSF_LABEL", "neighbour")    # neighbour (default) | red: a red-block fall (tilt >= 45 deg) is also a failure (RLAB1)
 
 
 def stage_merge():
@@ -38,6 +39,12 @@ def stage_merge():
                   open(OUT / f"{split}_summary.json", "w")); print(split, len(y), int(y.sum()), flush=True)
 
 
+def red_tilt(state):
+    """Tilt (deg) of the red (middle) block from a 61-D state's 6D rotation (block 0; as fresh_fragility_panel.neighbour_tilts)."""
+    r = state[9:15]
+    return float(np.degrees(np.arccos(np.clip(r[0] * r[3] - r[2] * r[1], -1, 1))))
+
+
 def labels_for(path):
     """-> latents (K, 19, 28, 28, 8) fp16, proprio (K, 19, 4), fail (K, 19) bool (sticky), z0, start target."""
     from fresh_fragility_panel import neighbour_tilts, TOPPLE_DEG
@@ -47,6 +54,8 @@ def labels_for(path):
     K = len(tr); fail = np.zeros((K, len(fi)), bool); prop = np.zeros((K, len(fi), 4), np.float32)
     for k in range(K):
         f = np.array([np.any((neighbour_tilts(tr[k][min(i, len(tr[k]) - 1)]) >= TOPPLE_DEG) & elig) for i in fi])
+        if LABEL == "red":
+            f |= np.array([red_tilt(tr[k][min(i, len(tr[k]) - 1)]) >= TOPPLE_DEG for i in fi])
         fail[k] = np.maximum.accumulate(f)
         prop[k] = acts[k][np.minimum(fi, len(acts[k]) - 1)]           # the target commanded at that control step
     return d["z"], prop, fail, d["z0"], acts[:, 0]

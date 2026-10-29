@@ -1,0 +1,22 @@
+{
+ "name": "RLAB1: the labelled baselines with red-block falls in their failure set (relabel, retrain classifier + both values, dev, re-run on the H2H5 episodes)",
+ "registered": "2026-10-29 17:30 EDT, before the relabelled data, classifier or values exist and before any episode with them",
+ "origin": "user 2026-10-29: 'add the red block topples to the safe classifier as well and train the labelled again (ofc mask free no mask for the robot)'. REDM1 found our value treats red-block falls as safe; the labelled classifier's failure label (neighbour toppled) does too, while success (v4) also requires the red block not knocked over",
+ "change": "failure label = a neighbour tilted >= 45 deg OR the red block tilted >= 45 deg (the audit's red-fall rule, eval/outcome_audit.py), sticky as before (eval/lsf.py LSF_LABEL=red; red_tilt reads block 0 of the 61-D state, checked: upright red = 0 deg). Everything else as the originals: sources closedloop_v1, cf_v1, cf_v2, oil_v1 (train / val splits), all failures + 3x safe (seed 20261020), classifier architecture / loss / 20 epochs, model_OIL + ens_v1 ensemble, training resets. The classifier sees the whole 28 x 28 x 8 latent: no hand mask (the labelled classifier never used one)",
+ "folder": "results/program_b/lsf_v2_red (LSF_OUT); names as the originals so the rollout modes load them unchanged: classifier.pt, value_unisafe_alea.pt, value_pub_code.pt; train_reset_plan.npy copied from lsf_v1 after checking the reset arrays are identical",
+ "pre_check": "2026-10-29, 40 training files per source (descriptive, before registering): red falls without a neighbour topple in 11 / 352 (closedloop_v1), 65 / 480 (cf_v1), 104 / 480 (cf_v2), 8 / 640 (oil_v1) imagined futures, all labelled safe by the original classifier",
+ "stages": {
+  "S0_data": "CPU: LSF_LABEL=red LSF_OUT=results/program_b/lsf_v2_red python3 eval/lsf.py data. Report latents / failures vs the original (231,748 / 93,484)",
+  "S1_classifier": "GPU: eval/lsf.py classifier (20 epochs, best val hinge). Offline report (eval/rlab1_analysis.py offline): on every val-split latent, recall of failure on red-fall-only latents (new label fail, old label safe), recall on neighbour-topple latents and false-alarm rate on safe latents, for the old and the new classifier. Descriptive, no gate",
+  "S2_values": "GPU: UNISafe recipe as value_unisafe_alea.pt (eval/lsf.py sac, LSF_ALEA=8, LSF_ALEA_SCALE=2, 60,000 updates); LSF as published as value_pub_code.pt (eval/lsf.py ddpg_pub, LSF_PUB_MODE=code). Offline gate of the originals reported (descriptive; the original pub_code failed it on saturation and was used anyway, labelled exploratory)",
+  "S3_dev": "dev episodes 15000-15099 at 2x, 60 chunks (the original sweep's settings, scripts/chains/lsfpubc_chain.sh): UNISafe-r at its published eps 0.30 (lsfa030, as the original, no sweep); LSF-pub-r swept eps 0.1-0.5 (lsfp010 ... lsfp050) with the original's rule extended to the new failure set: fewest (neighbour topples + red falls before extraction) among eps with v4 >= 59, ties -> smaller eps; none eligible -> the eps with the most v4",
+  "S4_test": "the 600 H2H5 episodes 26200-26799, 2x then 1x, 120 chunks, arms unisafe_r (lsfa030) and lsfpub_r (lsfp<selected>), LSF_OUT=results/program_b/lsf_v2_red, tags _rl1_<n>x; replay-audited (eval/outcome_audit.py). Paired by episode with the H2H5 arms already run (policy, ours90, ours80, unisafe, lsf_pub), whose results are reused as recorded. These episodes have been used before; nothing in the relabelled arms is tuned on them"
+ },
+ "hypotheses": {
+  "H_red": "per relabelled arm vs its original at 2x: fewer red falls before extraction, exact McNemar one-sided p < 0.05. Supported for an arm if it holds; 1x reported",
+  "reported": "per arm vs its original and vs ours90 (the deck's primary) and ours80 (the registered primary), 2x and 1x: topples, success (v4), strict success (v4b), red falls, time-outs as paired counts with one-sided 95% bounds and exact McNemar (eval/h2h5_analysis.py statistics)",
+  "baseline_choice": "from then on each labelled family is represented by whichever of {original, relabelled} has more v4 successes at 2x on these 600 episodes (the stronger baseline), the other reported; decided by this rule, not by the comparison with ours"
+ },
+ "queue": "CPU S0 now; GPU stages after XFER1 (one GPU job at a time), as scripts/run_rlab1.sh",
+ "status": "pre-registered"
+}
