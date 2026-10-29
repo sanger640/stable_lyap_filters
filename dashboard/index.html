@@ -240,17 +240,21 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Thu 29 Oct, 07:45 EDT";
+const UPDATED = "Thu 29 Oct, 09:45 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "GPU idle: next run awaits your choice", n: [0, 1], d: "Options: confirm the 90% barrier on fresh episodes (~6 h), test the 1.6 s value at 80% on fresh episodes, or fix the undo score's range first." },
+  { t: "GPU idle: next run awaits your choice", n: [0, 1], d: "Options: confirm the 90% barrier and/or the 1.6 s value at 80% on fresh episodes; the undo signal's 0.8 s horizon, not its score, limits recall." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "fail", when: "Thu 09:28", title: "Wider-range undo scores don't catch more; the threshold itself checks out",
+    say: "Pre-registered offline test. Measuring the AREA of irreversible change instead of the most-changed spot removes most of the cliff (recall swing 44 → 26 pp) but ranks danger no better (AUC 0.77 for all) and catches fewer pre-topple moves (19% vs 22%), so it stopped before retraining and the irreversible-fragility retry did not run. Calibrating the current score directly on undo-vs-hold scores gives 1.334, confirming the threshold 1.336. Every score tops out near 50%: about half the moves before a topple show no irreversible change within 0.8 s of imagination.",
+    cap: "pre-topple moves caught at each score's calibrated threshold (%)", unit: "%", max: 30,
+    rows: [["current score", 22.3, "--accent"], ["area of change", 18.6, "--bad"], ["mass of change", 19.1, "--bad"]] },
   { v: "pass", when: "Thu 07:28", title: "Ablation: the CBF condition beats LSF's level-set rule",
     say: "Pre-registered, 100 dev episodes, same value. Using LSF's rule (act only when the value drops below a level) instead of our barrier (keep 90% of the current value) gives 17–22 topples under 2× noise vs 7; LSF's switch to a safety actor is worst. All variants are free at 1×. Side result: the 1.6 s value at the 80% barrier gets 6 topples with 77 successes, matching the 90% barrier's protection without its success loss. Dev episodes picked the 90% barrier, so this favours it slightly.",
     cap: "neighbour topples per 100 at 2× noise (successes: 73, 75, 67, 78, 72, 77)", unit: "", max: 30,
