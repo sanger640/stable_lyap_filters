@@ -43,6 +43,10 @@ if STAT == "rng":
     SEL = json.loads((OUT / "rng1_result.json").read_text())["selected"]; THR = SEL["tau"]
 NOMASK = os.environ.get("IRRM_MASK") == "none"                             # NM1 (results/jenga/nm1_protocol.json): score all patches
 TAG = f"rng{NL}" if STAT == "rng" else f"nsi{NL}" if NSI else f"nm{NL}" if NOMASK else f"nl{NL}"     # label files
+WM_ALT = os.environ.get("IRRM_WM")                                         # XFER1 (results/jenga/xfer1_protocol.json): labels from
+WM_TAG = os.environ.get("IRRM_WM_TAG", "")                                 # another world model; files and margin get _<IRRM_WM_TAG>
+if WM_ALT:
+    TAG += f"_{WM_TAG}"
 RTAG = f"rngnsi{NL}" if NSI and STAT == "rng" else TAG                     # margin result (NSI2: NSI target on the rng labels)
 
 
@@ -59,7 +63,7 @@ class Undo:
         import uncertainty_monitor_dev as um
         import lsf as L
         self.torch, self.cb, self.wm, self.L = torch, cb, wm, L
-        self.model = wm.WorldModel.load(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); self.model.net.eval()
+        self.model = wm.WorldModel.load(Path(WM_ALT) if WM_ALT else ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); self.model.net.eval()
         self.G = sm.G.load(cf.V3 / "G.pt"); self.E = p3.ErrorModel(); self.snip = np.load(um.BENCH)["snippets"]
         self.total = 2 * wm.STEPS
 
@@ -198,6 +202,8 @@ def margin():
         tt, th = tgt(T["r"]), tgt(H["r"])
     mname = (f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if STAT == "rng" else f"margin_nsi_nl{NL}.pt" if NSI else
              f"margin_irrnm_nl{NL}.pt" if NOMASK else f"margin_irr_nl{NL}.pt")
+    if WM_ALT:
+        mname = mname[:-3] + f"_{WM_TAG}.pt"
     _, Critic, _ = L.nets(); net = Critic().cuda(); opt = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-4)
     a8 = lambda d: torch.cat([d, torch.zeros(len(d), 2, device="cuda")], 1)
     f = lambda z, g, d: torch.tanh(net(z, g, a8(d)))

@@ -80,7 +80,7 @@ def stage_data():
 DELTA, TAU = 0.25, 0.005
 GAMMA = float(os.environ.get("LSF_GAMMA", 0.9999))
 DEV = os.environ.get("LSF_DEVICE", "cuda")
-WM_PATH = ROOT / "results/program_b/oil_v1/model/model_OIL.pt"
+WM_PATH = Path(os.environ["LSF_WM"]) if os.environ.get("LSF_WM") else ROOT / "results/program_b/oil_v1/model/model_OIL.pt"   # LSF_WM: XFER1
 MAX_STEP = 0.01                                  # m per control step (the policy's own range)
 
 

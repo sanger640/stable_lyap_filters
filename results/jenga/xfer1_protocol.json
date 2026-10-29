@@ -1,0 +1,23 @@
+{
+ "name": "XFER1: does the safety value transfer when only the dynamics are adapted to a shifted world?",
+ "registered": "2026-10-29, before any XFER1 number is computed; user request 2026-10-29 ('no need to retrain the value and actor too i think they should be good just the fine dynamics that encodes all the friction, mass etc right?' -> 'sure do it')",
+ "question": "On a 'fake real world', is fine-tuning only the world model's dynamics enough (old value and actor kept), or must the value and actor be relabelled and retrained in the adapted model's imagination?",
+ "shift": "the s2s 'real world' (results/jenga/s2s_protocol.json): neighbour blocks' mass and inertia x0.3 (MASS_ONLY=0.3); rendering, layout, policy unchanged. Physics-only shift: the visual gap is NOT tested here (follow-up).",
+ "adapted_dynamics": "model_S2S (existing, 2026-10-24): model_OIL with only the latent dynamics fine-tuned on 400 label-free shifted-physics decisions from episodes 30000-30099 (about 80 min of robot time), co-trained with the original data. Its O_MAX calibration cbf_calibration_S2S.json is used for both model_S2S arms.",
+ "retrained_value": "value_irr8_s2s_alea.pt: the value_irr8_alea.pt recipe unchanged except the world model: irreversibility labels and held-out labels from the 0.8 s undo test in model_S2S (IRRM_WM, files tagged nl8_s2s), margin net margin_irr_nl8_s2s.pt, SAC value in model_S2S's imagination (LSF_WM). Same reset states, seeds, THR 1.3356 and s recipe. Deviation from a real deployment: reset states are the existing normal-physics latents (the scenes look identical under a mass-only shift). LF2 audit / diag and the M gate are REPORTED, not gated (the closed loop is the test); missing files stop the chain.",
+ "episodes": "300 fresh episodes 30400-30699 (never used), shifted physics, 2x execution noise, paired starts and per-episode seeds, 120 chunks (96 s) as H2H5",
+ "arms": {
+  "policy": "policy alone",
+  "A": "model_OIL + value_irr8_alea.pt (no adaptation)",
+  "B": "model_S2S + value_irr8_alea.pt (dynamics adapted, value and actor kept: the user's proposal)",
+  "C": "model_S2S + value_irr8_s2s_alea.pt (dynamics adapted, value and actor retrained)",
+  "filter": "lfc000 always-on edit, 90% barrier (LSF_CBF_GAMMA=0.1), LSF_ALEA_SCALE=2"
+ },
+ "outcomes": "replay audit in the SHIFTED physics (eval/xfer1_audit.py; outcome_audit.py would replay normal physics): topples (logged), v4 (success), v4b (strict), red falls before extraction, time-outs",
+ "H1_primary": "the old value transfers iff B is non-inferior to C: topples B - C one-sided 95% upper bound <= +3 pp AND v4 B - C one-sided 95% lower bound >= -5 pp (paired, normal approximation, as h2h5_analysis)",
+ "secondary": "B vs A (does adapting the dynamics help the filter at all; s2s found latent error only -5%), A / B / C vs policy, v4b and red falls, per-pair McNemar",
+ "analysis": "eval/xfer1_analysis.py (written before any result) -> results/jenga/xfer1_result.json",
+ "chain": "scripts/run_xfer1.sh, starts after the NM1 chain exits (one GPU pool at a time)",
+ "follow_up_not_registered": "XFER2 (needs the user's go): visual + physics shift on the filter camera and a data-efficiency curve (fine-tune vs from scratch at N = 50 / 100 / 200 / 500 shifted episodes)",
+ "audit_check": "pre-launch check on 30 Oct 24 shifted-physics episodes (30100-30129): replay topple flags match the logged ones 30/30 with the shifted replay, and also 30/30 with a normal-physics replay (each chunk restarts from the saved state), so the shifted audit is the principled choice but not a sensitive one"
+}
