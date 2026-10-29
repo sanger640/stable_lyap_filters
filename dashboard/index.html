@@ -128,17 +128,17 @@ code { font: 500 12px var(--mono) }
     <h2 id="h-bottom">Bottom line</h2>
     <div class="hero">
       <div>
-        <h3>Without labels, the filter beats the labelled latent safety filter.</h3>
-        <p class="say">600 fresh episodes, pre-registered, 2× noise, 48 s limit. The label-free filter cuts the policy's topples 95 → 36 and beats the labelled baseline (UNISafe-style latent safety filter) on topples and successes. The newer always-on version with an irreversibility value is free at the arm's real noise; its fresh-episode test comes next.</p>
+        <h3>On 600 fresh episodes, our 90% barrier beats every baseline. The registered 80% primary falls short.</h3>
+        <p class="say">Pre-registered head-to-head, 2× noise, 96 s limit. With the 90% barrier the label-free filter cuts the policy's topples 118 → 44 and adds 51 successes, beating UNISafe (labelled) on both. The 80% barrier, registered as primary before launch, passes 2 of 4 tests: free at real noise and better than the published filter, but its success gain at 2× is not significant and it has 20 more topples than UNISafe. Claiming 90% needs a confirmatory run.</p>
         <div class="kpis">
-          <div class="kpi"><b>95 → 36</b><span>topples, policy → label-free</span></div>
-          <div class="kpi"><b>36 vs 57</b><span>topples, label-free vs labelled</span></div>
+          <div class="kpi"><b>118 → 44</b><span>topples, policy → ours 90%</span></div>
+          <div class="kpi"><b>44 vs 72</b><span>topples, ours 90% vs UNISafe</span></div>
         </div>
-        <p class="say">Next: the decisive fresh test of the always-on irreversibility filter against the policy, the published latent safety filter and UNISafe.</p>
+        <p class="say">Next: irreversible fragility in closed loop, then the level-set vs CBF ablation.</p>
       </div>
       <div>
         <div id="heroChart"></div>
-        <p class="hnote">* Always-on edit with its time-outs re-run at 96 s. With 96 s for every controller (pre-registered check): gated 38 topples / 508 successes, labelled 61 / 431, policy 95 / 459.</p>
+        <p class="hnote">At the real noise (1×) both of ours are free: 538 and 537 successes vs 532 for the policy, 2 and 7 topples vs 14. Time per success at 2×: 59 s (80%), 66 s (90%), 57 s policy, 68 s UNISafe.</p>
       </div>
     </div>
   </section>
@@ -240,17 +240,26 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Wed 28 Oct, 11:27 EDT";
+const UPDATED = "Thu 29 Oct, 01:00 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Decisive fresh test (H2H5): running", n: [0, 10], d: "600 never-used episodes per arm at 2× and 1× noise, 96 s limit: policy alone, our always-on irreversibility filter (80% barrier primary, 90% secondary), UNISafe, the latent safety filter as published. Pre-registered. Started 11:07; results ~9–11 pm." },
+  { t: "Irreversible fragility in closed loop (H2H5-NSI): running", n: [1, 10], d: "Value trained to ignore irreversibility that happens in every imagined future (as an intended pour would), run as an extra arm on the H2H5 episodes. Pre-registered: must be no worse than our 80% arm. Started 00:07; results ~3 pm." },
+  { t: "Level-set vs CBF ablation (ABL1): queued", n: [0, 10], d: "Our value with LSF's level-set rule (edit at V ≥ 0 / 0.3, and LSF's switch) vs our CBF condition, plus the 1.6 s value at 80%. Dev episodes, pre-registered; starts after the run above, ~3 h." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "fail", when: "Thu 00:07", title: "Fresh head-to-head: the 90% barrier beats every baseline; the 80% primary passes 2 of 4",
+    say: "Pre-registered, 600 never-used episodes per arm, 2× noise. Primary (80%): free at 1× and better than the published filter, but the success gain is not significant (lower bound −0.1 pp) and it topples 20 more than UNISafe. Secondary (90%): passes all four tests, fewer topples and more successes than UNISafe (−4.7 pp, +8.2 pp). Reported as registered; a confirmatory run would be needed to claim 90%.",
+    cap: "neighbour topples of 600 at 2× noise (successes: 426, 417, 428, 444, 477)", unit: "", max: 130,
+    rows: [["policy alone", 118, "--policy"], ["LSF as published", 126, "--wait"], ["UNISafe (labelled)", 72, "--wait"], ["ours, 80% (primary)", 92, "--accent"], ["ours, 90%", 44, "--good"]] },
+  { v: "neg", when: "Thu 00:50", title: "The undo test's score tops out just above its threshold",
+    say: "Pre-registered offline check. The irreversibility score saturates near 1.46, only ~0.1 above the threshold 1.34, so small threshold changes swing recall from 44% to 0%. Label-free recalibrations land at 1.36–1.41 and would make it even less sensitive. Explains why the value rarely crosses zero; the score's range needs fixing before calibrating it.",
+    cap: "pre-topple decisions caught at threshold × (0.85, 1.0, 1.15)", unit: "%", max: 50,
+    rows: [["× 0.85", 44, "--accent"], ["× 1.0 (current)", 22, "--accent"], ["× 1.15", 0, "--bad"]] },
   { v: "find", when: "Tue 21:38", title: "The latent safety filter as published does nothing here",
     say: "Exploratory (it failed its training gate). Re-implemented faithfully to the paper and the authors' code, it overrides the policy 3–17 times per episode but prevents no topples at any threshold. UNISafe (the same group's follow-up) does: 13 topples, 9 with noise-aware pessimism. Our label-free filter: 7. Same 100 dev episodes, 2× noise.",
     cap: "neighbour topples per 100 at 2× noise (successes: 64, 65, 63, 76, 72)", unit: "", max: 30,
@@ -414,8 +423,8 @@ $("#older").innerHTML = OLDER.map(([v, t]) => `<li><span style="--k:var(${V[v][1
 
 // bottom line: head-to-head 4, 600 fresh episodes: neighbour topples and successes (v4) per controller
 (function () {
-  const R = [["policy alone", 95, 457, "--policy"], ["labelled latent filter", 57, 424, "--wait"], ["label-free, gated", 36, 476, "--accent"],
-             ["label-free, always on", 9, 390, "--accent"], ["always on, 96 s*", 13, 490, "--accent"]];
+  const R = [["policy alone", 118, 426, "--policy"], ["LSF as published", 126, 417, "--wait"], ["UNISafe (labelled)", 72, 428, "--wait"],
+             ["ours, 80% (primary)", 92, 444, "--accent"], ["ours, 90%", 44, 477, "--good"]];
   const W = 480, L = 150, c1 = [L, L + 120], c2 = [L + 150, W - 34], rh = 34, top = 30, H = top + R.length * rh + 6;
   const x1 = v => c1[0] + (c1[1] - c1[0]) * v / 100, x2 = v => c2[0] + (c2[1] - c2[0]) * v / 600;
   let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Topples and successes per 600 fresh episodes for each controller">`;
@@ -423,7 +432,7 @@ $("#older").innerHTML = OLDER.map(([v, t]) => `<li><span style="--k:var(${V[v][1
   s += `<text x="${c1[1]}" y="14" text-anchor="end">of 600</text><text x="${c2[1]}" y="14" text-anchor="end">of 600</text>`;
   R.forEach(([n, t, v, k], i) => {
     const y = top + i * rh, dash = n.endsWith("*") ? ";stroke:var(" + k + ");stroke-dasharray:3 2;fill-opacity:.35" : "";
-    s += `<text x="${L - 10}" y="${y + 14}" text-anchor="end"${i === 2 ? ' class="ink"' : ""}>${n}</text>`;
+    s += `<text x="${L - 10}" y="${y + 14}" text-anchor="end"${i === 4 ? ' class="ink"' : ""}>${n}</text>`;
     s += `<rect x="${c1[0]}" y="${y + 3}" width="${(x1(t) - c1[0]).toFixed(1)}" height="14" rx="2" style="fill:var(${k})${dash}"/><text x="${x1(t) + 5}" y="${y + 14}" class="ink">${t}</text>`;
     s += `<rect x="${c2[0]}" y="${y + 3}" width="${(x2(v) - c2[0]).toFixed(1)}" height="14" rx="2" style="fill:var(${k})${dash}"/><text x="${x2(v) + 5}" y="${y + 14}" class="ink">${v}</text>`;
   });
