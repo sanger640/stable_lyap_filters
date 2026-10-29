@@ -159,9 +159,11 @@ def render(job):
                     ImageDraw.Draw(im).text((12, CAM - 22), "gate closed: value not used", fill=(205, 212, 208))
             dr = ImageDraw.Draw(im)
             pn, pe = pr(np.vstack([hand[None], nom[j:, :3]])), pr(np.vstack([hand[None], exe[j:, :3]]))
+            if ROW:                                                # slides: one colour for "untouched", one for "filter editing"
+                col = ACTIVE if arm != "policy" and np.linalg.norm(exe[j, :3] - nom[j, :3]) * 1000 > EDIT_MIN else IDLE
             if arm != "policy":
-                dashed(dr, pn, (255, 255, 255), 3, 6, 4)
-            dr.line([tuple(q) for q in pe], fill=col if arm != "policy" else (250, 250, 250), width=3)
+                dashed(dr, pn, (40, 40, 40) if ROW else (255, 255, 255), 3, 6, 4)
+            dr.line([tuple(q) for q in pe], fill=col if (arm != "policy" or ROW) else (250, 250, 250), width=4 if ROW else 3)
             if arm != "policy" and np.linalg.norm(exe[-1, :3] - nom[-1, :3]) > EDIT_MIN / 1000:
                 a_, b_ = pn[-1], pe[-1]
                 dr.ellipse([a_[0] - 6, a_[1] - 6, a_[0] + 6, a_[1] + 6], outline=(255, 255, 255), width=2)
@@ -214,6 +216,7 @@ def words(dv):
 HEAD, TL, GAP = 30, 78, 14
 PWID, PHEI = CAM, 30 + CAM + 78
 ROW = os.environ.get("VID_LAYOUT") == "row"
+IDLE, ACTIVE = (60, 130, 255), (40, 225, 90)              # row layout: untouched (all arms) / filter editing (all filters)
 W, H = (4 * CAM + 3 * GAP + 24, 60 + PHEI + 12) if ROW else (2 * CAM + GAP + 24, 60 + 2 * PHEI + GAP + 12)
 
 
@@ -240,20 +243,22 @@ def compose(st, ep):
     def draw(k):
         im = Image.new("RGB", (W, H), (18, 23, 21)); dr = ImageDraw.Draw(im)
         dr.text((12, 8), f"Episode {ep}: same start and same noise for all four.", fill=(230, 236, 232), font=fb)
-        dr.text((12, 30 if ROW else 25), "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it.",
+        dr.text((12, 30 if ROW else 25), ("Blue = the policy's move, untouched.   Green = a filter is changing it (dashed = what the policy wanted)." if ROW else
+                "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it."),
                 fill=(170, 180, 175), font=f12)
         if st != "H5": dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
                 fill=(170, 180, 175), font=f12)
         for a, (x, y) in pos.items():
             _, lab, col = A[a]; Tt = T[a]; m = min(k, len(F[a]) - 1); ended = k >= len(F[a])
             e = float(Tt["edit"][m]); editing = a != "policy" and e > EDIT_MIN and not ended
-            dr.text((x, y + 8), lab, fill=col, font=fb)
+            dr.text((x, y + 8), lab, fill=(235, 240, 237) if ROW else col, font=fb)
             im.paste(Image.fromarray(F[a][m]), (x, y + HEAD))
-            dr.rectangle([x - 2, y + HEAD - 2, x + CAM + 1, y + HEAD + CAM + 1], outline=ORANGE if editing else (50, 60, 56), width=4 if editing else 1)
+            dr.rectangle([x - 2, y + HEAD - 2, x + CAM + 1, y + HEAD + CAM + 1], outline=(ACTIVE if editing else IDLE) if ROW else (ORANGE if editing else (50, 60, 56)),
+                         width=(5 if editing else 3) if ROW else (4 if editing else 1))
             if a == "policy":
                 badge, bc, tc = "no filter: the policy's own action", (40, 48, 45), (220, 225, 222)
             elif editing:
-                badge, bc, tc = f"FILTER EDITING: target moved {e:.0f} mm", ORANGE, (20, 20, 20)
+                badge, bc, tc = f"FILTER EDITING: target moved {e:.0f} mm", ACTIVE if ROW else ORANGE, (20, 20, 20)
                 if Tt["grip_pol"][m] != Tt["grip_exe"][m]:
                     badge += f", gripper {'closed' if Tt['grip_exe'][m] else 'kept open'}"
             else:
@@ -278,7 +283,7 @@ def compose(st, ep):
                 for q in range(len(Tt["t"])):
                     if Tt["edit"][q] > EDIT_MIN:
                         hgt = (ty1 - ty0 - 4) * min(Tt["edit"][q], EDIT_MAX) / EDIT_MAX
-                        dr.rectangle([tx(Tt["t"][q]), ty1 - 2 - hgt, tx(Tt["t"][q]) + max(1, (CAM - 8) * 0.1 / tmax - 0.5), ty1 - 2], fill=ORANGE)
+                        dr.rectangle([tx(Tt["t"][q]), ty1 - 2 - hgt, tx(Tt["t"][q]) + max(1, (CAM - 8) * 0.1 / tmax - 0.5), ty1 - 2], fill=ACTIVE if ROW else ORANGE)
                 dr.text((x + CAM - 44, ty0 + 2), f"{EDIT_MAX:.0f} mm", fill=(120, 130, 126), font=f11)
             dr.line([x + 4, ty1 - 2, tx(Tt["t"][-1] + 0.1), ty1 - 2], fill=(110, 120, 116))
             cx = tx(Tt["t"][m] if not ended else Tt["t"][-1]); dr.line([cx, ty0, cx, ty1], fill=(255, 255, 255), width=1)
@@ -290,7 +295,7 @@ def compose(st, ep):
         dr.text((40, 60 if ROW else 160), f"Episode {ep}: how much each controller changed the policy's action", fill=(230, 236, 232), font=fb)
         for i, a in enumerate(A):
             _, lab, col = A[a]; t, c = outcome(R[a]); y0 = (110 + 100 * i) if ROW else (210 + 70 * i)
-            dr.text((40, y0), lab, fill=col, font=fb); dr.text((40, y0 + (24 if ROW else 20)), "outcome: " + t, fill=c, font=f13)
+            dr.text((40, y0), lab, fill=(235, 240, 237) if ROW else col, font=fb); dr.text((40, y0 + (24 if ROW else 20)), "outcome: " + t, fill=c, font=f13)
             dr.text((40, y0 + (46 if ROW else 38)), summary(a), fill=(215, 222, 218), font=f13)
         return np.asarray(im)
 
