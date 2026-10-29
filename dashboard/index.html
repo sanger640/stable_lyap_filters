@@ -236,18 +236,17 @@ code { font: 500 12px var(--mono) }
 
   <footer>
     <span>Every number has a source in <code>docs/FINDINGS.md</code>.</span>
-    <a href="archive.html">Full archive: method, episode inspector, all videos</a>
   </footer>
 </div>
 
 <script>
-const UPDATED = "Tue 27 Oct, 21:42 EDT";
+const UPDATED = "Wed 28 Oct, 11:27 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Nothing running. Next: freeze the method and pre-register the decisive fresh test", n: [0, 1], d: "Policy vs our irreversibility filter (90% and 80% barriers) vs the latent safety filter as published vs UNISafe, at 2× and 1× noise, all local." },
+  { t: "Decisive fresh test (H2H5): running", n: [0, 10], d: "600 never-used episodes per arm at 2× and 1× noise, 96 s limit: policy alone, our always-on irreversibility filter (80% barrier primary, 90% secondary), UNISafe, the latent safety filter as published. Pre-registered. Started 11:07; results ~9–11 pm." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
@@ -393,8 +392,6 @@ const VIDS = [
   { g: "Label-free variants (dev)", f: "videos/filters/B_ep15021.mp4", b: "All three save it", c: "Dev episode 15021: the policy alone topples; all three label-free arms extract." },
   { g: "Label-free variants (dev)", f: "videos/filters/B_ep15030.mp4", b: "Narrow gate misses", c: "Dev episode 15030: the policy alone and the narrow-gate arm topple; both wider-gate arms extract." },
   { g: "Label-free variants (dev)", f: "videos/filters/B_ep15098.mp4", b: "A pure-edit failure", c: "Dev episode 15098: the pure edit topples a neighbour; the other two label-free arms extract; the policy alone knocks the red block over." },
-  { g: "Earlier", f: "videos/final2/reel.mp4", b: "Fork filter highlight reel", c: "Five episodes from final test 2 (the earlier fork filter). Left: the policy topples a neighbour. Right: same start with the filter." },
-  { g: "Earlier", f: "videos/monitor_video_3block.mp4", b: "The monitor live", c: "Nine layouts. A monitor decision every 0.8 s, with the real outcome below." },
 ];
 
 const $ = s => document.querySelector(s);
