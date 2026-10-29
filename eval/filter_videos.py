@@ -9,7 +9,8 @@ Sets: H5 = H2H5 fresh head-to-head at 2x (policy, UNISafe, ours 80%, ours 90%), 
       A = head-to-head 4 episodes (policy, lfci000, psel, labelled LSF), same episodes as results/program_b/h2h4_videos;
       B = dev episodes 15000-15099 (policy, lfci000, lfcj000, lfck000), episodes by a fixed rule (choose_b()).
 Output: results/program_b/filter_videos/{A,B}/ep<i>.mp4
-usage: python3 eval/filter_videos.py A|B [ep ...]      (COMPOSE_ONLY=1: re-compose from the saved raw renders)
+usage: python3 eval/filter_videos.py A|B [ep ...]      (COMPOSE_ONLY=1: re-compose from the saved raw renders;
+       VID_LAYOUT=row: the four panels side by side, landscape, larger text -> <set>/row/ep<i>.mp4, for slides)
 """
 import json
 import multiprocessing as mp
@@ -212,20 +213,22 @@ def words(dv):
 
 HEAD, TL, GAP = 30, 78, 14
 PWID, PHEI = CAM, 30 + CAM + 78
-W, H = 2 * CAM + GAP + 24, 60 + 2 * PHEI + GAP + 12
+ROW = os.environ.get("VID_LAYOUT") == "row"
+W, H = (4 * CAM + 3 * GAP + 24, 60 + PHEI + 12) if ROW else (2 * CAM + GAP + 24, 60 + 2 * PHEI + GAP + 12)
 
 
 def compose(st, ep):
     import imageio_ffmpeg
     from PIL import Image, ImageDraw, ImageFont
     A = SETS[st]
-    fb, f13, f12, f11 = (ImageFont.truetype(FONT.replace("Sans.ttf", "Sans-Bold.ttf"), 13), ImageFont.truetype(FONT, 13),
-                         ImageFont.truetype(FONT, 12), ImageFont.truetype(FONT, 11))
+    k_ = 16 if ROW else 13
+    fb, f13, f12, f11 = (ImageFont.truetype(FONT.replace("Sans.ttf", "Sans-Bold.ttf"), k_), ImageFont.truetype(FONT, k_),
+                         ImageFont.truetype(FONT, k_ - 1), ImageFont.truetype(FONT, k_ - 2))
     F = {a: frames(OUT / st / "raw" / f"{a}_ep{ep}.mp4") for a in A}
     T = {a: dict(np.load(OUT / st / "raw" / f"{a}_ep{ep}.npz")) for a in A}
     R = {a: audited(st, a, ep) for a in A}
     n = max(len(v) for v in F.values()); tmax = max(T[a]["t"][-1] for a in A) + 0.1
-    pos = {a: (12 + (i % 2) * (CAM + GAP), 60 + (i // 2) * (PHEI + GAP)) for i, a in enumerate(A)}
+    pos = {a: ((12 + i * (CAM + GAP), 60) if ROW else (12 + (i % 2) * (CAM + GAP), 60 + (i // 2) * (PHEI + GAP))) for i, a in enumerate(A)}
 
     def summary(a):
         e = T[a]["edit"]; on = e > EDIT_MIN
@@ -237,7 +240,7 @@ def compose(st, ep):
     def draw(k):
         im = Image.new("RGB", (W, H), (18, 23, 21)); dr = ImageDraw.Draw(im)
         dr.text((12, 8), f"Episode {ep}: same start and same noise for all four.", fill=(230, 236, 232), font=fb)
-        dr.text((12, 25), "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it.",
+        dr.text((12, 30 if ROW else 25), "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it.",
                 fill=(170, 180, 175), font=f12)
         if st != "H5": dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
                 fill=(170, 180, 175), font=f12)
@@ -262,7 +265,7 @@ def compose(st, ep):
                 dr.text((x + CAM - 56, y + HEAD + CAM - 22), f"{Tt['t'][m]:4.1f} s", fill=(225, 230, 228), font=f12)
             tp = np.flatnonzero(Tt["tilt"][:m + 1] >= TOPPLE)
             if len(tp):
-                dr.rectangle([x + 6, y + HEAD + CAM - 30, x + 190, y + HEAD + CAM - 6], fill=(200, 60, 45))
+                dr.rectangle([x + 6, y + HEAD + CAM - 30, x + 22 + dr.textlength("NEIGHBOUR TOPPLED", font=fb), y + HEAD + CAM - 6], fill=(200, 60, 45))
                 dr.text((x + 14, y + HEAD + CAM - 26), "NEIGHBOUR TOPPLED", fill=(255, 255, 255), font=fb)
             if ended:
                 t, c = outcome(R[a]); bw = dr.textlength("ended: " + t, font=fb) + 16
@@ -284,14 +287,15 @@ def compose(st, ep):
 
     def card():
         im = Image.new("RGB", (W, H), (18, 23, 21)); dr = ImageDraw.Draw(im)
-        dr.text((40, 160), f"Episode {ep}: how much each controller changed the policy's action", fill=(230, 236, 232), font=fb)
+        dr.text((40, 60 if ROW else 160), f"Episode {ep}: how much each controller changed the policy's action", fill=(230, 236, 232), font=fb)
         for i, a in enumerate(A):
-            _, lab, col = A[a]; t, c = outcome(R[a]); y0 = 210 + 70 * i
-            dr.text((40, y0), lab, fill=col, font=fb); dr.text((40, y0 + 20), "outcome: " + t, fill=c, font=f13)
-            dr.text((40, y0 + 38), summary(a), fill=(215, 222, 218), font=f13)
+            _, lab, col = A[a]; t, c = outcome(R[a]); y0 = (110 + 100 * i) if ROW else (210 + 70 * i)
+            dr.text((40, y0), lab, fill=col, font=fb); dr.text((40, y0 + (24 if ROW else 20)), "outcome: " + t, fill=c, font=f13)
+            dr.text((40, y0 + (46 if ROW else 38)), summary(a), fill=(215, 222, 218), font=f13)
         return np.asarray(im)
 
-    w = imageio_ffmpeg.write_frames(str(OUT / st / f"ep{ep}.mp4"), (W, H), fps=10, codec="libx264", quality=7, macro_block_size=1); w.send(None)
+    dst = OUT / st / "row" if ROW else OUT / st; dst.mkdir(parents=True, exist_ok=True)
+    w = imageio_ffmpeg.write_frames(str(dst / f"ep{ep}.mp4"), (W, H), fps=10, codec="libx264", quality=7, macro_block_size=1); w.send(None)
     for k in range(n + 10):
         w.send(draw(k))
     c = card()
