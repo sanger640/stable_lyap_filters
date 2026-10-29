@@ -240,17 +240,28 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Thu 29 Oct, 09:45 EDT";
+const UPDATED = "Thu 29 Oct, 15:45 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "GPU idle: next run awaits your choice", n: [0, 1], d: "Options: confirm the 90% barrier and/or the 1.6 s value at 80% on fresh episodes; the undo signal's 0.8 s horizon, not its score, limits recall." },
+  { t: "Fresh head-to-head 6: policy, ours 90%, 1.6 s value at 80%, UNISafe", n: [5, 8], d: "600 new episodes per arm; 2× done and audited, 1× running. Ends about 9 pm." },
+  { t: "1.6 s irreversible-fragility value", n: [0, 1], d: "Queued after the head-to-head: new labels, training gate, then 100 dev episodes. About 5 am." },
+  { t: "No hand mask (your call)", n: [0, 1], d: "Queued: score the whole image, relabel, retrain the value, rerun both barriers on dev. Tests fewer red-block falls with topples unchanged. Tomorrow evening." },
+  { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Queued: adapted dynamics with the old value vs a retrained value, 300 new episodes. After the no-mask run." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "find", when: "Thu 14:58", title: "Red-block falls look like half a failure to the undo test",
+    say: "Pre-registered offline check. Moves just before the red block falls rank as riskier (AUC 0.82) but only 5% cross the threshold, vs 50% before topples: the hand mask hides about half of the red block, and a few changed patches don't move the 98th-percentile score. So the value treats red falls as safe, which is why our filters neither cause nor prevent them. Next: the no-mask run.",
+    cap: "moves flagged at the threshold (%)", unit: "%", max: 60,
+    rows: [["before a topple", 49.9, "--good"], ["before a red-block fall", 5.2, "--bad"], ["safe grasping (false alarm)", 2.3, "--wait"]] },
+  { v: "find", when: "Thu 14:37", title: "Ours nudges early and small; UNISafe takes over late and big",
+    say: "Every 0.1 s target of the 600 head-to-head episodes at 2× noise. Our edits are about 3 mm, mostly backing off and lifting, and start seconds before the policy alone would topple a block. UNISafe acts on few steps, but each takeover moves the target about 2 cm, mostly in the last second.",
+    cap: "steps edited 2.4 s before the policy alone toppled a block (%)", unit: "%", max: 40,
+    rows: [["ours, barrier 90%", 28.4, "--good"], ["ours, barrier 80%", 17.6, "--accent"], ["UNISafe", 3.2, "--bad"]] },
   { v: "fail", when: "Thu 09:28", title: "Wider-range undo scores don't catch more; the threshold itself checks out",
     say: "Pre-registered offline test. Measuring the AREA of irreversible change instead of the most-changed spot removes most of the cliff (recall swing 44 → 26 pp) but ranks danger no better (AUC 0.77 for all) and catches fewer pre-topple moves (19% vs 22%), so it stopped before retraining and the irreversible-fragility retry did not run. Calibrating the current score directly on undo-vs-hold scores gives 1.334, confirming the threshold 1.336. Every score tops out near 50%: about half the moves before a topple show no irreversible change within 0.8 s of imagination.",
     cap: "pre-topple moves caught at each score's calibrated threshold (%)", unit: "%", max: 30,
