@@ -240,18 +240,25 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Thu 29 Oct, 01:00 EDT";
+const UPDATED = "Thu 29 Oct, 07:45 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Irreversible fragility in closed loop (H2H5-NSI): running", n: [1, 10], d: "Value trained to ignore irreversibility that happens in every imagined future (as an intended pour would), run as an extra arm on the H2H5 episodes. Pre-registered: must be no worse than our 80% arm. Started 00:07; results ~3 pm." },
-  { t: "Level-set vs CBF ablation (ABL1): queued", n: [0, 10], d: "Our value with LSF's level-set rule (edit at V ≥ 0 / 0.3, and LSF's switch) vs our CBF condition, plus the 1.6 s value at 80%. Dev episodes, pre-registered; starts after the run above, ~3 h." },
+  { t: "GPU idle: next run awaits your choice", n: [0, 1], d: "Options: confirm the 90% barrier on fresh episodes (~6 h), test the 1.6 s value at 80% on fresh episodes, or fix the undo score's range first." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "pass", when: "Thu 07:28", title: "Ablation: the CBF condition beats LSF's level-set rule",
+    say: "Pre-registered, 100 dev episodes, same value. Using LSF's rule (act only when the value drops below a level) instead of our barrier (keep 90% of the current value) gives 17–22 topples under 2× noise vs 7; LSF's switch to a safety actor is worst. All variants are free at 1×. Side result: the 1.6 s value at the 80% barrier gets 6 topples with 77 successes, matching the 90% barrier's protection without its success loss. Dev episodes picked the 90% barrier, so this favours it slightly.",
+    cap: "neighbour topples per 100 at 2× noise (successes: 73, 75, 67, 78, 72, 77)", unit: "", max: 30,
+    rows: [["level set, V ≥ 0", 19, "--wait"], ["level set, V ≥ 0.3", 17, "--wait"], ["LSF switch, 0.3", 22, "--bad"], ["ours, barrier 80%", 14, "--accent"], ["ours, barrier 90%", 7, "--good"], ["ours, 1.6 s value, 80%", 6, "--good"]] },
+  { v: "fail", when: "Thu 06:20", title: "Irreversible fragility value misses its training gate; no closed loop",
+    say: "Pre-registered. The value trained to ignore irreversibility that happens in every imagined future ranks fresh decisions slightly worse than required (AUC 0.788 vs 0.80; the plain value reached 0.809), so the closed-loop arm did not run. It flags more pre-topple decisions (4.0 vs 2.5%) at a similar false-alarm rate. The offline result (no recall cost) stands; the closed-loop claim is untested.",
+    cap: "ranking of fresh decisions, AUC × 100 (gate 80)", unit: "", max: 100,
+    rows: [["plain irreversibility value", 80.9, "--accent"], ["irreversible-fragility value", 78.8, "--bad"]] },
   { v: "fail", when: "Thu 00:07", title: "Fresh head-to-head: the 90% barrier beats every baseline; the 80% primary passes 2 of 4",
     say: "Pre-registered, 600 never-used episodes per arm, 2× noise. Primary (80%): free at 1× and better than the published filter, but the success gain is not significant (lower bound −0.1 pp) and it topples 20 more than UNISafe. Secondary (90%): passes all four tests, fewer topples and more successes than UNISafe (−4.7 pp, +8.2 pp). Reported as registered; a confirmatory run would be needed to claim 90%.",
     cap: "neighbour topples of 600 at 2× noise (successes: 426, 417, 428, 444, 477)", unit: "", max: 130,
