@@ -1,0 +1,19 @@
+{
+ "name": "ABL1: paper ablations on the dev episodes - is the CBF condition needed (vs LSF's level-set rule), and the 1.6 s value at the 80% barrier",
+ "registered": "2026-10-29 00:45 EDT, user request 2026-10-28 ('level set comparison ... rest of ablations'); before any ABL1 episode. H2H5 results are known; dev results of the comparator arms (g20 = 80%, g10 = 90%, same value, same dev episodes) are known.",
+ "episodes": "dev 15000-15099 (EP_OFFSET=15000, 100 episodes, same seeds as the IRRM dev arms), 2x then 1x (imagined noise matched: LSF_ALEA_SCALE = run noise), HARD_OFF, 6 local shards, one GPU pool at a time, after the H2H5-NSI chain exits; replay audit at the run's noise",
+ "arms": {
+  "lv0": "our value (value_irr8_alea.pt), our gradient edit, LEVEL SET V(z'_j) >= 0 for the worst of 8 (lfc000, LSF_CBF_GAMMA=1.0 -> threshold = eps)",
+  "lv30": "the same with level set V(z'_j) >= 0.3 (lfc030, LSF_CBF_GAMMA=1.0)",
+  "lsr30": "our value with LSF / UNISafe's runtime rule: switch to the value's safety actor when the worst of 8 noisy next values <= 0.3 (lfa030, LSF_VALUE_NAME=value_irr8_alea.pt)",
+  "a16g20": "1.6 s irreversibility value (value_irr16_alea.pt) at the 80% barrier (lfc000, LSF_CBF_GAMMA=0.2); 0.5 and 0.9 were run in IRRM amendment 4"
+ },
+ "comparators": "existing dev audits: g20 (80% barrier) and g10 (90% barrier), outcome_audit_{g20,g10}dev{2x,1x}.json; policy alone dev 2x 27 / 64 / 58, 1x 5 / 85 / 76 (FINDINGS)",
+ "questions_and_rules": {
+  "Q1_cbf_needed": "'the CBF condition is needed' iff EVERY level-set arm (lv0, lv30, lsr30) either has more 2x topples than g10 with one-sided exact McNemar p < 0.05, or fails 'no cost' at 1x (v4 >= 80 and topples <= 5, the IRRM rule). Also reported vs g20.",
+  "Q2_horizon": "a16g20 vs g20, descriptive (counts, paired differences, McNemar); no claim beyond dev",
+  "caveat": "dev episodes were used to select the barrier (g10), so dev comparisons favour g10 slightly; a fresh-episode confirmation would be needed for a paper claim"
+ },
+ "analysis": "eval/abl1_analysis.py (written before any ABL1 result) -> results/jenga/abl1_result.json",
+ "runner": "scripts/run_abl1.sh"
+}
