@@ -5,7 +5,8 @@ run's execution-noise sequence (as eval/h2h4_videos.py). Per controller:
   badge:     "policy's action, untouched" or "FILTER EDITING: <mm> (<direction words>)"; orange border while editing
   timeline:  one bar per 0.1 s step, height = |executed - proposed| target (mm); summary: share of steps edited, mean, max
   stamps:    neighbour topple when it happens; the replay-audited outcome (v4) at the end; end card with the same numbers
-Sets: A = head-to-head 4 episodes (policy, lfci000, psel, labelled LSF), same episodes as results/program_b/h2h4_videos;
+Sets: H5 = H2H5 fresh head-to-head at 2x (policy, UNISafe, ours 80%, ours 90%), episodes by choose_h5() (deck videos);
+      A = head-to-head 4 episodes (policy, lfci000, psel, labelled LSF), same episodes as results/program_b/h2h4_videos;
       B = dev episodes 15000-15099 (policy, lfci000, lfcj000, lfck000), episodes by a fixed rule (choose_b()).
 Output: results/program_b/filter_videos/{A,B}/ep<i>.mp4
 usage: python3 eval/filter_videos.py A|B [ep ...]      (COMPOSE_ONLY=1: re-compose from the saved raw renders)
@@ -30,7 +31,9 @@ SETS = {
           "psel": ("paired_cbfps3m_h2h3", "psel (baseline)", PURPLE), "lsf": ("paired_lsfa030_h2h3", "Labelled latent safety filter", BLUE)},
     "B": {"policy": ("paired_record_lflsfdev", "Policy alone", GREY), "lfci000": ("paired_lfci000_irrdev", "Narrow gate + actor fallback", TEAL),
           "lfcj000": ("paired_lfcj000_gate3dev", "Wider gate + actor fallback", BLUE),
-          "lfck000": ("paired_lfck000_gate3dev", "Wider gate, pure edit (selected)", GREEN)}}
+          "lfck000": ("paired_lfck000_gate3dev", "Wider gate, pure edit (selected)", GREEN)},
+    "H5": {"policy": ("paired_record_h5_2x", "Policy alone", GREY), "unisafe": ("paired_lsfa030_h5_2x", "UNISafe (labelled, + noise model)", BLUE),
+           "ours80": ("paired_lfc000_h5o80_2x", "Ours, 80% barrier", TEAL), "ours90": ("paired_lfc000_h5o90_2x", "Ours, 90% barrier", GREEN)}}
 EPS_A = [25630, 25765, 25880, 25882, 26043]          # results/program_b/h2h4_videos (h2h4_videos.choose())
 CAM = 400                                             # close camera, square
 EDIT_MIN, EDIT_MAX = 0.5, 15.0                         # mm: below = untouched; timeline full scale
@@ -179,7 +182,8 @@ def frames(path):
     return [np.frombuffer(f, np.uint8).reshape(h, w, 3) for f in rd]
 
 
-AUDIT = {"A": {"policy": "h2h4", "lfci000": "h2h4", "psel": "h2h3", "lsf": "h2h3"},
+AUDIT = {"H5": {a: "h5_2x" for a in ("policy", "unisafe", "ours80", "ours90")},
+         "A": {"policy": "h2h4", "lfci000": "h2h4", "psel": "h2h3", "lsf": "h2h3"},
          "B": {"policy": "lflsfdev", "lfci000": "irrdev", "lfcj000": "gate3dev", "lfck000": "gate3kdev"}}
 
 
@@ -196,7 +200,7 @@ def outcome(r):
         return "neighbour toppled", (245, 140, 120)
     if r["red_fell_before_extraction"]:
         return "red block knocked over", (245, 175, 120)
-    return ("block extracted (v4), no topple", (150, 225, 170)) if r["v4_success"] else ("time-out: not extracted", (225, 205, 140))
+    return ("success: block extracted, no topple", (150, 225, 170)) if r["v4_success"] else ("time-out: not extracted", (225, 205, 140))
 
 
 def words(dv):
@@ -235,7 +239,7 @@ def compose(st, ep):
         dr.text((12, 8), f"Episode {ep}: same start and same noise for all four.", fill=(230, 236, 232), font=fb)
         dr.text((12, 25), "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it.",
                 fill=(170, 180, 175), font=f12)
-        dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
+        if st != "H5": dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
                 fill=(170, 180, 175), font=f12)
         for a, (x, y) in pos.items():
             _, lab, col = A[a]; Tt = T[a]; m = min(k, len(F[a]) - 1); ended = k >= len(F[a])
@@ -309,10 +313,22 @@ def choose_b():
             + pick(lambda e: R["lfck000"][e]["neighbour_toppled"], 1))
 
 
+def choose_h5():
+    """fixed rule (seed 20261029, on the REPLAY-AUDITED outcomes at 2x): 2 random episodes where the policy alone topples and
+    ours90 succeeds, 1 where ours90 topples (its failure case)."""
+    rows = json.loads((ROOT / "results/jenga/outcome_audit_h5_2x.json").read_text())
+    R = {a: {r["ep"]: r for r in rows[run]["rows"]} for a, (run, _, _) in SETS["H5"].items()}
+    eps = sorted(set.intersection(*(set(v) for v in R.values())))
+    rng = np.random.default_rng(20261029)
+    pick = lambda c, m: [int(e) for e in rng.permutation([e for e in eps if c(e)])[:m]]
+    return (pick(lambda e: R["policy"][e]["logged_neighbour_toppled"] and R["ours90"][e]["v4_success"], 2)
+            + pick(lambda e: R["ours90"][e]["logged_neighbour_toppled"], 1))
+
+
 def main():
     st = sys.argv[1]
     (OUT / st / "raw").mkdir(parents=True, exist_ok=True)
-    eps = [int(x) for x in sys.argv[2:]] or (EPS_A if st == "A" else choose_b())
+    eps = [int(x) for x in sys.argv[2:]] or (EPS_A if st == "A" else choose_h5() if st == "H5" else choose_b())
     print("set", st, "episodes", eps, flush=True)
     jobs = [] if os.environ.get("COMPOSE_ONLY") == "1" else [(st, a, e) for e in eps for a in SETS[st]]
     with mp.get_context("spawn").Pool(max(1, min(int(os.environ.get("NPROC", 8)), len(jobs)))) as pool:
