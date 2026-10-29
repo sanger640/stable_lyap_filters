@@ -1,0 +1,16 @@
+{
+ "name": "NSI2: irreversible fragility retried on the RNG1 score (ignore irreversibility present in the typical imagined future)",
+ "registered": "2026-10-29 08:55 EDT, user request 2026-10-29 ('retry the nsi after the new score'); before any RNG1 result exists (RNG1 stage R running). Known: H2H5-NSI stopped at gate AN (AUC 0.788 < 0.80 with the q98 score), ABL1, H2H5.",
+ "requires": "RNG1's labels (results/jenga/irrm2_labels_rng8_*.npz with per-draw scores, irrm2_held_rng8.npz). If RNG1 stops before labels (gate R), NSI2 does not run.",
+ "failure_set": "per (z, a), RNG1's selected score per draw r_j (results/jenga/rng1_result.json: stat, c, tau). Failure iff r_max > tau AND median_j r_j <= tau. Margin target t = max(tanh((tau - r_max)/s), tanh((r_med - tau)/s)), s = IQR(r_max)/2 over the rng labels (as RNG1).",
+ "pipeline": {
+  "margin": "IRRM_STAT=rng IRRM_NSI=1 IRRM_NL=8 eval/irrm2.py margin -> margin_rngnsi_nl8.pt, irrm2_result_rngnsi8.json; gate MN2 (as M): held-out Spearman >= 0.6 and AUC vs the NSI flag >= 0.85. FAIL -> STOP.",
+  "value": "eval/lsf.py sac, recipe of value_irr8_alea.pt unchanged, LSF_IRR_MARGIN=margin_rngnsi_nl8.pt -> value_rngnsi8_alea.pt; gate AN2 (as A): LF2 criteria AND on CF3's fresh decisions AUC(-V) >= 0.80, V < 0 on safe closed <= 5%, safe open <= 10%. FAIL -> STOP (no closed loop).",
+  "dev_closed_loop": "lfc000 with value_rngnsi8_alea.pt at the 80% (n20, gamma 0.2) and 90% (n10, gamma 0.1) barrier, dev 15000-15099, 2x then 1x, imagined noise = run noise, HARD_OFF, 6 local shards; replay audit"
+ },
+ "comparators": "RNG1's dev arms r20 / r10 (same score without the NSI restriction, same episodes, paired). If RNG1 stopped before its dev arms, the irreversibility value's g20 / g10 instead, descriptive only.",
+ "rule": "exploratory dev. 'Irreversible fragility costs nothing on Jenga (with the RNG1 score)' iff for every barrier with both arms: 2x topples <= comparator + 3 AND 2x v4 >= comparator - 5, AND 1x v4 >= 80 AND 1x topples <= 5. Also reported: share of labels that are consistently irreversible (flag removed by NSI) and the offline flag rates.",
+ "order": "after RNG1's chain exits (one GPU pool at a time)",
+ "analysis": "eval/nsi2_dev_analysis.py -> results/jenga/nsi2_dev_result.json",
+ "runner": "scripts/run_nsi2.sh"
+}

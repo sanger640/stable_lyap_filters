@@ -17,6 +17,8 @@ intended change would show, is not failure). Files tagged nsi8 instead of nl8.
 RNG1 variant (IRRM_STAT=rng, results/jenga/rng1_protocol.json): the per-draw score is RNG1's selected area / mass score
 (eval/rng1.py, c and tau from results/jenga/rng1_result.json) instead of q98; THR = that tau; per-draw scores kept; files
 tagged rng<NL>, margin margin_rng_nl<NL>.pt.
+NSI2 (IRRM_STAT=rng IRRM_NSI=1, results/jenga/nsi2_protocol.json): the NSI target on the rng labels (margin only, no new
+labels) -> margin_rngnsi_nl<NL>.pt, irrm2_result_rngnsi<NL>.json.
 usage: SHARD=i/n python3 eval/irrm2.py labels;  python3 eval/irrm2.py held;  python3 eval/irrm2.py margin
        -> results/jenga/irrm2_labels_nl<NL>_<i>.npz, irrm2_held_nl<NL>.npz, lsf_v1/margin_irr_nl<NL>.pt, results/jenga/irrm2_result_nl<NL>.json
 """
@@ -37,7 +39,8 @@ NSI = os.environ.get("IRRM_NSI") == "1"
 STAT = os.environ.get("IRRM_STAT")
 if STAT == "rng":
     SEL = json.loads((OUT / "rng1_result.json").read_text())["selected"]; THR = SEL["tau"]
-TAG = f"nsi{NL}" if NSI else f"rng{NL}" if STAT == "rng" else f"nl{NL}"
+TAG = f"rng{NL}" if STAT == "rng" else f"nsi{NL}" if NSI else f"nl{NL}"     # label files
+RTAG = f"rngnsi{NL}" if NSI and STAT == "rng" else TAG                     # margin result (NSI2: NSI target on the rng labels)
 
 
 class Undo:
@@ -189,7 +192,7 @@ def margin():
         T["flag"], H["flag"] = T["r"] > THR, H["r"] > THR
         tgt = lambda r: np.tanh((THR - r) / s).astype(np.float32)
         tt, th = tgt(T["r"]), tgt(H["r"])
-    mname = f"margin_nsi_nl{NL}.pt" if NSI else f"margin_rng_nl{NL}.pt" if STAT == "rng" else f"margin_irr_nl{NL}.pt"
+    mname = f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if STAT == "rng" else f"margin_nsi_nl{NL}.pt" if NSI else f"margin_irr_nl{NL}.pt"
     _, Critic, _ = L.nets(); net = Critic().cuda(); opt = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-4)
     a8 = lambda d: torch.cat([d, torch.zeros(len(d), 2, device="cuda")], 1)
     f = lambda z, g, d: torch.tanh(net(z, g, a8(d)))
@@ -224,7 +227,7 @@ def margin():
            "grading_policy_action_auc_pre_vs_safe": {"hat": round(float(roc_auc_score(pre[pre | safe], -ph[pre | safe])), 3),
                                                      "true_r": round(float(roc_auc_score(pre[pre | safe], H["r"][pre | safe])), 3)},
            "best_val_mse": best, "log": log}
-    (OUT / f"irrm2_result_{TAG}.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
+    (OUT / f"irrm2_result_{RTAG}.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
 
 
 if __name__ == "__main__":
