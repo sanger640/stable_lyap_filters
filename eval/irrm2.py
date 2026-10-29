@@ -17,6 +17,8 @@ intended change would show, is not failure). Files tagged nsi8 instead of nl8.
 RNG1 variant (IRRM_STAT=rng, results/jenga/rng1_protocol.json): the per-draw score is RNG1's selected area / mass score
 (eval/rng1.py, c and tau from results/jenga/rng1_result.json) instead of q98; THR = that tau; per-draw scores kept; files
 tagged rng<NL>, margin margin_rng_nl<NL>.pt.
+NM1 (IRRM_MASK=none, results/jenga/nm1_protocol.json): the same q98 undo test over ALL patches (no hand mask); files tagged
+nm<NL>, margin margin_irrnm_nl<NL>.pt.
 NSI2 (IRRM_STAT=rng IRRM_NSI=1, results/jenga/nsi2_protocol.json): the NSI target on the rng labels (margin only, no new
 labels) -> margin_rngnsi_nl<NL>.pt, irrm2_result_rngnsi<NL>.json.
 usage: SHARD=i/n python3 eval/irrm2.py labels;  python3 eval/irrm2.py held;  python3 eval/irrm2.py margin
@@ -39,7 +41,8 @@ NSI = os.environ.get("IRRM_NSI") == "1"
 STAT = os.environ.get("IRRM_STAT")
 if STAT == "rng":
     SEL = json.loads((OUT / "rng1_result.json").read_text())["selected"]; THR = SEL["tau"]
-TAG = f"rng{NL}" if STAT == "rng" else f"nsi{NL}" if NSI else f"nl{NL}"     # label files
+NOMASK = os.environ.get("IRRM_MASK") == "none"                             # NM1 (results/jenga/nm1_protocol.json): score all patches
+TAG = f"rng{NL}" if STAT == "rng" else f"nsi{NL}" if NSI else f"nm{NL}" if NOMASK else f"nl{NL}"     # label files
 RTAG = f"rngnsi{NL}" if NSI and STAT == "rng" else TAG                     # margin result (NSI2: NSI target on the rng labels)
 
 
@@ -84,7 +87,8 @@ class Undo:
             path = np.concatenate([seg, seg[::-1][1:], g[None, :3]])                 # do, then the same targets back to the current one
             rev = np.c_[path, np.full(len(path), g[3])].astype(np.float32)
             bases.append(np.concatenate([rev, np.repeat(cur[None], self.total, 0)])[:self.total])
-            masks.append(torch.as_tensor(~self.cb.hand_mask(np.vstack([g[None, :3], seg])), device="cuda"))
+            hm = self.cb.hand_mask(np.vstack([g[None, :3], seg]))
+            masks.append(torch.as_tensor(np.ones_like(hm) if NOMASK else ~hm, device="cuda"))
         bases.append(np.repeat(cur[None], self.total, 0))
         acts = []
         for base in bases:
@@ -192,7 +196,8 @@ def margin():
         T["flag"], H["flag"] = T["r"] > THR, H["r"] > THR
         tgt = lambda r: np.tanh((THR - r) / s).astype(np.float32)
         tt, th = tgt(T["r"]), tgt(H["r"])
-    mname = f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if STAT == "rng" else f"margin_nsi_nl{NL}.pt" if NSI else f"margin_irr_nl{NL}.pt"
+    mname = (f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if STAT == "rng" else f"margin_nsi_nl{NL}.pt" if NSI else
+             f"margin_irrnm_nl{NL}.pt" if NOMASK else f"margin_irr_nl{NL}.pt")
     _, Critic, _ = L.nets(); net = Critic().cuda(); opt = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-4)
     a8 = lambda d: torch.cat([d, torch.zeros(len(d), 2, device="cuda")], 1)
     f = lambda z, g, d: torch.tanh(net(z, g, a8(d)))

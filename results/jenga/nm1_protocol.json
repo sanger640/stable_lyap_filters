@@ -1,0 +1,20 @@
+{
+ "name": "NM1: the irreversibility value without the hand mask",
+ "registered": "2026-10-29, before any NM1 number is computed; user request 2026-10-29 ('dont use the mask at all i think everything should still be pretty much the same for all arms i feel red block will see more improvement')",
+ "motivation": "REDM1: red-block falls (83% with the gripper closed) score r_max median 0.76 vs tau 1.3356 (recall 5%), the hand mask covers about half the red block, so the margin stays near +1 and the value never treats them as failures. H2H5: our filters neither cause nor prevent red falls. Oct 26 MASK1 (topples only, m3 dev): no mask barely changes topple detection (recall 50.0 -> 42.8%, safe flags 1.9 / 8.3 -> 1.4 / 6.6%).",
+ "change": "ONLY the hand mask: the undo test's q98 is taken over ALL 28x28 patches (IRRM_MASK=none in eval/irrm2.py; CF_MASK=none in eval/cf_conf.py). Everything else as value_irr8_alea.pt: 0.8 s undo test, 64 draws at 2x, THR 1.3356 fixed (not recalibrated), s = IQR/2 of the new labels (label-free), same label states / actions / seeds, same margin net and SAC value training (LSF_ALEA=8), same filter (lfc000 always-on edit).",
+ "stages": {
+  "S0_report": "CF3's 4679 fresh decisions rescored with no mask (cf3nm_rows_*.npz); eval/redm1.py nm -> nm1_stage0.json: pre-red / pre-topple AUC and recall at tau, clean-safe flag rates, masked vs no mask. Report only, does not stop the chain.",
+  "S1_labels": "irrm2 labels + held-out with no mask (irrm2_labels_nm8_*.npz, irrm2_held_nm8.npz); margin net margin_irrnm_nl8.pt; gate MNM = the M gate (held-out Spearman >= 0.6 and AUC(hat vs true flag) >= 0.85); fail -> stop and report.",
+  "S2_value": "value_irrnm8_alea.pt; gate ANM = the A gate (LF2 criteria AND on CF3 decisions AUC(-V, pre-topple vs safe) >= 0.80, V < 0 on safe closed <= 5%, safe open <= 10%); also reported, not gated: V on REDM1's pre-red decisions, and the same report for the current value (AREF). Fail -> stop and report.",
+  "S3_dev": "closed loop on dev 15000-15099 (paired starts, per-episode seeds), arms nm10 (90% barrier, LSF_CBF_GAMMA=0.1) and nm20 (80%, 0.2), 2x then 1x, replay-audited; compared with the existing masked dev audits g10 / g20 (2x: topples 7 / 14, v4 72 / 78, red falls 13 / 6; 1x: 1 / 1, 90 / 92, 8 / 4). Caveat: dev episodes were used to choose g10."
+ },
+ "hypotheses": {
+  "H_red": "fewer red-block falls before extraction with no mask: discordant pairs pooled over both barriers and both noise levels (400 episode pairs), one-sided exact McNemar p < 0.05",
+  "H_same": "per barrier: 2x topples <= masked + 3; v4 summed over 2x and 1x >= masked - 3; 1x no cost (v4 >= 80, topples <= 5)",
+  "GO_fresh": "H_red AND H_same for both barriers -> a fresh-episode head-to-head, registered separately before it runs. Otherwise report; no fresh test."
+ },
+ "reported": "v4b (strict success) and red falls after extraction, per arm and noise; per-pair discordant counts.",
+ "analysis": "eval/nm1_dev_analysis.py (written before any NM1 result) -> results/jenga/nm1_dev_result.json",
+ "chain": "scripts/run_nm1.sh, starts after the NSI3 chain exits (one GPU pool at a time)"
+}

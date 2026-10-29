@@ -20,7 +20,7 @@ import cf_rev as V
 OUT = ROOT / "results/jenga"
 RUNS = ("paired_record_s4", "paired_record_h2h2")
 S, THR = float(os.environ.get("CF_S", 2.0)), 1.3356          # CF_S / CF_TAG: other noise scale, own output files (gate2)
-TAG = os.environ.get("CF_TAG", "cf3")
+TAG = os.environ.get("CF_TAG", "cf3")                         # CF_MASK=none: score all patches (no hand mask)
 
 
 def select():
@@ -64,6 +64,8 @@ def run():
         hold = np.repeat(cur[None], total, 0)
         pts = np.vstack([hp[i, :3][None], plan[S0:S0 + NL, :3]])
         m = torch.as_tensor(~cb.hand_mask(pts), device="cuda")
+        if os.environ.get("CF_MASK") == "none":                    # NM1 stage 0 (results/jenga/nm1_protocol.json): all patches
+            m = torch.ones_like(m)
         for key, v in (("run", RUNS.index(run_)), ("ep", int(stem[2:])), ("i", i), ("kt", kt), ("k", k), ("closed", cl)):
             res[key].append(v)
         seed = C.SEED + 1000 * int(stem[2:]) + i

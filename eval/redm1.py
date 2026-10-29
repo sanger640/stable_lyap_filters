@@ -4,6 +4,8 @@ For CF3's 4679 fresh decisions (policy alone, 2x): (M1) the share of the red blo
 hand mask CF3 used, and (M2) whether CF3's stored score r_max separates decisions 1-3 chunks before a red-block fall from
 clean safe decisions.
 usage: python3 eval/redm1.py -> results/jenga/redm1_result.json
+       python3 eval/redm1.py nm -> results/jenga/nm1_stage0.json (NM1 stage 0: the same grading on the no-mask CF3 scores,
+       results/jenga/cf3nm_rows_*.npz, next to the masked ones; report only)
 """
 import json
 import os
@@ -112,5 +114,22 @@ def main():
     print(json.dumps(res, indent=1))
 
 
+def stage0():
+    Q = np.load(ROOT / "results/jenga/redm1_rows.npz")
+    N = {k: np.concatenate([np.load(ROOT / f"results/jenga/cf3nm_rows_{s}.npz")[k] for s in (0, 1)]) for k in ("run", "ep", "k", "r")}
+    key = {(int(a), int(b), int(c)): n for n, (a, b, c) in enumerate(zip(N["run"], N["ep"], N["k"]))}
+    idx = np.array([key[(int(a), int(b), int(c))] for a, b, c in zip(Q["run"], Q["ep"], Q["k"])])
+    kr, kt, k, cl = Q["kr"], Q["kt"], Q["k"], Q["closed"] > 0
+    pre_red = (kr >= 0) & (kr - k >= 1) & (kr - k <= 3); pre_top = (kt >= 0) & (kt - k >= 1) & (kt - k <= 3); clean = (kt < 0) & (kr < 0)
+    out = {}
+    for name, r in (("masked", Q["rmax"]), ("no_mask", N["r"][idx].max(1))):
+        out[name] = {"pre_red": {"auc_vs_clean_safe": auc(r[pre_red], r[clean]), "recall_at_tau": float((r[pre_red] > TAU).mean()),
+                                 "median": float(np.median(r[pre_red]))},
+                     "pre_topple": {"auc_vs_clean_safe": auc(r[pre_top], r[clean]), "recall_at_tau": float((r[pre_top] > TAU).mean())},
+                     "clean_safe_flag_rate": {"closed": float((r[clean & cl] > TAU).mean()), "open": float((r[clean & ~cl] > TAU).mean())},
+                     "clean_closed_median": float(np.median(r[clean & cl]))}
+    (ROOT / "results/jenga/nm1_stage0.json").write_text(json.dumps(out, indent=1)); print(json.dumps(out, indent=1))
+
+
 if __name__ == "__main__":
-    main()
+    stage0() if sys.argv[1:] == ["nm"] else main()

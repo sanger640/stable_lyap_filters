@@ -9,6 +9,9 @@
   AR / MR: the same for the RNG1 area / mass score (results/jenga/rng1_protocol.json: value_rng8_alea.pt, irrm2_result_rng8.json)
   AN2 / MN2: NSI on the RNG1 score (results/jenga/nsi2_protocol.json: value_rngnsi8_alea.pt, irrm2_result_rngnsi8.json)
   AN16 / MN16: NSI on the 1.6 s undo test (results/jenga/nsi3_protocol.json: value_nsi16_alea.pt, irrm2_result_nsi16.json)
+  ANM / MNM: no hand mask (results/jenga/nm1_protocol.json: value_irrnm8_alea.pt, irrm2_result_nm8.json); AREF = the current
+             value_irr8_alea.pt re-graded with the same red-fall report (irrm_A_gate.json untouched)
+  every A-type gate also reports (not gated) V on REDM1's pre-red-fall decisions (results/jenga/redm1_rows.npz)
 -> results/jenga/irrm_{A,B,M}_gate.json (lflsf_LF2.json is not touched)"""
 import json
 from pathlib import Path
@@ -18,7 +21,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
-NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt", "AR": "value_rng8_alea.pt", "AN2": "value_rngnsi8_alea.pt", "AN16": "value_nsi16_alea.pt"}
+NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt", "AR": "value_rng8_alea.pt", "AN2": "value_rngnsi8_alea.pt", "AN16": "value_nsi16_alea.pt",
+        "ANM": "value_irrnm8_alea.pt", "AREF": "value_irr8_alea.pt"}
 
 
 def lf2(stem):
@@ -58,18 +62,28 @@ def decisions(name):
     out = {"decisions": int(len(V)), "auc_minusV": round(float(roc_auc_score(pre[ok], -V[ok])), 4),
            "V_below0": {"pre": round(float((V[pre] < 0).mean()), 4), "safe_closed": round(float((V[safe & cl] < 0).mean()), 4),
                         "safe_open": round(float((V[safe & ~cl] < 0).mean()), 4)}}
+    rd = ROOT / "results/jenga/redm1_rows.npz"
+    if rd.exists():                                                          # report only: decisions 1-3 chunks before a red-block fall
+        Q = np.load(rd); kr = {(int(a), int(b), int(c)): int(d) for a, b, c, d in zip(Q["run"], Q["ep"], Q["k"], Q["kr"])}
+        KR = np.array([kr.get((int(a), int(b), int(c)), -1) for a, b, c in zip(R["run"], R["ep"], R["k"])])
+        pr = (KR >= 0) & (KR - k >= 1) & (KR - k <= 3); clean = safe & (KR < 0); ok2 = pr | clean
+        if pr.any():
+            out["pre_red_report"] = {"n": int(pr.sum()), "auc_minusV_vs_clean_safe": round(float(roc_auc_score(pr[ok2], -V[ok2])), 4),
+                                     "auc_minusV_vs_clean_closed": round(float(roc_auc_score(pr[pr | (clean & cl)], -V[pr | (clean & cl)])), 4),
+                                     "V_below0": round(float((V[pr] < 0).mean()), 4), "V_median": round(float(np.median(V[pr])), 4),
+                                     "V_median_clean_closed": round(float(np.median(V[clean & cl])), 4)}
     out["decisions_pass"] = bool(out["auc_minusV"] >= 0.80 and out["V_below0"]["safe_closed"] <= 0.05 and out["V_below0"]["safe_open"] <= 0.10)
     return out
 
 
 def main(which):
-    if which in ("M", "M16", "MN", "MR", "MN2", "MN16"):
-        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16'}[which] }.json").read_text())
+    if which in ("M", "M16", "MN", "MR", "MN2", "MN16", "MNM"):
+        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16', 'MNM': 'nm8'}[which] }.json").read_text())
         out = {"held_spearman": r["held_spearman"], "held_auc_hat_vs_true_flag": r["held_auc_hat_vs_true_flag"]}
         out["M_pass"] = bool(r["held_spearman"] >= 0.6 and (r["held_auc_hat_vs_true_flag"] or 0) >= 0.85)
     else:
         out = lf2(NAME[which][:-3])
-        if which in ("A", "A16", "AN", "AR", "AN2", "AN16"):
+        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF"):
             out["cf3_decisions"] = decisions(NAME[which])
             out["A_pass"] = bool(out["LF2_pass"] and out["cf3_decisions"]["decisions_pass"])
         else:
