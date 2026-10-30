@@ -128,17 +128,17 @@ code { font: 500 12px var(--mono) }
     <h2 id="h-bottom">Bottom line</h2>
     <div class="hero">
       <div>
-        <h3>On 600 fresh episodes, our 90% barrier beats every baseline. The registered 80% primary falls short.</h3>
-        <p class="say">Pre-registered head-to-head, 2× noise, 96 s limit. With the 90% barrier the label-free filter cuts the policy's topples 118 → 44 and adds 51 successes, beating UNISafe (labelled) on both. The 80% barrier, registered as primary before launch, passes 2 of 4 tests: free at real noise and better than the published filter, but its success gain at 2× is not significant and it has 20 more topples than UNISafe. Claiming 90% needs a confirmatory run.</p>
+        <h3>Confirmed on 600 new episodes: the 90% barrier beats the policy and UNISafe.</h3>
+        <p class="say">Pre-registered confirmatory run on 600 never-used episodes, 2× noise, 96 s limit. The 90% barrier passes all three tests: topples 117 → 50 with 32 more successes than the policy alone, free at the real noise, and fewer topples and more successes than UNISafe (labelled). It repeats the first head-to-head (118 → 44), so the paper can now claim the 90% setting. The 1.6 s value at the 80% barrier also passes, not different from 90% except for more time-outs.</p>
         <div class="kpis">
-          <div class="kpi"><b>118 → 44</b><span>topples, policy → ours 90%</span></div>
-          <div class="kpi"><b>44 vs 72</b><span>topples, ours 90% vs UNISafe</span></div>
+          <div class="kpi"><b>117 → 50</b><span>topples, policy → ours 90%</span></div>
+          <div class="kpi"><b>50 vs 74</b><span>topples, ours 90% vs UNISafe</span></div>
         </div>
-        <p class="say">Next: irreversible fragility in closed loop, then the level-set vs CBF ablation.</p>
+        <p class="say">Next: the 1.6 s irreversible-fragility value, the no-mask value, value transfer, and the labelled baselines retrained with red-block falls.</p>
       </div>
       <div>
         <div id="heroChart"></div>
-        <p class="hnote">At the real noise (1×) both of ours are free: 538 and 537 successes vs 532 for the policy, 2 and 7 topples vs 14. Time per success at 2×: 59 s (80%), 66 s (90%), 57 s policy, 68 s UNISafe.</p>
+        <p class="hnote">At the real noise (1×) ours 90% is free: 526 successes vs 519 for the policy, 7 topples vs 17 (UNISafe 509 and 6). Time per success at 2×: 65 s ours 90%, 56 s policy, 65 s UNISafe. Red-block falls are not reduced by our filters.</p>
       </div>
     </div>
   </section>
@@ -240,20 +240,24 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Thu 29 Oct, 15:45 EDT";
+const UPDATED = "Thu 29 Oct, 20:35 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Fresh head-to-head 6: policy, ours 90%, 1.6 s value at 80%, UNISafe", n: [5, 8], d: "600 new episodes per arm; 2× done and audited, 1× running. Ends about 9 pm." },
-  { t: "1.6 s irreversible-fragility value", n: [0, 1], d: "Queued after the head-to-head: new labels, training gate, then 100 dev episodes. About 5 am." },
-  { t: "No hand mask (your call)", n: [0, 1], d: "Queued: score the whole image, relabel, retrain the value, rerun both barriers on dev. Tests fewer red-block falls with topples unchanged. Tomorrow evening." },
-  { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Queued: adapted dynamics with the old value vs a retrained value, 300 new episodes. After the no-mask run." },
+  { t: "1.6 s irreversible-fragility value", n: [0, 1], d: "Running: new labels, training gate, then 100 dev episodes. About 5 am." },
+  { t: "No hand mask (your call)", n: [0, 1], d: "Queued: score the whole image, relabel, retrain the value, rerun both barriers on dev. Tests fewer red-block falls with topples unchanged." },
+  { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Queued: adapted dynamics with the old value vs a retrained value, 300 new episodes." },
+  { t: "Labelled baselines retrained with red-block falls as failures", n: [0, 1], d: "Queued: relabelled data ready; retrain UNISafe and LSF-as-published, pick LSF's threshold on dev, rerun both on the 600 head-to-head episodes at 2× and 1×." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "pass", when: "Thu 20:24", title: "Confirmed: the 90% barrier beats the policy and UNISafe on 600 new episodes",
+    say: "Pre-registered confirmatory run, 600 never-used episodes, 2× noise. The 90% barrier passes all three tests: fewer topples than the policy (−11.2 pp, p < 0.001) with more successes (+5.3 pp, lower bound +1.7), free at 1× noise, and at least as good as UNISafe (topples −4.0 pp, successes +6.5 pp, clean lifts +8.7 pp). The 1.6 s value at the 80% barrier passes too; versus the 90% barrier it shows no difference beyond 2 pp more time-outs.",
+    cap: "neighbour topples of 600 at 2× noise (successes: 436, 429, 472, 468)", unit: "", max: 130,
+    rows: [["policy alone", 117, "--policy"], ["UNISafe (labelled)", 74, "--wait"], ["ours, 1.6 s value, 80%", 40, "--accent"], ["ours, 90% (primary)", 50, "--good"]] },
   { v: "find", when: "Thu 14:58", title: "Red-block falls look like half a failure to the undo test",
     say: "Pre-registered offline check. Moves just before the red block falls rank as riskier (AUC 0.82) but only 5% cross the threshold, vs 50% before topples: the hand mask hides about half of the red block, and a few changed patches don't move the 98th-percentile score. So the value treats red falls as safe, which is why our filters neither cause nor prevent them. Next: the no-mask run.",
     cap: "moves flagged at the threshold (%)", unit: "%", max: 60,
@@ -443,10 +447,10 @@ $("#feed").innerHTML = UPDATES.map(u => `<article class="card">
 
 $("#older").innerHTML = OLDER.map(([v, t]) => `<li><span style="--k:var(${V[v][1]})">${V[v][0]}</span>${esc(t)}</li>`).join("");
 
-// bottom line: head-to-head 4, 600 fresh episodes: neighbour topples and successes (v4) per controller
+// bottom line: confirmatory head-to-head 6, 600 fresh episodes: neighbour topples and successes (v4) per controller
 (function () {
-  const R = [["policy alone", 118, 426, "--policy"], ["LSF as published", 126, 417, "--wait"], ["UNISafe (labelled)", 72, 428, "--wait"],
-             ["ours, 80% (primary)", 92, 444, "--accent"], ["ours, 90%", 44, 477, "--good"]];
+  const R = [["policy alone", 117, 436, "--policy"], ["UNISafe (labelled)", 74, 429, "--wait"],
+             ["ours, 1.6 s value, 80%", 40, 472, "--accent"], ["ours, 90% (primary)", 50, 468, "--good"]];
   const W = 480, L = 150, c1 = [L, L + 120], c2 = [L + 150, W - 34], rh = 34, top = 30, H = top + R.length * rh + 6;
   const x1 = v => c1[0] + (c1[1] - c1[0]) * v / 100, x2 = v => c2[0] + (c2[1] - c2[0]) * v / 600;
   let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Topples and successes per 600 fresh episodes for each controller">`;
@@ -454,7 +458,7 @@ $("#older").innerHTML = OLDER.map(([v, t]) => `<li><span style="--k:var(${V[v][1
   s += `<text x="${c1[1]}" y="14" text-anchor="end">of 600</text><text x="${c2[1]}" y="14" text-anchor="end">of 600</text>`;
   R.forEach(([n, t, v, k], i) => {
     const y = top + i * rh, dash = n.endsWith("*") ? ";stroke:var(" + k + ");stroke-dasharray:3 2;fill-opacity:.35" : "";
-    s += `<text x="${L - 10}" y="${y + 14}" text-anchor="end"${i === 4 ? ' class="ink"' : ""}>${n}</text>`;
+    s += `<text x="${L - 10}" y="${y + 14}" text-anchor="end"${i === R.length - 1 ? ' class="ink"' : ""}>${n}</text>`;
     s += `<rect x="${c1[0]}" y="${y + 3}" width="${(x1(t) - c1[0]).toFixed(1)}" height="14" rx="2" style="fill:var(${k})${dash}"/><text x="${x1(t) + 5}" y="${y + 14}" class="ink">${t}</text>`;
     s += `<rect x="${c2[0]}" y="${y + 3}" width="${(x2(v) - c2[0]).toFixed(1)}" height="14" rx="2" style="fill:var(${k})${dash}"/><text x="${x2(v) + 5}" y="${y + 14}" class="ink">${v}</text>`;
   });
@@ -540,3 +544,5 @@ $("#picks").innerHTML = [...new Set(VIDS.map(v => v.g))].map(g => `<div class="p
 $("#picks").addEventListener("click", e => { const b = e.target.closest("button"); if (b) pick(+b.dataset.i); });
 pick(0);
 </script>
+
+</body></html>
