@@ -240,19 +240,22 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Fri 30 Oct, 11:59 EDT";
+const UPDATED = "Fri 30 Oct, 18:52 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Running: adapted dynamics with the old value vs a retrained value, 300 new episodes." },
-  { t: "No-mask and irreversible-fragility values in closed loop, vs the 90% filter (your call)", n: [0, 1], d: "Queued: both values at the 90% barrier on the 600 head-to-head episodes at 2× and 1×, then four-panel videos like the presentation." },
+  { t: "No-mask and irreversible-fragility values in closed loop, vs the 90% filter (your call)", n: [0, 1], d: "Running: both values at the 90% barrier on the 600 head-to-head episodes at 2× and 1×, then four-panel videos like the presentation." },
   { t: "Labelled baselines retrained with red-block falls as failures", n: [0, 1], d: "Queued: relabelled data ready; retrain UNISafe and LSF-as-published, pick LSF's threshold on dev, rerun both on the 600 head-to-head episodes at 2× and 1×." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "fail", when: "Fri 18:49", title: "In a heavier-shift world, the value must be retrained, not just the dynamics",
+    say: "Pre-registered, 300 new episodes with neighbours at 0.3× mass, 2× noise. Fine-tuning only the world model's dynamics and keeping the old value (your proposal) does no better than no adaptation, and falls short of retraining the value in the adapted model: 6.7 pp fewer successes, 3.7 pp more topples. Every version still beats the policy alone by a wide margin.",
+    cap: "neighbour topples of 300 (successes: 125, 165, 167, 187)", unit: "", max: 180,
+    rows: [["policy alone", 165, "--policy"], ["no adaptation", 116, "--wait"], ["dynamics adapted, old value", 109, "--accent"], ["dynamics + value retrained", 98, "--good"]] },
   { v: "fail", when: "Fri 09:40", title: "No hand mask: red-block falls stay invisible; value misses its gate",
     say: "Pre-registered (your call). Scoring the whole image instead of masking the hand leaves red-block falls exactly as hidden as before: 3 of 58 pre-fall moves cross the threshold either way. The retrained value then ranks fresh decisions slightly worse than required (AUC 0.790 vs 0.80), so the closed-loop runs did not go ahead. The mask was not the problem: a red-block fall changes too little of the image for the undo test to notice.",
     cap: "moves before a red-block fall flagged at the threshold (%)", unit: "%", max: 60,
