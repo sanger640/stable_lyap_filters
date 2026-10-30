@@ -1,0 +1,25 @@
+{
+ "name": "GFCL1: closed loop for the two values that missed their value gate (no hand mask; 0.8 s irreversible fragility), both at the 90% barrier, vs ours90 on H2H5's episodes, with videos",
+ "registered": "2026-10-30 11:57 EDT, user request 2026-10-30 ('i still want to do nm1 testing for closed loop go ahead with it, and the same for irreversibility signal compare both of them with the 90% filter with video results (similar to the presentation)'); before any closed-loop episode of either value exists. Exploratory: the user overrides the registered STOP of NM1 (gate ANM, AUC 0.790) and of H2H5-NSI (gate AN, AUC 0.788); those STOP verdicts stand as recorded, this is a separate test.",
+ "arms": {
+  "nm90": "lfc000 with value_irrnm8_alea.pt (NM1's value: undo test over all patches, no hand mask), LSF_CBF_GAMMA=0.1 (90% barrier)",
+  "ns90": "lfc000 with value_nsi8_alea.pt (H2H5-NSI's value: 0.8 s irreversible fragility, irreversible in some imagined futures but not the median one), LSF_CBF_GAMMA=0.1",
+  "comparator": "H2H5's ours90 (paired_lfc000_h5o90_{2x,1x}: value_irr8_alea.pt, 90% barrier); also reported vs H2H5's policy and UNISafe arms",
+  "settings": "exactly H2H5's ours90 runner settings (scripts/run_h2h5.sh: PER_EPISODE_SEEDS=1 PAIRED_PER_EP=1 EP_OFFSET=26200 HARD_OFF=1 PAIRED_MAX_CHUNKS=120, imagined noise = run noise LSF_ALEA_SCALE=nz, 6 local shards); only LSF_VALUE_NAME changes"
+ },
+ "episodes": "26200-26799 (H2H5's 600 episodes, the presentation's episodes; used, so not fresh), 2x then 1x; replay audit at the run's noise -> outcome_audit_h5nm_{2x,1x}.json, outcome_audit_h5ns_{2x,1x}.json",
+ "hypotheses": {
+  "R_nm": "nm90 has fewer red-block falls before extraction than ours90: discordant pairs pooled over 2x and 1x (1200 pairs), one-sided exact McNemar p < 0.05 (NM1's H_red, here vs the 90% barrier only)",
+  "S_nm_2x / S_nm_1x": "nm90 non-inferior to ours90 at that noise: paired topples upper 95% bound < +3 pp AND v4 success lower 95% bound > -5 pp",
+  "S_ns_2x / S_ns_1x": "the same for ns90 vs ours90 (H2H5-NSI's N1 / N2, here at the 90% barrier)",
+  "R_ns": "reported, not a hypothesis: ns90 red falls vs ours90"
+ },
+ "reported": "per arm and noise: topples / v4 / v4b / red falls / time-outs; paired differences vs ours90, policy, UNISafe; mean episode duration per success",
+ "videos": {
+  "what": "descriptive, 2x only; four panels side by side as the presentation (eval/filter_videos.py set H5N, VID_LAYOUT=row, NO_SLICE=1): Policy alone, Ours 90% (current), No hand mask 90%, Irreversible fragility 90%",
+  "episodes": "the presentation's three (26381, 26312, 26244) plus, by a fixed rule on the 2x replay-audited outcomes (seed 20261030, choose_h5n()): 1 random episode where ours90 knocks the red block over and nm90 succeeds (v4); 1 where nm90 topples a neighbour and ours90 does not; 1 where ns90 and ours90 differ on topples (either direction). An empty category is skipped and reported."
+ },
+ "analysis": "eval/gfcl1_analysis.py (written before any GFCL1 result) -> results/jenga/gfcl1_result.json",
+ "order": "after the XFER1 chain exits (one GPU pool at a time); RLAB1 moves behind GFCL1",
+ "runner": "scripts/run_gfcl1.sh"
+}
