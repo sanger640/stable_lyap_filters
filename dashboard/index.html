@@ -240,20 +240,23 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Thu 29 Oct, 20:35 EDT";
+const UPDATED = "Fri 30 Oct, 03:10 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "1.6 s irreversible-fragility value", n: [0, 1], d: "Running: new labels, training gate, then 100 dev episodes. About 5 am." },
-  { t: "No hand mask (your call)", n: [0, 1], d: "Queued: score the whole image, relabel, retrain the value, rerun both barriers on dev. Tests fewer red-block falls with topples unchanged." },
+  { t: "No hand mask (your call)", n: [0, 1], d: "Running: score the whole image, relabel, retrain the value, rerun both barriers on dev. Tests fewer red-block falls with topples unchanged." },
   { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Queued: adapted dynamics with the old value vs a retrained value, 300 new episodes." },
   { t: "Labelled baselines retrained with red-block falls as failures", n: [0, 1], d: "Queued: relabelled data ready; retrain UNISafe and LSF-as-published, pick LSF's threshold on dev, rerun both on the 600 head-to-head episodes at 2× and 1×." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "pass", when: "Fri 02:56", title: "Irreversible fragility at 1.6 s costs nothing on dev",
+    say: "Pre-registered dev test. A value that ignores irreversibility present in the typical imagined future (so intended changes like pouring would not be blocked) passes its training gates and matches the plain 1.6 s value within the registered margins: 8 vs 6 topples at 2× noise, 1 vs 1 at 1×. Successes at 2× land exactly on the bound (72 vs 77), so it is a usable option, not a replacement for the confirmed filter.",
+    cap: "neighbour topples per 100 at 2× noise (successes: 77, 72)", unit: "", max: 30,
+    rows: [["plain 1.6 s value", 6, "--accent"], ["irreversible-fragility 1.6 s value", 8, "--good"]] },
   { v: "pass", when: "Thu 20:24", title: "Confirmed: the 90% barrier beats the policy and UNISafe on 600 new episodes",
     say: "Pre-registered confirmatory run, 600 never-used episodes, 2× noise. The 90% barrier passes all three tests: fewer topples than the policy (−11.2 pp, p < 0.001) with more successes (+5.3 pp, lower bound +1.7), free at 1× noise, and at least as good as UNISafe (topples −4.0 pp, successes +6.5 pp, clean lifts +8.7 pp). The 1.6 s value at the 80% barrier passes too; versus the 90% barrier it shows no difference beyond 2 pp more time-outs.",
     cap: "neighbour topples of 600 at 2× noise (successes: 436, 429, 472, 468)", unit: "", max: 130,
