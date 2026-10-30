@@ -240,19 +240,22 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Fri 30 Oct, 03:10 EDT";
+const UPDATED = "Fri 30 Oct, 09:51 EDT";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "No hand mask (your call)", n: [0, 1], d: "Running: score the whole image, relabel, retrain the value, rerun both barriers on dev. Tests fewer red-block falls with topples unchanged." },
-  { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Queued: adapted dynamics with the old value vs a retrained value, 300 new episodes." },
+  { t: "Does the value transfer? (fake real world: neighbours 0.3× mass)", n: [0, 1], d: "Running: adapted dynamics with the old value vs a retrained value, 300 new episodes." },
   { t: "Labelled baselines retrained with red-block falls as failures", n: [0, 1], d: "Queued: relabelled data ready; retrain UNISafe and LSF-as-published, pick LSF's threshold on dev, rerun both on the 600 head-to-head episodes at 2× and 1×." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "fail", when: "Fri 09:40", title: "No hand mask: red-block falls stay invisible; value misses its gate",
+    say: "Pre-registered (your call). Scoring the whole image instead of masking the hand leaves red-block falls exactly as hidden as before: 3 of 58 pre-fall moves cross the threshold either way. The retrained value then ranks fresh decisions slightly worse than required (AUC 0.790 vs 0.80), so the closed-loop runs did not go ahead. The mask was not the problem: a red-block fall changes too little of the image for the undo test to notice.",
+    cap: "moves before a red-block fall flagged at the threshold (%)", unit: "%", max: 60,
+    rows: [["hand masked (current)", 5.2, "--bad"], ["no mask", 5.2, "--bad"], ["for reference: before a topple", 49.9, "--good"]] },
   { v: "pass", when: "Fri 02:56", title: "Irreversible fragility at 1.6 s costs nothing on dev",
     say: "Pre-registered dev test. A value that ignores irreversibility present in the typical imagined future (so intended changes like pouring would not be blocked) passes its training gates and matches the plain 1.6 s value within the registered margins: 8 vs 6 topples at 2× noise, 1 vs 1 at 1×. Successes at 2× land exactly on the bound (72 vs 77), so it is a usable option, not a replacement for the confirmed filter.",
     cap: "neighbour topples per 100 at 2× noise (successes: 77, 72)", unit: "", max: 30,
