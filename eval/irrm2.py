@@ -48,6 +48,9 @@ WM_TAG = os.environ.get("IRRM_WM_TAG", "")                                 # ano
 if WM_ALT:
     TAG += f"_{WM_TAG}"
 RTAG = f"rngnsi{NL}" if NSI and STAT == "rng" else TAG                     # margin result (NSI2: NSI target on the rng labels)
+THR_SCALE = os.environ.get("IRRM_THR_SCALE")                               # TAU2 (results/jenga/abl2_protocol.json): margin only,
+if THR_SCALE:                                                              # the same labels with THR x scale; margin and result
+    THR *= float(THR_SCALE); RTAG += f"_t{THR_SCALE.replace('.', '')}"     # files get _t<scale> (e.g. _t085)
 
 
 class Undo:
@@ -204,6 +207,8 @@ def margin():
              f"margin_irrnm_nl{NL}.pt" if NOMASK else f"margin_irr_nl{NL}.pt")
     if WM_ALT:
         mname = mname[:-3] + f"_{WM_TAG}.pt"
+    if THR_SCALE:
+        mname = mname[:-3] + f"_t{THR_SCALE.replace('.', '')}.pt"
     _, Critic, _ = L.nets(); net = Critic().cuda(); opt = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-4)
     a8 = lambda d: torch.cat([d, torch.zeros(len(d), 2, device="cuda")], 1)
     f = lambda z, g, d: torch.tanh(net(z, g, a8(d)))

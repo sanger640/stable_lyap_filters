@@ -1,0 +1,50 @@
+{
+ "name": "ABL2 + VIS1 + SEED1 + TAU2: the paper's ablations of the 90% filter, a visual-shift test of the filter, a seed control for XFER1, and one threshold variant",
+ "registered": "2026-10-30 23:14 EDT, before any ABL2 / VIS1 / SEED1 / TAU2 number exists; user request 2026-10-30 ('do the ablations chain them'; earlier: 'can we try with different visuals as well and see how filter works on those as an ablation')",
+ "claim_rule": "Ablations are descriptive. The method stays ours90 (value_irr8_alea.pt, lfc000, V' >= 0.9 V, actor fallback, 8 noisy futures, hard min) whatever these show; no arm replaces it without its own fresh confirmatory test. Episodes 26800-27099 were used by H2H6 (policy and ours90 there); reusing them is fine for ablations (no selection is made) and lets the policy arm be reused.",
+ "common": "lfc000 always-on edit, 2x execution noise, LSF_ALEA_SCALE=2, model_OIL, paired starts and per-episode seeds (PER_EPISODE_SEEDS=1), 120 chunks (96 s), HARD_OFF=1, replay audit (eval/outcome_audit.py, AUDIT_NOISE_SCALE=2; shifted physics: eval/xfer1_audit.py). Outcomes: topples (logged), v4 (success), v4b (strict success), red falls before extraction, time-outs; edits per episode, compute per move. Statistics as eval/h2h5_analysis.py: paired by episode, normal approximation, one-sided 95% bounds, exact McNemar. 2x only (1x is not run here; the barrier's 1x cost is known from H2H5 / H2H6).",
+ "code_check": "default code path after the new switches: ours90 on episode 26800 (6 chunks) reproduces H2H6's executed actions, states and V bit for bit (2026-10-30 23:08). Smoke tests 2026-10-30 23:08-23:14 (8 chunks of episode 26836, not analysed): actor / projection / no-fallback / det / mean / softmin / light switches run and change the edit as intended (e.g. the 4th chunk's edit 2 mm search, 10 mm actor, 5 mm projection); policy camera bit-identical under every look. V1 smoke on the first 600 of CF3's decisions (seen before launch; does not change any rule): re-rendering 'none' reproduces the stored latents up to encoding noise (mean |dz| 0.005, median |dV| 0.001, AUC 0.741 vs 0.741 on the subset); under 'light' V < 0 on most safe states, under 'camera' AUC drops to 0.65, 'colour' changes little. The full V1 and all closed-loop arms run as registered.",
+ "ABL2": {
+  "episodes": "26800-27099 (the first 300 of H2H6), 2x",
+  "reference": "policy = H2H6's paired_record_h6_2x on these episodes (reused; audited in outcome_audit_h6_2x.json); o90 = ours90 rerun with the current code (tag _ab2_o90); reported: its agreement with H2H6's ours90 on the same episodes (expected identical)",
+  "arms": {
+   "o90": "ours90 (reference)",
+   "b50": "barrier V' >= 0.5 V (LSF_CBF_GAMMA=0.5)",
+   "b80": "barrier V' >= 0.8 V (0.2)",
+   "lv0": "no barrier: LSF's level test V' > 0 (LSF_CBF_GAMMA=1.0, as ABL1's lv0)",
+   "h16": "1.6 s undo test value value_irr16_alea.pt at the 90% barrier",
+   "frag": "failure set = fragility (outcome spread) instead of irreversibility: value_lf_alea.pt at the 90% barrier",
+   "nofb": "edit only, never the safety actor (LSF_NO_FALLBACK=1)",
+   "act": "barrier condition, but the safety actor's commands whenever it fails (no edit; LSF_EDIT_ALT=actor)",
+   "proj": "one linearised step instead of the 10-step Adam search: the smallest xyz change lifting the first-order soft-min (T 0.05) to the threshold, |.| <= 1 cm per coordinate, then the same check and actor fallback (LSF_EDIT_ALT=proj)",
+   "det": "one noise-free imagined future (no perception or execution noise; the value's own training pessimism kept = pessimism once instead of twice) (LSF_DET=1)",
+   "mean": "average over the 8 futures instead of the minimum in every check (LSF_AGG=mean)",
+   "soft": "soft-min over the 8 futures, -T log mean exp(-V/T), T 0.05, in every check (LSF_AGG=softmin; the search's gradient objective is unchanged)"
+  },
+  "report": "each arm vs o90 and vs policy: paired differences with one-sided 95% bounds for all five outcomes; edits per episode; compute per move. Not a selection."
+ },
+ "VIS1": {
+  "question": "does the filter still work when its camera sees a different look than its training data? The policy's cameras and the physics are untouched (only the monitor / filter render changes), so any change is the filter's",
+  "looks": "light: both lights x0.6 and a beige table (0.80, 0.72, 0.60); colour: blue neighbour blocks (0.25, 0.45, 0.75) instead of wood; camera: the filter's close camera moved (azimuth -10 deg, elevation +6 deg, distance +3 cm). Example frames: results/jenga/vis1_looks.png. No adaptation of any part (encoder, dynamics, value).",
+  "V1_offline": "eval/vis1_offline.py: CF3's 4679 decisions re-rendered under each look; V of value_irr8_alea.pt; AUC(-V, pre-topple vs safe), V < 0 on safe states, latent shift. 'none' must reproduce stored latents. Reported, not a gate: the closed loop runs for every look.",
+  "V2_closed_loop": "ours90 with VIS_SHIFT=<look>, episodes 26800-27099, 2x, paired with ABL2's o90 and the policy",
+  "reading_per_look": "WORKS iff topples vs policy one-sided 95% upper bound < 0 AND v4 vs policy lower bound >= -5 pp; BREAKS otherwise. Also reported: retention = (policy - look) / (policy - o90) topples, and look vs o90 for all outcomes.",
+  "follow_up_not_registered": "adaptation under a visual shift (fine-tune dynamics + retrain value on shifted-look data, data-efficiency curve) = XFER2, needs the user's go"
+ },
+ "SEED1": {
+  "question": "XFER1 arm C (value retrained in the adapted model) beat arm A by +7.3 pp v4. How much of that could be a different value-training seed rather than adaptation?",
+  "value": "value_irr8s2_alea.pt = value_irr8_alea.pt's recipe in model_OIL (margin_irr_nl8.pt, LSF_MARGIN_MODE=irr, LSF_ALEA=8), only LSF_SEED=20261031 instead of 20261020. LF2 audit / diag and the CF3 decision grading are reported, not gated.",
+  "arm": "A2 = model_OIL + value_irr8s2_alea.pt, ours90 settings, XFER1's shifted physics (MASS_ONLY=0.3) on its episodes 30400-30699, 2x; shifted-physics audit; paired with XFER1's A and C (outcome_audit_x1.json)",
+  "reading": "C's gain is beyond seed variation iff C - A2 v4 one-sided 95% lower bound > 0. Also reported: A2 - A (pure seed effect) for all outcomes, C - A2 topples."
+ },
+ "TAU2": {
+  "question": "threshold sensitivity in closed loop: irreversibility threshold tau x0.85 (1.1353; TAU1 placed the knee there offline: recall 44% vs 22%, safe closed flagged 5.5% vs 0.3%)",
+  "value": "the nl8 labels unchanged; margin retrained with THR x0.85 (IRRM_THR_SCALE=0.85, s unchanged = IQR / 2 of the same labels) -> margin_irr_nl8_t085.pt; value value_irr8t085_alea.pt with value_irr8_alea.pt's recipe and seed. Margin result and value grading reported, not gated.",
+  "arm": "t085 = ours90 settings with this value, episodes 26800-27099, 2x, paired with ABL2's o90 and the policy",
+  "not_run": "s (margin scale) variants and tau x1.15 (TAU1: recall 0 offline, the value would see no failures)"
+ },
+ "order": "after RLAB1 (one GPU pool at a time): ABL2 arms -> audit -> analysis; VIS1 V1 -> V2 arms -> audit -> analysis; SEED1 value -> grading -> arm -> shifted audit -> analysis; TAU2 margin -> value -> grading -> arm -> audit -> analysis. Missing files stop the chain at that stage.",
+ "not_included": "gated edit (lfck000, a different rollout script), plan-conditioned margin and longer value horizon (new methods, not ablations of the current one), 1x runs",
+ "analysis": "eval/abl2_analysis.py (written before any result) -> results/jenga/abl2_result.json",
+ "chain": "scripts/run_abl2.sh <RLAB1 chain pid>"
+}

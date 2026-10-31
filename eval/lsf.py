@@ -24,6 +24,7 @@ OUT = Path(os.environ.get("LSF_OUT", str(ROOT / "results/program_b/lsf_v1")))
 SOURCES = os.environ.get("LSF_SOURCES", "closedloop_v1,cf_v1,cf_v2,oil_v1").replace("+", ",").split(",")
 TAG = os.environ.get("LSF_TAG", "")                 # part files (data built where the sources live), merged by stage_merge
 SAFE_PER_FAIL, SEED = 3, 20261020
+SEED = int(os.environ.get("LSF_SEED", SEED))           # SEED1 (results/jenga/abl2_protocol.json): another value-training seed
 LABEL = os.environ.get("LSF_LABEL", "neighbour")    # neighbour (default) | red: a red-block fall (tilt >= 45 deg) is also a failure (RLAB1)
 
 

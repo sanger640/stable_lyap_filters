@@ -29,6 +29,32 @@ V3 = ROOT / "results/program_b/threeblock_v3"
 CEM = {"pop": 16, "iters": 3, "elites": 4, "max_mm": 10.0, "init_sd_mm": 5.0, "s_a_mm": 6.0, "lam": 20.0, "mu": 1.0}
 # Profile (3090): frame 0.2 s, encode + G 0.4 s, 64-future rollout 0.36 s; the BOTH test runs exactly on the GPU
 # (split_test_gpu, 80/80 agreement with outcome_modes.two_mode_test, 0.08 s for 32 candidates).
+# VIS1 (results/jenga/vis1_protocol.json): VIS_SHIFT changes only what the monitor / filter camera sees (the policy's cameras
+# and the physics are untouched): light = lights x0.6 and a beige table; colour = blue neighbour blocks; camera = the close
+# camera moved (azimuth, elevation in deg, distance in m). Unset = the training look (default).
+VIS_LIGHT, VIS_TABLE, VIS_BLOCKS, VIS_CAMERA = 0.6, (0.80, 0.72, 0.60, 1.0), (0.25, 0.45, 0.75, 1.0), (-10.0, 6.0, 0.03)
+
+
+def vis_shift(m):
+    """apply VIS_SHIFT's look to model m; returns a function that restores it"""
+    look = os.environ.get("VIS_SHIFT")
+    if look not in ("light", "colour"):
+        return lambda: None
+    saved = (m.light_diffuse.copy(), m.geom_rgba.copy(), m.geom_matid.copy())
+    body = lambda g: m.body(m.geom_bodyid[g]).name
+    if look == "light":
+        m.light_diffuse[:] *= VIS_LIGHT
+        for g in range(m.ngeom):
+            if body(g) == "table":
+                m.geom_matid[g] = -1; m.geom_rgba[g] = VIS_TABLE
+    else:
+        for g in range(m.ngeom):
+            if body(g) in ("block_left", "block_right"):
+                m.geom_matid[g] = -1; m.geom_rgba[g] = VIS_BLOCKS
+
+    def undo():
+        m.light_diffuse[:], m.geom_rgba[:], m.geom_matid[:] = saved
+    return undo
 
 
 class Monitor:
@@ -55,8 +81,14 @@ class Monitor:
         from jenga_render_frames import close_camera
         if self.renderer is None:
             self.renderer = mujoco.Renderer(sim.model, height=384, width=384); self.cam = close_camera(mujoco)
-        self.renderer.update_scene(sim.data, camera=self.cam)
-        return self.renderer.render().copy()
+            if os.environ.get("VIS_SHIFT") == "camera":      # VIS1 (results/jenga/vis1_protocol.json): the filter's camera moved
+                self.cam.azimuth += VIS_CAMERA[0]; self.cam.elevation += VIS_CAMERA[1]; self.cam.distance += VIS_CAMERA[2]
+        undo = vis_shift(sim.model)                          # VIS1: other looks change only this render, restored right after
+        try:
+            self.renderer.update_scene(sim.data, camera=self.cam)
+            return self.renderer.render().copy()
+        finally:
+            undo()
 
     def starts(self, frame):
         """64 sampled perceived starts for the current camera frame."""

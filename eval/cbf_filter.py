@@ -273,14 +273,23 @@ class CBF:
         if getattr(self, "_noise", None) is None:
             self._noise = L.Noise()
         vf, eps = self._lsf; mdl, n, XYZ = self.mon.model, L.ALEA or 8, [0, 1, 2, 4, 5, 6]
+        # ABL2 (results/jenga/abl2_protocol.json), all off by default: LSF_DET=1 one future without perception / execution
+        # noise; LSF_AGG = min (default) | mean | softmin (-T log mean exp(-V / T), T = 0.05) over the futures in every check
+        det, AGG = os.environ.get("LSF_DET") == "1", os.environ.get("LSF_AGG", "min")
+        n = 1 if det else n
+        agg = {"min": lambda V: V.min(-1).values, "mean": lambda V: V.mean(-1),
+               "softmin": lambda V: -0.05 * (torch.logsumexp(-V / 0.05, -1) - np.log(V.shape[-1]))}[AGG]
         self._noise.rng = self.mon.rng
         cmds = np.asarray(cmds, np.float32)
         z = torch.as_tensor(self.mon.latent(self.mon.frame(sim)[None])[0], device="cuda").float()[None]
         g = torch.as_tensor(np.r_[sim.target, cmds[0][3]][None], dtype=torch.float32, device="cuda")
         a_pol = torch.as_tensor(cmds.reshape(1, 8), device="cuda")
         with torch.no_grad():
-            zs = self._noise.starts(z.expand(n, *z.shape[1:]).contiguous())
-            off = self._noise.actions(a_pol, n)[:, 0] - a_pol                          # (n, 8) execution offsets
+            if det:
+                zs, off = z.clone(), torch.zeros(1, 8, device="cuda")
+            else:
+                zs = self._noise.starts(z.expand(n, *z.shape[1:]).contiguous())
+                off = self._noise.actions(a_pol, n)[:, 0] - a_pol                      # (n, 8) execution offsets
             a_act = vf.act(z, g)
         gen = torch.Generator(device="cuda").manual_seed(int(self.mon.rng.integers(2**31)))
         x0 = torch.randn(zs.shape, device="cuda", generator=gen)                       # flow noise, common to all candidates
@@ -303,10 +312,10 @@ class CBF:
                 d = (torch.cat([A[:, 0:3] - g[:, :3], A[:, 4:7] - A[:, 0:3]], 1) / L.MAX_STEP).clamp(-1, 1)
                 Vn = torch.minimum(Vn, irr(z.expand(c, *z.shape[1:]), g.expand(c, -1), d)[:, None])
             return Vn
-        mode = os.environ["LSF_EDIT"]
+        mode = os.environ.get("LSF_EDIT_ALT") or os.environ["LSF_EDIT"]   # ABL2: LSF_EDIT_ALT = actor | proj (policy_rollout sets LSF_EDIT)
         gam = os.environ.get("LSF_CBF_GAMMA")
         with torch.no_grad():
-            v0 = float(vals(a_pol).min())
+            v0 = float(agg(vals(a_pol))[0])
             if gam is not None:
                 vnow = float(vf.V(z, g)); eps = eps + (1 - float(gam)) * (vnow - eps); info["lsf_vnow_min"] = min(vnow, info.get("lsf_vnow_min", np.inf))
         out, v, edit = cmds, v0, 0.0
@@ -325,7 +334,7 @@ class CBF:
             with torch.enable_grad():
                 for it in range(10):
                     a = torch.cat([x[:, 0:3], a_pol[:, 3:4], x[:, 3:6], a_pol[:, 7:8]], 1)
-                    V = vals(a)[0]; vm = float(V.detach().min())
+                    V = vals(a)[0]; vm = float(agg(V.detach()))
                     if vm > best[0]:
                         best = (vm, a.detach().clone())
                     if vm > eps:
@@ -336,9 +345,31 @@ class CBF:
             info["lsf_edit_iters"] = info.get("lsf_edit_iters", 0) + it + 1
             if best[0] <= eps and os.environ.get("LSF_NO_FALLBACK") != "1":   # LSF_NO_FALLBACK=1: pure edit, never the actor
                 with torch.no_grad():
-                    va = float(vals(a_act).min())
+                    va = float(agg(vals(a_act))[0])
                 if va > best[0]:
                     best = (va, a_act)
+            if best[0] > v0:
+                out, v = best[1].view(2, 4).cpu().numpy().astype(np.float32), best[0]
+        elif v0 <= eps and mode == "actor":       # ABL2: the barrier condition, but the safety actor's commands whenever it fails
+            with torch.no_grad():
+                v = float(agg(vals(a_act))[0])
+            out = a_act.view(2, 4).cpu().numpy().astype(np.float32)
+        elif v0 <= eps and mode == "proj":        # ABL2: one linearised step instead of the 10-step search: the smallest xyz change
+            x = a_pol[:, XYZ].clone().requires_grad_(True)   # that lifts the linearised soft-min to the threshold, |.| <= 1 cm
+            with torch.enable_grad():
+                a = torch.cat([x[:, 0:3], a_pol[:, 3:4], x[:, 3:6], a_pol[:, 7:8]], 1)
+                s0 = -0.05 * torch.logsumexp(-vals(a)[0] / 0.05, 0); s0.backward()
+            gr = x.grad.detach(); gn = float((gr ** 2).sum())
+            dx = gr * max(float(eps - s0.detach()), 0.0) / gn if gn > 0 else torch.zeros_like(gr)
+            xa = torch.minimum(torch.maximum(a_pol[:, XYZ] + dx, a_pol[:, XYZ] - 0.01), a_pol[:, XYZ] + 0.01)
+            a = torch.cat([xa[:, 0:3], a_pol[:, 3:4], xa[:, 3:6], a_pol[:, 7:8]], 1)
+            with torch.no_grad():
+                best = (float(agg(vals(a))[0]), a)
+                if best[0] <= eps:                                # same actor fallback as the search
+                    va = float(agg(vals(a_act))[0])
+                    if va > best[0]:
+                        best = (va, a_act)
+            info["lsf_edit_iters"] = info.get("lsf_edit_iters", 0) + 1
             if best[0] > v0:
                 out, v = best[1].view(2, 4).cpu().numpy().astype(np.float32), best[0]
         if v0 <= eps:
