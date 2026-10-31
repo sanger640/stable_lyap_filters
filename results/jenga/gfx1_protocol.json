@@ -1,0 +1,49 @@
+{
+ "name": "GFX1: fixing what GFCL1 got wrong - irreversible fragility without a reward for certain damage, a barrier chosen per value, and a check of whether the gripper is the red-fall blind spot",
+ "registered": "2026-10-31 18:32 EDT, before any GFX1 number exists; user request 2026-10-31 ('i feel we didnt implement irreversibility fragility properly ... even with no mask i feel the same'; 'pause the chain after RLAB1 and run these first')",
+ "diagnosis_before_registration": {
+  "nsi_target": "the NSI margin target t = max(tanh((THR - r_max)/s), tanh((r_med - THR)/s)) rewards CERTAIN damage: on the 0.8 s training labels the mean target by share P of the 64 futures that are irreversible is P 0-10%: -0.14, 30-50%: -0.11, 50-70%: +0.08, 70-100%: +0.25 (plain irreversibility: -0.15 / -0.38 / -0.44 / -0.51). The value and the gradient edit can therefore move toward making a topple certain. Any exemption of 'consistent' irreversibility is non-monotone in the probability of damage; a flat exemption still jumps from negative to 0 at P = 0.5.",
+  "no_mask": "masked and unmasked 0.8 s labels hardly differ (flagged 5.6 vs 4.9% of moves, median residual of moving actions 0.196 vs 0.193): the mask is not what limits the value.",
+  "gripper": "the value's labels (eval/irrm2.py) and its actor hold the gripper; CF3's offline undo test of the policy's plan already reverses the plan's gripper commands and still flags only 5.2% of pre-red-fall decisions at tau (NM1 S0). Of CF3's 58 pre-red decisions 74% have the gripper closed; with it closed a release is planned within 0.8 s in 19% (clean decisions: 38%) and within 1.5 s in 74% (58%). Every check is relative to hold: after a release the block also falls in the hold branch, so the state after the release looks reversible; only the release action itself can be scored.",
+  "operating_point": "GFCL1 ran both values at the 90% barrier that IRRM selected for value_irr8_alea.pt; neither got its own selection (edits per episode 2x: 38.3 / 43.6 vs 30.4)."
+ },
+ "part_F": {
+  "question": "irreversible fragility at 1.6 s without a reward for certain damage",
+  "labels": "the existing 1.6 s NSI labels (irrm2_labels_nsi16_*.npz, all 64 per-draw residuals; held irrm2_held_nsi16.npz); THR 1.3356, s = IQR(r_max)/2 as before",
+  "variants": {
+   "flat": "target = tanh((THR - r_max)/s) if r_med <= THR, else 0 (consistent irreversibility = neutral, as proposed to the user; the remaining jump at P = 0.5 is stated). Flag for the margin gate: r_max > THR and r_med <= THR. -> margin_nsif_nl16.pt, irrm2_result_nsif16.json, value_nsif16_alea.pt",
+   "chance": "target = tanh((THR - r_q)/s), r_q = 95th percentile of the 64 per-draw residuals (np.quantile, linear): a move fails iff it is irreversible in at least about 5% of the imagined futures (chance-constrained irreversibility; monotone in the probability of damage, no exemption). eps = 0.05 fixed now, label-free. Flag: r_q > THR. -> margin_nsiq_nl16.pt, irrm2_result_nsiq16.json, value_nsiq16_alea.pt"
+  },
+  "training": "margin as eval/irrm2.py margin (same net, seed, 4x oversampling of flagged labels); value with value_nsi16_alea.pt's recipe (LSF_CLF=margin_lf.pt, LSF_MARGIN_MODE=irr, LSF_ALEA=8, default seed)",
+  "gates": "M (held Spearman >= 0.6, AUC vs own flag >= 0.85) and A (LF2 criteria + CF3 decisions AUC(-V) >= 0.80, V < 0 safe closed <= 5%, open <= 10%) computed and REPORTED, not blocking (user asked for both to be tried; GFCL1 precedent); keys MNF / MNQ, ANF / ANQ in eval/irrm_gate.py"
+ },
+ "part_S": {
+  "question": "the barrier chosen per value by the rule that chose the current one",
+  "values": "nm8 = value_irrnm8_alea.pt (no mask, 0.8 s), F-flat, F-chance",
+  "dev": "dev episodes 15000-15099, 2x and 1x (LSF_ALEA_SCALE = noise), 60 chunks, as IRRM's dev arms; barrier gamma 0.5 / 0.2 / 0.1 (V' >= 0.5 / 0.8 / 0.9 V); tags _{nm,ff,fq}{50,20,10}dev{2,1}x; replay audits",
+  "rule": "eval/irrm_select.py's rule, per value: among its three barriers, the fewest 2x topples among those with 'no cost' at 1x (v4 >= 80 and topples <= 5); ties -> fewer 2x time-outs; none eligible -> that value is not taken to the fresh test. Between the two F variants: the same rule over all six F arms picks one (variant + barrier). The current value's dev arms (i0 / g20 / g10) are listed for reference.",
+  "note": "the dev episodes were used to choose the current value's barrier; the same set is used here so every value gets the same chance"
+ },
+ "part_T": {
+  "question": "on fresh episodes, with its own barrier, does the selected F arm (and the no-mask value, if its selected barrier is not 0.9) match or beat the current filter?",
+  "episodes": "H2H5's 26200-26799 (as GFCL1), 2x and 1x, 120 chunks, paired with H2H5's ours90, policy and UNISafe and GFCL1's nm90 / ns90 (audits outcome_audit_h5_{n}.json, outcome_audit_h5{nm,ns}_{n}.json). These episodes were not used to select anything in GFX1.",
+  "arms": "F_sel = the selected F arm (tag _h5fx_{n}); nm_sel = no-mask value at its selected barrier (tag _h5nmx_{n}) only if that barrier is not 0.1 (otherwise GFCL1's nm90 is that arm and is reported again)",
+  "hypotheses": {
+   "T_F_2x / T_F_1x": "non-inferiority vs ours90: topples one-sided 95% upper < +3 pp AND v4 lower > -5 pp (as GFCL1)",
+   "T_F_better": "superiority vs ours90 at 2x on topples (upper < 0) OR v4 (lower > 0), reported as better only if T_F_2x also holds",
+   "T_F_policy": "2x topples vs the policy: upper < 0",
+   "T_nm_2x / T_nm_1x": "as T_F for nm_sel (only if run)"
+  },
+  "also_reported": "red falls, v4b, time-outs, edits per episode, all arms' paired differences, F_sel vs GFCL1's ns90",
+  "claim_rule": "the method stays ours90 unless F_sel passes T_F_2x, T_F_1x and T_F_better; even then a switch needs the user's decision"
+ },
+ "part_G": {
+  "question": "is holding the gripper fixed in the undo test the reason the value cannot see red-block falls?",
+  "G0_offline": "eval/gfx1_grip.py on CF3's decisions (redm1_rows: 58 pre-red-fall, all pre-topple, clean safe): the undo test of the policy's own plan with its gripper commands (pol, as CF3 / irrm1) vs the same plan with the gripper held at the current command (held, as the value's labels), NL 8 and 16, hand-masked and unmasked patches, q98 statistic (also reported: max patch), 64 draws at 2x, CF3's seeds. Metrics: pre-red AUC vs clean safe, recall at 1.3356; pre-topple AUC / recall; clean safe flags closed / open. Reproduction reported: pol masked NL 8 vs the stored irrm1 r8.",
+  "gate_G": "the gripper is the blind spot at horizon NL iff, masked q98 at 1.3356, recall(pol) - recall(held) >= 10 pp AND AUC(pol) - AUC(held) >= 0.03 on pre-red decisions. Either horizon passing -> a gripper-aware value (labels with the gripper command as two extra action dimensions, the actor commands the gripper, the runtime check adds the policy action's own margin only on chunks where its gripper command changes) is designed and registered as an amendment before it runs. Neither -> STOP; the gripper is not the fix, and the per-variant numbers say where red falls are lost.",
+  "cost": "offline, one process, before parts F / S / T"
+ },
+ "order": "act arm of ABL2 finishes; G0; F margins (flat, chance) + M gates; F-flat value; F-chance value; A gates; dev arms (nm, flat, chance x 3 barriers x 2x, 1x) + audits; selection; T arms + audits; analysis eval/gfx1_analysis.py; then the paused ABL2 chain resumes from its first unfinished arm (proj).",
+ "chain": "scripts/run_gfx1.sh",
+ "code_check": "2026-10-31 18:31 EDT, before launch: G0 smoke on 4 decisions reproduces irrm1's stored r8 exactly (pol masked NL 8: 1.3432 / 1.2465 / 0.2047 / 0.1279 = stored); smoke rows deleted. Selected decisions: 1657 (58 pre-red, 399 other pre-topple, 1200 clean). New margin modes are off unless IRRM_NSI_MODE is set (default and NSI paths unchanged). ABL2 was paused at 18:25 after its 'act' arm (300 episodes, completed by its own workers); scripts/run_abl2.sh now skips arms with 300 episodes and takes '-' for no wait; GFX1's chain resumes it at 'proj'."
+}

@@ -12,6 +12,8 @@
   ANM / MNM: no hand mask (results/jenga/nm1_protocol.json: value_irrnm8_alea.pt, irrm2_result_nm8.json); AREF = the current
              value_irr8_alea.pt re-graded with the same red-fall report (irrm_A_gate.json untouched)
   every A-type gate also reports (not gated) V on REDM1's pre-red-fall decisions (results/jenga/redm1_rows.npz)
+  ANF / MNF, ANQ / MNQ: GFX1's 1.6 s irreversible fragility, flat / chance target (results/jenga/gfx1_protocol.json:
+             value_nsif16_alea.pt / value_nsiq16_alea.pt, irrm2_result_nsif16.json / nsiq16.json); reported, not blocking
 -> results/jenga/irrm_{A,B,M}_gate.json (lflsf_LF2.json is not touched)"""
 import json
 from pathlib import Path
@@ -23,7 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt", "AR": "value_rng8_alea.pt", "AN2": "value_rngnsi8_alea.pt", "AN16": "value_nsi16_alea.pt",
         "ANM": "value_irrnm8_alea.pt", "AREF": "value_irr8_alea.pt",
-        "AS2": "value_irr8s2_alea.pt", "AT085": "value_irr8t085_alea.pt"}   # ABL2 protocol: SEED1 / TAU2 values, graded as A (reported)
+        "AS2": "value_irr8s2_alea.pt", "AT085": "value_irr8t085_alea.pt",
+        "ANF": "value_nsif16_alea.pt", "ANQ": "value_nsiq16_alea.pt"}   # ABL2 protocol: SEED1 / TAU2 values, graded as A (reported)
 
 
 def lf2(stem):
@@ -78,13 +81,13 @@ def decisions(name):
 
 
 def main(which):
-    if which in ("M", "M16", "MN", "MR", "MN2", "MN16", "MNM"):
-        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16', 'MNM': 'nm8'}[which] }.json").read_text())
+    if which in ("M", "M16", "MN", "MR", "MN2", "MN16", "MNM", "MNF", "MNQ"):
+        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16', 'MNM': 'nm8', 'MNF': 'nsif16', 'MNQ': 'nsiq16'}[which] }.json").read_text())
         out = {"held_spearman": r["held_spearman"], "held_auc_hat_vs_true_flag": r["held_auc_hat_vs_true_flag"]}
         out["M_pass"] = bool(r["held_spearman"] >= 0.6 and (r["held_auc_hat_vs_true_flag"] or 0) >= 0.85)
     else:
         out = lf2(NAME[which][:-3])
-        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF", "AS2", "AT085"):
+        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF", "AS2", "AT085", "ANF", "ANQ"):
             out["cf3_decisions"] = decisions(NAME[which])
             out["A_pass"] = bool(out["LF2_pass"] and out["cf3_decisions"]["decisions_pass"])
         else:

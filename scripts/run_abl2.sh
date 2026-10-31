@@ -5,10 +5,11 @@
 cd "$(dirname "$0")/.."
 PY=/home/corey/wksp/dp_venv/bin/python
 OIL=$PWD/results/program_b/oil_v1/model/model_OIL.pt
-while kill -0 "$1" 2>/dev/null; do sleep 300; done
+[ "$1" = - ] || while kill -0 "$1" 2>/dev/null; do sleep 300; done   # '-': no wait (GFX1 resumes this chain)
 echo "start $(date)"
 arm() {  # name tag offset extra-env...  (ours90 settings unless overridden; later env entries win)
   local name=$1 tag=$2 off=$3; shift 3
+  [ "$(ls results/program_b/policy_rollouts/paired_lfc000$tag/ep*.json 2>/dev/null | wc -l)" -ge 300 ] && { echo "$name already done, skipped $(date)"; return; }
   echo "$name start $(date)"
   for i in 0 1 2 3 4 5; do
     env MUJOCO_GL=egl PER_EPISODE_SEEDS=1 PAIRED_PER_EP=1 PAIRED_TAG=$tag EP_OFFSET=$off SHARD=$i/6 EXEC_NOISE_SCALE=2 HARD_OFF=1 \

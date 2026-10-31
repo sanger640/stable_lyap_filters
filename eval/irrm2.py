@@ -19,6 +19,10 @@ RNG1 variant (IRRM_STAT=rng, results/jenga/rng1_protocol.json): the per-draw sco
 tagged rng<NL>, margin margin_rng_nl<NL>.pt.
 NM1 (IRRM_MASK=none, results/jenga/nm1_protocol.json): the same q98 undo test over ALL patches (no hand mask); files tagged
 nm<NL>, margin margin_irrnm_nl<NL>.pt.
+GFX1 (IRRM_NSI=1 IRRM_NSI_MODE=flat|chance, results/jenga/gfx1_protocol.json): margin only, on the NSI labels. flat: target
+tanh((THR - r_max) / s) if r_med <= THR else 0 (consistent irreversibility neutral, no reward for certain damage beyond 0);
+chance: tanh((THR - r_q) / s), r_q = 95th percentile of the 64 per-draw residuals (irreversible in >= ~5% of futures = failure).
+Files nsif<NL> / nsiq<NL> (margin margin_nsif_nl<NL>.pt / margin_nsiq_nl<NL>.pt).
 NSI2 (IRRM_STAT=rng IRRM_NSI=1, results/jenga/nsi2_protocol.json): the NSI target on the rng labels (margin only, no new
 labels) -> margin_rngnsi_nl<NL>.pt, irrm2_result_rngnsi<NL>.json.
 usage: SHARD=i/n python3 eval/irrm2.py labels;  python3 eval/irrm2.py held;  python3 eval/irrm2.py margin
@@ -48,6 +52,9 @@ WM_TAG = os.environ.get("IRRM_WM_TAG", "")                                 # ano
 if WM_ALT:
     TAG += f"_{WM_TAG}"
 RTAG = f"rngnsi{NL}" if NSI and STAT == "rng" else TAG                     # margin result (NSI2: NSI target on the rng labels)
+NSI_MODE = os.environ.get("IRRM_NSI_MODE")                                 # GFX1: flat | chance (margin only, NSI labels)
+if NSI_MODE:
+    RTAG = {"flat": "nsif", "chance": "nsiq"}[NSI_MODE] + str(NL)
 THR_SCALE = os.environ.get("IRRM_THR_SCALE")                               # TAU2 (results/jenga/abl2_protocol.json): margin only,
 if THR_SCALE:                                                              # the same labels with THR x scale; margin and result
     THR *= float(THR_SCALE); RTAG += f"_t{THR_SCALE.replace('.', '')}"     # files get _t<scale> (e.g. _t085)
@@ -194,7 +201,17 @@ def margin():
     T = {k: np.concatenate([np.load(f)[k] for f in fs]) for k in ("z", "g", "d", "r", "src") + (("rall",) if NSI else ())}
     H = dict(np.load(OUT / f"irrm2_held_{TAG}.npz"))
     s = float(np.subtract(*np.quantile(T["r"], [0.75, 0.25]))) / 2
-    if NSI:
+    if NSI and NSI_MODE == "flat":
+        med = lambda X: np.median(X["rall"].astype(np.float32), 1)
+        T["flag"], H["flag"] = (T["r"] > THR) & (med(T) <= THR), (H["r"] > THR) & (med(H) <= THR)
+        tgt = lambda X: np.where(med(X) <= THR, np.tanh((THR - X["r"]) / s), 0.0).astype(np.float32)
+        tt, th = tgt(T), tgt(H)
+    elif NSI and NSI_MODE == "chance":
+        q95 = lambda X: np.quantile(X["rall"].astype(np.float32), 0.95, axis=1)
+        T["flag"], H["flag"] = q95(T) > THR, q95(H) > THR
+        tgt = lambda X: np.tanh((THR - q95(X)) / s).astype(np.float32)
+        tt, th = tgt(T), tgt(H)
+    elif NSI:
         med = lambda X: np.median(X["rall"].astype(np.float32), 1)
         T["flag"], H["flag"] = (T["r"] > THR) & (med(T) <= THR), (H["r"] > THR) & (med(H) <= THR)
         tgt = lambda X: np.maximum(np.tanh((THR - X["r"]) / s), np.tanh((med(X) - THR) / s)).astype(np.float32)
@@ -203,7 +220,7 @@ def margin():
         T["flag"], H["flag"] = T["r"] > THR, H["r"] > THR
         tgt = lambda r: np.tanh((THR - r) / s).astype(np.float32)
         tt, th = tgt(T["r"]), tgt(H["r"])
-    mname = (f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if STAT == "rng" else f"margin_nsi_nl{NL}.pt" if NSI else
+    mname = (f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if STAT == "rng" else f"margin_{RTAG[:-len(str(NL))]}_nl{NL}.pt" if NSI_MODE else f"margin_nsi_nl{NL}.pt" if NSI else
              f"margin_irrnm_nl{NL}.pt" if NOMASK else f"margin_irr_nl{NL}.pt")
     if WM_ALT:
         mname = mname[:-3] + f"_{WM_TAG}.pt"
