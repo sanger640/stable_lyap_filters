@@ -26,6 +26,8 @@ TAG = os.environ.get("LSF_TAG", "")                 # part files (data built whe
 SAFE_PER_FAIL, SEED = 3, 20261020
 SEED = int(os.environ.get("LSF_SEED", SEED))           # SEED1 (results/jenga/abl2_protocol.json): another value-training seed
 LABEL = os.environ.get("LSF_LABEL", "neighbour")    # neighbour (default) | red: a red-block fall (tilt >= 45 deg) is also a failure (RLAB1)
+#                                                     red2 (RLAB2): as red, only for futures whose red block starts upright and resting
+#                                                     (tilt < 45 deg, |z - 0.462| <= 1 cm) and only before it is extracted (>= 2 cm up / pulled)
 
 
 def stage_merge():
@@ -46,6 +48,23 @@ def red_tilt(state):
     return float(np.degrees(np.arccos(np.clip(r[0] * r[3] - r[2] * r[1], -1, 1))))
 
 
+def red_fail(trace, fi, label=None):
+    """per frame (bool, not yet sticky): the red block counts as fallen under LSF_LABEL (red: tilt >= 45 deg; red2: also requires
+    an upright resting start and no extraction (z +2 cm or x -2 cm from the future's start) at or before that frame, as the audit)"""
+    from fresh_fragility_panel import TOPPLE_DEG
+    label = label or LABEL
+    st = [trace[min(i, len(trace) - 1)] for i in fi]
+    rt = np.array([red_tilt(x) for x in st]) >= TOPPLE_DEG
+    if label != "red2":
+        return rt
+    p0 = trace[0][0:3]
+    if red_tilt(trace[0]) >= TOPPLE_DEG or abs(p0[2] - 0.462) > 0.01:
+        return np.zeros(len(fi), bool)
+    P = np.array([x[0:3] for x in st])
+    ext = np.maximum.accumulate((P[:, 2] - p0[2] >= 0.02) | (P[:, 0] - p0[0] <= -0.02))
+    return rt & ~ext
+
+
 def labels_for(path):
     """-> latents (K, 19, 28, 28, 8) fp16, proprio (K, 19, 4), fail (K, 19) bool (sticky), z0, start target."""
     from fresh_fragility_panel import neighbour_tilts, TOPPLE_DEG
@@ -55,8 +74,8 @@ def labels_for(path):
     K = len(tr); fail = np.zeros((K, len(fi)), bool); prop = np.zeros((K, len(fi), 4), np.float32)
     for k in range(K):
         f = np.array([np.any((neighbour_tilts(tr[k][min(i, len(tr[k]) - 1)]) >= TOPPLE_DEG) & elig) for i in fi])
-        if LABEL == "red":
-            f |= np.array([red_tilt(tr[k][min(i, len(tr[k]) - 1)]) >= TOPPLE_DEG for i in fi])
+        if LABEL in ("red", "red2"):
+            f |= red_fail(tr[k], fi)
         fail[k] = np.maximum.accumulate(f)
         prop[k] = acts[k][np.minimum(fi, len(acts[k]) - 1)]           # the target commanded at that control step
     return d["z"], prop, fail, d["z0"], acts[:, 0]
