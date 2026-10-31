@@ -246,12 +246,17 @@ const UPDATED = "Fri 30 Oct, 18:52 EDT";
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Labelled baselines retrained with red-block falls as failures", n: [0, 1], d: "Running: relabelled data ready; retrain UNISafe and LSF-as-published, pick LSF's threshold on dev, rerun both on the 600 head-to-head episodes at 2× and 1×." },
-  { t: "Paper ablations of the 90% filter, and the filter under new camera looks", n: [0, 1], d: "Queued after the labelled baselines: 12 ablation arms on 300 episodes at 2× (barrier strength, no barrier, 1.6 s value, fragility value, edit variants, noise in the check); the filter with new lighting, block colours and a moved camera (policy unchanged); a value-seed control for the mass-shift test; one threshold variant." },
+  { t: "Fixing the irreversible-fragility and no-mask tests", n: [0, 1], d: "Running (your call): irreversible fragility retrained so certain damage is never rated safe (two versions, 1.6 s), every value gets its own barrier on dev episodes, then the best on 600 head-to-head episodes; first a quick offline check of whether the held gripper hides red-block falls." },
+  { t: "Paper ablations and new camera looks", n: [0, 1], d: "Paused after 8 of 12 ablation arms; resumes automatically after the fixes." },
+  { t: "Labelled baselines with red-block falls, label fixed", n: [0, 1], d: "Queued last: the first try was broken by our label; rerun with the audit's red-fall rule and a check that the value has not collapsed before any episode." },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "neg", when: "Sat 12:51", title: "Labelled baselines retrained with red-block falls: broken by our label, not usable",
+    say: "Adding red-block falls to the labelled failure set made both labelled filters freeze: LSF-as-published never finishes an episode (its value says every state is failure), UNISafe times out in 274 of 600. Fewer red falls only because they rarely extract the block. Cause: our red label also counted blocks that were already lying flat. The original baselines stay; a fixed rerun is queued.",
+    cap: "successes of 600 at 2× (original vs retrained)", unit: "", max: 480,
+    rows: [["UNISafe", 428, "--wait"], ["UNISafe, retrained", 291, "--bad"], ["LSF as published", 417, "--wait"], ["LSF, retrained", 0, "--bad"]] },
   { v: "fail", when: "Sat 01:33", title: "No hand mask and irreversible fragility: no better than the current filter in closed loop",
     say: "Pre-registered (your call), 600 head-to-head episodes, 90% barrier, only the value swapped. Both keep the topple protection at 2× (47 and 45 vs 44) but cost successes (−4.5 and −5.3 pp) and cause more red-block falls, not fewer (no mask: 96 vs 57 episodes where only one arm drops it). At 1× irreversible fragility topples as often as the policy alone (14 vs 2). Both edit more often than the current filter. The current filter stays.",
     cap: "neighbour topples of 600 at 2× (successes: 426, 477, 450, 445)", unit: "", max: 130,
