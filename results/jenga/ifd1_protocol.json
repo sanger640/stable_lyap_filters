@@ -1,0 +1,16 @@
+{
+ "name": "IFD1: why the corrected irreversible-fragility value topples more at 1x (offline diagnosis)",
+ "registered": "2026-11-01 20:38 EST, before any run (smoke test on 2 decisions only: shapes and plausible scores)",
+ "user_request": "2026-11-01: 'yea go ahead with the test' (after the explanation that the flat target may exempt certain damage at 1x); 'just remove the hand mask its useless'",
+ "background": "GFX1 (results/jenga/gfx1_result.json): fx = value_nsif16_alea.pt (1.6 s undo labels, flat target: consistent irreversibility -> 0) at the 80% barrier vs ours90 on H2H5 episodes 26200-26799. 2x 35 vs 44 topples (non-inferior); 1x 10 vs 2 (9 vs 1 discordant), v4 521 vs 537 -> T_F_1x failed.",
+ "hypothesis_H_exempt": "At 1x the moves before fx's extra topples are irreversible in most imagined futures (median draw > tau), so the flat target scored them 0 ('intended') instead of negative: noise-dependence alone cannot separate certain damage from intended change.",
+ "code": "eval/ifd1.py (run | grade)",
+ "decisions": "1-3 chunks before every logged neighbour topple in paired_lfc000_h5fx_{1x,2x} and paired_lfc000_h5o90_{1x,2x}; latent re-encoded from the saved sim state (fixed camera, as eval/hj_data2.py)",
+ "undo_test": "as the value's labels (eval/irrm2.py): the policy's own plan for NL steps, undone, gripper held, vs hold; 64 draws (CF3's error model, seeds C.SEED + 1000 ep + i, recorded snippets); NL 8 and 16; imagined noise 2x (the labels) and 1x; q98 over ALL patches (primary, no hand mask) and outside the hand mask (reported: how fx's labels were made)",
+ "classes": "per decision, tau 1.3356: consistent = median draw > tau; fragile = max > tau and median <= tau; none = max <= tau",
+ "primary_test": "the discordant 1x episodes (fx topples, ours90 does not; 9 expected). An episode is 'exempted' if its pre-topple decisions include at least one consistent decision and no fragile one (NL 16, imagined 2x, all patches). H_exempt SUPPORTED iff a strict majority of the discordant episodes are exempted; else NOT SUPPORTED, report the class breakdown (e.g. 'none' = the undo test sees nothing: a horizon / visibility miss, not an exemption).",
+ "reported_only": "class shares per run and variant (fx 1x vs 2x, ours90 1x vs 2x), masked vs all patches, imagined 1x vs 2x",
+ "consequence": "If supported: design (separately registered) a plan-aware irreversible-fragility target: a change counts as intended only if the policy's noise-free plan produces it; irreversibility produced only under noise = fragility. If not supported: the 1x cost has another cause; no new value from this test.",
+ "order": "after the SOS1 chain (one GPU job at a time), single process, small (~270 decisions)",
+ "outputs": "results/jenga/ifd1_rows.npz, ifd1_result.json, ifd1_chain.log"
+}

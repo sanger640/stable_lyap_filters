@@ -2,7 +2,7 @@
 Why: the undo-test score r = max_j q98_outside-hand d_p (d_p = mean over the 8 latent channels of |f_rev_j - f_hold_j| per
 patch) fires only when ~12 of the ~600 outside-hand patches change; a fallen red block changes ~7 (REDM1, NM1, G0: pre-red
 recall 0-5%). G0's single-patch max reaches 19-38% but flags 6-13% of clean grasping moves. Candidates in between, per draw j
-on the 28 x 28 patch grid (hand patches set to 0 for pooling, excluded from the quantiles):
+on the 28 x 28 patch grid, ALL patches (amendment 1, 2026-11-01, user: no hand mask):
   q98   reference (= irrm1 r8 at NL 8, reproduced)          q995  99.5th percentile (~3 patches)
   top5  mean of the 5 largest patches                       pool2 max over 2 x 2 windows of the mean d_p (adjacent change)
   pool3 max over 3 x 3 windows of the mean d_p              max   single largest patch (reported only)
@@ -44,7 +44,6 @@ def patch_scores(D, mask):
 
 def run(which):
     import torch
-    import cbf_barrier as cb
     import cbf_filter as cbff
     import cem_filter as cf
     import cf_conf as CC
@@ -83,7 +82,7 @@ def run(which):
             rev = V.reverse_plan(plan, cur, nl, S0)
             rev = np.concatenate([rev[S0:], np.repeat(rev[-1:], total, 0)])[:total]
             rev[:, 3] = cur[3]                                                   # gripper held, as the value's labels
-            masks.append(torch.as_tensor(~cb.hand_mask(np.vstack([hp[i, :3][None], plan[S0:S0 + nl, :3]])), device="cuda"))
+            masks.append(torch.ones(28, 28, dtype=torch.bool, device="cuda"))     # amendment 1: no hand mask (all patches)
             for base in (rev, hold):
                 for j in range(C.N_FUT):
                     a = base.copy(); a[:nl, :3] -= np.concatenate([snip[j % 64], snip[(j + 1) % 64]])[:nl] * S; acts.append(a)
@@ -130,7 +129,7 @@ def grade():
     kr = np.array([kr_of.get((str(a), int(b), int(c)), -1) for a, b, c in zip(Ev["run"], Ev["ep"], Ev["k"])])
     pre_red = (kr >= 0) & (kr - k >= 1) & (kr - k <= 3); pre_top = (kt >= 0) & (kt - k >= 1) & (kt - k <= 3) & ~pre_red
     clean = (kt < 0) & (kr < 0)
-    # reproduction: q98 with the gripper held = G0's held{8,16}_mask_q98 per draw on G0's 1657 decisions (must be exact);
+    # reproduction: q98 with the gripper held, all patches = G0's held{8,16}_all_q98 per draw on G0's 1657 decisions (must be exact);
     # vs irrm1's r8 (gripper with the plan) agreement is reported only
     import gfx1_grip as G0
     gi = np.concatenate([np.load(f)["idx"] for f in sorted(OUT.glob("gfx1_grip_rows_*.npz"))])
@@ -138,7 +137,7 @@ def grade():
     pos = {key(CC.RUNS[int(I["run"][x])], I["ep"][x], I["i"][x]): n for n, x in enumerate(gi)}
     rep = {}
     for nl in NLS:
-        v = G0.VARS.index(f"held{nl}_mask_q98")
+        v = G0.VARS.index(f"held{nl}_all_q98")
         d0 = [np.abs(Ev[f"q98{nl}"][n].astype(np.float64) - gr[pos[key(Ev["run"][n], Ev["ep"][n], Ev["i"][n])], v]).max()
               for n in range(len(kt)) if key(Ev["run"][n], Ev["ep"][n], Ev["i"][n]) in pos]
         rep[f"NL{nl}"] = {"decisions": len(d0), "max_abs": round(float(np.max(d0)), 5), "reproduced": bool(np.max(d0) <= 0.01)}

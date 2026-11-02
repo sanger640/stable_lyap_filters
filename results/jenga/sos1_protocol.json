@@ -31,5 +31,10 @@
  "reported_only": "AUC vs clean (pre-red, pre-topple), recall / false alarms at a threshold matched to 2% clean-closed false alarms, NSI variant per score, q98 agreement with irrm1's r8 (gripper with the plan)",
  "stage_2_conditional": "If S passes: relabel the value's training decisions with the selected score and tau (irrm2 machinery), check the new labels on the label files (target monotone in harm; share flagged; red-fall eligibility as eval/outcome_audit.py), margin gate, value, start-state value gate (median V >= 0.5, V < 0 on <= 10% of starts), then dev 15000-15099 at the 90% barrier vs o90, then a fresh test. Stage 2's exact gates and hypotheses are registered as an amendment to this file BEFORE any stage-2 training starts.",
  "order": "after the RLAB2 chain (one GPU pool at a time): calib (2 shards) -> cf3 (2 shards) -> grade. scripts/run_sos1.sh",
- "outputs": "results/jenga/sos1_{calib,cf3}_<i>.npz, sos1_result.json, sos1_chain.log"
+ "outputs": "results/jenga/sos1_{calib,cf3}_<i>.npz, sos1_result.json, sos1_chain.log",
+ "amendment_1": {
+  "time": "2026-11-01 (before any SOS1 run; the chain was still waiting for RLAB2)",
+  "reason": "user: 'just remove the hand mask its useless dont focus on it at all'",
+  "change": "every score is computed over ALL 784 patches (no hand mask); pooling over the full grid; reproduction check against G0's held{8,16}_all_{q98,max} instead of _mask_; everything else unchanged (scores, tau rule, gate, selection, stage-2 path, where the new value is also unmasked)"
+ }
 }
