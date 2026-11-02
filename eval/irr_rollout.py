@@ -21,6 +21,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 THR, S = 1.3356, float(os.environ.get("IRR_S", 2.0))     # S: the gate's imagined noise scale (N1M: 1x)
+NOMASK = os.environ.get("IRR_MASK") == "none"            # ABL3 (results/jenga/abl3_protocol.json): score all patches
 
 
 def score_irr(self, sim, frame_z0, plans, n_fut):
@@ -60,7 +61,8 @@ def score_irr(self, sim, frame_z0, plans, n_fut):
     z = z.float().reshape(B, n_fut, 28, 28, -1)
     r = np.zeros(len(plans))
     for c, p in enumerate(plans):
-        m = torch.as_tensor(~cb.hand_mask(np.vstack([site[None], p[S0:S0 + NL, :3]])), device="cuda")
+        m = ~cb.hand_mask(np.vstack([site[None], p[S0:S0 + NL, :3]]))
+        m = torch.as_tensor(np.ones_like(m) if NOMASK else m, device="cuda")
         zh = z[len(plans) + grips.index(float(p[0, 3]))]
         r[c] = float(torch.quantile((z[c] - zh).abs().mean(-1)[:, m], 0.98, dim=1).max())
     return -r, r
@@ -88,7 +90,7 @@ def setup(mode):
     cbff.CBF.__init__ = init_oil
 
 
-def setup_gated(value_or=False):
+def setup_gated(value_or=False, ours=False):
     """lfci000 (irr_protocol amendment_1): LF4's lfc000 (label-free value value_lf_alea.pt, eps 0.00, gradient edit of the
     policy's xyz under the latent CBF condition, gamma 0.5, every model step) acting ONLY in chunks whose plan the
     irreversibility barrier flags (r_max > THR, computed once per chunk before it runs); other chunks: the policy's commands.
@@ -97,6 +99,8 @@ def setup_gated(value_or=False):
     os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
     os.environ.update({"LSF_EPS": "0.0", "LSF_VALUE_NAME": "value_lf_alea.pt", "LSF_ALEA": "8", "LSF_REL": "0",
                        "LSF_EDIT": "grad", "LSF_CBF_GAMMA": "0.5"})          # = policy_rollout's lfc000 settings
+    if ours:                                                  # ABL3 g90: ours90 (value_irr8_alea.pt, V' >= 0.9 V, actor fallback), gated
+        os.environ.update({"LSF_VALUE_NAME": "value_irr8_alea.pt", "LSF_CBF_GAMMA": "0.1"})
     import time
     import cbf_filter as cbff
     cbff.CALIB = ROOT / "results/jenga/cbf_calibration_OIL.json"
@@ -132,9 +136,9 @@ def setup_gated(value_or=False):
 
 if __name__ == "__main__":
     mode, n = sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else 100
-    assert mode in ("irg", "irs", "lfci000", "lfcj000", "lfck000")
+    assert mode in ("irg", "irs", "lfci000", "lfcj000", "lfck000", "lfcg090")
     if mode == "lfck000":                                     # gate3 amendment_2: lfcj000 with the pure edit (no actor fallback)
         os.environ["LSF_NO_FALLBACK"] = "1"
-    setup_gated(mode in ("lfcj000", "lfck000")) if mode.startswith("lfc") else setup(mode)
+    setup_gated(mode in ("lfcj000", "lfck000"), mode == "lfcg090") if mode.startswith("lfc") else setup(mode)
     import policy_rollout as pr
     pr._paired(mode, "cbf", n)

@@ -1,0 +1,25 @@
+{
+ "name": "ABL3: two remaining paper ablations of the 90% filter: (1) gated edit (act only when the undo test flags the plan) vs always-on, (2) the key ABL2 ablations at 1x noise",
+ "registered": "2026-11-02 16:01 EST, before any ABL3 episode exists; user request 2026-11-02 ('sure go ahead do 1 and 2')",
+ "claim_rule": "Descriptive, like ABL2. The method stays ours90 (value_irr8_alea.pt, lfc000 always-on gradient edit, V' >= 0.9 V, actor fallback, 8 noisy futures, hard min) whatever these show; no arm replaces it without its own fresh confirmatory test. Episodes 26800-27099 (ABL2's, the first 300 of H2H6) so every arm pairs with ABL2's 2x arms and H2H6's policy at both scales.",
+ "common": "as ABL2 (results/jenga/abl2_protocol.json): model_OIL, paired starts, PER_EPISODE_SEEDS=1, 120 chunks (96 s), HARD_OFF=1, replay audit (eval/outcome_audit.py, AUDIT_NOISE_SCALE = the run's scale). At 1x the filter's imagined noise is matched (LSF_ALEA_SCALE=1, gate IRR_S=1), as H2H5/H2H6's ours90 at 1x. Outcomes: topples, v4 (success), v4b (strict success), red falls before extraction, time-outs; edits per episode, compute per move, share of chunks with the gate open (gated arms). Statistics as eval/h2h5_analysis.py: paired by episode, normal approximation, one-sided 95% bounds, exact McNemar.",
+ "code_check": "eval/irr_rollout.py gets mode lfcg090 (setup_gated with value_irr8_alea.pt and gamma 0.1, actor fallback on) and IRR_MASK=none (gate score over all patches); both default off, lfck000's path unchanged. Smoke 2026-11-02 (episode 26836, 2x, 45 chunks, deleted, not analysed): gate closed on the approach (r 0.10-0.16), open on 2 chunks near contact (r 1.34, 1.38), 3 edits; compute 0.36 s per move with the gate closed.",
+ "part_1_gated": {
+  "question": "is the always-on edit needed, or does editing only when the label-free undo test flags the policy's plan do as well?",
+  "arms": {
+   "g90": "ours90 acting ONLY in chunks whose plan the undo test flags (r_max over 64 imagined futures > 1.3356, computed once per chunk, all patches per the user's no-mask rule; eval/irr_rollout.py lfcg090, IRR_MASK=none); other chunks run the policy's commands unchanged",
+   "gk": "the earlier gated filter exactly as selected in GATE3 (eval/irr_rollout.py lfck000: fragility value value_lf_alea.pt, V' >= 0.5 V, pure edit, gate = undo test OR (gripper open AND V < 0), masked gate as registered then); reported as the previous method"
+  },
+  "scales": "2x and 1x",
+  "references": "2x: policy = paired_record_h6_2x, o90 = ABL2's paired_lfc000_ab2_o90; 1x: policy = paired_record_h6_1x, o90 = part 2's 1x rerun"
+ },
+ "part_2_1x": {
+  "question": "do ABL2's 2x conclusions (barrier strength and the worst case over noisy futures carry the effect) hold at the real noise, and what do the weaker variants cost or gain there?",
+  "arms": "1x versions of ABL2's arms, same switches: o90 (reference, rerun; agreement with H2H6's paired_lfc000_h6o90_1x reported), b50 (LSF_CBF_GAMMA=0.5), b80 (0.2), lv0 (1.0, level test), det (LSF_DET=1, one noise-free future), mean (LSF_AGG=mean)",
+  "not_run": "soft, h16, frag, nofb, act, proj at 1x (cost; ABL2 2x is enough for them)"
+ },
+ "report": "per scale, every arm vs o90 and vs policy: paired differences with one-sided 95% bounds for all five outcomes; edits per episode; compute per move; gate-open share. Not a selection.",
+ "order": "1x: o90, b50, b80, lv0, det, mean -> 2x: g90, gk -> 1x: g90, gk -> audits -> eval/abl3_analysis.py",
+ "chain": "scripts/run_abl3.sh",
+ "files": "results/jenga/abl3_{result.json,analysis.log,chain.log}, outcome_audit_ab3_{1x,2x}.json"
+}
