@@ -240,12 +240,14 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Mon 2 Nov, 15:50 EST";
+const UPDATED = "Mon 2 Nov, 16:05 EST";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
-const RUNNING = [];
+const RUNNING = [
+  { t: "Last ablations: gated edit, and the key ablations at normal noise", n: [0, 10], d: "Pre-registered, 300 episodes each (the ablation set). Does the filter need to be always on, or is editing only when the undo test flags the move enough (2x and 1x)? And do the barrier and worst-case results hold at 1x (barrier 50/80%, level test, one noise-free future, average of futures)? About 6-7 h." },
+];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
