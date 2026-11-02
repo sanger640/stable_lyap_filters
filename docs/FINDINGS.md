@@ -1,7 +1,11 @@
 # Findings ledger (fork monitor + CBF safety filter)
 
 Every entry has a source file. Check this ledger before quoting any comparison. Newest first within each section.
-Last updated 2026-11-02 08:45 EST (RLAB2 done: the fixed red-fall label makes UNISafe a fair, stronger baseline; ours90 still has fewer topples and more strict successes at 2x, ties at 1x; SOS1 STOP: no small-object undo score sees red-block falls; IFD1: H_exempt not supported, fx's extra 1x topples were not exempted as certain damage).
+Last updated 2026-11-02 15:50 EST (ACAL1 done: a normalised barrier fixes irreversible fragility's 1x cost but costs successes at 2x; not a switch candidate, ours90 stays).
+
+## 2026-11-02: ACAL1 (one barrier rule for every value)
+
+- **ACAL1 (pre-registered 2026-11-02 09:08, results/jenga/acal1_protocol.json, commit 95410d1): T_N_1x PASS, T_N_2x FAIL, T_N_better FAIL -> not a switch candidate; ours90 stays.** Calibration (RNG1's 3000 policy moves): ours90's check at gamma 0.1 fails on 7.4% (2x) / 2.3% (1x) of moves; matched gammas recover every hand-picked barrier (ours 0.100, nm 0.103, fq 0.105, seed2 0.135, irr16 0.207, fx 0.218 at 2x, 0.216 at 1x). Gate N PASS (fx fails 1.905x as often as ours at 0.1). Gate D PASS (dev 15000-15099: 2x 5 / 77 / 66, 10 time-outs; 1x 1 / 90 / 72). Fresh episodes 27400-27999 (600, paired, replay-audited), topples / v4 / v4b / red falls / time-outs: 2x ours90 38 / 500 / 411 / 47 / 22, fxn 35 / 472 / 389 / 67 / 36 (topples -0.5 pp [-2.42, +1.42], v4 -4.67 pp [lower -7.87 < -5 -> FAIL], McNemar p 0.021; v4b -3.7 pp, p 0.11; red falls +3.3 pp, p 0.038; time-outs +2.3 pp, p 0.039); 1x ours90 7 / 516 / 428 / 56 / 22, fxn 11 / 515 / 425 / 54 / 25 (topples +0.67 pp, upper 1.76 < 3; v4 -0.17 pp, lower -2.87 > -5 -> PASS; topple discordants 10 vs 6, p 0.45). Edits per episode: 2x ours90 29.7, fxn 32.5; 1x 11.3 vs 10.0 (matching the offline fail share roughly matches the closed-loop edit rate). Reading: the normalised barrier removes the 1x cost GFX1 found (then 10 vs 2 topples, v4 -2.7 pp; now 11 vs 7, -0.2 pp), so the barrier strength, not the target, caused it; but at 2x the irreversible-fragility value now loses successes and drops the red block more often, with no topple gain. Irreversible fragility still does not come free on Jenga. Paper point: the calibration rule recovers every hand-picked gamma label-free. (results/jenga/acal1_result.json, acal1_test.json, acal1_analysis.log, acal1_chain.log)
 
 ## 2026-11-02: RLAB2 / SOS1 / IFD1 (overnight)
 

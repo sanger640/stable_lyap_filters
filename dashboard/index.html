@@ -134,7 +134,7 @@ code { font: 500 12px var(--mono) }
           <div class="kpi"><b>117 → 50</b><span>topples, policy → ours 90%</span></div>
           <div class="kpi"><b>50 vs 74</b><span>topples, ours 90% vs UNISafe</span></div>
         </div>
-        <p class="say">Since then: ablations show the barrier and the worst case over noisy futures carry the effect. With its red-fall label fixed, UNISafe ties ours at normal noise; ours keeps fewer topples and more strict successes under stress, with no labels. Red-block falls stay invisible to the undo test. Next: one barrier rule for every value (running), then a task where some damage is intended (pouring, handover).</p>
+        <p class="say">Since then: ablations show the barrier and the worst case over noisy futures carry the effect. With its red-fall label fixed, UNISafe ties ours at normal noise; ours keeps fewer topples and more strict successes under stress, with no labels. Red-block falls stay invisible to the undo test. A barrier matched across values fixes irreversible fragility at normal noise but costs successes under stress, so ours 90% stays. Next: a task where some damage is intended (pouring, handover).</p>
       </div>
       <div>
         <div id="heroChart"></div>
@@ -240,17 +240,19 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Mon 2 Nov, 09:30 EST";
+const UPDATED = "Mon 2 Nov, 15:50 EST";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
-const RUNNING = [
-  { t: "One barrier rule for every value", n: [2, 6], d: "Pre-registered. Each value gets the barrier at which it rejects the same share of the policy's normal moves as ours does at 90%. Calibration done: it recovers every barrier we had picked by hand (irreversible fragility and the 1.6 s value about 78-79%, the others about 90%). Dev check passed. Now: irreversible fragility at its matched barrier vs ours on 600 new episodes, 2x and 1x (about 5 h)." },
-];
+const RUNNING = [];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "fail", when: "Mon 15:43", title: "One barrier rule for every value: fixes normal noise, costs successes under stress",
+    say: "Pre-registered, 600 new episodes. Each value gets the barrier at which it rejects the same share of the policy's normal moves as ours at 90%; with no labels this recovers every barrier we had picked by hand. At its matched barrier, irreversible fragility now ties ours at 1x (11 vs 7 topples, 515 vs 516 successes), so its earlier 1x cost came from the barrier. At 2x it loses 28 successes (p 0.02) and drops the red block more often (67 vs 47), with no topple gain (35 vs 38). Ours 90% stays.",
+    cap: "successes of 600 (topples: 38, 35, 7, 11)", unit: "", max: 600,
+    rows: [["ours 90%, 2x", 500, "--good"], ["irreversible fragility, matched, 2x", 472, "--bad"], ["ours 90%, 1x", 516, "--good"], ["irreversible fragility, matched, 1x", 515, "--accent"]] },
   { v: "fail", when: "Mon 06:09", title: "Irreversible fragility's extra 1x topples are not 'intended damage'",
     say: "Pre-registered, offline. We re-ran the undo test on the 1-3 moves before every topple. None looked irreversible in most imagined futures, so the target never excused them as intended: in the 9 episodes where only irreversible fragility toppled, 0 qualified (5 needed). Most of those moves look fully reversible. The likelier cause is its looser barrier; a test with a matched barrier is running.",
     cap: "moves before irreversible fragility's 1x topples (%)", unit: "%", max: 100,
@@ -480,7 +482,8 @@ const fmt = (x, u) => (Number.isInteger(x) ? String(x) : x < 10 ? x.toFixed(2) :
 
 $("#stamp").textContent = "Updated " + UPDATED;
 
-$("#run").innerHTML = RUNNING.map(j => `<div class="job"><span class="t">${esc(j.t)}</span><span class="n">${j.n[0]} / ${j.n[1]}</span>
+$("#run").innerHTML = RUNNING.length ? "" : `<p class="say">Nothing running.</p>`;
+$("#run").innerHTML += RUNNING.map(j => `<div class="job"><span class="t">${esc(j.t)}</span><span class="n">${j.n[0]} / ${j.n[1]}</span>
   <div class="bar"><i style="width:${(100 * j.n[0] / j.n[1]).toFixed(1)}%"></i></div><span class="d">${esc(j.d)}</span></div>`).join("");
 
 $("#feed").innerHTML = UPDATES.map(u => `<article class="card">
