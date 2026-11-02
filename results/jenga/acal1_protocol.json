@@ -1,0 +1,28 @@
+{
+ "name": "ACAL1: one barrier strength for every value (normalise the CBF check so gamma means the same strictness), tested on the irreversible-fragility value",
+ "registered": "2026-11-02 09:08 EST, before any ACAL1 number on the full calibration set or any episode exists; user request 2026-11-02 ('normalise V so alpha means the same for every value')",
+ "why": "the check min_j V(z'_j) > (1 - gamma) V(z) means a different strictness for every value: values differ in how much V drops on an ordinary move. GFX1's dev: the flat irreversible-fragility value (value_nsif16_alea.pt) stalls at gamma 0.1 (2x: v4 36, time-outs 59 of 100) and at 0.2 topples more than ours90 at 1x on fresh episodes (10 vs 2). IFD1 found no exemption at work, so the operating point is the remaining explanation.",
+ "smoke": "eval/acal1.py on the first 40 calibration moves (deleted, not used): code runs; ours90's matched gamma comes back near 0.1; fx's check at 0.1 fails on more moves than ours90's. At 1x the 40-move sample had no failing move, hence the 1x fallback rule below.",
+ "normalisation": {
+  "rule": "label-free: each value gets the gamma at which its check fails on the same share of the policy's own moves as ours90's check (value_irr8_alea.pt, gamma 0.1). Grid 0.010-0.600 step 0.001; the gamma whose fail share is closest to ours90's; ties -> middle of the tie. Matched per noise scale (2x and 1x, the scale the filter imagines = the episode's), because ours90 uses 0.1 at both. If fewer than 30 of ours90's calibration moves fail at 1x, every value uses its 2x gamma at 1x (reported).",
+  "moves": "RNG1's 3000 seeded decisions of paired_record_ocl (policy alone, never a test episode; eval/rng1.py calib_select). Each = the filter's first check of the chunk exactly as eval/cbf_filter.py lsf_edit: stored fixed-camera latent, g = (target, first gripper command), the policy's commands plan16[1:3], 8 perceived starts + execution offsets (lsf.Noise at the scale, seeded per decision), one step of model_OIL; the 8 next latents are shared by all values.",
+  "values": "ours = value_irr8_alea.pt (reference); fx = value_nsif16_alea.pt (tested); reported only: fq = value_nsiq16_alea.pt, nm = value_irrnm8_alea.pt, seed2 = value_irr8s2_alea.pt, irr16 = value_irr16_alea.pt",
+  "reported": "per value and scale: matched gamma, fail share at 0.1 / 0.2 / matched gamma, median V now, share V now < 0, median and 90th pct relative drop (V - min V') / V on V > 0; ours90's own matched gamma (should be ~0.1)"
+ },
+ "gate_N": "fx's check at gamma 0.1 fails on >= 1.5x as many of the policy's moves as ours90's (2x). Fail -> STOP: scale does not explain fx's stalls; no closed loop.",
+ "gate_D": "dev 15000-15099, 60 chunks (as GFX1's dev arms), fx at its matched gamma per scale (tags _ac1fxndev{2,1}x), replay-audited: 2x v4 >= 65 and time-outs <= 20; 1x v4 >= 80 and topples <= 5 (GFX1's 'no cost'). Fail -> STOP, no fresh run.",
+ "test": {
+  "episodes": "600 fresh episodes 27400-27999 (no run has used them), 120 chunks, 2x and 1x, paired",
+  "arms": "ours90 (value_irr8_alea.pt, gamma 0.1; tag _ac1o90_{n}) and fxn (value_nsif16_alea.pt at its matched gamma; tag _ac1fxn_{n}); H2H5's ours90 settings otherwise (lfc000, LSF_ALEA_SCALE = noise). No policy arm (cost); filters beat the policy in every earlier test.",
+  "hypotheses": {
+   "T_N_2x / T_N_1x": "non-inferiority of fxn vs ours90: topples one-sided 95% upper < +3 pp AND v4 lower > -5 pp (as GFX1's T_F)",
+   "T_N_better": "superiority at 2x on topples (upper < 0) OR v4 (lower > 0), counted only if T_N_2x holds"
+  },
+  "statistics": "eval/h2h5_analysis.py paired (paired by episode, normal approximation, one-sided 95% bounds, exact McNemar)",
+  "also_reported": "red falls, v4b, time-outs, edits per episode (does matching the offline fail share also match the closed-loop edit rate?)",
+  "claim_rule": "ours90 stays unless fxn passes T_N_2x, T_N_1x and T_N_better; even then a switch needs the user's decision. If T_N_2x and T_N_1x pass, 'with a normalised barrier, irreversible fragility costs nothing on Jenga' may be stated."
+ },
+ "order": "calibration (offline, ~1 min) -> gate N -> dev (gate D) -> fresh: ours90 2x, fxn 2x, ours90 1x, fxn 1x -> audits -> eval/acal1.py test",
+ "chain": "scripts/run_acal1.sh",
+ "files": "results/jenga/acal1_{rows.npz,result.json,grade.log,dev.log,test.json,analysis.log,chain.log}"
+}
