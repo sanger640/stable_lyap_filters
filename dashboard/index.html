@@ -134,7 +134,7 @@ code { font: 500 12px var(--mono) }
           <div class="kpi"><b>117 → 50</b><span>topples, policy → ours 90%</span></div>
           <div class="kpi"><b>50 vs 74</b><span>topples, ours 90% vs UNISafe</span></div>
         </div>
-        <p class="say">Next: the 1.6 s irreversible-fragility value, the no-mask value, value transfer, and the labelled baselines retrained with red-block falls.</p>
+        <p class="say">Since then: ablations show the barrier and the worst case over noisy futures carry the effect; fixed irreversible fragility matches under stress but costs at normal noise. Next: fair labelled baselines (running), a small-object score so red-block falls become visible, and why irreversible fragility costs at normal noise.</p>
       </div>
       <div>
         <div id="heroChart"></div>
@@ -240,19 +240,35 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Fri 30 Oct, 18:52 EDT";
+const UPDATED = "Sun 1 Nov, 20:40 EST";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
 const RUNNING = [
-  { t: "Fixing the irreversible-fragility and no-mask tests", n: [0, 1], d: "Running (your call): irreversible fragility retrained so certain damage is never rated safe (two versions, 1.6 s), every value gets its own barrier on dev episodes, then the best on 600 head-to-head episodes; first a quick offline check of whether the held gripper hides red-block falls." },
-  { t: "Paper ablations and new camera looks", n: [0, 1], d: "Paused after 8 of 12 ablation arms; resumes automatically after the fixes." },
-  { t: "Labelled baselines with red-block falls, label fixed", n: [0, 1], d: "Queued last: the first try was broken by our label; rerun with the audit's red-fall rule and a check that the value has not collapsed before any episode." },
+  { t: "Labelled baselines with red-block falls, label fixed", n: [2, 7], d: "Running: the fixed label works offline (the labelled classifier now catches 92% of red-fall states, was 4%). Training the UNISafe value now; then LSF-as-published, a check that neither value has collapsed, dev, and the same 600 head-to-head episodes." },
+  { t: "A small-object score for red-block falls", n: [0, 1], d: "Queued after the baselines (pre-registered, no hand mask): scores that need 3-5 changed patches instead of ~12, tested offline on 4,679 saved decisions; pass = catch >= 20% of moves before a red fall at <= 2% false alarms, without losing topples." },
+  { t: "Why irreversible fragility costs at normal noise", n: [0, 1], d: "Queued after that (pre-registered): were the moves before its extra 1x topples irreversible in most imagined futures, so the target treated them as intended?" },
 ];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "fail", when: "Sun 04:57", title: "Irreversible fragility, fixed: as good as ours under stress, not at normal noise",
+    say: "Pre-registered, the same 600 head-to-head episodes. With the target fixed (certain damage no longer rated safe) and its own barrier chosen on dev episodes, the 1.6 s irreversible-fragility value matches the confirmed filter at 2x (35 vs 44 topples, 487 vs 477 successes) and has fewer red-block falls than UNISafe. At 1x it fails: 10 topples vs 2 and 16 fewer successes. The 90% filter stays the method.",
+    cap: "neighbour topples of 600 (successes at 2x: 426, 477, 487; at 1x: 537, 521)", unit: "", max: 130,
+    rows: [["policy alone, 2x", 118, "--policy"], ["ours 90%, 2x", 44, "--good"], ["irreversible fragility, 2x", 35, "--accent"], ["ours 90%, 1x", 2, "--good"], ["irreversible fragility, 1x", 10, "--bad"]] },
+  { v: "find", when: "Sun 19:31", title: "Ablations: the barrier and the worst case over noisy futures do the work",
+    say: "Pre-registered, descriptive, 300 episodes each at 2x. Weakening the barrier, dropping it, imagining one noise-free future or averaging the 8 futures all bring topples back to the policy's level. Dropping the safety-actor backup changes nothing (26 vs 27), so it is not needed. Stricter variants (1.6 s value, safety actor, fragility value, tighter threshold) cut topples further but stall in 45-190 of 300 episodes.",
+    cap: "neighbour topples of 300 at 2x (successes: 217, 235, 216, 217, 219, 211, 236, 222)", unit: "", max: 70,
+    rows: [["policy alone", 61, "--policy"], ["ours 90%", 27, "--good"], ["barrier 50%", 60, "--bad"], ["no barrier (level test)", 54, "--bad"], ["one noise-free future", 59, "--bad"], ["average of 8 futures", 58, "--bad"], ["no safety-actor backup", 26, "--good"], ["1.6 s value (45 stalls)", 9, "--accent"]] },
+  { v: "find", when: "Sun 12:24", title: "New camera looks: the filter keeps working",
+    say: "Pre-registered, 300 episodes each at 2x, only the filter's camera image changed (the policy's cameras untouched). Under new lighting, block colours or a moved camera, the filter still beats the policy and is not different from the normal look. The moved camera makes it edit much more (168 edits per episode vs 35).",
+    cap: "neighbour topples of 300 at 2x (successes: 217, 235, 228, 230, 227)", unit: "", max: 70,
+    rows: [["policy alone", 61, "--policy"], ["normal look", 27, "--good"], ["new lighting", 33, "--accent"], ["new colours", 25, "--accent"], ["moved camera", 19, "--accent"]] },
+  { v: "neg", when: "Sun 15:45", title: "The gain from retraining the value in a new world is within seed noise",
+    say: "Pre-registered control for Friday's lighter-blocks test. Retraining the old value with a second seed alone gives 103 topples, between no adaptation (116) and the value retrained in the adapted model (98); retrained vs second seed is not significant (p 0.67). So Friday's 'retrain the value' conclusion should not be claimed; adaptation tests need several seeds.",
+    cap: "neighbour topples of 300, lighter blocks (successes: 125, 165, 172, 187)", unit: "", max: 180,
+    rows: [["policy alone", 165, "--policy"], ["old value", 116, "--wait"], ["old value, second seed", 103, "--accent"], ["value retrained", 98, "--accent"]] },
   { v: "neg", when: "Sat 12:51", title: "Labelled baselines retrained with red-block falls: broken by our label, not usable",
     say: "Adding red-block falls to the labelled failure set made both labelled filters freeze: LSF-as-published never finishes an episode (its value says every state is failure), UNISafe times out in 274 of 600. Fewer red falls only because they rarely extract the block. Cause: our red label also counted blocks that were already lying flat. The original baselines stay; a fixed rerun is queued.",
     cap: "successes of 600 at 2× (original vs retrained)", unit: "", max: 480,
