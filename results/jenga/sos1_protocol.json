@@ -1,0 +1,35 @@
+{
+ "name": "SOS1: a small-object undo score so red-block falls become visible (stage S offline; stage 2 conditional)",
+ "registered": "2026-11-01 20:50 EST, before any run (smoke test on 3 decisions only: shapes, speed and exact reproduction of G0's held-gripper q98 and max, max |d| 0.0 at NL 8 and 16)",
+ "user_request": "2026-11-01: 'ok pre-register it and run after rlab2' (after the small-object score was proposed as priority 1 of the future-work deck)",
+ "motivation": "The undo score r = max_j q98 of per-patch change outside the hand fires only when ~12 of ~600 patches change; a fallen red block changes ~7 visible patches. REDM1 / NM1 / G0: pre-red recall 0-5% at tau 1.3356; G0's single-patch max reaches 19% (0.8 s) / 38% (1.6 s) but flags 6-13% of clean gripper-closed moves. The filter does not reduce red falls in any fresh test.",
+ "code": "eval/sos1.py (calib | cf3 | grade)",
+ "undo_test": "as irrm1 / RNG1 / G0: do the policy's plan for NL control steps, undo back to the current target, hold; vs hold for the same time; 64 draws at 2x perception + execution noise with CF3's seeds; model_OIL; gripper HELD at the current command in the undo branch (as the value's labels, eval/irrm2.py); hand mask of the plan's path. Horizons NL 8 (0.8 s, the confirmed value) and 16 (1.6 s).",
+ "scores": {
+  "per_patch": "d_p = mean over the 8 latent channels of |z_undo - z_hold| on the 28 x 28 grid",
+  "q98": "98th percentile of d_p over outside-hand patches (reference, current)",
+  "q995": "99.5th percentile (~3 patches)",
+  "top5": "mean of the 5 largest outside-hand d_p",
+  "pool2": "max over 2 x 2 windows (stride 1) of the mean d_p, hand patches counted as 0 (adjacent change)",
+  "pool3": "max over 3 x 3 windows, same",
+  "max": "largest outside-hand d_p (reported only; G0 showed it too noisy)",
+  "decision_score": "max over the 64 draws",
+  "nsi_report": "irreversible fragility per score (reported only): score > tau AND the median draw <= tau"
+ },
+ "threshold": "label-free, per score and horizon: conformal 98% (alpha 0.02) of the decision score over the calibration decisions",
+ "calibration": "RNG1's 3000 seeded decisions of paired_record_ocl (policy alone, dev set; eval/rng1.py calib_select), no outcome used",
+ "evaluation": "CF3's 4679 fresh decisions (eval/cf_conf.py select); labels for grading only: pre-red = 1-3 chunks before a red-block fall before extraction (redm1_rows, n = 58), pre-topple = 1-3 chunks before a neighbour topple (not pre-red), clean = neither (gripper closed / open)",
+ "reproduction_check": "q98 and max (held gripper) must equal G0's held{8,16}_mask_{q98,max} on G0's 1657 decisions (max |d| <= 0.01); else the result is reported as not reproduced and stage 2 does not run",
+ "gate_S_per_candidate": {
+  "candidates": "q995, top5, pool2, pool3 at NL 8 and 16",
+  "clean_closed": "share flagged at its tau <= 2%",
+  "clean_open": "share flagged at its tau <= 3%",
+  "pre_red": "recall at its tau >= 20% (q98 today: 0% at 0.8 s, 5% at 1.6 s)",
+  "pre_topple": "recall at its tau >= q98's recall at the same horizon (its own tau) - 2 pp"
+ },
+ "selection_rule": "among passing candidates prefer NL 8 (the 1.6 s value stalls: ABL2 h16 45 time-outs / 300), then the highest pre-red recall, then the highest pre-topple recall. None passes -> STOP, report.",
+ "reported_only": "AUC vs clean (pre-red, pre-topple), recall / false alarms at a threshold matched to 2% clean-closed false alarms, NSI variant per score, q98 agreement with irrm1's r8 (gripper with the plan)",
+ "stage_2_conditional": "If S passes: relabel the value's training decisions with the selected score and tau (irrm2 machinery), check the new labels on the label files (target monotone in harm; share flagged; red-fall eligibility as eval/outcome_audit.py), margin gate, value, start-state value gate (median V >= 0.5, V < 0 on <= 10% of starts), then dev 15000-15099 at the 90% barrier vs o90, then a fresh test. Stage 2's exact gates and hypotheses are registered as an amendment to this file BEFORE any stage-2 training starts.",
+ "order": "after the RLAB2 chain (one GPU pool at a time): calib (2 shards) -> cf3 (2 shards) -> grade. scripts/run_sos1.sh",
+ "outputs": "results/jenga/sos1_{calib,cf3}_<i>.npz, sos1_result.json, sos1_chain.log"
+}
