@@ -134,7 +134,7 @@ code { font: 500 12px var(--mono) }
           <div class="kpi"><b>117 → 50</b><span>topples, policy → ours 90%</span></div>
           <div class="kpi"><b>50 vs 74</b><span>topples, ours 90% vs UNISafe</span></div>
         </div>
-        <p class="say">Since then: ablations show the barrier and the worst case over noisy futures carry the effect. With its red-fall label fixed, UNISafe ties ours at normal noise; ours keeps fewer topples and more strict successes under stress, with no labels. Red-block falls stay invisible to the undo test. A barrier matched across values fixes irreversible fragility at normal noise but costs successes under stress, so ours 90% stays. Next: a task where some damage is intended (pouring, handover).</p>
+        <p class="say">Since then: ablations show the barrier and the worst case over noisy futures carry the effect. With its red-fall label fixed, UNISafe ties ours at normal noise; ours keeps fewer topples and more strict successes under stress, with no labels. Red-block falls stay invisible to the undo test. A barrier matched across values fixes irreversible fragility at normal noise but costs successes under stress, so ours 90% stays. The edit must stay on: editing only when the undo test flags a move lets topples back in. Next: a task where some damage is intended (pouring, handover).</p>
       </div>
       <div>
         <div id="heroChart"></div>
@@ -240,17 +240,19 @@ code { font: 500 12px var(--mono) }
 </div>
 
 <script>
-const UPDATED = "Mon 2 Nov, 16:05 EST";
+const UPDATED = "Tue 3 Nov, 08:05 EST";
 
 // verdict -> chip label and colour. "Fail" / "Pass" = pre-registered test; "Negative" / "Finding" = exploratory
 const V = { pass: ["Pass", "--good"], fail: ["Fail", "--bad"], neg: ["Negative", "--bad"], find: ["Finding", "--accent"], queue: ["Queued", "--wait"] };
 
-const RUNNING = [
-  { t: "Last ablations: gated edit, and the key ablations at normal noise", n: [0, 10], d: "Pre-registered, 300 episodes each (the ablation set). Does the filter need to be always on, or is editing only when the undo test flags the move enough (2x and 1x)? And do the barrier and worst-case results hold at 1x (barrier 50/80%, level test, one noise-free future, average of futures)? About 6-7 h." },
-];
+const RUNNING = [];
 
 // rows: [label, value, colour token]; bars scaled to max; unit appended to values
 const UPDATES = [
+  { v: "find", when: "Tue 07:57", title: "Last ablations: the filter must stay on; at normal noise every variant ties",
+    say: "Pre-registered, descriptive, 300 episodes each. Editing only when the undo test flags the move lets 19 of the 34 prevented topples back in at 2x (46 vs 27, p 0.009): the test flags 4% of moves and misses about half the moves before a topple. The earlier gated filter has the fewest 2x topples (16) but at 1x loses 24 successes and drops the red block more often (p 0.006, 0.03). At 1x the policy alone topples only 7 of 300, so the weaker variants (50/80% barrier, level test, noise-free, average) all tie ours. Ours 90% stays.",
+    cap: "neighbour topples of 300 at 2x (successes: 217, 235, 226, 238)", unit: "", max: 70,
+    rows: [["policy alone", 61, "--policy"], ["ours 90%, always on", 27, "--good"], ["ours 90%, only when flagged", 46, "--bad"], ["earlier gated filter", 16, "--accent"]] },
   { v: "fail", when: "Mon 15:43", title: "One barrier rule for every value: fixes normal noise, costs successes under stress",
     say: "Pre-registered, 600 new episodes. Each value gets the barrier at which it rejects the same share of the policy's normal moves as ours at 90%; with no labels this recovers every barrier we had picked by hand. At its matched barrier, irreversible fragility now ties ours at 1x (11 vs 7 topples, 515 vs 516 successes), so its earlier 1x cost came from the barrier. At 2x it loses 28 successes (p 0.02) and drops the red block more often (67 vs 47), with no topple gain (35 vs 38). Ours 90% stays.",
     cap: "successes of 600 (topples: 38, 35, 7, 11)", unit: "", max: 600,
