@@ -10,7 +10,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 841mm; height: 1189mm; background: var(--bg); color: var(--ink); font-family: "InterP", "DejaVu Sans", sans-serif; }
 body { display: flex; flex-direction: column; }
-header { background: var(--navy); color: #fff; padding: 26.4mm 36mm 21.6mm; display: flex; gap: 24mm; align-items: center; }
+header { background: var(--navy); color: #fff; padding: 20.4mm 36mm 16.8mm; display: flex; gap: 24mm; align-items: center; }
 header .t { flex: 1; }
 header h1 { font-size: 40mm; line-height: 1.08; font-weight: 700; letter-spacing: -0.36mm; }
 header .sub { text-wrap: balance; font-size: 19.2mm; line-height: 1.15; margin-top: 4.8mm; font-weight: 700; color: #dfe7f1; }
@@ -18,13 +18,13 @@ header .au { font-size: 13.2mm; margin-top: 9.6mm; }
 header .af { font-size: 10.2mm; margin-top: 3mm; color: #c9d4e3; }
 header .logo { background: #fff; border-radius: 4.8mm; padding: 7.2mm 9.6mm; }
 header .logo img { width: 144mm; display: block; }
-.banner { background: #fbefe4; border-bottom: 1.44mm solid var(--orange); padding: 13.2mm 36mm; font-size: 16.2mm; line-height: 1.25; font-weight: 700; color: var(--ink); }
+.banner { background: #fbefe4; border-bottom: 1.44mm solid var(--orange); padding: 10.8mm 36mm; font-size: 16.2mm; line-height: 1.25; font-weight: 700; color: var(--ink); }
 .banner span { color: var(--orange); }
-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 19.2mm; padding: 19.2mm 36mm 0; }
-.col { display: flex; flex-direction: column; gap: 16.8mm; min-width: 0; }
+main { flex: 1; padding-bottom: 12mm !important; display: grid; grid-template-columns: 1fr 1fr; gap: 19.2mm; padding: 15.6mm 36mm 0; }
+.col { display: flex; flex-direction: column; gap: 13.2mm; min-width: 0; }
 section h2 { font-size: 16.8mm; font-weight: 700; color: var(--navy); display: flex; align-items: baseline; gap: 6mm; margin-bottom: 7.2mm; }
 section h2 .n { color: var(--orange); }
-p, li { font-size: 11.04mm; line-height: 1.38; }
+p, li { font-size: 10.56mm; line-height: 1.34; }
 p + p { margin-top: 4.8mm; }
 ul { padding-left: 10.8mm; display: flex; flex-direction: column; gap: 3mm; }
 .muted { color: var(--muted); }
@@ -49,7 +49,14 @@ figcaption { font-size: 8.64mm; color: var(--muted); line-height: 1.3; text-alig
 .take { display: grid; grid-template-columns: 1fr 1fr; gap: 8.4mm; }
 .take div { background: var(--card); border-left: 2.4mm solid var(--teal); border-radius: 2.4mm; padding: 7.2mm 8.4mm; font-size: 10.32mm; line-height: 1.32; }
 .take div b { display: block; font-size: 11.28mm; margin-bottom: 1.8mm; color: var(--navy); }
-footer { padding: 12mm 36mm 16.8mm; display: flex; justify-content: space-between; font-size: 9.12mm; color: var(--muted); border-top: 0.48mm solid var(--line); margin-top: 16.8mm; }
+
+.why { display: grid; grid-template-columns: 1fr 1fr; gap: 8.4mm; margin-top: 6mm; }
+.why div { background: var(--card); border-radius: 2.4mm; padding: 7.2mm 8.4mm; font-size: 10.08mm; line-height: 1.32; }
+.why div b { display: block; font-size: 11.04mm; margin-bottom: 1.8mm; }
+.why .st { border-top: 2.4mm solid var(--violet); } .why .de { border-top: 2.4mm solid var(--ink); }
+.bnd { width: 92%; display: block; margin: 3.6mm auto 4.8mm; }
+.note { font-size: 9.6mm; color: var(--muted); line-height: 1.32; }
+footer { padding: 9.6mm 36mm 13.2mm; display: flex; justify-content: space-between; font-size: 9.12mm; color: var(--muted); border-top: 0.48mm solid var(--line); margin-top: 12mm; }
 </style></head>
 <body>
 <header>
@@ -58,85 +65,110 @@ footer { padding: 12mm 36mm 16.8mm; display: flex; justify-content: space-betwee
     <div class="sub">Testing World Models as Intuitive Physics Engines for Robot Safety</div>
     <div class="au">Alikasim Budhwani &nbsp;·&nbsp; Soo Jeon</div>
     <div class="af">Mechanical and Mechatronics Engineering, University of Waterloo &nbsp;·&nbsp; a2budhwa@uwaterloo.ca</div>
+    <div class="af">CoRL 2026 Workshop on Bringing Physics Simulation and World Models Together for Robotic Manipulation · Austin, TX</div>
   </div>
   <div class="logo"><img src="assets/uw_logo.svg" alt="University of Waterloo"></div>
 </header>
-<div class="banner">A world model can predict well on average, even with the right <span>amount</span> of uncertainty, and still miss <span>where</span> physics branches. A safety check needs the second.</div>
+<div class="banner">Where a robot's own small errors decide the outcome, its futures <span>fork</span>. A fork marks the edge of the safe set, and a world model is only useful there if it forks <span>where physics does</span>.</div>
 <main>
 <div class="col">
   <section>
     <h2><span class="n">1</span> The question</h2>
-    <p>Before each action chunk, a robot should ask: <b>could my own small errors change what happens?</b> Picking the middle block, the same command lifts it cleanly or tips a neighbour, depending on a few millimetres of perception and execution error.</p>
+    <p>Before each action chunk, a robot should ask: <b>could my own small errors change what happens?</b> The same command can lift the middle block cleanly or tip a neighbour, depending on a few millimetres of error.</p>
     <div class="row" style="margin-top:7.2mm">
       <figure style="flex:1"><img src="assets/start.png" alt="Start: gripper at the red middle block"><figcaption>the chunk starts</figcaption></figure>
-      <figure style="flex:1"><img src="assets/end_stays.png" alt="Ending where the neighbour stays upright"><figcaption>31 of 64 futures: neighbour stays</figcaption></figure>
-      <figure style="flex:1"><img src="assets/end_topples.png" alt="Ending where the neighbour topples"><figcaption>33 of 64 futures: neighbour topples</figcaption></figure>
+      <figure style="flex:1"><img src="assets/end_stays.png" alt="Ending where the neighbour stays upright"><figcaption>half the imagined futures: neighbour stays</figcaption></figure>
+      <figure style="flex:1"><img src="assets/end_topples.png" alt="Ending where the neighbour topples"><figcaption>the other half: neighbour topples</figcaption></figure>
     </div>
-    <p style="margin-top:7.2mm">The physics is deterministic: all uncertainty is the robot's own. A state is a <b>fork</b> if the outcome splits over futures sampled from that uncertainty.</p>
   </section>
   <section>
-    <h2><span class="n">2</span> The fork probe</h2>
-    <p>Like the human intuitive physics engine: a few rough simulations over an uncertain scene; disagreement means precarious.</p>
+    <h2><span class="n">2</span> A fork is the edge of the safe set</h2>
+    <p>A state is a <b>fork</b> if futures sampled from the robot's own uncertainty split into different outcomes. When one branch is irreversible (a toppled block stays toppled), a fork marks the <b>boundary between safe and unsafe states</b>, with no failure labels.</p>
+    <svg class="bnd" viewBox="0 0 600 300" role="img" aria-label="State space split into a safe region (neighbour stays) and an unsafe region (topples) by a curved boundary; three uncertainty circles: fully safe (no fork), straddling the boundary (fork), fully unsafe (no fork, always fails)">
+        <path d="M0 0 H 285 C 300 70, 245 150, 275 300 H 0 Z" fill="#e3f0f1"/>
+        <path d="M285 0 C 300 70, 245 150, 275 300 H 600 V 0 Z" fill="#f8e9dc"/>
+        <path d="M285 0 C 300 70, 245 150, 275 300" fill="none" stroke="#c96a14" stroke-width="4"/>
+        <rect x="1" y="1" width="598" height="298" fill="none" stroke="#c3cad1" stroke-width="2"/>
+        <text x="14" y="34" font-size="23" font-weight="700" fill="#0e7a86">safe</text>
+        <text x="14" y="60" font-size="18" fill="#0e7a86">neighbour stays</text>
+        <text x="586" y="34" font-size="23" font-weight="700" fill="#c96a14" text-anchor="end">unsafe</text>
+        <text x="586" y="60" font-size="18" fill="#c96a14" text-anchor="end">topples (irreversible)</text>
+        <text x="300" y="52" font-size="17" font-style="italic" fill="#c96a14" transform="rotate(80 300 52)">boundary</text>
+        <g fill="none" stroke="#5d6873" stroke-width="2" stroke-dasharray="7 6">
+          <circle cx="100" cy="150" r="52"/><circle cx="268" cy="150" r="52"/><circle cx="470" cy="150" r="52"/></g>
+        <g fill="#0e7a86"><circle cx="70" cy="140" r="6"/><circle cx="88" cy="172" r="6"/><circle cx="100" cy="120" r="6"/><circle cx="114" cy="155" r="6"/><circle cx="132" cy="134" r="6"/><circle cx="96" cy="148" r="6"/><circle cx="124" cy="180" r="6"/><circle cx="72" cy="165" r="6"/>
+          <circle cx="234" cy="140" r="6"/><circle cx="248" cy="172" r="6"/><circle cx="258" cy="118" r="6"/><circle cx="238" cy="160" r="6"/><circle cx="254" cy="146" r="6"/></g>
+        <g fill="#c96a14"><circle cx="440" cy="140" r="6"/><circle cx="458" cy="172" r="6"/><circle cx="470" cy="120" r="6"/><circle cx="484" cy="155" r="6"/><circle cx="502" cy="134" r="6"/><circle cx="466" cy="148" r="6"/><circle cx="494" cy="180" r="6"/><circle cx="442" cy="165" r="6"/>
+          <circle cx="284" cy="132" r="6"/><circle cx="300" cy="160" r="6"/><circle cx="282" cy="180" r="6"/><circle cx="296" cy="122" r="6"/></g>
+        <g text-anchor="middle"><rect x="40" y="218" width="120" height="50" rx="5" fill="#fff" opacity="0.9"/><rect x="208" y="218" width="120" height="50" rx="5" fill="#fff" opacity="0.9"/><rect x="410" y="218" width="120" height="50" rx="5" fill="#fff" opacity="0.9"/>
+          <text x="100" y="240" font-size="20" font-weight="700" fill="#1b2430">no fork</text><text x="100" y="261" font-size="15" fill="#5d6873">one outcome</text>
+          <text x="268" y="240" font-size="20" font-weight="700" fill="#1b2430">fork</text><text x="268" y="261" font-size="15" fill="#5d6873">futures split</text>
+          <text x="470" y="240" font-size="20" font-weight="700" fill="#1b2430">no fork</text><text x="470" y="261" font-size="15" fill="#5d6873">always fails</text></g>
+      </svg>
+    <p class="note">A proxy, not a failure detector: a fork with two harmless branches is a false alarm, and an action that always fails never splits.</p>
+  </section>
+  <section>
+    <h2><span class="n">3</span> The fork probe</h2>
+    <p>People judge whether a stack will fall by <b>imagining it a few times</b> with slightly different guesses of where things are; if the outcomes disagree, it is precarious (the <b>intuitive physics engine</b> of cognitive science). The probe does the same with the robot's measured errors.</p>
     <div class="pipe">
       <div><div class="stage">camera image</div><img src="assets/start.png" alt="Camera image" style="width:100%;border-radius:2.4mm"></div>
       <div class="arrow">→</div>
-      <div><div class="stage" style="color:var(--teal)">64 plausible scenes</div><img src="assets/start_ghost.png" alt="64 sampled scenes overlaid" style="width:100%;border-radius:2.4mm"></div>
+      <div><div class="stage" style="color:var(--teal)">N plausible scenes</div><img src="assets/start_ghost.png" alt="Sampled scenes overlaid" style="width:100%;border-radius:2.4mm"></div>
       <div class="arrow">→</div>
-      <div class="card"><b>rollout engine</b>chunk + 3&nbsp;s hold<br><br>physics engine<br>or <span style="color:var(--violet)">learned world model</span></div>
+      <div class="card"><b>simulator</b>chunk, then hold<br><br>physics engine<br>or <span style="color:var(--violet)">learned world model</span></div>
       <div class="arrow">→</div>
-      <div><div class="stage" style="color:var(--orange)">64 futures</div><img src="assets/end_ghost.png" alt="64 imagined endings overlaid" style="width:100%;border-radius:2.4mm"></div>
+      <div><div class="stage" style="color:var(--orange)">N futures</div><img src="assets/end_ghost.png" alt="Imagined endings overlaid" style="width:100%;border-radius:2.4mm"></div>
     </div>
     <ul>
-      <li>Samples the robot's <b>measured</b> errors: perception 2.5&nbsp;mm, execution about 3&nbsp;mm.</li>
-      <li>Flags the chunk if the 64 endings are <b>bimodal</b>, not merely different.</li>
-      <li>No task labels, no failure data, no thresholds fit to labels.</li>
+      <li>Samples the robot's <b>measured</b> perception and execution errors.</li>
+      <li>Flags <b>two separate groups</b>, not just spread: futures can vary smoothly with one outcome; a fork has a gap.</li>
+      <li>No task labels, failure data or tuned thresholds.</li>
     </ul>
-  </section>
-  <section>
-    <h2><span class="n">3</span> With a physics engine, it works</h2>
-    <div class="big"><div class="num">88%</div><div class="lab">of forks caught with <b>7%</b> false alarms<br>on unseen layouts, from one camera image<br><span class="muted">(test set C, 156 states; 95% CI 77–94%)</span></div></div>
-    <div class="bars">
-      <div class="bar"><div>pose estimate trusted</div><div class="track"><div class="fill" style="width:67%;background:var(--muted)"></div><span class="v" style="left:67%">67%</span></div></div>
-      <div class="bar"><div>fork probe (block positions)</div><div class="track"><div class="fill" style="width:91%;background:var(--teal)"></div><span class="v" style="left:79%;color:#fff">91%</span></div></div>
-      <div class="bar"><div>fork probe (images only)</div><div class="track"><div class="fill" style="width:88%;background:var(--teal)"></div><span class="v" style="left:76%;color:#fff">88%</span></div></div>
-    </div>
-    <p class="muted" style="font-size:9.6mm">Sampling perception error matters: it is as large as execution error. This is the bar a learned world model must reach.</p>
+    <p style="margin-top:6mm"><b>Physics engine = upper reference.</b> MuJoCo with the true masses and friction is not deployable, but sets the bar: <b>88%</b> of forks caught, <b>7%</b> false alarms, unseen layouts, one camera image.</p>
   </section>
 </div>
 <div class="col">
   <section>
-    <h2><span class="n">4</span> Learned world models miss the branch</h2>
-    <p>Replace the engine with a world model predicting in DINOv2 feature space. Both models below predict <b>3–4× better than a no-motion baseline</b>.</p>
-    <div class="setlab">forks caught · test set C</div>
+    <h2><span class="n">4</span> Forks test a world model's physics</h2>
+    <p>To find forks, a simulator must respond to <b>millimetre changes in state and action</b> as physics does. Average error, dominated by moments where nothing dramatic happens, does not test this: we call it <b>branching fidelity</b>.</p>
+    <p><b>World models</b> predicting in DINOv2 feature space, both with <b>3–4× lower error than assuming nothing moves</b>:</p>
+    <div class="setlab">forks caught · same unseen test set</div>
     <div class="bars">
       <div class="bar"><div>physics engine</div><div class="track"><div class="fill" style="width:88%;background:var(--teal)"></div><span class="v" style="left:76%;color:#fff">88%</span></div></div>
       <div class="bar"><div>world model, stochastic</div><div class="track"><div class="fill" style="width:18%;background:var(--violet)"></div><span class="v" style="left:18%">18%</span></div></div>
       <div class="bar"><div>world model, deterministic</div><div class="track"><div class="fill" style="width:60%;background:var(--ink)"></div><span class="v" style="left:60%">60%</span></div></div>
     </div>
-    <figure style="margin-top:6mm"><img src="assets/fig_futures.png" alt="Scatter plots of 64 futures: real futures form two groups; stochastic model one cloud; deterministic model no gap" style="border:none"></figure>
-    <p style="margin-top:6mm"><b>Right amount, wrong shape.</b> The stochastic model's spread matches reality (0.98×), but only 15% lies along the branch (real: 57%), and it is barely larger on forks than on safe states (1.3× vs 4.8×). Five more generative variants catch at most 3%.</p>
+    <figure style="margin-top:6mm"><img src="assets/fig_futures.png" alt="Scatter plots of the imagined futures: real futures form two groups; stochastic model one cloud; deterministic model stretched with no gap" style="border:none"></figure>
   </section>
   <section>
-    <h2><span class="n">5</span> What closes the gap</h2>
-    <p><b>Uncertain starts, deterministic dynamics</b>, as in the intuitive physics engine: perturb the start, roll it out without noise. <b>Oversample rare branches</b>: find each training scene's rare branch with the same split test, no labels.</p>
-    <div class="setlab">forks caught · two fresh test sets (160 / 152 states)</div>
+    <h2><span class="n">5</span> Why</h2>
+    <p>In physics, futures differ only because starts and commands differ, and diverge only near the boundary.</p>
+    <div class="why">
+      <div class="st"><b>Stochastic: noise in the wrong place</b>Fresh noise at every step: the right <i>amount</i> of spread, but in every direction, almost as much on safe states as on forks (1.3× vs 4.8× in physics).</div>
+      <div class="de"><b>Deterministic: right place, no gap</b>Spread comes only from perturbed inputs, as in physics: along the branch, 32× larger on forks. But squared-error training predicts the average, blurring the branches.</div>
+    </div>
+  </section>
+  <section>
+    <h2><span class="n">6</span> What closes the gap</h2>
+    <p><b>Put the uncertainty where it is</b>, in the robot's knowledge of the scene: perturb the start, roll out deterministically. <b>Train on the forks</b>: the split test finds each training scene's rare branch without labels; we oversample it.</p>
+    <div class="setlab">forks caught · two fresh test sets</div>
     <div class="bars">
       <div class="bar"><div>uncertain starts</div><div class="track"><div class="fill" style="width:72%;background:var(--ink)"></div><span class="v" style="left:52%;color:#fff">72 / 82%</span></div></div>
       <div class="bar"><div>+ rare-branch oversampling</div><div class="track"><div class="fill" style="width:82%;background:var(--orange)"></div><span class="v" style="left:62%;color:#fff">82 / 85%</span></div></div>
     </div>
-    <p class="muted" style="font-size:9.6mm">False alarms 7–11%. A generative model given the same uncertain starts still catches 0%: noise in the dynamics erases the forks.</p>
+    <p class="note">False alarms 7–11%. A generative model given the same uncertain starts still catches 0%: noise in the dynamics erases the forks.</p>
   </section>
   <section>
-    <h2><span class="n">6</span> Takeaways</h2>
+    <h2><span class="n">7</span> Takeaways</h2>
     <div class="take">
-      <div><b>Measure branching fidelity</b>Average error and calibrated spread do not show whether rollouts split where physics splits.</div>
-      <div><b>Put uncertainty in the start</b>Deterministic dynamics from perturbed starts keep the branch; per-step noise smears it.</div>
-      <div><b>Train for rare branches</b>Oversampling each scene's rare branch, found without labels, lifts catch rates.</div>
-      <div><b>A fork is not a failure</b>Pair the flag with a harm signal, such as whether the outcome can be undone, before acting.</div>
+      <div><b>Benchmark branching fidelity</b>Beside average error: does the model fork where physics does?</div>
+      <div><b>Uncertainty in the start</b>Deterministic dynamics from perturbed starts keep the branch; per-step noise smears it.</div>
+      <div><b>Train for rare branches</b>Oversampling them, found without labels, lifts catch rates.</div>
+      <div><b>Pair forks with harm</b>A fork is a proxy: add a harm signal, e.g. can the outcome be undone? Our label-free safety filter builds on this.</div>
     </div>
-    <p class="muted" style="font-size:9.12mm;margin-top:7.2mm">Limitations: simulation, one three-block task; the ground truth uses the same error model the probe samples; single-seed, small world models.</p>
+    <p class="note" style="margin-top:7.2mm">Limitations: simulation, one three-block task; the ground truth uses the same error model the probe samples; small world models, trained once.</p>
   </section>
 </div>
 </main>
-<footer><div>CoRL 2026 Workshop on Bringing Physics Simulation and World Models Together for Robotic Manipulation, Austin, TX</div><div>University of Waterloo · Mechanical and Mechatronics Engineering</div></footer>
+
 </body></html>
