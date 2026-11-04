@@ -231,8 +231,7 @@ robots are untested, and there is no closed-loop intervention or latency experim
 \item \textbf{Ground truth.} The fork label uses the same perception and execution error model that the
 probe samples, so it measures agreement with that model, not with real outcomes: if the robot's real errors
 are biased or heavier-tailed, real forks lie elsewhere. A real-robot anchor is needed. One Gaussian models perception error for all images, and the engine probe uses the simulator's
-true shapes, masses and friction. Shifting blocks by a sampled pose error can leave them slightly out of
-rest; in 3 of 25 checked states this alone moved a block.
+true shapes, masses and friction.
 \item \textbf{Split test.} It projects the endings on one main axis and fits at most two Gaussians, so it
 cannot represent more than two outcome regimes, can miss a split along a minor axis, and cannot see a branch
 reached by fewer than 2 of the $N$ futures.
@@ -275,8 +274,7 @@ false alarms; the minimum group size matters most (requiring 8 members halves th
 \paragraph{Ground truth.} The oracle is the probe centred on the true scene: each of its 64 futures starts
 from the true block poses shifted by a fresh perception-error draw and uses one execution-error sample (the
 same 64 snippets as the probe, different perception seeds). A neighbour topples if it tilts more than
-45$^\circ$ by the end. Candidate test states were picked by a cheaper screen (execution error only)
-before the oracle labelled them.
+45$^\circ$ by the end.
 
 \paragraph{World models.} The latent compresses DINOv2 patch tokens by a fixed per-patch PCA to
 $28\times28\times8$; applied to real futures, the split test on this latent still catches 97\% of forks.

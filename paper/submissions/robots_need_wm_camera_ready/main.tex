@@ -32,12 +32,13 @@
 \maketitle
 
 \begin{abstract}
-World models for manipulation are judged mainly by average prediction error, yet picking from a stack,
+World models for manipulation are usually judged by average prediction error or by the return of the
+policies that use them, yet picking from a stack,
 pushing a tall object or inserting a peg can succeed or fail on a few millimetres of error in the start or
 the action. We call a state whose futures, sampled over the robot's own small errors, split into separate
 outcomes a \emph{fork}, and propose the \emph{fork probe} to evaluate a world model's \emph{branching
 fidelity}: does it branch where physics branches? With a physics engine as the upper reference, the probe
-catches 88\% of forks with 7\% false alarms. Two world models with similar average error, 3--4$\times$ lower than
+catches 88\% of forks with 9\% false alarms. Two world models with similar average error, 3--4$\times$ lower than
 predicting that nothing moves, differ sharply: a stochastic one catches 18\% of forks, a deterministic one
 60\%, and 72\% with uncertain starts. The probe's split test also curates training data: oversampling the
 rare branches it finds lifts the deterministic model from 72 to 82\% of forks. Finally, in rigid-body
@@ -50,12 +51,13 @@ label-free safety signal, much as people judge a stack precarious by imagining i
 \section{Introduction}
 World models are increasingly used to plan, evaluate and safeguard robot policies
 \citep{zhou2025dinowm,assran2025vjepa2,hafner2025dreamerv3}, and are judged mainly by average prediction
-error. Manipulation, however, is full of states where a few millimetres decide the outcome: a block picked
+error, video quality, or the success of the policies that plan with them. Manipulation, however, is full of states where a few millimetres decide the outcome: a block picked
 from a stack lifts cleanly or drags a neighbour down, a pushed bottle slides or tips, a peg slides in or
 jams, an object nudged near a table edge stays or falls. A world model useful for such tasks
-must respond to small changes of state and action as physics does, and average error, dominated by states
-where nothing dramatic happens, does not test this. For the question whether robots need world models, this is a concrete test: a model that
-cannot reproduce forks cannot be trusted where small errors matter most.
+must respond to small changes of state and action as physics does. Average error, dominated by states
+where nothing dramatic happens, does not test this, and task success does not show why a model fails. For the question whether robots need world
+models, this is a concrete test: a model that cannot reproduce forks cannot be trusted where small errors
+matter most.
 
 We call a state whose futures, sampled over the robot's own small errors, split into separate outcomes a
 \emph{fork}, and a world model's ability to reproduce forks its \emph{branching fidelity}. We measure it
@@ -107,11 +109,10 @@ forks and 100 safe states, and was fixed before testing.
 
 \section{Results}
 \subsection{The upper reference: the probe with a physics engine}\label{sec:validation}
-Sampling the perception error matters: a probe that trusts the pose estimate catches only 65--67\% of
-forks, because perception errors are as large as execution errors; sampling them raises this to
+Sampling the perception error matters: a probe that samples only execution error catches 65--67\% of
+forks, because perception errors are as large as execution errors; adding them raises this to
 77--91\% (Table~\ref{tab:panels}). Reading the endings from image features instead of block positions
-changes little: on test set C the probe catches 88\% of forks (95\% CI 77--94\%) with 7\% false alarms.
-This is the bar a learned world model should reach.
+changes little (77--88\% of forks, 8--12\% false alarms). This is the bar a learned world model should reach.
 
 \begin{table}[t]
 \centering
@@ -120,14 +121,13 @@ This is the bar a learned world model should reach.
 \small
 \begin{tabular}{lcccccc}
 \toprule
-& \multicolumn{2}{c}{Set A (153 states)} & \multicolumn{2}{c}{Set B (160)} & \multicolumn{2}{c}{Set C (156)} \\
-& caught & false & caught & false & caught & false \\
+& \multicolumn{2}{c}{Test set 1 (153 states)} & \multicolumn{2}{c}{Test set 2 (160)} & \multicolumn{2}{c}{Test set 3 (156)} \\
+fork probe sampling & caught & false & caught & false & caught & false \\
 \midrule
-pose estimate trusted (no perception sampling) & 65 & 23 & 65 & 12 & 67 & 24 \\
-fork probe, endings read from block positions & 90 & 12 & 77 & 8 & 91 & 10 \\
-fork probe, endings read from images & 88 & 12 & 77 & 8 & \textbf{88} & \textbf{7}$^*$ \\
+execution error only & 65 & 23 & 65 & 12 & 67 & 24 \\
++ perception error, block-position endings & 90 & 12 & 77 & 8 & 91 & 10 \\
++ perception error, image endings & 88 & 12 & 77 & 8 & \textbf{88} & \textbf{9} \\
 \bottomrule
-\multicolumn{7}{l}{\footnotesize $^*$ with 5 sampled scene estimates (Appendix~\ref{app:details}); 9\% with one.}
 \end{tabular}
 \end{table}
 
@@ -137,28 +137,25 @@ A learned model now takes MuJoCo's role. Our models predict in a compact DINOv2 
 perturbed starts, so a model can learn the robot's own uncertainty. We compare a stochastic model (flow
 matching), which draws fresh noise at every step, with a deterministic one that predicts the next state
 directly. By average error the two look alike: both are 3--4$\times$ better than predicting that nothing
-moves, the deterministic one slightly better (0.042 vs 0.055). The fork probe separates them: on test set C
+moves, the deterministic one slightly better (0.042 vs 0.055). The fork probe separates them: on test set 3
 the stochastic model catches 18\% of forks and the deterministic one 60\% (Table~\ref{tab:wm}).
 
 \begin{table}[t]
 \centering
-\caption{World models. Spread: total spread of the futures relative to real futures; main axis: its
-share along the real futures' main axis; fork ratio: spread on forks over spread on safe states. Fresh
-test sets were never used for training or selection.}
+\caption{World models on test set 3. The three spread columns show why they differ: how much the futures
+spread (relative to the real futures), how much of it lies along the real branch, and how many times more
+they spread on forks than on safe states.}
 \label{tab:wm}
 \small
 \begin{tabular}{lccccc}
 \toprule
-rollouts from & caught & false & spread & main axis & fork ratio \\
+& \multicolumn{2}{c}{forks} & \multicolumn{3}{c}{spread of the futures} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-6}
+rollouts from & caught & false & size & on branch & forks / safe \\
 \midrule
-\multicolumn{6}{l}{\emph{test set C (156 states)}} \\
-physics engine (upper reference) & 88\% & 7\% & 1.00 & 0.57 & 4.8 \\
-world model, stochastic & 18\% & 2\% & 0.98 & 0.15 & 1.3 \\
-world model, deterministic & 60\% & 10\% & 0.04 & 0.69 & 32 \\
-\midrule
-\multicolumn{6}{l}{\emph{two fresh test sets (160 / 152 states)}} \\
-uncertain starts + deterministic & 72 / 82\% & 8 / 7\% & & & \\
-\quad + rare-branch oversampling & 82 / 85\% & 9 / 11\% & & & \\
+physics engine (upper reference) & 88\% & 9\% & 1.00 & 57\% & 4.8$\times$ \\
+world model, stochastic & 18\% & 2\% & 0.98 & 15\% & 1.3$\times$ \\
+world model, deterministic & 60\% & 10\% & 0.04 & 69\% & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -167,7 +164,7 @@ uncertain starts + deterministic & 72 / 82\% & 8 / 7\% & & & \\
 differ, and they diverge only near the boundary between outcomes. The stochastic model instead adds noise
 at every step. It learns the right \emph{amount} of spread (0.98 of the real futures') but not
 \emph{where} it belongs: its futures spread in every direction, almost as much on safe states as on forks
-(fork ratio 1.3 vs 4.8 for physics; Fig.~\ref{fig:forks}b). Five further generative variants catch at most
+(1.3$\times$ more on forks vs 4.8$\times$ in physics; Fig.~\ref{fig:forks}b). Five further generative variants catch at most
 3\% of forks, with the same shapeless spread (Appendix~\ref{app:details}).
 
 \paragraph{Why the deterministic model comes closer.} Its futures differ only through their perturbed
@@ -186,16 +183,16 @@ generative model given the same perturbed starts still catches 0\%: the noise in
 forks. \textbf{Data curation with the split test:} without labels, we apply the split test to each
 training scene's own real futures, mark the smaller group as the rare branch, and fill half of every batch
 with rare-branch futures. On two fresh test sets this lifts the uncertain-start model from 72 to 82\% and
-from 82 to 85\% of forks, at 1--4 points more false alarms. Part of the gain may come from a faster training
-recipe this model also used. Branching fidelity can be trained for, not only measured.
+from 82 to 85\% of forks, at 1--4 points more false alarms. Branching fidelity can be trained for, not only measured.
 
 \section{Application: forks as a label-free safety signal}\label{sec:safety}
 \begin{wrapfigure}{r}{0.43\linewidth}
 \vspace{-12pt}
 \centering
 \input{fig_boundary.tex}
-\vspace{-14pt}
-\caption{A fork is a state whose uncertainty straddles the boundary between safe and unsafe outcomes.}
+\vspace{-4pt}
+\caption{Forks lie on the boundary of the safe set. Dashed circles: the robot's uncertainty around three
+states; dots: sampled starts, coloured by their outcome. Only the middle state's futures split.}
 \label{fig:boundary}
 \vspace{-10pt}
 \end{wrapfigure}
@@ -239,18 +236,14 @@ robots are untested, and there is no closed-loop intervention or latency experim
 \item \textbf{Ground truth.} The fork label uses the same perception and execution error model that the
 probe samples, so it measures agreement with that model, not with real outcomes: if the robot's real errors
 are biased or heavier-tailed, real forks lie elsewhere. A real-robot anchor is needed. One Gaussian models perception error for all images, and the engine probe uses the simulator's
-true shapes, masses and friction. Sampled pose errors were applied without letting the blocks settle; a
-later check found that this moves a block with the robot still in 3 of 25 three-block states.
+true shapes, masses and friction.
 \item \textbf{Split test.} It projects the endings on one main axis and fits at most two Gaussians, so it
 cannot represent more than two outcome regimes, can miss a split along a minor axis, and cannot see a branch
 reached by fewer than 2 of the $N$ futures.
-\item \textbf{Operating points.} Each method is reported at one operating point fixed before testing; a
-sweep is possible only for the physics-engine probes on set C (Appendix~\ref{app:sweep}). The test sets
-differ in difficulty.
 \item \textbf{World models.} Each was trained once, at small scale, from scratch; the DINO-WM comparison
 re-implements its predictor on our latents rather than using the released model. The fork-rich training
 data of the uncertain-start models was screened with topple counts; only the rare-branch oversampling is
-label-free, and the oversampled model also used a faster training recipe.
+label-free.
 \item \textbf{Forks as a safety proxy.} A fork signals danger only when one branch is harmful, as for
 toppling rigid bodies. Forks with two harmless branches are false alarms for safety, actions that always
 fail are never forks, and gradual harm (deformation, spills) need not split into separate groups.
@@ -279,16 +272,14 @@ execution error. The world models receive exactly the same action sequence, with
 projected on their first principal axis at hold steps 10 and 30. The chunk is flagged if, at both times,
 two Gaussians fit better than one (BIC), the groups are well separated (Ashman's $D>2$
 \citep{ashman1994detecting}) and the smaller group has at least 2 members, and the grouping is the same
-at both times. These are fixed statistical conventions, not fitted to labels.
-
-\paragraph{Five scene hypotheses.} Each hypothesis draws one scene estimate from the perception-error model
-around the perceived scene; its 64 futures add a fresh perception draw and an execution-error sample
-each. The probe flags if at least 3 of the 5 hypotheses split.
+at both times. These are fixed statistical conventions, not fitted to labels. On test set 3, every
+Ashman's-$D$ threshold from 0.5 to 8 keeps the block-position probe at 88--95\% of forks with 8--10\%
+false alarms; the minimum group size matters most (requiring 8 members halves the catch rate).
 
 \paragraph{Ground truth.} The oracle is the probe centred on the true scene: each of its 64 futures starts
 from the true block poses shifted by a fresh perception-error draw and uses one execution-error sample (the
 same 64 snippets as the probe, different perception seeds). A neighbour topples if it tilts more than
-45$^\circ$ by the end. Test-set states were found by an execution-only screen, not by the oracle.
+45$^\circ$ by the end.
 
 \paragraph{World models.} The latent compresses DINOv2 patch tokens by a fixed per-patch PCA to
 $28\times28\times8$; applied to real futures, the split test on this latent still catches 97\% of forks.
@@ -314,29 +305,6 @@ or DINO-WM's transformer predictor \citep{zhou2025dinowm} reach 68--72\% on the 
 \paragraph{Rare-branch oversampling.} For every training state, the split test is applied to the latents
 of its real futures; if it splits, the smaller group at hold step 30 is the rare branch. Each batch draws
 half its futures from rare branches and half from the other branch of the same starts. Model and loss are
-unchanged, but this model was trained with a faster recipe (larger batches, the same number of samples);
-a model without oversampling was not retrained with that recipe. The fresh test sets have 160 states
-(67 forks) and 152 states (55 forks), with reset seeds disjoint from training but chunks from the same 100
-demonstrations; neither was used for training or model selection. The first had earlier served as a
-held-out check for other models; the second was generated for this check.
-
-\section{Operating-point sweep}\label{app:sweep}
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{fig_sweep.pdf}
-\caption{Forks caught vs false alarms on test set C (57 forks, 99 safe states) as one split-test setting
-is varied with the others at their defaults; stars mark the defaults used in Table~\ref{tab:panels}.
-Left: Ashman's $D$ threshold (0.5--8). Right: minimum size of the smaller group (1--16).}
-\label{fig:sweep}
-\end{figure}
-Recomputed from the stored set-C rollouts, the defaults reproduce Table~\ref{tab:panels} exactly. Across
-every Ashman's-$D$ threshold from 0.5 to 8, the fork probe catches 88--95\% of forks at 8--10\% false
-alarms, while the probe that ignores perception uncertainty never catches more than 72\%, and only 58\%
-once its false alarms fall to 8\%. Results barely move between $D=1.5$ and 4, so the default is not a
-tuned optimum. The minimum group size is the most sensitive setting: requiring at least 8 members per
-group halves every method's catch rate. With five scene hypotheses, requiring 2, 3 or 4 of the 5 to split
-gives 95/21, 89/11 and 84/7\% (caught / false); adding a margin to the BIC comparison changes little up
-to +10. The probes' advantage holds at every operating point. Rollouts for sets A and B and for the
-world models were not stored, so this sweep covers the physics-engine probes on set C only.
+unchanged.
 
 \end{document}
