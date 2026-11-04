@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # KNOCK stage 2 (results/jenga/knock_protocol.json stage2): zero-shot closed loop on seeds 45000-45199, policy vs ours90 vs
-# frag, model_KNK. Waits for the SEED2/TAU3 chain (one GPU worker pool at a time); arms resumable.
+# frag, model_KNK. Waits for the SEED2/TAU3 chain (one GPU worker pool at a time) unless NO_WAIT=1; arms resumable.
 # usage (repo root): nohup bash scripts/run_knock2.sh > results/knock/knock2_chain.log 2>&1 &
 cd "$(dirname "$0")/.."
 PY=/home/corey/wksp/dp_venv/bin/python
 KNK=$PWD/results/program_b/knock_v1/model/model_KNK.pt
 echo "waiting $(date)"
-until grep -qE "analysed|stop|Traceback|missing" results/jenga/seed2tau3_chain.log; do sleep 300; done
+[ -n "$NO_WAIT" ] || until grep -qE "analysed|stop|Traceback|missing" results/jenga/seed2tau3_chain.log; do sleep 300; done
 arm() {  # name mode tag extra-env...
   local name=$1 mode=$2 tag=$3; shift 3
   [ "$(ls results/program_b/policy_rollouts/paired_${mode}${tag}/ep*.json 2>/dev/null | wc -l)" -ge 200 ] && { echo "$name done, skipped"; return; }
