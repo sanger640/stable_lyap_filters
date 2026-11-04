@@ -12,7 +12,7 @@ html, body { width: 841mm; height: 1189mm; background: var(--bg); color: var(--i
 body { display: flex; flex-direction: column; }
 header { background: var(--navy); color: #fff; padding: 20.4mm 36mm 16.8mm; display: flex; gap: 24mm; align-items: center; }
 header .t { flex: 1; }
-header h1 { font-size: 40mm; line-height: 1.08; font-weight: 700; letter-spacing: -0.36mm; }
+header h1 { font-size: 34mm; line-height: 1.08; font-weight: 700; letter-spacing: -0.36mm; }
 header .sub { text-wrap: balance; font-size: 19.2mm; line-height: 1.15; margin-top: 4.8mm; font-weight: 700; color: #dfe7f1; }
 header .au { font-size: 13.2mm; margin-top: 9.6mm; }
 header .af { font-size: 10.2mm; margin-top: 3mm; color: #c9d4e3; }
@@ -74,7 +74,7 @@ footer { padding: 9.6mm 36mm 13.2mm; display: flex; justify-content: space-betwe
 <div class="col">
   <section>
     <h2><span class="n">1</span> Small errors, different outcomes</h2>
-    <p>Picking from a stack, pushing a tall bottle, inserting a peg, nudging an object near an edge: <b>a few millimetres of error in the start or the action decide the outcome.</b> Here the same command lifts the middle block cleanly or tips a neighbour.</p>
+    <p>Picking from a stack, pushing a tall bottle, inserting a peg: <b>a few millimetres of error in the start or the action decide the outcome.</b> Here one command lifts the middle block cleanly or tips a neighbour.</p>
     <div class="row" style="margin-top:7.2mm">
       <figure style="flex:1"><img src="assets/start.png" alt="Start: gripper at the red middle block"><figcaption>the chunk starts</figcaption></figure>
       <figure style="flex:1"><img src="assets/end_stays.png" alt="Ending where the neighbour stays upright"><figcaption>half the futures: neighbour stays</figcaption></figure>
@@ -95,14 +95,14 @@ footer { padding: 9.6mm 36mm 13.2mm; display: flex; justify-content: space-betwe
     </div>
     <ul>
       <li>Samples the robot's <b>measured</b> perception (2.5 mm) and execution (~3 mm) errors.</li>
-      <li>Flags <b>two separate groups</b>, not just spread: futures can vary smoothly with one outcome; a fork has a gap.</li>
+      <li>Flags <b>two separate groups</b>, not just spread: on the endings' main axis, two Gaussians must fit better than one (BIC) with a clear gap (Ashman's D &gt; 2), at least 2 futures in the smaller group, at two hold times.</li>
       <li>No task labels, failure data or tuned thresholds.</li>
     </ul>
     <p style="margin-top:6mm"><b>Upper reference: the physics engine.</b> MuJoCo with the true masses and friction is not deployable, but sets the bar: <b>88%</b> of forks caught, <b>7%</b> false alarms, unseen layouts, one camera image.</p>
   </section>
   <section>
     <h2><span class="n">3</span> Similar error, different branching</h2>
-    <p>Two world models in DINOv2 feature space. By average error they look alike, both <b>3–4× better than predicting that nothing moves</b>. The fork probe separates them.</p>
+    <p>Two world models in DINOv2 feature space. By average error they look alike, both <b>3–4× better than predicting that nothing moves</b>. The fork probe separates them. Same latent for both (it keeps 97% of real forks), so only where the noise enters differs.</p>
     <div class="setlab">forks caught · same unseen test set</div>
     <div class="bars">
       <div class="bar"><div>physics engine</div><div class="track"><div class="fill" style="width:88%;background:var(--teal)"></div><span class="v" style="left:76%;color:#fff">88%</span></div></div>
@@ -155,7 +155,7 @@ footer { padding: 9.6mm 36mm 13.2mm; display: flex; justify-content: space-betwe
           <text x="268" y="240" font-size="20" font-weight="700" fill="#1b2430">fork</text><text x="268" y="261" font-size="15" fill="#5d6873">futures split</text>
           <text x="470" y="240" font-size="20" font-weight="700" fill="#1b2430">no fork</text><text x="470" y="261" font-size="15" fill="#5d6873">always fails</text></g>
       </svg>
-    <p class="note">A proxy, not a failure detector, and not for every task: a fork with two harmless branches is a false alarm, an action that always fails never splits, and gradual harm (spills) need not split. Our follow-up builds a label-free safety filter on this signal.</p>
+    <p class="note">A proxy, not a failure detector: two harmless branches give a false alarm; an action that always fails, or gradual harm (spills), never splits. Our follow-up builds a label-free safety filter on it.</p>
   </section>
   <section>
     <h2><span class="n">7</span> Takeaways</h2>
@@ -165,7 +165,7 @@ footer { padding: 9.6mm 36mm 13.2mm; display: flex; justify-content: space-betwe
       <div><b>Train for rare branches</b>The probe's own split test finds them without labels.</div>
       <div><b>Forks flag the safe-set edge</b>in rigid-body tasks; pair them with a harm signal.</div>
     </div>
-    <p class="note" style="margin-top:7.2mm">Limitations: simulation, one three-block task; the ground truth uses the same error model the probe samples; small world models, trained once.</p>
+    <p class="note" style="margin-top:7.2mm">Limitations: simulation, one three-block task; the probe and its ground truth assume the same measured error model, so a real-robot check is needed; the split test sees at most two groups along one axis; small world models, trained once.</p>
   </section>
 </div>
 </main>

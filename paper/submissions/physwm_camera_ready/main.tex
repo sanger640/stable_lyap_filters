@@ -233,12 +233,13 @@ pretrained world models (V-JEPA 2-AC), other tasks and a real robot.
 \item \textbf{Scope.} Simulation only, one task with three blocks; other tasks, real images and real
 robots are untested, and there is no closed-loop intervention or latency experiment here.
 \item \textbf{Ground truth.} The fork label uses the same perception and execution error model that the
-probe samples, so it measures agreement with that model, not with real outcomes; a real-robot anchor is
-needed. One Gaussian models perception error for all images, and the engine probe uses the simulator's
+probe samples, so it measures agreement with that model, not with real outcomes: if the robot's real errors
+are biased or heavier-tailed, real forks lie elsewhere. A real-robot anchor is needed. One Gaussian models perception error for all images, and the engine probe uses the simulator's
 true shapes, masses and friction. Sampled pose errors were applied without letting the blocks settle; a
 later check found that this moves a block with the robot still in 3 of 25 three-block states.
 \item \textbf{Split test.} It projects the endings on one main axis and fits at most two Gaussians, so it
-cannot represent more than two outcome regimes and can miss a split along a minor axis.
+cannot represent more than two outcome regimes, can miss a split along a minor axis, and cannot see a branch
+reached by fewer than 2 of the $N$ futures.
 \item \textbf{Operating points.} Each method is reported at one operating point fixed before testing; a
 sweep is possible only for the physics-engine probes on set C (Appendix~\ref{app:sweep}). The test sets
 differ in difficulty.
