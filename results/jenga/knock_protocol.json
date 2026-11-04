@@ -28,5 +28,56 @@
   "model": "model_KNK = model_OIL with only the latent dynamics fine-tuned (encoder and start operator G frozen), eval/s2s.py's recipe: 3000 steps, lr x0.3, batches 1/2 knock futures + 1/6 each oil_v1 / cf_v1 / closedloop_v1 (eval/knock_wm.py train)",
   "gate": "stage 1's W1 and W2 with model_KNK on fresh seeds 42100-42139 (not 42000-42039, which judged the zero-shot model). Pass -> model_KNK for stages 2-3. Fail -> stop; report.",
   "reported": "latent prediction error of model_OIL vs model_KNK on knock val futures and on normal Jenga val futures (does the fine-tune forget Jenga?)"
+ },
+ "stage1b_result": {
+  "graded": "2026-11-04 14:28 EST",
+  "states": 162,
+  "forks": 33,
+  "intended_only": 7,
+  "s2": {
+   "auroc_D30_vs_fork": 0.7604,
+   "flag_rate_forks": 0.5758,
+   "flag_rate_nonfork": 0.031,
+   "flag_rate_intended_only": 0.1429
+  },
+  "s1": {
+   "auroc_D30_vs_fork": 0.6016,
+   "flag_rate_forks": 0.3333,
+   "flag_rate_nonfork": 0.0155,
+   "flag_rate_intended_only": 0.0
+  },
+  "W1": true,
+  "W2": true,
+  "pass": true,
+  "latent_error_hold30": {
+   "knock_val": {
+    "OIL": 0.06737,
+    "KNK": 0.01556
+   },
+   "jenga_val": {
+    "OIL": 0.02432,
+    "KNK": 0.02481
+   }
+  },
+  "note": "training first ran out of GPU memory (shared GPU); rerun with FAST_TRAIN_Z_ON_CPU=1 (exact, same values); recipe otherwise as registered",
+  "sources": "results/knock/wm_result_knk.json, knk_error.json, knk_train.log"
+ },
+ "stage2": {
+  "registered": "2026-11-04 14:31 EST",
+  "what": "zero-shot closed loop: Jenga's trained values used unchanged on the knock-down task, world model model_KNK (stage 1b passed). Replaces the 'values on this task's states' stage for now; task-trained values (stage 3) only under their own amendment if this result calls for it.",
+  "episodes": "fresh seeds 45000-45199 (200 paired episodes per arm), 2x execution noise, 15 chunks, eval/knock_rollout.py (policy_rollout's paired runner), PER_EPISODE_SEEDS=1, 6 shards",
+  "arms": {
+   "policy": "expert alone (record mode)",
+   "ours90": "lfc000 always-on CBF gradient edit, value_irr8_alea.pt (plain irreversibility, undo-test labels), LSF_CBF_GAMMA=0.1, LSF_ALEA_SCALE=2, IRR_S=2, CBF_CALIB=cbf_calibration_OIL.json, CBF_WM=model_KNK",
+   "frag": "identical to ours90 except value_lf_alea.pt (label-free fork/fragility value; ABL2's 'frag' arm)"
+  },
+  "outcomes": "per episode from the simulator: red_down (red tilt >= 45 deg at the end), neighbour_toppled (peak neighbour tilt >= 45 deg), success = red_down and no neighbour topple",
+  "hypotheses": {
+   "H_block": "ours90 lowers red_down by >= 10 points vs policy (the plain-irreversibility value objects to the intended topple) - design note prediction",
+   "H_frag": "frag topples fewer neighbours than policy (paired exact McNemar, one-sided p < 0.05) AND lowers red_down by < 10 points",
+   "reported": "success, red_down, neighbour topples per arm; paired differences vs policy with 95% paired-bootstrap intervals (10,000 resamples, seed 0); frag vs ours90 success; edits per episode"
+  },
+  "scheduling": "after the SEED2/TAU3 chain finishes (one GPU worker pool at a time)",
+  "no_audit": "outcomes come straight from the simulator per episode (no replay audit, as stage 0/1)"
  }
 }
