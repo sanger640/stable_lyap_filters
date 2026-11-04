@@ -1,0 +1,22 @@
+{
+ "name": "NOISE1: is the stochastic world model's fork failure caused by WHERE its noise enters?",
+ "registered": "2026-11-04 12:46 EST",
+ "question": "User poster question: did the stochastic (flow-matching) model fail because of the DINO latent or because of where its noise is added? The DINO part is answered by existing data (same latent for both models; the deterministic model on that latent catches forks; split test on real latent futures keeps 97% of forks). This test isolates noise placement with the SAME trained stochastic network (results/program_b/step3/wm_stochastic.pt), changing only how noise is drawn at test time.",
+ "data": "the 60 held-out D0 states (results/program_b/step3/d0, 64 real futures each; 35 real-latent forks), the same states, actions, perturbed starts (diagnostics/pert_*.npz), seeds 20261060+n, readout (persistent_mode_alarm) and describe() as results/jenga/step3_diagnostics.json",
+ "variants": {
+  "S_step": "fresh independent noise per future per step (as published; true start)",
+  "S_step_pert": "fresh independent noise per future per step, perturbed starts",
+  "S_shared": "one noise draw per step SHARED by all 64 futures; futures differ only via their actions (true start)",
+  "S_shared_pert": "shared per-step noise, perturbed starts (futures differ only via actions + starts, as the deterministic model)",
+  "S_zero": "noise = 0 at every step (the flow's noise-free path), true start",
+  "S_zero_pert": "noise = 0, perturbed starts",
+  "reference (from step3_diagnostics.json, recomputed in the same run)": "D, D_pert"
+ },
+ "metrics": "per variant: forks caught = alarms on the 35 real-latent forks; false alarms = alarms on the 25 non-forks; spread ratio to real; main-axis (PC1) share on forks",
+ "decision_rule": {
+  "placement": "noise placement explains the failure if the better of S_shared_pert / S_zero_pert catches >= 2x the forks of S_step_pert AND is within 10 points of D_pert",
+  "dynamics": "the stochastic network's own learned dynamics are (also) insensitive if both S_shared_pert and S_zero_pert stay within 10 points of S_step_pert",
+  "otherwise": "partial: report as mixed"
+ },
+ "status": "descriptive diagnostic on held-out TRAIN states (as step3_diagnostics); no model trained or selected; single GPU process"
+}
