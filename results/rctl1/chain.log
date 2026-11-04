@@ -1,0 +1,15 @@
+waiting Wed Nov  4 02:31:53 PM EST 2026
+start Wed Nov  4 02:31:53 PM EST 2026
+RCTL1 done Wed Nov  4 06:14:36 PM EST 2026
+    main()
+  File "/home/corey/wksp/stable_lyap_filters/eval/recipe_control.py", line 75, in main
+    model, h = train()
+  File "/home/corey/wksp/stable_lyap_filters/eval/recipe_control.py", line 24, in train
+    res = p1d.evaluate(model, False, tau) | {"validation_futures": n_val, "tau": tau, "recipe": "fast (phase1e amendment 1)",
+  File "/home/corey/.local/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/corey/wksp/stable_lyap_filters/eval/phase1d_models.py", line 170, in evaluate
+    return {"R0": g("R0"), "R1": g("R1"), "tau": tau}
+  File "/home/corey/wksp/stable_lyap_filters/eval/phase1d_models.py", line 166, in g
+    return {"caught": float((a & fork).sum() / fork.sum()), "false_alarm": float((a & ~fork).sum() / (~fork).sum()),
+TypeError: ufunc 'bitwise_and' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
