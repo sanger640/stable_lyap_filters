@@ -1,0 +1,21 @@
+{
+ "name": "SEED2 + TAU3: value-seed spread of the 90% filter at nominal physics (2x, 1x) and a looser undo threshold (tau x1.05, 2x)",
+ "registered": "2026-11-04 10:40 EST, before any SEED2 / TAU3 episode, margin or value exists; user request 2026-11-04 ('pre-register and run the seed and tau arms')",
+ "claim_rule": "Descriptive, like ABL2 / ABL3. ours90 (value_irr8_alea.pt, lfc000, gamma 0.1) stays the method whatever these show.",
+ "common": "ABL3's settings (results/jenga/abl3_protocol.json): episodes 26800-27099 (300, paired), model_OIL, PER_EPISODE_SEEDS=1, 120 chunks, HARD_OFF=1, LSF_ALEA_SCALE = IRR_S = the run's noise scale, gamma 0.1; replay audit (eval/outcome_audit.py, AUDIT_NOISE_SCALE = scale). Outcomes topples, v4, v4b, red falls, time-outs; edits per episode. Statistics as eval/h2h5_analysis.py (paired, one-sided 95% bounds, exact McNemar).",
+ "seed2": {
+  "question": "how much do closed-loop results vary with the value-training seed at nominal physics?",
+  "arms": "s2 = value_irr8s2_alea.pt (SEED1's second seed, LSF_SEED=20261031, already trained; gate AS2 reported earlier: LF2 pass, CF3 AUC 0.786 < 0.80, used anyway because the question is seed spread); s3 = value_irr8s3_alea.pt, same recipe with LSF_SEED=20261104, trained in this chain and graded (gate AS3, reported, not blocking). Each at 2x and 1x.",
+  "references": "o90 2x = paired_lfc000_ab2_o90 (ABL2), o90 1x = paired_lfc000_ab3_o90_1x (ABL3); policy = paired_record_h6_{2x,1x}",
+  "report": "per scale: counts for o90 / s2 / s3, paired differences s2 and s3 vs o90 and vs policy, and the across-seed range (max - min) of topples and v4"
+ },
+ "tau3": {
+  "question": "a looser undo threshold: does it cost safety?",
+  "why_1.05_not_1.15": "share of the 59,690 training labels whose residual exceeds tau x s: x0.85 14.65%, x1.0 5.62%, x1.05 2.03%, x1.1 0.26%, x1.15 0.01% (max residual 1.587). x1.15 would leave an essentially empty failure set (TAU1: 0% recall offline), so x1.05 is the informative looser point.",
+  "arm": "t105 = value_irr8t105_alea.pt: margin with IRRM_THR_SCALE=1.05 on the nl8 labels (eval/irrm2.py margin), value with value_irr8_alea.pt's recipe, gate AT105 (reported, not blocking); 2x only (ABL3: at 1x no variant differs)",
+  "reference": "TAU2's t085 (paired_lfc000_tau2_t085) and o90 are reported beside it"
+ },
+ "order": "s2 2x -> s2 1x -> TAU3 margin + value + gate -> t105 2x -> s3 value + gate -> s3 2x -> s3 1x -> audits -> eval/seed2tau3_analysis.py",
+ "chain": "scripts/run_seed2tau3.sh",
+ "files": "results/jenga/seed2tau3_{result.json,analysis.log,chain.log}, outcome_audit_st3_{1x,2x}.json"
+}

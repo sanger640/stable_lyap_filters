@@ -26,6 +26,7 @@ sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
 NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr16_alea.pt", "AN": "value_nsi8_alea.pt", "AR": "value_rng8_alea.pt", "AN2": "value_rngnsi8_alea.pt", "AN16": "value_nsi16_alea.pt",
         "ANM": "value_irrnm8_alea.pt", "AREF": "value_irr8_alea.pt",
         "AS2": "value_irr8s2_alea.pt", "AT085": "value_irr8t085_alea.pt",
+        "AS3": "value_irr8s3_alea.pt", "AT105": "value_irr8t105_alea.pt",   # SEED2 / TAU3 (results/jenga/seed2tau3_protocol.json)
         "ANF": "value_nsif16_alea.pt", "ANQ": "value_nsiq16_alea.pt"}   # ABL2 protocol: SEED1 / TAU2 values, graded as A (reported)
 
 
@@ -87,7 +88,7 @@ def main(which):
         out["M_pass"] = bool(r["held_spearman"] >= 0.6 and (r["held_auc_hat_vs_true_flag"] or 0) >= 0.85)
     else:
         out = lf2(NAME[which][:-3])
-        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF", "AS2", "AT085", "ANF", "ANQ"):
+        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF", "AS2", "AT085", "ANF", "ANQ", "AS3", "AT105"):
             out["cf3_decisions"] = decisions(NAME[which])
             out["A_pass"] = bool(out["LF2_pass"] and out["cf3_decisions"]["decisions_pass"])
         else:
