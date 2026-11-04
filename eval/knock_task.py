@@ -30,7 +30,7 @@ HALF_X, TOP_Z = 0.0125, 0.0375       # block half-depth along x, half-height
 PUSH_BELOW_TOP = 0.010               # site height: 1 cm below the block's top
 PERC_SIGMA = 0.0018                  # per-axis perception sd (2.5 mm 2-D error, Jenga's measured head)
 MAX_CHUNKS = 15                      # 12 s
-DEPTH = float(os.environ.get("KNOCK_DEPTH_MM", 40)) / 1000
+DEPTH = float(os.environ.get("KNOCK_DEPTH_MM", 50)) / 1000          # stage 0 depth rule -> 50 mm
 
 
 def make_sim():
