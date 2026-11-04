@@ -1,0 +1,15 @@
+{
+ "name": "RCTL1: recipe control for rare-branch oversampling (user 2026-11-04: 'yes run the recipe control too after the gpu frees')",
+ "registered": "2026-11-04 13:44 EST",
+ "question": "The paper's 72->82% (panel 7) and 82->85% (panel 6) compare US (rare-branch oversampling, FAST recipe, phase1e amendment 1) with cell E (no oversampling, OLD recipe). Two changes at once. This trains the missing control: E_fast = cell E's uniform sampling of futures with the fast recipe.",
+ "arm": "E_fast: eval/fast_train.py exactly as US (batch 128 x 7,500 steps, lr x2, compile, seed 0, same Phase-1 enriched data, same G start mix, input noise, hold weighting), sampler uniform over all futures (cell E's rule). FAST_TRAIN_Z_ON_CPU=1 (exact). Only the sampler differs from US.",
+ "evaluation": "unchanged code paths: (1) selection set H via phase1d_models.evaluate with E_fast's own validation floor; (2) fresh panel 7 (160 states, 67 forks) and panel 6 (152 states, 55 forks) graded as eval/phase1e_panel7.py / phase1e_panel6.py (G starts from monitor_d draws, R0 primary, R1 beside). US is re-graded in the same pass as a reproducibility check: its R0 counts must equal the stored ones (panel 7 55/8, panel 6 47/11), else the run is reported as not comparable.",
+ "decision_rule (R0, forks caught)": {
+  "oversampling_helps": "US - E_fast >= +5 points on BOTH panels, with false alarms no more than 5 points higher",
+  "recipe_explains": "US - E_fast <= +2 points on BOTH panels",
+  "otherwise": "mixed / inconclusive",
+  "noise_note": "one seed per model; one fork = 1.5 (panel 7) / 1.8 (panel 6) points, so differences under ~5 points are within run-to-run noise"
+ },
+ "paper_action": "if recipe_explains: the paper/poster/guide drop the oversampling claim to 'no clear gain beyond the faster recipe'; if oversampling_helps: replace the confound sentence with the control's numbers; if mixed: report the numbers and keep the caveat",
+ "scheduling": "runs after the SEED2/TAU3 and KNOCK1b chains and NOISE1 release the GPU; single process"
+}
