@@ -99,6 +99,7 @@ class Expert:
 
 
 def episode(ep, depth=None, noise_scale=2.0, record=None, chunk_hook=None):
+    depth = DEPTH if depth is None else depth
     import uncertainty_monitor_dev as um
     snippets = np.load(um.BENCH)["snippets"]; nrng = np.random.default_rng([20261502, ep])
     sim = make_sim()
@@ -143,9 +144,66 @@ def pilot(depth_mm, n, seed0, nz=2.0):
     return s, rows
 
 
+def select():
+    """Registered depth rule (results/jenga/knock_protocol.json stage0.depth_rule)."""
+    res = {}
+    for d in (40, 45, 50, 55):
+        s, rows = pilot(d, 40, 40000, 2.0); res[d] = {**s, "rate": s["success"] / 40}
+    band = [d for d in res if 0.6 <= res[d]["rate"] <= 0.9]
+    pick = max(band) if band else min(res, key=lambda d: min(abs(res[d]["rate"] - 0.6), abs(res[d]["rate"] - 0.9)))
+    out = {"protocol": "results/jenga/knock_protocol.json", "grid": res, "chosen_depth_mm": pick, "in_band": bool(band)}
+    OUT.mkdir(parents=True, exist_ok=True); (OUT / "select.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps({"chosen_depth_mm": pick, "in_band": bool(band)}), flush=True)
+
+
+def fork(n, seed0, control=False):
+    """Registered fork check: 32 copies per chunk with fresh 2x snippets (none in the control), + 20 hold steps."""
+    import uncertainty_monitor_dev as um
+    snippets = np.load(um.BENCH)["snippets"]
+    depth = json.loads((OUT / "select.json").read_text())["chosen_depth_mm"] / 1000
+    pts, eps = [], []
+    for e in range(seed0, seed0 + n):
+        rec = []; res = episode(e, depth, 2.0, record=rec); eps.append(res)
+        sim = make_sim(); rng = np.random.default_rng([20261105, e])
+        try:
+            for r in rec:
+                nb, rd = [], []
+                for c in range(32):
+                    sim.restore(r["snap"]); sim._z0 = None
+                    noise = np.zeros((8, 3)) if control else snippets[rng.integers(len(snippets))] * 2.0
+                    peak = float(tilts(sim)[1:].max())
+                    for j in range(8):
+                        a = r["chunk"][j].copy(); a[:3] -= noise[j]; sim.execute(a); peak = max(peak, float(tilts(sim)[1:].max()))
+                    for _ in range(20):
+                        sim.execute(np.r_[sim.target, 1.0].astype(np.float32)); peak = max(peak, float(tilts(sim)[1:].max()))
+                    nb.append(peak >= TOPPLE_DEG); rd.append(tilts(sim)[0] >= TOPPLE_DEG)
+                pts.append({"ep": e, "k": r["k"], "neigh": int(sum(nb)), "red": int(sum(rd)), "pushed": bool(r["pushed"])})
+        finally:
+            sim.close()
+        print(e, res["success"], [(p["neigh"], p["red"]) for p in pts if p["ep"] == e], flush=True)
+    P = len(pts); anyb = [p for p in pts if p["neigh"] > 0]; fk = [p for p in pts if 0 < p["neigh"] < 32]
+    redany = [p for p in pts if p["red"] > 0]
+    out = {"protocol": "results/jenga/knock_protocol.json", "control": control, "depth_mm": depth * 1000, "episodes": n,
+           "episode_success": sum(r["success"] for r in eps), "episode_neighbour_toppled": sum(r["neighbour_toppled"] for r in eps),
+           "points": P, "points_any_neighbour": len(anyb), "forks": len(fk), "all_bad": sum(p["neigh"] == 32 for p in pts),
+           "fork_share": round(len(fk) / P, 4), "fork_share_of_any": round(len(fk) / max(len(anyb), 1), 4),
+           "red_points_any": len(redany), "red_points_all32": sum(p["red"] == 32 for p in redany),
+           "red_points_some": sum(0 < p["red"] < 32 for p in redany)}
+    if not control:
+        sel = json.loads((OUT / "select.json").read_text())
+        out["bars"] = {"B1_success_in_band": sel["in_band"], "B2_neighbour_topple_ge5pct": out["episode_neighbour_toppled"] / n >= 0.05,
+                       "B3_forks_ge50pct_of_any": out["fork_share_of_any"] >= 0.5, "B4_forks_ge3pct": out["fork_share"] >= 0.03}
+    (OUT / f"fork{'_control' if control else ''}.json").write_text(json.dumps({**out, "points_rows": pts, "episodes_rows": eps}, indent=1))
+    print(json.dumps(out, indent=1), flush=True)
+
+
 if __name__ == "__main__":
     a = sys.argv[1:]
     if a[0] == "pilot":
         s, rows = pilot(float(a[1]), int(a[2]), int(a[3]), float(a[4]) if len(a) > 4 else 2.0)
         for r in rows[:5]:
             print(r)
+    elif a[0] == "select":
+        select()
+    elif a[0] == "fork":
+        fork(int(a[1]), int(a[2]), len(a) > 3 and a[3] == "control")
