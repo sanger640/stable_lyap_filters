@@ -7,6 +7,7 @@
 % Deadline 2026-10-12; notification 10-26; camera-ready 11-06; workshop 11-12. Reciprocal review: one
 % author must review another submission. Archival: TBD. Not double-blind as far as the page says;
 % kept anonymous to be safe. References assumed outside the 4 pages (CoRL convention): check.
+% 2026-11-04: body mirrors the PhysWM camera-ready restructure (evaluation first; safety as an application).
 % Build: cd paper && tectonic -X compile main.tex  (corl_2026.sty, corlabbrvnat.bst: official kit).
 \documentclass{article}
 \usepackage[preprint]{corl_2026}   % official CoRL 2026 style; [preprint] = de-anonymised without the main-conference footer
@@ -14,6 +15,7 @@
 \usepackage[T1]{fontenc}           % Times (ptm) under XeTeX/Tectonic; harmless under pdfLaTeX
 \usepackage{booktabs,amsmath,amssymb,graphicx,xcolor,tikz}
 \usetikzlibrary{positioning,arrows.meta}
+\usepackage{wrapfig}
 \definecolor{inkc}{HTML}{1B2430}\definecolor{mutedc}{HTML}{5D6873}\definecolor{linec}{HTML}{C3CAD1}
 \definecolor{cardc}{HTML}{F2F4F6}\definecolor{tealc}{HTML}{0E7A86}\definecolor{orangec}{HTML}{C96A14}
 \definecolor{violetc}{HTML}{6B55C9}
@@ -30,58 +32,54 @@
 \maketitle
 
 \begin{abstract}
-Before a robot acts, it should know whether its own small errors could change the outcome. People judge
-this with an intuitive physics engine \citep{battaglia2013simulation}: a few rough simulations over an
-uncertain scene, called precarious when the outcomes disagree. We build this check for robots as a
-\emph{fork probe}: it samples the robot's measured perception and execution errors, rolls the intended
-action forward 64 times, and flags it when the futures split into two groups. With a physics engine and
-camera-based perception, the probe catches 88\% of forks on unseen layouts with 7\% false alarms. With a
-learned world model in place of the engine, average accuracy turns out not to be enough: a stochastic
-model that predicts 3--4$\times$ better than a no-motion baseline, with the right overall amount of
-spread, catches only 18\% of forks, because its futures spread in every direction rather than along the
-branch. Deterministic dynamics started from perturbed scenes, as in the intuitive physics engine, reach
-72\% on a fresh test set, and 82\% when training oversamples rare branches, found without labels. World
-models for safe deployment need this \emph{branching fidelity}, which average-error benchmarks do not
-measure.
+World models for manipulation are judged mainly by average prediction error, yet picking from a stack,
+pushing a tall object or inserting a peg can succeed or fail on a few millimetres of error in the start or
+the action. We call a state whose futures, sampled over the robot's own small errors, split into separate
+outcomes a \emph{fork}, and propose the \emph{fork probe} to evaluate a world model's \emph{branching
+fidelity}: does it branch where physics branches? With a physics engine as the upper reference, the probe
+catches 88\% of forks with 7\% false alarms. Two world models with similar average error, 3--4$\times$ lower than
+predicting that nothing moves, differ sharply: a stochastic one catches 18\% of forks, a deterministic one
+60\%, and 72\% with uncertain starts. The probe's split test also curates training data: oversampling the
+rare branches it finds lifts the deterministic model from 72 to 82\% of forks. Finally, in rigid-body
+tasks where one branch is irreversible, a fork marks the edge of the safe set, so the probe doubles as a
+label-free safety signal, much as people judge a stack precarious by imagining it fall.
 \end{abstract}
 
-\keywords{World models, intuitive physics, uncertainty, safe deployment}
+\keywords{World models, physical fidelity, evaluation, intuitive physics}
 
 \section{Introduction}
-Manipulation policies act by committing to short action chunks
-\citep{chi2023diffusion,zhao2023act,black2024pi0}. Before each chunk runs, a safe robot should ask: could
-my own small errors change what happens? When a robot picks a block standing between two others, the same
-command can lift it cleanly or tip a neighbour, depending on a few millimetres of perception and execution
-error. Existing monitors flag inputs a model has not seen \citep{seo2025uncertainty,xu2025failure}; this
-\emph{physical} uncertainty remains even for a perfect model.
+World models are increasingly used to plan, evaluate and safeguard robot policies
+\citep{zhou2025dinowm,assran2025vjepa2,hafner2025dreamerv3}, and are judged mainly by average prediction
+error. Manipulation, however, is full of states where a few millimetres decide the outcome: a block picked
+from a stack lifts cleanly or drags a neighbour down, a pushed bottle slides or tips, a peg slides in or
+jams, an object nudged near a table edge stays or falls. A world model useful for such tasks
+must respond to small changes of state and action as physics does, and average error, dominated by states
+where nothing dramatic happens, does not test this. For the question whether robots need world models, this is a concrete test: a model that
+cannot reproduce forks cannot be trusted where small errors matter most.
 
-People judge it with an \emph{intuitive physics engine}: a few rough simulations over an uncertain scene,
-whose disagreement signals precariousness
-\citep{battaglia2013simulation,smith2013sources,sanborn2013reconciling}. We build the same check for
-robots. It needs a model of the robot's own uncertainty and a simulator; outside simulation, the
-simulator must be a learned world model. This turns the debate on whether robots need world models into a
-concrete test: do the model's rollouts split where the real physics splits? We find that they often do
-not, even when the model predicts well on average. We call the missing property \emph{branching
-fidelity}.
+We call a state whose futures, sampled over the robot's own small errors, split into separate outcomes a
+\emph{fork}, and a world model's ability to reproduce forks its \emph{branching fidelity}. We measure it
+with a \emph{fork probe} that imagines many futures under sampled errors and tests whether they split.
 
-\paragraph{Contributions.} (1) A \emph{fork probe}: a pre-execution check that pushes the robot's
-measured uncertainty through a simulator and flags actions whose futures split, with no task labels or
-tuned thresholds (Sec.~\ref{sec:probe}). (2) With a physics engine and camera perception, it catches 88\%
-of forks on unseen layouts, the bar for a world model (Sec.~\ref{sec:validation}). (3) Learned world
-models: generative ones fail despite good average accuracy, deterministic ones come closer, and
-oversampling rare branches in training narrows the gap further (Sec.~\ref{sec:wm}).
+\paragraph{Contributions.} (1) The fork probe, an evaluation of branching fidelity to report beside average
+error, validated with a physics engine as the upper reference (Sec.~\ref{sec:probe}, \ref{sec:validation}).
+(2) A benchmark showing that world models with similar average error differ sharply in branching fidelity,
+and why (Sec.~\ref{sec:wm}). (3) Fork-aware training: the probe's split test curates training data and
+improves branching fidelity (Sec.~\ref{sec:train}). (4) Forks as a label-free safety signal in rigid-body
+manipulation, with its limits (Sec.~\ref{sec:safety}).
 
 \section{The fork probe}\label{sec:probe}
 \paragraph{Task.} A simulated Franka Panda (MuJoCo) must pick the middle of three upright blocks without
-toppling its neighbours (Fig.~\ref{fig:forks}a). A policy commits to 8-step action chunks; the probe
-treats it as a black box and sees only the chunk, one camera image and the robot's joint state.
+toppling its neighbours (Fig.~\ref{fig:forks}a), a small instance of picking from a stack. A policy commits
+to 8-step action chunks \citep{chi2023diffusion,zhao2023act,black2024pi0}; the probe treats it as a black
+box and sees only the chunk, one camera image and the robot's joint state.
 
 \begin{figure}[t]
 \centering
 \input{fig_probe.tex}\\[1pt]
 \includegraphics[width=0.93\linewidth]{fig_futures.pdf}
-\caption{(a) The fork probe on one held-out state (exact renders; images average all 64 samples).
-(b) The 64 futures of that state, projected on the real futures' two main axes. The real futures form
+\caption{(a) The fork probe on one held-out state ($N=64$; exact renders, images average all samples).
+(b) The $N$ futures of that state, projected on the real futures' two main axes. The real futures form
 two groups (the neighbour stays or topples). The stochastic world model's futures form one cloud, so no
 fork is detected; the deterministic model's futures stretch along the branch but leave no gap.}
 \label{fig:forks}
@@ -89,33 +87,31 @@ fork is detected; the deterministic model's futures stretch along the branch but
 
 \paragraph{Forks.} The simulated physics is deterministic, so all uncertainty is the robot's own: its
 error in perceiving the block poses (2.5\,mm, measured on held-out images) and in executing commands
-(about 3\,mm, measured from tracking). A state is a \emph{fork} if the outcome splits over 64 futures
-sampled from this uncertainty: here, if between 2 and 62 of them topple a neighbour. A fork is not a
-failure: every branch may be acceptable, and an action that always fails is not a fork. The probe asks
-only whether errors the robot cannot control decide the outcome; a task-level check is still needed
-(Sec.~\ref{sec:conclusion}).
+(about 3\,mm, measured from tracking). A state is a fork if the outcome splits over $N=64$ futures sampled
+from this uncertainty: here, if between 2 and 62 of them topple a neighbour.
 
-\paragraph{Probe.} The probe imagines 64 versions of the chunk. Each starts from the perceived scene
+\paragraph{Probe.} The probe imagines $N$ versions of the chunk. Each starts from the perceived scene
 shifted by a sampled perception error and runs the chunk with a sampled execution error; the robot then
-holds still for 30 steps so the outcome settles. The probe flags the chunk if the 64 endings fall into two
-separate groups, a test of bimodality rather than of whether the endings differ, using fixed statistical
-rules instead of thresholds fit to labels (Appendix~\ref{app:details}). The simulator can be swapped: our
-reference is MuJoCo given the blocks' true shapes, masses and friction, which a real robot lacks; the
-alternative is a learned world model (Sec.~\ref{sec:wm}).
+holds still for 30 steps so the outcome settles. The probe flags the chunk if the $N$ endings fall into
+two separate groups. We test for separate groups (bimodality), not for large spread: futures can differ
+smoothly without a change of outcome (a block sliding a few millimetres further), whereas a fork is a
+qualitative split with a gap, and a spread threshold would need tuning per task. The split test uses
+fixed statistical conventions, not thresholds fit to labels (Appendix~\ref{app:details}). The rollout
+engine can be swapped: MuJoCo given the blocks' true shapes, masses and friction, which a real robot does
+not know, is the \emph{upper reference}; a learned world model is the system under test.
 
 \paragraph{Ground truth.} One real outcome cannot grade the probe, since a fragile action may succeed by
-luck. An oracle runs the 64 futures from the \emph{true} scene in exact physics and labels forks as above;
+luck. An oracle runs the $N$ futures from the \emph{true} scene in exact physics and labels forks as above;
 two independent oracle runs agree on 99\% of states. Each test set has unseen block layouts, about 60
 forks and 100 safe states, and was fixed before testing.
 
 \section{Results}
-\subsection{With a physics engine, the probe works}\label{sec:validation}
+\subsection{The upper reference: the probe with a physics engine}\label{sec:validation}
 Sampling the perception error matters: a probe that trusts the pose estimate catches only 65--67\% of
 forks, because perception errors are as large as execution errors; sampling them raises this to
 77--91\% (Table~\ref{tab:panels}). Reading the endings from image features instead of block positions
 changes little: on test set C the probe catches 88\% of forks (95\% CI 77--94\%) with 7\% false alarms.
-This is the bar a learned world model must reach.
-
+This is the bar a learned world model should reach.
 
 \begin{table}[t]
 \centering
@@ -135,14 +131,14 @@ fork probe, endings read from images & 88 & 12 & 77 & 8 & \textbf{88} & \textbf{
 \end{tabular}
 \end{table}
 
-\subsection{Learned world models: average accuracy is not branching fidelity}\label{sec:wm}
-A learned model must now take MuJoCo's role: given one image and the 64 perturbed chunks, do its rollouts
-split where physics splits? Our models predict in a compact DINOv2 feature space
-\citep{oquab2024dinov2} (Appendix~\ref{app:details}). Each training image comes with 8 real futures from
-perturbed starts, so a stochastic model can learn the robot's own uncertainty. We compare a stochastic
-model, which samples fresh noise at every step, with a deterministic one. Both predict 3--4$\times$
-better than a no-motion baseline, yet on test set C the stochastic model catches 18\% of forks and the
-deterministic one 60\% (Table~\ref{tab:wm}).
+\subsection{Benchmark: similar error, different branching fidelity}\label{sec:wm}
+A learned model now takes MuJoCo's role. Our models predict in a compact DINOv2 feature space
+\citep{oquab2024dinov2} (Appendix~\ref{app:details}); each training image comes with 8 real futures from
+perturbed starts, so a model can learn the robot's own uncertainty. We compare a stochastic model (flow
+matching), which draws fresh noise at every step, with a deterministic one that predicts the next state
+directly. By average error the two look alike: both are 3--4$\times$ better than predicting that nothing
+moves, the deterministic one slightly better (0.042 vs 0.055). The fork probe separates them: on test set C
+the stochastic model catches 18\% of forks and the deterministic one 60\% (Table~\ref{tab:wm}).
 
 \begin{table}[t]
 \centering
@@ -156,7 +152,7 @@ test sets were never used for training or selection.}
 rollouts from & caught & false & spread & main axis & fork ratio \\
 \midrule
 \multicolumn{6}{l}{\emph{test set C (156 states)}} \\
-physics engine (real futures) & 88\% & 7\% & 1.00 & 0.57 & 4.8 \\
+physics engine (upper reference) & 88\% & 7\% & 1.00 & 0.57 & 4.8 \\
 world model, stochastic & 18\% & 2\% & 0.98 & 0.15 & 1.3 \\
 world model, deterministic & 60\% & 10\% & 0.04 & 0.69 & 32 \\
 \midrule
@@ -167,54 +163,74 @@ uncertain starts + deterministic & 72 / 82\% & 8 / 7\% & & & \\
 \end{tabular}
 \end{table}
 
-\paragraph{Why the stochastic model fails.} It has the right \emph{amount} of spread but the wrong
-\emph{shape}: its futures spread equally in every direction, almost as much on safe states as on forks
-(Fig.~\ref{fig:forks}b). The deterministic model's spread is tiny but lies along the branch and is
-32$\times$ larger on forks. Five further generative variants catch at most 3\% of forks, with the same
-shapeless spread (Appendix~\ref{app:details}).
+\paragraph{Why the stochastic model fails.} In physics, futures differ only because starts and commands
+differ, and they diverge only near the boundary between outcomes. The stochastic model instead adds noise
+at every step. It learns the right \emph{amount} of spread (0.98 of the real futures') but not
+\emph{where} it belongs: its futures spread in every direction, almost as much on safe states as on forks
+(fork ratio 1.3 vs 4.8 for physics; Fig.~\ref{fig:forks}b). Five further generative variants catch at most
+3\% of forks, with the same shapeless spread (Appendix~\ref{app:details}).
 
-\paragraph{Uncertain starts instead of noisy dynamics.} As in the intuitive physics engine, uncertainty
-can enter through the start instead: a learned operator perturbs the start by sampled perception error,
-and a deterministic model rolls it out. Trained on fork-rich data, this catches 72\% of forks on a fresh
-test set and plateaus there: longer training, more data, a frame history or DINO-WM's transformer
-predictor \citep{zhou2025dinowm} all land at 68--72\%. A generative model given the same perturbed
-starts still catches 0\%, so the noise in its dynamics is what erases the forks.
+\paragraph{Why the deterministic model comes closer.} Its futures differ only through their perturbed
+inputs, so, as in physics, its spread comes from the sensitivity of its dynamics: tiny overall, but along
+the branch and 32$\times$ larger on forks. Its weakness is the opposite one: trained with squared error,
+it predicts the average of the outcomes it has seen, so near a fork its futures stretch toward both
+branches without a gap (Fig.~\ref{fig:forks}b), and rare branches get averaged away.
 
-\paragraph{Rebalancing rare branches.} Toppling branches are rare in training and get averaged away.
-Without labels, we apply the split test to each training scene's own real futures, mark the smaller
-group as the rare branch, and fill half of every batch with rare-branch futures. On two fresh test sets
-this lifts the uncertain-start model from 72 to 82\% and from 82 to 85\% of forks: training can target
-branching fidelity, not only measure it.
+\subsection{Fork-aware training}\label{sec:train}
+The probe's ingredients also serve as a training recipe. \textbf{Uncertain starts:} uncertainty should
+enter where it really is, in the robot's knowledge of the scene, not in the physics. A learned operator
+perturbs the start by sampled perception error and the deterministic model rolls each start out. Trained
+on fork-rich data, this catches 72\% of forks on a fresh test set and plateaus there: longer training, more
+data, a frame history or DINO-WM's transformer predictor \citep{zhou2025dinowm} all land at 68--72\%. A
+generative model given the same perturbed starts still catches 0\%: the noise in its dynamics erases the
+forks. \textbf{Data curation with the split test:} without labels, we apply the split test to each
+training scene's own real futures, mark the smaller group as the rare branch, and fill half of every batch
+with rare-branch futures. On two fresh test sets this lifts the uncertain-start model from 72 to 82\% and
+from 82 to 85\% of forks, at 1--4 points more false alarms. Part of the gain may come from a faster training
+recipe this model also used. Branching fidelity can be trained for, not only measured.
+
+\section{Application: forks as a label-free safety signal}\label{sec:safety}
+\begin{wrapfigure}{r}{0.43\linewidth}
+\vspace{-12pt}
+\centering
+\input{fig_boundary.tex}
+\vspace{-14pt}
+\caption{A fork is a state whose uncertainty straddles the boundary between safe and unsafe outcomes.}
+\label{fig:boundary}
+\vspace{-10pt}
+\end{wrapfigure}
+The probe mirrors how people judge physical risk. In the \emph{intuitive physics engine} account of
+cognitive science \citep{battaglia2013simulation,smith2013sources,sanborn2013reconciling}, people decide
+whether a stack will fall by simulating it in their heads a few times, each with slightly different
+guesses of where things are, and call it precarious when the outcomes disagree \citep{zhou2023mental}. The fork probe is this check with measured
+errors in place of guesses. In rigid-body manipulation one branch is often irreversible: a toppled block
+stays toppled, a dropped part stays dropped. A fork then marks a state one small error away from the
+unsafe set, i.e.\ the boundary of the safe set (Fig.~\ref{fig:boundary}), found without failure labels.
+Our three-block pick represents such tasks (stacking, picking from clutter). The signal is a proxy, not a failure detector, and does not suit every task: both branches
+of a fork may be harmless (a pushed ball rolls left or right), an action that always fails lies inside the
+unsafe set and never splits, and gradual harm (spills, deformation) need not split at all. A robot should
+pair the flag with a harm signal, e.g.\ whether the outcome can be undone. Our follow-up work builds a label-free
+safety filter for manipulation policies on this signal.
 
 \section{Related work}
-\paragraph{Simulation under uncertainty.} Robotics runs Monte Carlo rollouts over pose, friction or model
-parameters to score grasps and pushes \citep{mahler2017dexnet,agboh2018pushing}, to build safety filters
-\citep{johansson2025safety,wang2026manidreams}, or to judge whether blocks stay standing
-\citep{cannizzaro2024cobra,zhou2023mental,lerer2016learning}; \citet{goyal2026stability} measure offline
-how fast perturbed chunks diverge, and \citet{zapolsky2016particle} find divergent traces to validate
-plans. These predict a task outcome, a stability label or a divergence rate. Our probe
-runs before every chunk, with measured errors and an automatic split test: a Monte Carlo test of
-closeness to a basin boundary \citep{menck2013basin}.
-\paragraph{Monitors and world models.} Safety filters and failure detectors use failure labels, epistemic
-or policy uncertainty \citep{nakamura2025generalizing,seo2025uncertainty,xu2025failure,agia2024unpacking}:
-what a model does not know, not whether the physics is at a branch. Learned world models
+Robotics runs Monte Carlo rollouts over pose, friction or model parameters to score grasps and pushes
+\citep{mahler2017dexnet,agboh2018pushing}, build safety filters \citep{johansson2025safety,wang2026manidreams}
+or judge whether blocks stay standing \citep{cannizzaro2024cobra,lerer2016learning};
+\citet{goyal2026stability} and \citet{zapolsky2016particle} measure how perturbed rollouts diverge. These
+predict a task outcome, a stability label or a divergence rate; our probe is a per-chunk Monte Carlo test
+of closeness to a basin boundary \citep{menck2013basin}. Learned world models
 \citep{sanchezgonzalez2020learning,allen2023fignet,zhou2025dinowm,assran2025vjepa2,hafner2025dreamerv3}
-struggle with stiff contact \citep{parmar2021fundamental} and show weak physical grounding in audits
-\citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}. \citet{yu2026evaluated} evaluate
-branches created by different actions; ours arise from one action under small, unavoidable errors.
-Stochastic and ensemble models \citep{chua2018pets,lakshminarayanan2017ensembles} are judged by
-likelihood, calibration or return, none of which checks where their spread splits.
+struggle with stiff contact \citep{parmar2021fundamental} and physical grounding
+\citep{bear2021physion,motamed2026physicsiq,yang2026mirabench}; \citet{yu2026evaluated} evaluate branches
+created by different actions, ours arise from one action under small errors. Stochastic and ensemble models
+\citep{chua2018pets,lakshminarayanan2017ensembles} are judged by likelihood, calibration or return. Safety filters and failure detectors use failure labels, epistemic
+or policy uncertainty \citep{nakamura2025generalizing,seo2025uncertainty,xu2025failure,agia2024unpacking},
+not whether the physics is at a branch.
 
 \section{Conclusion}\label{sec:conclusion}
-A robot can judge fragility as people do, by pushing its own measured uncertainty through a rough
-simulator and checking whether the futures split. A physics engine sets the bar at 88\% of forks from
-one image. Learned world models fall short despite good average accuracy; deterministic dynamics with
-uncertain starts recover much of the gap, and rare-branch oversampling more, so benchmarks should measure
-branching fidelity beside average error. Because a fork is not a failure, a robot should combine the flag
-with a task- or harm-level signal before acting, for example by re-perceiving, slowing down or choosing
-a less fragile action. Whether an outcome can be undone is one label-free signal of harm; our follow-up
-work uses it as the failure set of a safety filter on a policy's actions. Next: pretrained world models
-such as V-JEPA 2-AC, and a real robot.
+World models for manipulation should branch where physics branches. The fork probe measures this where
+average error cannot, and its split test helps train for it; benchmarks should report both. Next:
+pretrained world models (V-JEPA 2-AC), other tasks and a real robot.
 
 \section*{Limitations}
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
@@ -234,8 +250,9 @@ differ in difficulty.
 re-implements its predictor on our latents rather than using the released model. The fork-rich training
 data of the uncertain-start models was screened with topple counts; only the rare-branch oversampling is
 label-free, and the oversampled model also used a faster training recipe.
-\item \textbf{Forks are not failures.} Every branch of a fork may be acceptable, and an action that always
-fails is never a fork.
+\item \textbf{Forks as a safety proxy.} A fork signals danger only when one branch is harmful, as for
+toppling rigid bodies. Forks with two harmless branches are false alarms for safety, actions that always
+fail are never forks, and gradual harm (deformation, spills) need not split into separate groups.
 \end{itemize}
 
 \paragraph{AI usage statement.} Generative AI tools (Claude) assisted with code, figures, literature
@@ -277,7 +294,7 @@ $28\times28\times8$; applied to real futures, the split test on this latent stil
 The dynamics are a convolutional network with six residual blocks conditioned on the action. One model
 step covers two simulator actions (0.2\,s), so the 8-step chunk plus the 30-step hold is 19 model steps;
 the quoted prediction error is the open-loop latent error at the end of this horizon (0.055 stochastic,
-0.042 deterministic, 0.176 for a no-motion baseline). The stochastic model is a flow-matching transition
+0.042 deterministic, 0.176 for predicting that nothing moves, i.e.\ copying the current latent). The stochastic model is a flow-matching transition
 that draws fresh noise at every step; the deterministic one predicts the next latent directly. Each
 training image comes with 8 real futures whose starts were perturbed by sampled perception error.
 
