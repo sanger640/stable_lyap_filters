@@ -21,8 +21,13 @@ def train():
     n = sum(len(s["z"]) for s in states)
     model = ft.train("E_fast", P1E, states, lambda rng, b: rng.integers(n, size=b))
     tau, n_val = p1d.floor(model, False)
-    res = p1d.evaluate(model, False, tau) | {"validation_futures": n_val, "tau": tau, "recipe": "fast (phase1e amendment 1)",
-                                            "possibly_undertrained": ft.undertrained(json.loads((P1E / "model_E_fast_log.json").read_text()))}
+    res = {"validation_futures": n_val, "tau": tau, "recipe": "fast (phase1e amendment 1)",
+           "possibly_undertrained": ft.undertrained(json.loads((P1E / "model_E_fast_log.json").read_text()))}
+    import phase1_models as p1
+    if any((p1.OUT / "h").glob("ep*.npz")):
+        res |= p1d.evaluate(model, False, tau)
+    else:                                   # deviation (protocol amendment_1): the H states are no longer on disk
+        res["H"] = "not evaluated: results/program_b/phase1/h is missing"
     return model, res
 
 
