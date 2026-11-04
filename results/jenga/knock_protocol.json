@@ -80,5 +80,32 @@
   "scheduling": "after the SEED2/TAU3 chain finishes (one GPU worker pool at a time)",
   "no_audit": "outcomes come straight from the simulator per episode (no replay audit, as stage 0/1)",
   "scheduling_note": "2026-11-04 17:45 EST: user asked to run stage 2 before the rest of the SEED2/TAU3 chain. The chain driver was stopped after launching its t105_2x arm (that arm finishes as registered); stage 2 starts when those workers exit; the chain is then restarted (resumable, finished steps skipped). No change to stage 2's design."
+ },
+ "stage2_result": {
+  "analysed": "2026-11-04 18:30 EST",
+  "paired_episodes": 200,
+  "arms": {
+   "policy": {
+    "success": 139,
+    "red_down": 200,
+    "neighbour_toppled": 61
+   },
+   "ours90": {
+    "success": 95,
+    "red_down": 95,
+    "neighbour_toppled": 0,
+    "edits_per_episode": 9.26
+   },
+   "frag": {
+    "success": 34,
+    "red_down": 35,
+    "neighbour_toppled": 1,
+    "edits_per_episode": 11.96
+   }
+  },
+  "H_block": "SUPPORTED (ours90 red_down -52.5 points, 95% CI -59.5 to -45.5)",
+  "H_frag": "FAIL (neighbour topples 1 vs 61, p < 1e-4, but red_down -82.5 points, CI -87.5 to -77.0)",
+  "descriptive_after": "In the blocked episodes the red block is never touched (final tilt < 5 deg in 101/105 ours90 and 162/165 frag), the first edit is at chunk 0 and the filter edits about every chunk (median 11 / 13 edits), median min V 0.34 / 0.36: the zero-shot Jenga values rate the knock-down approach itself as unsafe, before any contact. Both filters remove neighbour topples (61 -> 0 / 1); ours90 succeeds whenever the red block goes down (95/95). Reading: zero-shot transfer of Jenga-trained values blocks the intended irreversible change, but the mechanism is out-of-distribution caution from the first decision, not a judgement about the red topple; the fork value is more cautious, not less. Task-trained values (stage 3) would be needed to test H_frag fairly.",
+  "sources": "results/knock/stage2_result.json, stage2_analysis.log, knock2_chain.log"
  }
 }
