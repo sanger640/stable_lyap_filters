@@ -18,12 +18,19 @@ echo "fork statistics $(ls results/jenga/hj2/data/paired_record_knock_wm/ep*.npz
 IRR="IRRM_NL=8 IRRM_MASK=none IRRM_WM=$KNK IRRM_WM_TAG=knk IRRM_HELD_RUN=paired_record_knock_wm IRRM_HELD_MIN_EP=44130 PYTHONUNBUFFERED=1"
 [ -f results/jenga/irrm2_labels_nm8_knk_0.npz ] || env $IRR $PY eval/irrm2.py labels > results/knock/irrm2_labels_knk.log 2>&1
 [ -f results/jenga/irrm2_held_nm8_knk.npz ] || env $IRR $PY eval/irrm2.py held > results/knock/irrm2_held_knk.log 2>&1
-[ -f $LSF_OUT/margin_irrnm_nl8_knk.pt ] || env $IRR $PY eval/irrm2.py margin > results/knock/irrm2_margin_knk.log 2>&1
+# amendment 1: Jenga's margin update counts (epochs x Jenga labels / knock labels: 40 x 59690 / 8000, 30 x 69247 / 1950)
+[ -f $LSF_OUT/margin_irrnm_nl8_knk.pt ] || env $IRR IRRM_EPOCHS=298 $PY eval/irrm2.py margin > results/knock/irrm2_margin_knk.log 2>&1
 ls $LSF_OUT/margin_irrnm_nl8_knk.pt || { echo "irr margin missing, stop $(date)"; exit 1; }
-[ -f $LSF_OUT/margin_lf.pt ] || LF_RUN=paired_record_knock_wm LF_SPLIT_EP=44130 LF_RESULT=results/knock/lflsf_LF1_knk.json PYTHONUNBUFFERED=1 \
+[ -f $LSF_OUT/margin_lf.pt ] || LF_EPOCHS=1065 LF_RUN=paired_record_knock_wm LF_SPLIT_EP=44130 LF_RESULT=results/knock/lflsf_LF1_knk.json PYTHONUNBUFFERED=1 \
   $PY eval/lflsf.py margin > results/knock/lflsf_margin_knk.log 2>&1
 ls $LSF_OUT/margin_lf.pt || { echo "fork margin missing, stop $(date)"; exit 1; }
 echo "margins $(date)"; grep -E '"held_(spearman|auc)' results/jenga/irrm2_result_nm8_knk.json results/knock/lflsf_LF1_knk.json
+FIT=""   # M3 (amendment 1): margins whose in-sample recall reaches half the Jenga margin's
+for m in irr frag; do
+  LF_RUN=paired_record_knock_wm LF_SPLIT_EP=44130 $PY eval/knock_values.py fit $m >> results/knock/stage3_margin_fit.log 2>&1 && FIT="$FIT $m"
+  tail -1 results/knock/stage3_margin_fit.log
+done
+echo "M3 passed:$FIT $(date)"
 echo "waiting for the SEED2/TAU3 chain $(date)"
 until grep -qE "analysed|stop|Traceback|missing" results/jenga/seed2tau3_chain.log; do sleep 300; done
 run() {  # tag offset n chunks value-path   (stage 2's ours90 settings, the filter imagining with model_KNK)
@@ -56,8 +63,12 @@ gated() {  # name tag value-path
 }
 arm z_o90 _knock3_zo90 value_irr8_alea.pt
 arm z_frag _knock3_zfrag value_lf_alea.pt
-value k_frag value_lf_knk.pt LSF_CLF=margin_lf.pt
-gated k_frag _knock3_kfrag $LSF_OUT/value_lf_knk.pt
-value k_o90 value_irrnm8_knk.pt LSF_CLF=margin_lf.pt LSF_IRR_MARGIN=margin_irrnm_nl8_knk.pt LSF_MARGIN_MODE=irr
-gated k_o90 _knock3_ko90 $LSF_OUT/value_irrnm8_knk.pt
+if [[ "$FIT" == *frag* ]]; then
+  value k_frag value_lf_knk.pt LSF_CLF=margin_lf.pt
+  gated k_frag _knock3_kfrag $LSF_OUT/value_lf_knk.pt
+else echo "k_frag not run (M3 fail)"; fi
+if [[ "$FIT" == *irr* ]]; then
+  value k_o90 value_irrnm8_knk.pt LSF_CLF=margin_lf.pt LSF_IRR_MARGIN=margin_irrnm_nl8_knk.pt LSF_MARGIN_MODE=irr
+  gated k_o90 _knock3_ko90 $LSF_OUT/value_irrnm8_knk.pt
+else echo "k_o90 not run (M3 fail)"; fi
 $PY eval/knock_analysis.py stage3 > results/knock/stage3_analysis.log 2>&1; echo "KNOCK3 analysed $(date)"; tail -60 results/knock/stage3_analysis.log

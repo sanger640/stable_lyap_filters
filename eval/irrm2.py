@@ -241,7 +241,7 @@ def margin():
         return np.concatenate(out)
     va = rng.random(len(tt)) < 0.05; idx = np.flatnonzero(~va); best, log = 1e9, []
     w = np.where(T["flag"][idx], 4.0, 1.0); w /= w.sum()                        # irreversible actions are rare: oversample 4x
-    for ep in range(40):
+    for ep in range(int(os.environ.get("IRRM_EPOCHS", 40))):   # KNOCK stage 3 amendment 1: Jenga's update count
         net.train()
         for _ in range(len(idx) // 512):
             i = np.sort(rng.choice(idx, 512, p=w))

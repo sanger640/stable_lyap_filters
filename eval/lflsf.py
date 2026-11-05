@@ -92,7 +92,7 @@ def margin():
                 z = torch.as_tensor(Z[b:b + 2048], device="cuda").float(); out.append(net(z, g0.expand(len(z), -1)).cpu().numpy())
         return np.concatenate(out)
     best, log, idx_tr = 1e9, [], np.flatnonzero(~va)
-    for ep in range(30):
+    for ep in range(int(__import__("os").environ.get("LF_EPOCHS", 30))):   # KNOCK stage 3 amendment 1: Jenga's update count
         net.train()
         for b in range(0, len(idx_tr), 512):
             i = np.sort(idx_tr[rng.integers(len(idx_tr), size=512)])

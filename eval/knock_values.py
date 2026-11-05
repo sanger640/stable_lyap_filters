@@ -4,7 +4,9 @@
   gate   G3: from the 1-chunk gate runs on the knock val episodes 44130-44149 (paired_lfc000_knock3g_<arm>), the number of
          episodes whose first chunk was edited; an arm runs only if <= 5 of 20 (Jenga references: 0 / 300 for ours90 and
          frag in ABL2; knock stage 2: 138 / 200 and 184 / 200)
-usage: python3 eval/knock_values.py plans | gate <arm>   (gate exits 1 on a fail)"""
+  fit    M3 (amendment 1): in-sample recall of a knock margin (share of its own training labels with a failure target that
+         it predicts below 0) must be >= half its Jenga counterpart's (undo margin 0.93, fork margin 0.537)
+usage: python3 eval/knock_values.py plans | gate <arm> | fit <irr|frag>   (gate / fit exit 1 on a fail)"""
 import glob
 import json
 from pathlib import Path
@@ -47,5 +49,38 @@ def gate(arm):
     sys.exit(0 if out["pass"] else 1)
 
 
+JENGA_RECALL = {"irr": 0.93, "frag": 0.537}
+
+
+def fit(kind):
+    import torch
+    sys.path[:0] = [str(ROOT / "eval"), str(ROOT / "src")]
+    import lsf as L
+    C, Cr, _ = L.nets()
+    if kind == "irr":
+        T = {k: np.concatenate([np.load(f)[k] for f in sorted(glob.glob(str(ROOT / "results/jenga/irrm2_labels_nm8_knk_*.npz")))]) for k in ("z", "g", "d", "r")}
+        w = torch.load(LSF / "margin_irrnm_nl8_knk.pt"); net = Cr().cuda().eval(); net.load_state_dict(w["state"])
+        f = T["r"] > w["thr"]
+        X = lambda b: (torch.as_tensor(T["z"][b:b + 1024], device="cuda").float(), torch.as_tensor(T["g"][b:b + 1024], device="cuda").float(),
+                       torch.cat([torch.as_tensor(T["d"][b:b + 1024], device="cuda").float(), torch.zeros(len(T["d"][b:b + 1024]), 2, device="cuda")], 1))
+        pred = lambda b: torch.tanh(net(*X(b))); n = len(f)
+    else:
+        import lflsf as F
+        Z, M, _ = F.load((F.RUN,), lambda e: e < F.SPLIT)
+        w = torch.load(LSF / "margin_lf.pt"); net = C().cuda().eval(); net.load_state_dict(w["state"])
+        f = np.tanh((M - w["q10"]) / w["s"]) < 0
+        pred = lambda b: net(torch.as_tensor(Z[b:b + 1024], device="cuda").float(), torch.zeros(len(Z[b:b + 1024]), 4, device="cuda")); n = len(f)
+    with torch.no_grad():
+        p = np.concatenate([pred(b).cpu().numpy() for b in range(0, n, 1024)])
+    rec = float((p[f] < 0).mean()) if f.any() else 0.0
+    out = {"protocol": "results/jenga/knock_protocol.json stage3 amendment_1 M3", "margin": kind, "train_labels": int(n), "failure_targets": int(f.sum()),
+           "recall_in_sample": round(rec, 3), "false_flag_in_sample": round(float((p[~f] < 0).mean()), 4), "jenga_recall": JENGA_RECALL[kind],
+           "min_required": round(JENGA_RECALL[kind] / 2, 3), "pass": bool(rec >= JENGA_RECALL[kind] / 2)}
+    path = ROOT / "results/knock/stage3_margin_fit.json"
+    allm = json.loads(path.read_text()) if path.exists() else {}
+    allm[kind] = out; path.write_text(json.dumps(allm, indent=1) + "\n"); print(json.dumps(out), flush=True)
+    sys.exit(0 if out["pass"] else 1)
+
+
 if __name__ == "__main__":
-    {"plans": plans, "gate": lambda: gate(sys.argv[2])}[sys.argv[1]]()
+    {"plans": plans, "gate": lambda: gate(sys.argv[2]), "fit": lambda: fit(sys.argv[2])}[sys.argv[1]]()
