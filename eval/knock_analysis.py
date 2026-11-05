@@ -1,6 +1,7 @@
-"""KNOCK stage 2 / 3 analysis (results/jenga/knock_protocol.json stage2, stage3): per-arm rates, paired differences vs the
-policy (paired bootstrap), H_block and H_frag (stage 3: on the task-trained values; arms stopped at their gate are reported
-as not run). usage: python3 eval/knock_analysis.py [stage3]"""
+"""KNOCK stage 2 / 3 / 4 analysis (results/jenga/knock_protocol.json stage2, stage3, stage4): per-arm rates, paired
+differences vs the policy (paired bootstrap), H_block and H_frag (stage 3: on the task-trained values; arms stopped at their
+gate are reported as not run); stage 4: H_nsi_safe / H_nsi_red for the irreversible-fragility arm and refusal targeting.
+usage: python3 eval/knock_analysis.py [stage3 | stage4]"""
 import json
 from math import comb
 from pathlib import Path
@@ -11,7 +12,8 @@ ROOT = Path(__file__).resolve().parent.parent
 RUNS = ROOT / "results/program_b/policy_rollouts"
 STAGES = {"stage2": {"policy": "paired_record_knock2", "ours90": "paired_lfc000_knock2_o90", "frag": "paired_lfc000_knock2_frag"},
           "stage3": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_frag": "paired_lfc000_knock3_zfrag",
-                     "k_o90": "paired_lfc000_knock3_ko90", "k_frag": "paired_lfc000_knock3_kfrag"}}
+                     "k_o90": "paired_lfc000_knock3_ko90", "k_frag": "paired_lfc000_knock3_kfrag"},
+          "stage4": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_fx": "paired_lfc000_knock4_zfx"}}
 HYP = {"stage2": ("ours90", "frag"), "stage3": ("k_o90", "k_frag")}          # (H_block arm, H_frag arm)
 EPS = range(45000, 45200)
 
@@ -50,6 +52,12 @@ def main(stage="stage2"):
     for arm in data:
         if arm != "policy":
             out[f"{arm}_minus_policy_points"] = {k: diff(arm, "policy", k) for k in ("success", "red_down", "neighbour_toppled")}
+    for arm in data:
+        if arm != "policy":
+            log = [c for e in eps for c in data[arm][e].get("log", []) if c.get("intervened")]
+            out["arms"][arm]["edited_chunks_over_15mm_share"] = round(float(np.mean([c.get("lsf_edit_mm", 0) > 15 for c in log])), 3) if log else 0.0
+    if stage == "stage4":
+        return stage4(out, data, eps, col, diff)
     hb, hf = HYP[stage]
     if stage == "stage2":
         out["frag_minus_ours90_success"] = diff("frag", "ours90", "success")
@@ -65,6 +73,30 @@ def main(stage="stage2"):
     else:
         out["H_frag"] = "not run (gate)"
     (ROOT / f"results/knock/{stage}_result.json").write_text(json.dumps(out, indent=1) + "\n")
+    print(json.dumps(out, indent=1))
+
+
+def stage4(out, data, eps, col, diff):
+    from scipy.stats import fisher_exact
+    if "z_fx" not in data:
+        out["H_nsi"] = "not run"
+    else:
+        out["z_fx_minus_z_o90_points"] = {k: diff("z_fx", "z_o90", k) for k in ("success", "red_down", "neighbour_toppled")}
+        p_s, a_s, b_s = mcnemar_less(col("z_fx", "neighbour_toppled"), col("policy", "neighbour_toppled"))
+        p_r, a_r, b_r = mcnemar_less(col("z_o90", "red_down"), col("z_fx", "red_down"))
+        out["H_nsi_safe"] = {"pass": bool(p_s < 0.05), "mcnemar_p_one_sided": round(p_s, 6), "z_fx_only_topples": a_s, "policy_only_topples": b_s}
+        out["H_nsi_red"] = {"pass": bool(p_r < 0.05), "mcnemar_p_one_sided": round(p_r, 6), "z_o90_only_red_down": a_r, "z_fx_only_red_down": b_r}
+        out["H_nsi"] = bool(out["H_nsi_safe"]["pass"] and out["H_nsi_red"]["pass"])
+    pt = col("policy", "neighbour_toppled")
+    for arm in [a for a in ("z_o90", "z_fx") if a in data]:
+        red = col(arm, "red_down"); ref = ~red
+        tab = [[int((ref & pt).sum()), int((ref & ~pt).sum())], [int((red & pt).sum()), int((red & ~pt).sum())]]
+        out[f"{arm}_refusal_targeting"] = {"refused": int(ref.sum()), "policy_topple_share_refused": round(float(pt[ref].mean()), 3) if ref.any() else None,
+                                           "policy_topple_share_allowed": round(float(pt[red].mean()), 3) if red.any() else None,
+                                           "fisher_p_two_sided": round(float(fisher_exact(tab)[1]), 4)}
+        out[f"{arm}_on_policy_topple_episodes"] = {"clean_knockdown": int((pt & col(arm, "success")).sum()), "refused": int((pt & ref).sum()),
+                                                   "toppled": int((pt & col(arm, "neighbour_toppled")).sum())}
+    (ROOT / "results/knock/stage4_result.json").write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps(out, indent=1))
 
 

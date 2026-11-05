@@ -151,5 +151,23 @@
    "seen_before_this_amendment": "the flat margins' held-out reports (undo: Spearman -0.01, AUC 0.08; fork: Spearman 0.61, AUC vs pre-topple 0.07, the target itself 0.075) and a descriptive look at the fork statistic: knock neighbour topples start at chunk 1-3 (45 of 51 at chunk 2), so the pre-topple decisions are chunks 0-1 (the approach, before contact), where the hold futures are calm; the state-only hold statistic flags later chunks (red block down) instead. Prediction written now: the fork margin may pass M3 yet still not see push-caused topples (the danger is in the action, not the state). No closed-loop or stage-3 outcome has been seen.",
    "unchanged": "hypotheses, G3, episodes, arms, analysis"
   }
+ },
+ "stage4": {
+  "registered": "2026-11-05 12:05 EST, before any stage-4 episode; user request 2026-11-05 ('do the irreversible fragility, that's more important; remove frag hold')",
+  "question": "does the Jenga-trained irreversible-fragility value (irreversible in some imagined futures of the planned move, not all) let the intended red topple through while still preventing neighbour topples, zero-shot with model_KNK? Theory (stage 0): the red topple is irreversible in every future (190 of 190 chunks), so the flat target exempts it; a neighbour topple is irreversible in only some futures, so it is flagged.",
+  "why_now": "stage 0's plan named irreversible-fragility values for this task; stage 1's design note replaced them with the hold-still fork value (frag), which cannot see push-caused danger (stage 3 M3: recall 3%). frag is dropped from further KNOCK work (user, 2026-11-05).",
+  "seen_before": "stage 3 results (policy, z_o90, z_frag); the exploratory refusal check on z_o90 (refused 59; policy topples in 34% of refused vs 29% of allowed episodes, Fisher p 0.51; of the policy's 61 topple episodes z_o90 has 41 clean knock-downs, 20 refusals, 0 topples); no z_fx episode.",
+  "arm": {
+   "z_fx": "stage 3's z_o90 settings (eval/knock_rollout.py lfc000, model_KNK via LSF_FILTER_WM and CBF_WM, LSF_ALEA_SCALE = IRR_S = 2, cbf_calibration_OIL.json, 2x, 15 chunks) with LSF_VALUE_NAME = value_nsif16_alea.pt (GFX1's flat 1.6 s irreversible-fragility value, Jenga-trained, unchanged) and LSF_CBF_GAMMA = 0.218 (its label-free matched barrier at 2x from ACAL1; ours90 uses 0.1). Not gated (zero-shot, as z_o90)."
+  },
+  "episodes": "45000-45199 (200, paired with stage 3's policy = paired_record_knock2 and z_o90 = paired_lfc000_knock3_zo90; same seeds and execution noise); tag _knock4_zfx; 6 shards",
+  "hypotheses": {
+   "H_nsi_safe": "z_fx topples fewer neighbours than the policy (paired exact McNemar, one-sided p < 0.05)",
+   "H_nsi_red": "z_fx knocks the red block down in more episodes than z_o90 (paired exact McNemar, one-sided p < 0.05)",
+   "H_nsi": "both hold"
+  },
+  "reported": "per arm success, red_down, neighbour topples, edits per episode, episodes with the first chunk edited, share of edited chunks with a > 15 mm move (the safety-actor fallback); paired differences z_fx - policy and z_fx - z_o90 (95% paired bootstrap, 10,000, seed 0); refusal targeting for z_fx and z_o90: share of refused episodes (red not down) where the policy alone toppled a neighbour vs the same share among allowed episodes, Fisher exact two-sided p; of the policy's topple episodes, how many each filter turns into clean knock-downs / refusals / topples",
+  "order": "z_fx (~11 min) -> eval/knock_analysis.py stage4",
+  "files": "results/knock/stage4_{result.json,analysis.log}, knock4_chain.log; scripts/run_knock4.sh"
  }
 }
