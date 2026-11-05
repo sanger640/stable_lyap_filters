@@ -127,6 +127,8 @@ def render(job):
     rc = mujoco.Renderer(sim.model, height=CAM, width=CAM)
     cam = close_camera(mujoco); fov = float(sim.model.vis.global_.fovy)
     cam.lookat[:] = (0.49, 0.0, 0.49); cam.distance = 0.20          # closer than eval/jenga_render_frames: blocks + gripper fill the frame
+    if os.environ.get("VID_CAM"):                                   # lookat x,y,z, distance, azimuth, elevation (eval/knock_videos.py)
+        v = [float(x) for x in os.environ["VID_CAM"].split(",")]; cam.lookat[:] = v[:3]; cam.distance, cam.azimuth, cam.elevation = v[3:]
     log = {c["chunk"]: c for c in json.loads((RUNS / run / f"ep{ep}.json").read_text())["log"]}
     smap = slicer(arm, ep) if arm in VALUE_ARMS and os.environ.get("NO_SLICE") != "1" else None
     w = imageio_ffmpeg.write_frames(str(OUT / st / "raw" / f"{arm}_ep{ep}.mp4"), (CAM, CAM), fps=10, codec="libx264", quality=8,
@@ -268,11 +270,11 @@ def compose(st, ep):
 
     def draw(k):
         im = Image.new("RGB", (W, H), (18, 23, 21)); dr = ImageDraw.Draw(im)
-        dr.text((12, 8), f"Episode {ep}: same start and same noise for all four.", fill=(230, 236, 232), font=fb)
+        dr.text((12, 8), f"Episode {ep}: same start and same noise for all {('two', 'three', 'four')[len(A) - 2]}.", fill=(230, 236, 232), font=fb)
         dr.text((12, 30 if ROW else 25), ("Blue = the policy's move, untouched.   Green = a filter is changing it (dashed = what the policy wanted)." if ROW else
                 "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it."),
                 fill=(170, 180, 175), font=f12)
-        if st not in ("H5", "H5N"): dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
+        if st not in ("H5", "H5N", "K3"): dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
                 fill=(170, 180, 175), font=f12)
         for a, (x, y) in pos.items():
             _, lab, col = A[a]; Tt = T[a]; m = min(k, len(F[a]) - 1); ended = k >= len(F[a])
