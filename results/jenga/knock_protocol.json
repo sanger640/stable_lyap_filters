@@ -107,5 +107,41 @@
   "H_frag": "FAIL (neighbour topples 1 vs 61, p < 1e-4, but red_down -82.5 points, CI -87.5 to -77.0)",
   "descriptive_after": "In the blocked episodes the red block is never touched (final tilt < 5 deg in 101/105 ours90 and 162/165 frag), the first edit is at chunk 0 and the filter edits about every chunk (median 11 / 13 edits), median min V 0.34 / 0.36: the zero-shot Jenga values rate the knock-down approach itself as unsafe, before any contact. Both filters remove neighbour topples (61 -> 0 / 1); ours90 succeeds whenever the red block goes down (95/95). Reading: zero-shot transfer of Jenga-trained values blocks the intended irreversible change, but the mechanism is out-of-distribution caution from the first decision, not a judgement about the red topple; the fork value is more cautious, not less. Task-trained values (stage 3) would be needed to test H_frag fairly.",
   "sources": "results/knock/stage2_result.json, stage2_analysis.log, knock2_chain.log"
+ },
+ "stage2_deviation": {
+  "found": "2026-11-04 21:00 EST, while preparing stage 3, before any stage-3 data or value exists",
+  "what": "eval/policy_rollout.py's lf* modes (lfc000 included) set CBF_WM = model_OIL unconditionally, overriding the CBF_WM = model_KNK that scripts/run_knock2.sh passed. The filter's imagination (mon.model) in both stage-2 filter arms was therefore model_OIL, the Jenga world model, not model_KNK as registered. The policy arm uses no world model and is unaffected.",
+  "consequence": "Stage 2's result stands as 'Jenga-trained values AND the Jenga world model, zero-shot'. The registered stage 2 (Jenga values with model_KNK) is run inside stage 3 as arms z_o90 / z_frag.",
+  "fix": "policy_rollout.py: the lf* modes use LSF_FILTER_WM when set (default unchanged, so every Jenga run is unaffected)."
+ },
+ "stage3": {
+  "registered": "2026-11-04 21:05 EST, before any stage-3 data, label, margin, value or episode exists; user request 2026-11-04 ('run stage 3', no hand mask)",
+  "question": "with values trained on the knock-down task's own (label-free) data, does the plain-irreversibility value still block the intended topple of the red block (H_block), and does the fork/fragility value prevent neighbour topples while letting the red block go down (H_frag)?",
+  "data": "label-free, all from the stage-1b knock data (no new episodes): value-training resets = the 800 train decision states of results/program_b/knock_v1 (eval/lsf.py data, LSF_SOURCES = knock_v1, LSF_OUT = results/program_b/lsf_knock; its topple labels are written by the code but used by nothing here); train_reset_plan = the expert's recorded plan at those states (eval/knock_values.py plans). Held-out (grading of the margins only, report): the knock val episodes 44130-44149.",
+  "no_hand_mask": "all patches are scored (user, 2026-11-04; docs feedback: no hand mask for new scores / labels / values)",
+  "world_model": "model_KNK everywhere (labels, fork statistics, value imagination LSF_WM, closed-loop filter LSF_FILTER_WM); the uncertainty margin's ensemble members stay the Jenga ens_v1 models, with the OOD threshold recalibrated by lsf.py on the knock resets (95th percentile under the expert's own actions), as the recipe does",
+  "margins": {
+   "irr": "undo-test labels (eval/irrm2.py labels, NL = 8, IRRM_MASK = none, IRRM_WM = model_KNK, tag nm8_knk) on the knock resets and one imagined state each; THR = 1.3356 as for Jenga (not re-tuned); margin eval/irrm2.py margin -> lsf_knock/margin_irrnm_nl8_knk.pt; held = knock val decisions (IRRM_HELD_RUN = paired_record_knock_wm, IRRM_HELD_MIN_EP = 44130). Report: irrm2_result_nm8_knk.json",
+   "frag": "hold-plan fork statistics (eval/hj_data2.py, model_KNK, scale 4, hold with the gripper closed HJ_HOLD_GRIP = 1 since the knock gripper never opens) on paired_record_knock_wm; margin eval/lflsf.py margin with LF_RUN = paired_record_knock_wm, LF_SPLIT_EP = 44130 (train < 44130 <= held), q10 / s from the knock training decisions -> lsf_knock/margin_lf.pt. Report: results/knock/lflsf_LF1_knk.json"
+  },
+  "values": "eval/lsf.py sac with the Jenga values' recipe unchanged (60,000 updates, ALEA 8, alea scale 2, uncertainty margin on, seed 20261020), LSF_OUT = lsf_knock, LSF_WM = model_KNK: k_frag = value_lf_knk.pt (LSF_CLF = margin_lf.pt, the knock fork margin; as value_lf_alea.pt); k_o90 = value_irrnm8_knk.pt (+ LSF_IRR_MARGIN = margin_irrnm_nl8_knk.pt, LSF_MARGIN_MODE = irr; as value_irr8_alea.pt)",
+  "gate_G3": "per task-trained value, before its arm: a 1-chunk run of its closed-loop settings on the 20 knock val episodes 44130-44149 (tag _knock3g_<arm>); the arm runs only if the filter edits the first chunk in <= 5 of 20 episodes (the first chunk is the approach, before contact; references: Jenga ABL2 ours90 / frag 0 / 300, knock stage 2 138 / 200 and 184 / 200). Fail -> that arm is not run; reported. eval/knock_values.py gate -> results/knock/stage3_gate.json. The zero-shot arms z_o90 / z_frag are not gated (they are the registered stage 2).",
+  "episodes": "stage 2's seeds 45000-45199 (200 paired episodes per arm), 2x execution noise, 15 chunks, eval/knock_rollout.py, PER_EPISODE_SEEDS = 1, 6 shards; the policy arm is stage 2's paired_record_knock2 (no world model involved); same seeds so every arm is paired with stage 2's",
+  "arms": {
+   "policy": "paired_record_knock2 (reused)",
+   "z_o90": "stage 2's ours90 settings (lfc000, value_irr8_alea.pt, gamma 0.1, LSF_ALEA_SCALE = IRR_S = 2, cbf_calibration_OIL.json) with LSF_FILTER_WM = model_KNK (= stage 2 as registered)",
+   "z_frag": "as z_o90 with value_lf_alea.pt",
+   "k_o90": "as z_o90 with value_irrnm8_knk.pt (absolute path in LSF_VALUE_NAME)",
+   "k_frag": "as z_o90 with value_lf_knk.pt"
+  },
+  "hypotheses": {
+   "H_block": "k_o90 lowers red_down by >= 10 points vs policy (design note: the undo test scores the intended topple as irreversible)",
+   "H_frag": "k_frag topples fewer neighbours than policy (paired exact McNemar, one-sided p < 0.05) AND lowers red_down by < 10 points",
+   "reported": "per arm success, red_down, neighbour topples, edits per episode, episodes with the first chunk edited; paired differences vs policy and task-trained vs zero-shot (k_ vs z_, same world model) with 95% paired-bootstrap intervals (10,000 resamples, seed 0); z_ vs stage 2's arms (model_KNK vs model_OIL, descriptive); the margins' held-out reports; G3 counts"
+  },
+  "order": "prep (single GPU processes beside the SEED2/TAU3 chain: lsf data -> plans -> fork statistics -> undo labels -> held -> both margins) -> wait for the chain -> z_o90, z_frag -> k_frag value -> G3 -> arm -> k_o90 value -> G3 -> arm -> eval/knock_analysis.py stage3",
+  "chain": "scripts/run_knock3.sh",
+  "files": "results/knock/{stage3_result.json, stage3_analysis.log, stage3_gate.json, knock3_chain.log, lflsf_LF1_knk.json}, results/jenga/irrm2_result_nm8_knk.json",
+  "no_audit": "outcomes straight from the simulator per episode, as stages 0-2"
  }
 }

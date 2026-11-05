@@ -162,13 +162,16 @@ def labels():
 def held():
     """1500 paired_record_m3 decisions: the policy's first 2 steps (clipped) + 1 random action; topple grading labels"""
     U = Undo(); L = U.L
-    data = ROOT / "results/jenga/hj2/data/paired_record_m3"; runs = ROOT / "results/program_b/policy_rollouts/paired_record_m3"
+    run = os.environ.get("IRRM_HELD_RUN", "paired_record_m3")              # KNOCK stage 3: the knock run's val episodes
+    data = ROOT / "results/jenga/hj2/data" / run; runs = ROOT / "results/program_b/policy_rollouts" / run
     rows = []
     for f in sorted(data.glob("ep*.npz")):
+        if int(f.stem[2:]) < int(os.environ.get("IRRM_HELD_MIN_EP", 0)):
+            continue
         with np.load(f) as d:
             kt, k = int(d["topple_chunk"]), d["chunk_index"]
         rows += [(f.stem, i, kt, int(k[i])) for i in range(len(k))]
-    rng = np.random.default_rng(SEED); sel = [rows[j] for j in sorted(rng.choice(len(rows), 1500, replace=False))]
+    rng = np.random.default_rng(SEED); sel = [rows[j] for j in sorted(rng.choice(len(rows), min(1500, len(rows)), replace=False))]
     out = {k: [] for k in ("z", "g", "d", "r", "pol", "kt", "k", "rall")}
     for n, (stem, i, kt, k) in enumerate(sel):
         with np.load(data / f"{stem}.npz") as d:
@@ -258,7 +261,8 @@ def margin():
            "held_hat_below0_given_true_flag": round(float((ph[fail] < 0).mean()), 3) if fail.any() else None,
            "held_hat_below0_given_true_safe": round(float((ph[~fail] < 0).mean()), 4),
            "grading_policy_action_auc_pre_vs_safe": {"hat": round(float(roc_auc_score(pre[pre | safe], -ph[pre | safe])), 3),
-                                                     "true_r": round(float(roc_auc_score(pre[pre | safe], H["r"][pre | safe])), 3)},
+                                                     "true_r": round(float(roc_auc_score(pre[pre | safe], H["r"][pre | safe])), 3)}
+                                                    if pre.any() and safe.any() else None,
            "best_val_mse": best, "log": log}
     (OUT / f"irrm2_result_{RTAG}.json").write_text(json.dumps(out, indent=1)); print(json.dumps({k: v for k, v in out.items() if k != "log"}, indent=1))
 

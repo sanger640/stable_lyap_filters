@@ -446,7 +446,8 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["FIX"] = "lsf"
         return _paired(mode, "cbf", n, shrink)
     if mode[:3] in ("lfa", "lfr", "lfm", "lfg", "lfc"):   # label-free LSF (results/jenga/lflsf_protocol.json): LSF stage 2's switch with the
-        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
+        os.environ["CBF_WM"] = os.environ.get("LSF_FILTER_WM") or str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt")   # KNOCK
+        os.environ["CBF_FIX"] = "lsf_step"   # stage 3: LSF_FILTER_WM = the filter's world model (CBF_WM is overridden here)
         os.environ["LSF_EPS"] = str(int(mode[3:]) / 100)   # value / actor learned against the label-free margin net; lfr =
         os.environ.setdefault("LSF_VALUE_NAME", "value_lf_alea.pt"); os.environ["LSF_ALEA"] = "8"   # relative switch (actor safer)
         os.environ["LSF_REL"] = "1" if mode.startswith("lfr") else "0"

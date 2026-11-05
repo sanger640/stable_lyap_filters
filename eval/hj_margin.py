@@ -54,7 +54,7 @@ def split_stats(e):
 def hold_stats(mon, cbff, wm, z0, target, n_fut=64):
     """Hold plan from the current state at every scale -> {scale: {ending: stats}} (one plan)."""
     torch = mon.torch
-    hold = np.repeat(np.r_[target, 0.0][None].astype(np.float32), 16, 0)
+    hold = np.repeat(np.r_[target, float(os.environ.get("HJ_HOLD_GRIP", 0.0))][None].astype(np.float32), 16, 0)   # KNOCK: 1 (closed)
     seed = int(mon.rng.integers(2 ** 31)); out = {}
     for s in SC:
         d_ = np.stack([np.concatenate([(p * [1, 1, 0] * s).reshape(9), (r * [0, 0, 1] * s).reshape(9)])

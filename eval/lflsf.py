@@ -25,6 +25,8 @@ SFX = "" if SCALE == 4.0 else f"{SCALE:g}"
 TARGET = __import__("os").environ.get("LF_TARGET", "fork")      # LF6: "se" = side-effect margin (results/jenga/lflsf_LF6_protocol.json)
 if TARGET == "se":
     SFX = "se"
+RUN = __import__("os").environ.get("LF_RUN")                    # KNOCK stage 3 (results/jenga/knock_protocol.json): one run split by
+SPLIT = int(__import__("os").environ.get("LF_SPLIT_EP", 0))     # episode, train < LF_SPLIT_EP <= held; result -> LF_RESULT
 
 
 def side_effect(z):
@@ -47,10 +49,12 @@ def load_se(runs):
     return np.concatenate(Z), np.concatenate(M).astype(np.float32), np.concatenate(R), np.concatenate(Y)
 
 
-def load(runs):
+def load(runs, keep=lambda e: True):
     Z, M, Y = [], [], []
     for run in runs:
         for f in sorted((DATA / run).glob("ep*.npz")):
+            if not keep(int(f.stem[2:])):
+                continue
             with np.load(f) as d:
                 j = list(np.round(d["scales"], 3)).index(SCALE)
                 sp = d["stats"][:, j, 7]                                        # spread30 at 4x
@@ -69,6 +73,9 @@ def margin():
     if TARGET == "se":                                                          # LF6: thr = q98 of the pre-grasp reference
         Zt, Mt, Rt, _ = load_se(TRAIN); Zh, Mh, _, Yh = load_se(HELD)
         q10 = float(np.quantile(Mt[Rt], 0.02)); s = float(np.subtract(*np.quantile(Mt[Rt], [0.75, 0.25]))) / 2
+    elif RUN:
+        Zt, Mt, _ = load((RUN,), lambda e: e < SPLIT); Zh, Mh, Yh = load((RUN,), lambda e: e >= SPLIT)
+        q10 = float(np.quantile(Mt, 0.10)); s = float(np.subtract(*np.quantile(Mt, [0.75, 0.25]))) / 2
     else:
         Zt, Mt, _ = load(TRAIN); Zh, Mh, Yh = load(HELD)
         q10 = float(np.quantile(Mt, 0.10)); s = float(np.subtract(*np.quantile(Mt, [0.75, 0.25]))) / 2
@@ -97,7 +104,8 @@ def margin():
                                   L.OUT / f"margin_lf{SFX}.pt")
     net.load_state_dict(torch.load(L.OUT / f"margin_lf{SFX}.pt")["state"]); net.eval()
     ph = pred(Zh); sel = Yh >= 0
-    auc_hat = float(roc_auc_score(Yh[sel] == 1, -ph[sel])); auc_t = float(roc_auc_score(Yh[sel] == 1, -th[sel]))
+    two = 0 < (Yh[sel] == 1).sum() < sel.sum()                                 # KNOCK: a small held set may lack one class
+    auc_hat = float(roc_auc_score(Yh[sel] == 1, -ph[sel])) if two else float("nan"); auc_t = float(roc_auc_score(Yh[sel] == 1, -th[sel])) if two else float("nan")
     rho = float(spearmanr(ph, th).correlation)
     out = {"train_decisions": int(len(tt)), "held_decisions": int(len(th)), "q10": q10, "s": s,
            "held_spearman": round(rho, 3), "held_auc_hat": round(auc_hat, 3), "held_auc_target": round(auc_t, 3),
@@ -110,7 +118,8 @@ def margin():
                                      and out["held_share_hat_below0_post"] >= 0.5)
     else:
         out["GATE_LF1_pass"] = bool(rho >= 0.6 and auc_hat >= auc_t - 0.05)
-    (ROOT / f"results/jenga/lflsf_LF1{('_' if TARGET == 'se' else '_x') + SFX if SFX else ''}.json").write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
+    res = ROOT / __import__("os").environ["LF_RESULT"] if RUN else ROOT / f"results/jenga/lflsf_LF1{('_' if TARGET == 'se' else '_x') + SFX if SFX else ''}.json"
+    res.write_text(json.dumps(out, indent=1)); print({k: v for k, v in out.items() if k != "log"})
 
 
 def gate2():

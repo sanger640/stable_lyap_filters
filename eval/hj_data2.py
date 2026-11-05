@@ -40,7 +40,11 @@ def main():
         out.parent.mkdir(parents=True, exist_ok=True)
         with np.load(f) as z:
             S = {k: z[k] for k in z.files}
-        L = json.loads(f.with_suffix(".json").read_text())["log"]
+        if f.with_suffix(".json").exists():
+            L = json.loads(f.with_suffix(".json").read_text())["log"]
+        else:                                                       # runs logged without PAIRED_PER_EP (one jsonl per run)
+            L = next(r for r in map(json.loads, (ROOT / f"results/jenga/{f.parent.name}.jsonl").read_text().splitlines())
+                     if r["episode"] == int(f.stem[2:]))["log"]
         kt = next((c["chunk"] for c in L if c.get("topple_started")), -1)
         ep = int(f.stem[2:]); Z, P, ST = [], [], []
         for d in range(len(S["chunk_index"])):
