@@ -467,7 +467,8 @@ def paired(mode, n=100, shrink=None):
         cbff.CFG["FIX"] = "lsf_step"
         return _paired(mode, "cbf", n, shrink)
     if mode.startswith("lsfs") or mode.startswith("lsfa"):   # LSF-step (docs/LATENT_SAFETY_FILTER.md audit 3): lsfs065 = eps 0.65,
-        os.environ["CBF_WM"] = str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt"); os.environ["CBF_FIX"] = "lsf_step"
+        os.environ["CBF_WM"] = os.environ.get("LSF_FILTER_WM") or str(ROOT / "results/program_b/oil_v1/model/model_OIL.pt")   # KNOCK 5
+        os.environ["CBF_FIX"] = "lsf_step"
         os.environ["LSF_EPS"] = str(int(mode[4:]) / 100)  # switch per model step; lsfa = stage 2 (noisy value + noisy check)
         os.environ["LSF_VALUE_NAME"] = "value_unisafe.pt" if mode.startswith("lsfs") else "value_unisafe_alea.pt"
         if mode.startswith("lsfa"):

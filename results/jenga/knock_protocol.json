@@ -169,5 +169,34 @@
   "reported": "per arm success, red_down, neighbour topples, edits per episode, episodes with the first chunk edited, share of edited chunks with a > 15 mm move (the safety-actor fallback); paired differences z_fx - policy and z_fx - z_o90 (95% paired bootstrap, 10,000, seed 0); refusal targeting for z_fx and z_o90: share of refused episodes (red not down) where the policy alone toppled a neighbour vs the same share among allowed episodes, Fisher exact two-sided p; of the policy's topple episodes, how many each filter turns into clean knock-downs / refusals / topples",
   "order": "z_fx (~11 min) -> eval/knock_analysis.py stage4",
   "files": "results/knock/stage4_{result.json,analysis.log}, knock4_chain.log; scripts/run_knock4.sh"
+ },
+ "stage5": {
+  "registered": "2026-11-05 14:05 EST, before any stage-5 episode or new value; user request 2026-11-05 ('do 1 and 2 ... just do the UNISafe one and lbf if worth it ... do 3 and 4 too')",
+  "questions": {
+   "1_seed": "is stage 4's irreversible-fragility result robust to the value-training seed?",
+   "2_labelled": "do labelled Jenga-trained filters (zero-shot) block the intended knock-down that the label-free value lets through?",
+   "4_refusals": "stage 4's 34 z_fx refusals are untargeted; exploratory check (seen before registering): in them 97% of edited chunks are the safety-actor fallback (> 15 mm; successes 39%), the red block is never touched (median tilt 0), edits alternate chunk to chunk. Does removing the fallback (pure 1 cm edit, LSF_NO_FALLBACK=1; ABL2: no Jenga cost) cut refusals without more topples?",
+   "3_one_filter": "irreversible fragility at the 0.8 s horizon of ours90 (flat target, value_nsif8_alea.pt) as the one-filter candidate for both tasks (Jenga part in results/jenga/hzn1_protocol.json)"
+  },
+  "seen_before": "stages 0-4 results; the exploratory refusal diagnosis above; ACAL1's Jenga runs. No stage-5 episode, no uni / uni_r / lcbf knock-down run, value_nsif16s2 / value_nsif8 do not exist yet.",
+  "arms": {
+   "z_fx2": "stage 4's z_fx (model_KNK via LSF_FILTER_WM and CBF_WM, 2x, 15 chunks, LSF_ALEA_SCALE = IRR_S = 2, cbf_calibration_OIL.json, eval/knock_rollout.py lfc000) with value_nsif16s2_alea.pt: GFX1's recipe for value_nsif16_alea.pt (margin_nsif_nl16.pt, LSF_ALEA 8, eval/lsf.py sac) with LSF_SEED=20261105; gamma = ACAL1's label-free rule at 2x (eval/acal_extra.py fx2). Gate ANF2 reported, not blocking (as ANF for z_fx).",
+   "uni_r": "UNISafe-r, the current labelled baseline (RLAB2: red2 labels = neighbour topple or red-block fall, results/program_b/lsf_v3_red/value_unisafe_alea.pt), eval/knock_rollout.py lsfa030 (eps 0.30 as H2H5 / RLAB2), model_KNK via LSF_FILTER_WM and CBF_WM, 2x, 15 chunks, LSF_ALEA_SCALE = IRR_S = 2, cbf_calibration_OIL.json; eval/policy_rollout.py lsfa now honours LSF_FILTER_WM (CBF_WM was hard-coded to model_OIL).",
+   "uni": "original UNISafe (labels = neighbour topple only, results/program_b/lsf_v1/value_unisafe_alea.pt), lsfa030, model_KNK via LSF_FILTER_WM and CBF_WM, 2x, 15 chunks, LSF_ALEA_SCALE = IRR_S = 2, cbf_calibration_OIL.json.",
+   "lcbf": "LatentCBF-style: our filter (lfc000: grad edit under the barrier, actor fallback) with the labelled UNISafe-r value (absolute path lsf_v3_red/value_unisafe_alea.pt) instead of the label-free one; gamma = ACAL1's rule at 2x (eval/acal_extra.py lcbf). Caveat: not LatentCBF's margin (gradient penalty) or mixed-replay value training.",
+   "z_fxnf": "stage 4's z_fx exactly, plus LSF_NO_FALLBACK=1.",
+   "z_f8": "stage 4's z_fx settings with value_nsif8_alea.pt (flat NSI target on the 0.8 s labels irrm2_labels_nsi8_*: margin IRRM_NSI=1 IRRM_NL=8 IRRM_NSI_MODE=flat -> margin_nsif_nl8.pt; value as GFX1's recipe); gamma = ACAL1's rule at 2x (eval/acal_extra.py f8). Runs only if margin gate MNF8 passes (held Spearman >= 0.6 and AUC vs flag >= 0.85); value gate ANF8 reported, not blocking."
+  },
+  "episodes": "45000-45199 (200, paired with stage 3's policy and z_o90 and stage 4's z_fx; same seeds and execution noise); 6 shards; tags _knock5_<arm>",
+  "hypotheses": {
+   "H_s2": "z_fx2 topples fewer neighbours than the policy AND knocks the red block down in more episodes than z_o90 (both paired exact McNemar, one-sided p < 0.05; stage 4's H_nsi tests)",
+   "H_lab_r": "z_fx has more successes than uni_r (paired exact McNemar, one-sided p < 0.05)",
+   "H_lab_c": "z_fx has more successes than lcbf (same test)",
+   "H_nofb": "z_fxnf refuses (red not down and no topple) in fewer episodes than z_fx (paired exact McNemar, one-sided p < 0.05) AND z_fxnf - z_fx topples upper 95% paired bootstrap bound < +3 points",
+   "H_f8": "z_f8 passes stage 4's two tests (fewer topples than the policy; more red down than z_o90)"
+  },
+  "reported": "uni descriptive (no hypothesis); per arm success / red down / topples / edits / first chunk edited / > 15 mm share; paired differences vs z_fx (and z_f8 vs z_o90), 95% paired bootstrap; refusal targeting per arm (Fisher, refused = red not down and no topple); on the policy's 61 topple episodes: clean knock-downs / refusals / topples.",
+  "order": "pool chain scripts/run_knock5_hzn1.sh: lcbf gamma -> uni_r, uni, lcbf, z_fxnf -> (Jenga HZN1 arms) -> z_fx2 when its value exists -> z_f8 when its value exists; values trained by scripts/run_train_k5.sh as single processes alongside. One pool at a time.",
+  "files": "results/knock/stage5_result.json, stage5_analysis.log, knock5_chain.log; results/jenga/acalx_{lcbf,fx2,f8}.json; eval/knock_analysis.py stage5"
  }
 }

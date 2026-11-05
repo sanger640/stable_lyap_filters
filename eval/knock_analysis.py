@@ -1,7 +1,8 @@
-"""KNOCK stage 2 / 3 / 4 analysis (results/jenga/knock_protocol.json stage2, stage3, stage4): per-arm rates, paired
+"""KNOCK stage 2-5 analysis (results/jenga/knock_protocol.json stage2-stage5): per-arm rates, paired
 differences vs the policy (paired bootstrap), H_block and H_frag (stage 3: on the task-trained values; arms stopped at their
-gate are reported as not run); stage 4: H_nsi_safe / H_nsi_red for the irreversible-fragility arm and refusal targeting.
-usage: python3 eval/knock_analysis.py [stage3 | stage4]"""
+gate are reported as not run); stage 4: H_nsi_safe / H_nsi_red for the irreversible-fragility arm and refusal targeting;
+stage 5: value seed 2, labelled baselines, no safety-actor fallback, irreversible fragility at 0.8 s.
+usage: python3 eval/knock_analysis.py [stage3 | stage4 | stage5]"""
 import json
 from math import comb
 from pathlib import Path
@@ -13,7 +14,10 @@ RUNS = ROOT / "results/program_b/policy_rollouts"
 STAGES = {"stage2": {"policy": "paired_record_knock2", "ours90": "paired_lfc000_knock2_o90", "frag": "paired_lfc000_knock2_frag"},
           "stage3": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_frag": "paired_lfc000_knock3_zfrag",
                      "k_o90": "paired_lfc000_knock3_ko90", "k_frag": "paired_lfc000_knock3_kfrag"},
-          "stage4": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_fx": "paired_lfc000_knock4_zfx"}}
+          "stage4": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_fx": "paired_lfc000_knock4_zfx"},
+          "stage5": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_fx": "paired_lfc000_knock4_zfx",
+                     "z_fx2": "paired_lfc000_knock5_zfx2", "uni_r": "paired_lsfa030_knock5_unir", "uni": "paired_lsfa030_knock5_uni",
+                     "lcbf": "paired_lfc000_knock5_lcbf", "z_fxnf": "paired_lfc000_knock5_zfxnf", "z_f8": "paired_lfc000_knock5_zf8"}}
 HYP = {"stage2": ("ours90", "frag"), "stage3": ("k_o90", "k_frag")}          # (H_block arm, H_frag arm)
 EPS = range(45000, 45200)
 
@@ -58,6 +62,8 @@ def main(stage="stage2"):
             out["arms"][arm]["edited_chunks_over_15mm_share"] = round(float(np.mean([c.get("lsf_edit_mm", 0) > 15 for c in log])), 3) if log else 0.0
     if stage == "stage4":
         return stage4(out, data, eps, col, diff)
+    if stage == "stage5":
+        return stage5(out, data, eps, col, diff)
     hb, hf = HYP[stage]
     if stage == "stage2":
         out["frag_minus_ours90_success"] = diff("frag", "ours90", "success")
@@ -98,6 +104,55 @@ def stage4(out, data, eps, col, diff):
                                                    "toppled": int((pt & col(arm, "neighbour_toppled")).sum())}
     (ROOT / "results/knock/stage4_result.json").write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps(out, indent=1))
+
+
+def targeting(out, data, col):
+    from scipy.stats import fisher_exact
+    pt = col("policy", "neighbour_toppled")
+    for arm in [a for a in data if a != "policy"]:
+        red = col(arm, "red_down"); ref = ~red & ~col(arm, "neighbour_toppled")
+        tab = [[int((ref & pt).sum()), int((ref & ~pt).sum())], [int((~ref & pt).sum()), int((~ref & ~pt).sum())]]
+        out[f"{arm}_refusal_targeting"] = {"refused": int(ref.sum()), "policy_topple_share_refused": round(float(pt[ref].mean()), 3) if ref.any() else None,
+                                           "policy_topple_share_not_refused": round(float(pt[~ref].mean()), 3) if (~ref).any() else None,
+                                           "fisher_p_two_sided": round(float(fisher_exact(tab)[1]), 4)}
+        out[f"{arm}_on_policy_topple_episodes"] = {"clean_knockdown": int((pt & col(arm, "success")).sum()), "refused": int((pt & ref).sum()),
+                                                   "toppled": int((pt & col(arm, "neighbour_toppled")).sum())}
+
+
+def stage5(out, data, eps, col, diff):
+    """registered tests (knock_protocol.json stage5); arms that did not run are reported as not run"""
+    keys = ("success", "red_down", "neighbour_toppled")
+    for a, b in (("z_fx2", "z_fx"), ("uni_r", "z_fx"), ("uni", "z_fx"), ("lcbf", "z_fx"), ("z_fxnf", "z_fx"), ("z_f8", "z_fx"), ("z_f8", "z_o90")):
+        if a in data and b in data:
+            out[f"{a}_minus_{b}_points"] = {k: diff(a, b, k) for k in keys}
+    def safe_red(arm):
+        p_s, a_s, b_s = mcnemar_less(col(arm, "neighbour_toppled"), col("policy", "neighbour_toppled"))
+        p_r, a_r, b_r = mcnemar_less(col("z_o90", "red_down"), col(arm, "red_down"))
+        return {"safe": {"pass": bool(p_s < 0.05), "p": round(p_s, 6), "arm_only_topples": a_s, "policy_only_topples": b_s},
+                "red": {"pass": bool(p_r < 0.05), "p": round(p_r, 6), "z_o90_only_red_down": a_r, "arm_only_red_down": b_r}}
+    for arm, h in (("z_fx2", "H_s2"), ("z_f8", "H_f8")):
+        if arm in data:
+            r = safe_red(arm); out[h] = r | {"pass": bool(r["safe"]["pass"] and r["red"]["pass"])}
+        else:
+            out[h] = "not run"
+    for arm, h in (("uni_r", "H_lab_r"), ("lcbf", "H_lab_c")):
+        if arm in data:
+            p, a, b = mcnemar_less(col(arm, "success"), col("z_fx", "success"))
+            out[h] = {"pass": bool(p < 0.05), "p_one_sided_labelled_fewer_successes": round(p, 6), "labelled_only_success": a, "z_fx_only_success": b}
+        else:
+            out[h] = "not run"
+    if "z_fxnf" in data:
+        ref = lambda arm: ~col(arm, "red_down") & ~col(arm, "neighbour_toppled")
+        p, a, b = mcnemar_less(ref("z_fxnf"), ref("z_fx")); up = diff("z_fxnf", "z_fx", "neighbour_toppled")["ci95"][1]
+        out["H_nofb"] = {"pass": bool(p < 0.05 and up < 3), "refusals_p_one_sided": round(p, 6), "nofb_only_refusals": a, "fx_only_refusals": b,
+                         "topple_diff_upper95_points": up}
+    else:
+        out["H_nofb"] = "not run"
+    targeting(out, data, col)
+    (ROOT / "results/knock/stage5_result.json").write_text(json.dumps(out, indent=1) + "\n")
+    print(json.dumps(out, indent=1))
+    for h in ("H_s2", "H_lab_r", "H_lab_c", "H_nofb", "H_f8"):
+        v = out[h]; print(f"{h}={int(v['pass']) if isinstance(v, dict) else 'NA'}")
 
 
 if __name__ == "__main__":

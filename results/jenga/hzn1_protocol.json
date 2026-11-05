@@ -1,0 +1,20 @@
+{
+ "name": "HZN1: is irreversible fragility comparable to plain irreversibility on Jenga at the same horizon; one-filter candidates",
+ "registered": "2026-11-05 14:05 EST, before any HZN1 episode; user request 2026-11-05 ('check on jenga it should be quite good intuitively speaking or comparable to just irreversibility ... do 3 and 4 too')",
+ "why": "every Jenga test of irreversible fragility (fx, 1.6 s) compared it with ours90 (plain irreversibility, 0.8 s), so horizon and target were confounded. ACAL1 (fresh 27400-27999): fx loses 4.7 points of 2x success vs ours90; exploratory breakdown seen before registering: 2x discordant episodes are mostly red-block falls (42 fx-only vs 25 ours90-only) and time-outs (20 vs 11), topples even (21 vs 19); the safety-actor fallback is rare in both (8% of edits). Plain 1.6 s irreversibility was never run on fresh episodes at its matched barrier.",
+ "seen_before": "ACAL1 results (ours90, fx at both noises on these episodes) and the breakdown above; ABL2 h16 (1.6 s plain at gamma 0.1, other episodes); NSI3 dev (n16 vs a16). No irr16 / fxnf / f8 run on 27400-27999.",
+ "arms": {
+  "irr16": "value_irr16_alea.pt (plain irreversibility, 1.6 s), ACAL1's matched gamma (2x 0.207, 1x 0.259), ACAL1's fresh() settings exactly (lfc000, model_OIL, LSF_ALEA_SCALE = noise, 120 chunks); tag hz1i16_<n>x",
+  "fxnf": "ACAL1's fx arm (value_nsif16_alea.pt, gamma 2x 0.218 / 1x 0.216) plus LSF_NO_FALLBACK=1; runs only if KNOCK stage 5 H_nofb passes; tag hz1fxnf_<n>x",
+  "f8": "value_nsif8_alea.pt (KNOCK stage 5 z_f8's value), gamma from eval/acal_extra.py f8 (2x and 1x, ACAL1's fallback rule); runs only if margin gate MNF8 passes; tag hz1f8_<n>x"
+ },
+ "episodes": "27400-27999 (600, paired with ACAL1's ac1o90 and ac1fxn at the same noise), 2x and 1x, replay-audited (eval/outcome_audit.py, AUDIT_OUT set)",
+ "hypotheses": {
+  "H_comp": "fx is non-inferior to irr16 at both noises (fx - irr16: topples one-sided 95% upper < +3 pp AND v4 lower > -5 pp; ACAL1's rule)",
+  "J_fxnf": "fxnf is non-inferior to ours90 at both noises (same rule)",
+  "J_f8": "f8 is non-inferior to ours90 at both noises (same rule)"
+ },
+ "one_filter_rule": "a candidate (fxnf or f8) is a one-filter candidate if its J test passes here AND its KNOCK stage 5 test passes (H_nofb for fxnf; H_f8 for f8). Otherwise ours90 stays on Jenga and the paper reports the two-task trade-off.",
+ "reported": "counts (topples / v4 / v4b / red falls / time-outs), paired differences fx-irr16, irr16-ours90 (horizon effect), fx-ours90, candidate-ours90, candidate-fx, with discordant outcome breakdowns; edits per episode.",
+ "files": "results/jenga/hzn1_result.json, hzn1_analysis.log, hzn1_chain (results/knock/knock5_chain.log), outcome_audit_hz1*_{2x,1x}.json; eval/hzn1_analysis.py"
+}

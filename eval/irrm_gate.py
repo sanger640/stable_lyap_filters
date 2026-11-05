@@ -27,7 +27,8 @@ NAME = {"A": "value_irr8_alea.pt", "B": "value_lf_alea_n1.pt", "A16": "value_irr
         "ANM": "value_irrnm8_alea.pt", "AREF": "value_irr8_alea.pt",
         "AS2": "value_irr8s2_alea.pt", "AT085": "value_irr8t085_alea.pt",
         "AS3": "value_irr8s3_alea.pt", "AT105": "value_irr8t105_alea.pt",   # SEED2 / TAU3 (results/jenga/seed2tau3_protocol.json)
-        "ANF": "value_nsif16_alea.pt", "ANQ": "value_nsiq16_alea.pt"}   # ABL2 protocol: SEED1 / TAU2 values, graded as A (reported)
+        "ANF": "value_nsif16_alea.pt", "ANQ": "value_nsiq16_alea.pt",
+        "ANF2": "value_nsif16s2_alea.pt", "ANF8": "value_nsif8_alea.pt"}   # KNOCK stage 5 / HZN1: fx seed 2, fx at 0.8 s   # ABL2 protocol: SEED1 / TAU2 values, graded as A (reported)
 
 
 def lf2(stem):
@@ -82,13 +83,13 @@ def decisions(name):
 
 
 def main(which):
-    if which in ("M", "M16", "MN", "MR", "MN2", "MN16", "MNM", "MNF", "MNQ"):
-        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16', 'MNM': 'nm8', 'MNF': 'nsif16', 'MNQ': 'nsiq16'}[which] }.json").read_text())
+    if which in ("M", "M16", "MN", "MR", "MN2", "MN16", "MNM", "MNF", "MNQ", "MNF8"):
+        r = json.loads((ROOT / f"results/jenga/irrm2_result_{ {'M': 'nl8', 'M16': 'nl16', 'MN': 'nsi8', 'MR': 'rng8', 'MN2': 'rngnsi8', 'MN16': 'nsi16', 'MNM': 'nm8', 'MNF': 'nsif16', 'MNQ': 'nsiq16', 'MNF8': 'nsif8'}[which] }.json").read_text())
         out = {"held_spearman": r["held_spearman"], "held_auc_hat_vs_true_flag": r["held_auc_hat_vs_true_flag"]}
         out["M_pass"] = bool(r["held_spearman"] >= 0.6 and (r["held_auc_hat_vs_true_flag"] or 0) >= 0.85)
     else:
         out = lf2(NAME[which][:-3])
-        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF", "AS2", "AT085", "ANF", "ANQ", "AS3", "AT105"):
+        if which in ("A", "A16", "AN", "AR", "AN2", "AN16", "ANM", "AREF", "AS2", "AT085", "ANF", "ANQ", "AS3", "AT105", "ANF2", "ANF8"):
             out["cf3_decisions"] = decisions(NAME[which])
             out["A_pass"] = bool(out["LF2_pass"] and out["cf3_decisions"]["decisions_pass"])
         else:
