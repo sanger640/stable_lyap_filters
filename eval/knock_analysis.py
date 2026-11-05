@@ -17,7 +17,8 @@ STAGES = {"stage2": {"policy": "paired_record_knock2", "ours90": "paired_lfc000_
           "stage4": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_fx": "paired_lfc000_knock4_zfx"},
           "stage5": {"policy": "paired_record_knock2", "z_o90": "paired_lfc000_knock3_zo90", "z_fx": "paired_lfc000_knock4_zfx",
                      "z_fx2": "paired_lfc000_knock5_zfx2", "uni_r": "paired_lsfa030_knock5_unir", "uni": "paired_lsfa030_knock5_uni",
-                     "lcbf": "paired_lfc000_knock5_lcbf", "z_fxnf": "paired_lfc000_knock5_zfxnf", "z_f8": "paired_lfc000_knock5_zf8"}}
+                     "lcbf": "paired_lfc000_knock5_lcbf", "z_fxnf": "paired_lfc000_knock5_zfxnf", "z_f8": "paired_lfc000_knock5_zf8",
+                     "z_o90nf": "paired_lfc000_knock5_zo90nf", "lcbfnf": "paired_lfc000_knock5_lcbfnf"}}   # LCBFJ1, reported
 HYP = {"stage2": ("ours90", "frag"), "stage3": ("k_o90", "k_frag")}          # (H_block arm, H_frag arm)
 EPS = range(45000, 45200)
 
@@ -122,7 +123,8 @@ def targeting(out, data, col):
 def stage5(out, data, eps, col, diff):
     """registered tests (knock_protocol.json stage5); arms that did not run are reported as not run"""
     keys = ("success", "red_down", "neighbour_toppled")
-    for a, b in (("z_fx2", "z_fx"), ("uni_r", "z_fx"), ("uni", "z_fx"), ("lcbf", "z_fx"), ("z_fxnf", "z_fx"), ("z_f8", "z_fx"), ("z_f8", "z_o90")):
+    for a, b in (("z_fx2", "z_fx"), ("uni_r", "z_fx"), ("uni", "z_fx"), ("lcbf", "z_fx"), ("z_fxnf", "z_fx"), ("z_f8", "z_fx"), ("z_f8", "z_o90"),
+                 ("z_o90nf", "z_o90"), ("lcbfnf", "lcbf"), ("lcbfnf", "z_fxnf")):
         if a in data and b in data:
             out[f"{a}_minus_{b}_points"] = {k: diff(a, b, k) for k in keys}
     def safe_red(arm):

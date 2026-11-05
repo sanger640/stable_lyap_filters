@@ -3,6 +3,7 @@ is irreversible fragility (fx, 1.6 s) comparable to plain irreversibility at the
 one-filter candidates (fx without the safety-actor fallback; irreversible fragility at 0.8 s) keep ours90's Jenga results?
 Paired differences and non-inferiority as ACAL1 (eval/h2h5_analysis.paired: one-sided 95% bounds, topples upper < +3 pp
 and v4 lower > -5 pp); arms that did not run are reported as not run.
+LCBFJ1 adds the no-fallback arms (ours90, fx, our filter with the labelled UNISafe-r value) and H_L1 / H_L2.
 usage: python3 eval/hzn1_analysis.py -> results/jenga/hzn1_result.json"""
 import collections
 import json
@@ -14,7 +15,8 @@ sys.path[:0] = [str(ROOT / "eval")]
 import h2h5_analysis as H  # noqa: E402
 
 OUT = ROOT / "results/jenga"
-ARMS = {"ours90": "ac1o90", "fx": "ac1fxn", "irr16": "hz1i16", "fxnf": "hz1fxnf", "f8": "hz1f8"}
+ARMS = {"ours90": "ac1o90", "fx": "ac1fxn", "irr16": "hz1i16", "fxnf": "hz1fxnf", "f8": "hz1f8",
+        "o90nf": "hz1o90nf", "lcbfnf": "hz1lcbfnf"}                  # LCBFJ1 (results/jenga/lcbfj1_protocol.json): no actor fallback
 
 
 def rows(tag, nz):
@@ -41,7 +43,8 @@ def main():
         eps = sorted(set.intersection(*(set(v) for v in V.values())))
         r = {"episodes": len(eps), "not_run": [a for a in ARMS if a not in V],
              "counts": {a: {k: int(H.vec(V, eps, a, k).sum()) for k in H.KEYS} for a in V}, "pairs": {}}
-        for a, b in (("fx", "irr16"), ("irr16", "ours90"), ("fx", "ours90"), ("fxnf", "ours90"), ("fxnf", "fx"), ("f8", "ours90"), ("f8", "fx")):
+        for a, b in (("fx", "irr16"), ("irr16", "ours90"), ("fx", "ours90"), ("fxnf", "ours90"), ("fxnf", "fx"), ("f8", "ours90"), ("f8", "fx"),
+                     ("fxnf", "lcbfnf"), ("o90nf", "lcbfnf"), ("fxnf", "o90nf"), ("o90nf", "ours90"), ("lcbfnf", "ours90")):
             if a in V and b in V:
                 p = {k: H.paired(V, eps, a, b, k) for k in H.KEYS}
                 p["noninferior"] = bool(p["topple"]["upper95_pp"] < 3 and p["v4_success"]["lower95_pp"] > -5)
@@ -54,8 +57,10 @@ def main():
     res["H_comp"] = hyp("fx", "irr16")          # irreversible fragility costs nothing vs plain irreversibility at 1.6 s
     res["J_fxnf"] = hyp("fxnf", "ours90")       # one-filter candidates keep ours90's Jenga results
     res["J_f8"] = hyp("f8", "ours90")
+    res["H_L1"] = hyp("fxnf", "lcbfnf")         # LCBFJ1: label-free values vs the labelled value, same filter, no fallback
+    res["H_L2"] = hyp("o90nf", "lcbfnf")
     (OUT / "hzn1_result.json").write_text(json.dumps(res, indent=1) + "\n"); print(json.dumps(res, indent=1))
-    for h in ("H_comp", "J_fxnf", "J_f8"):
+    for h in ("H_comp", "J_fxnf", "J_f8", "H_L1", "H_L2"):
         print(f"{h}={res[h] if isinstance(res[h], str) else int(res[h])}")
 
 
