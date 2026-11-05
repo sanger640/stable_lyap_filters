@@ -2,7 +2,7 @@
 % (https://corl26ws-physwm.github.io); accepted as a poster (submission 71). Built from robots_need_wm_camera_ready.
 % CAMERA-READY (deadline to be announced). Incorporates the review (aCbS) and the other workshop's two reviews.
 %
-% Non-archival; 4 pages excluding references (limitations, AI statement and appendix also kept after the body).
+% Non-archival; 4 pages excluding references and appendix (organisers, 2026-11-05: extra content goes in the appendix; limitations and AI statement are appendix sections).
 % 2026-11-03 restructure (user): evaluation first (sensitivity -> fork probe as a branching-fidelity metric ->
 % benchmark -> fork-aware training -> safety as an application, intuitive physics engine there).
 % Build: tectonic main.tex (corl_2026.sty, corlabbrvnat.bst: official kit).
@@ -222,9 +222,12 @@ not whether the physics is at a branch.
 \section{Conclusion}\label{sec:conclusion}
 World models for manipulation should branch where physics branches. The fork probe measures this where
 average error cannot, and its split test helps train for it; benchmarks should report both. Next:
-pretrained world models (V-JEPA 2-AC), other tasks and a real robot.
+pretrained world models (V-JEPA 2-AC), other tasks and a real robot. Limitations are in Appendix~\ref{app:limitations}.
 
-\section*{Limitations}
+\bibliography{references}
+
+\appendix
+\section{Limitations}\label{app:limitations}
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
 \item \textbf{Scope.} Simulation only, one task with three blocks; other tasks, real images and real
 robots are untested, and there is no closed-loop intervention or latency experiment here.
@@ -244,13 +247,11 @@ toppling rigid bodies. Forks with two harmless branches are false alarms for saf
 fail are never forks, and gradual harm (deformation, spills) need not split into separate groups.
 \end{itemize}
 
-\paragraph{AI usage statement.} Generative AI tools (Claude) assisted with code, figures, literature
+\section{AI usage statement}
+Generative AI tools (Claude) assisted with code, figures, literature
 search and drafting. The authors designed the study, checked all results and references, and take full
 responsibility for the content.
 
-\bibliography{references}
-
-\appendix
 \section{Implementation details}\label{app:details}
 \paragraph{Uncertainty model.} Execution error is drawn from 64 snippets of the robot's measured tracking
 residuals (median per-chunk maximum 3.2\,mm). Perception is a frozen DINOv2 encoder on one close-camera
