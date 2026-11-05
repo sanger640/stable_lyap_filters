@@ -103,7 +103,8 @@ engine can be swapped: MuJoCo given the blocks' true shapes, masses and friction
 not know, is the \emph{upper reference}; a learned world model is the system under test.
 
 \paragraph{Ground truth.} One real outcome cannot grade the probe, since a fragile action may succeed by
-luck. An oracle runs the $N$ futures from the \emph{true} scene in exact physics and labels forks as above;
+luck. An oracle runs the $N$ futures from the \emph{true} scene in exact physics and labels forks as above,
+by counting topples (no split test);
 two independent oracle runs agree on 99\% of states. Each test set has unseen block layouts, about 60
 forks and 100 safe states, and was fixed before testing.
 
@@ -126,7 +127,7 @@ fork probe sampling & caught & false & caught & false & caught & false \\
 \midrule
 execution error only & 65 & 23 & 65 & 12 & 67 & 24 \\
 + perception error, block-position endings & 90 & 12 & 77 & 8 & 91 & 10 \\
-+ perception error, image endings & 88 & 12 & 77 & 8 & \textbf{88} & \textbf{9} \\
++ perception error, image endings & 88 & 12 & 77 & 8 & 88 & 9 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,16 +143,17 @@ the stochastic model catches 18\% of forks and the deterministic one 60\% (Table
 
 \begin{table}[t]
 \centering
-\caption{World models on test set 3. The three spread columns show why they differ: how much the futures
-spread (relative to the real futures), how much of it lies along the real branch, and how many times more
-they spread on forks than on safe states.}
+\caption{World models: forks caught and false alarms on test set 3. The three spread columns, measured on
+held-out training-domain states (Appendix~\ref{app:details}), show why they differ: how much the futures
+spread (relative to the real futures), what share of it lies along one main axis on real forks (the
+direction a split separates), and how many times more they spread on forks than on safe states.}
 \label{tab:wm}
 \small
 \begin{tabular}{lccccc}
 \toprule
 & \multicolumn{2}{c}{forks} & \multicolumn{3}{c}{spread of the futures} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-6}
-rollouts from & caught & false & size & on branch & forks / safe \\
+rollouts from & caught & false & size & main axis & forks / safe \\
 \midrule
 physics engine (upper reference) & 88\% & 9\% & 1.00 & 57\% & 4.8$\times$ \\
 world model, stochastic & 18\% & 2\% & 0.98 & 15\% & 1.3$\times$ \\
@@ -169,10 +171,12 @@ is a likely factor: sharing one noise draw across all futures at test time recov
 not all (Appendix~\ref{app:details}), so the cause deserves further study.
 
 \paragraph{Why the deterministic model comes closer.} Its futures differ only through their perturbed
-inputs, so, as in physics, its spread comes from the sensitivity of its dynamics: tiny overall, but along
-the branch and 32$\times$ larger on forks. Its weakness is the opposite one: trained with squared error,
+inputs, so, as in physics, its spread comes from the sensitivity of its dynamics: tiny overall, but mostly
+along one axis and 32$\times$ larger on forks. Its weakness is the opposite one: trained with squared error,
 it predicts the average of the outcomes it has seen, so near a fork its futures stretch toward both
-branches without a gap (Fig.~\ref{fig:forks}b), and rare branches get averaged away.
+branches without a gap (Fig.~\ref{fig:forks}b), and rare branches get averaged away. This is the more
+fixable failure: its spread is already in the right place, so restoring the gap is a matter of training
+(Section~\ref{sec:train}).
 
 \subsection{Fork-aware training}\label{sec:train}
 The probe's ingredients also serve as a training recipe. \textbf{Uncertain starts:} uncertainty should
@@ -295,6 +299,12 @@ training image comes with 8 real futures whose starts were perturbed by sampled 
 and an action-sensitivity loss. On 160 held-out states from the training domain (75 forks) they catch
 0--3\% of forks at 0--1\% false alarms, with spread 1.1--1.6$\times$ that of the real futures and only
 7--10\% of it on the main axis.
+
+\paragraph{Spread columns (Table~\ref{tab:wm}).} Size and main-axis share: 60 held-out training-domain
+states with 64 real futures each; size is the median ratio of the model's to the real futures' spread at
+the end of the horizon, and main-axis share is the variance on the first principal axis of the 64 endings
+over the total, median over the 35 states whose real futures fork. Forks / safe: 150 validation states
+with 8 real futures each, median end-of-horizon spread on states whose real futures disagree over the rest.
 
 \paragraph{Noise placement.} With the same trained stochastic network on 60 held-out training-domain states
 (35 forks), changing only its test-time noise: fresh noise at every step catches 6\% of forks; one noise
