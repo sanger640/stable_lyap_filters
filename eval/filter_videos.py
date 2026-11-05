@@ -274,7 +274,7 @@ def compose(st, ep):
         dr.text((12, 30 if ROW else 25), ("Blue = the policy's move, untouched.   Green = a filter is changing it (dashed = what the policy wanted)." if ROW else
                 "Dashed white = the policy's move (o = its end).  Solid = what was executed.  Orange frame = filter is changing it."),
                 fill=(170, 180, 175), font=f12)
-        if st not in ("H5", "H5N", "K3"): dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
+        if st not in ("H5", "H5N", "K3", "K5"): dr.text((12, 40), "Green / magenta patch = nearby targets the filter's learned value accepts / rejects (faded = gate closed, value not used).",
                 fill=(170, 180, 175), font=f12)
         for a, (x, y) in pos.items():
             _, lab, col = A[a]; Tt = T[a]; m = min(k, len(F[a]) - 1); ended = k >= len(F[a])
